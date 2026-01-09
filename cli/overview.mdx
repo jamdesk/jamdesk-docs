@@ -1,0 +1,328 @@
+---
+title: CLI Overview
+description: Install and use the Jamdesk CLI for local development
+---
+
+The Jamdesk CLI lets you preview your documentation locally with hot reload, validate your configuration, and more.
+
+## Installation
+
+<Tabs>
+  <Tab title="npm (Recommended)">
+    Install globally to use `jamdesk` from anywhere:
+
+    ```bash
+    npm install -g jamdesk
+    ```
+  </Tab>
+  <Tab title="npx">
+    Run without installing:
+
+    ```bash
+    npx jamdesk dev
+    ```
+  </Tab>
+</Tabs>
+
+### Requirements
+
+- **Node.js** v20.0.0 or higher
+- **npm** v8 or higher (recommended)
+
+## Quick Start
+
+<Steps>
+  <Step title="Create a Project">
+    Create a new documentation project:
+
+    ```bash
+    jamdesk init my-docs
+    cd my-docs
+    ```
+  </Step>
+  <Step title="Start Development Server">
+    Run the local development server with hot reload:
+
+    ```bash
+    jamdesk dev
+    ```
+
+    Your docs will be available at **http://localhost:3000/docs**
+  </Step>
+  <Step title="Validate Before Deploying">
+    Check for configuration errors and broken links:
+
+    ```bash
+    jamdesk validate
+    jamdesk broken-links
+    ```
+  </Step>
+</Steps>
+
+## Commands
+
+Run `jamdesk <command> --help` for detailed information about any command.
+
+### Development
+
+<Accordion title="jamdesk dev" icon="play" defaultOpen>
+  Start the local development server with hot reload.
+
+  ```bash
+  jamdesk dev
+  jamdesk dev --port 3001
+  ```
+
+  **Features:**
+  - Hot reload on MDX file changes
+  - Automatic navigation rebuild on docs.json changes
+  - Full search functionality
+  - All themes and components available
+
+  **Options:**
+
+  | Flag | Description |
+  |------|-------------|
+  | `-p, --port <port>` | Port to run on (default: 3000) |
+  | `-v, --verbose` | Enable verbose output |
+</Accordion>
+
+<Accordion title="jamdesk init" icon="folder-plus">
+  Create a new documentation project.
+
+  ```bash
+  jamdesk init              # Interactive mode
+  jamdesk init my-docs      # Create in new directory
+  ```
+
+  This creates a new project with:
+  - `docs.json` configuration file
+  - Sample MDX pages
+  - Recommended folder structure
+</Accordion>
+
+### Validation
+
+<Accordion title="jamdesk validate" icon="check">
+  Validate your `docs.json` configuration and OpenAPI specs.
+
+  ```bash
+  jamdesk validate
+  ```
+
+  **Checks for:**
+  - Valid JSON syntax
+  - Required fields (name, navigation)
+  - Valid theme values
+  - OpenAPI spec validation (if configured)
+  - Schema compliance
+
+  Run this before deploying to catch errors early.
+</Accordion>
+
+<Accordion title="jamdesk broken-links" icon="link-slash">
+  Scan your documentation for broken internal links.
+
+  ```bash
+  jamdesk broken-links
+  ```
+
+  **Example output:**
+  ```
+  docs/getting-started.mdx:15 - /docs/quikstart
+    Did you mean: /docs/quickstart
+
+  Found 1 broken link in 45 files.
+  ```
+</Accordion>
+
+<Accordion title="jamdesk openapi-check" icon="file-code">
+  Validate a single OpenAPI specification file.
+
+  ```bash
+  jamdesk openapi-check openapi.yaml
+  jamdesk openapi-check api/spec.json
+  ```
+
+  **Validates:**
+  - Valid YAML/JSON syntax
+  - OpenAPI 3.x schema compliance
+  - Endpoint definitions
+  - `$ref` references resolve correctly
+</Accordion>
+
+### File Management
+
+<Accordion title="jamdesk rename" icon="file-pen">
+  Rename a page and automatically update all references.
+
+  ```bash
+  jamdesk rename docs/old-name.mdx docs/new-name.mdx
+  ```
+
+  **This will:**
+  - Rename the file
+  - Update docs.json navigation
+  - Update links in all other MDX files
+  - Update snippet references
+
+  Use this instead of manual renaming to keep all references in sync.
+</Accordion>
+
+### Migration
+
+<Accordion title="jamdesk migrate" icon="right-left">
+  Migrate documentation from Mintlify to Jamdesk.
+
+  ```bash
+  cd /path/to/mintlify-docs
+  jamdesk migrate
+  ```
+
+  The interactive wizard will:
+  1. Detect your Mintlify configuration (mint.json)
+  2. Ask where to save the migrated docs
+  3. Ask for the new directory name (default: `jamdesk-docs`)
+  4. Let you choose a theme (Jam, Nebula, or Pulsar)
+  5. Copy all files and convert the configuration
+
+  **Supported conversions:**
+
+  | Mintlify | Jamdesk |
+  |----------|---------|
+  | `$schema` | Updated to Jamdesk schema |
+  | `topbarLinks` | `navbar.links` |
+  | `topbarCtaButton` | `navbar.primary` |
+  | `anchors` | `navigation.anchors` |
+  | `navigation` | `navigation.groups` |
+  | `footerSocials` | `footer.socials` |
+  | `mint.json` | Renamed to `docs.json` |
+</Accordion>
+
+### Maintenance
+
+<Accordion title="jamdesk doctor" icon="stethoscope">
+  Check your environment and diagnose issues.
+
+  ```bash
+  jamdesk doctor
+  ```
+
+  **Checks:**
+  - Node.js version (requires v20+)
+  - npm version
+  - docs.json exists and is valid
+  - ~/.jamdesk cache status
+  - Write permissions
+
+  Run this if you're experiencing issues with the CLI.
+</Accordion>
+
+<Accordion title="jamdesk clean" icon="broom">
+  Clear the ~/.jamdesk cache directory.
+
+  ```bash
+  jamdesk clean
+  ```
+
+  This removes cached dependencies and build artifacts. Use it to:
+  - Free up disk space
+  - Fix corrupted cache issues
+  - Force fresh dependency installation
+
+  Dependencies will be reinstalled on the next `jamdesk dev`.
+</Accordion>
+
+<Accordion title="jamdesk update" icon="arrow-up">
+  Update the CLI to the latest version.
+
+  ```bash
+  jamdesk update
+  ```
+
+  You can also update manually:
+
+  ```bash
+  npm update -g jamdesk
+  ```
+</Accordion>
+
+## Configuration
+
+Create `~/.jamdeskrc` to set default options:
+
+```json
+{
+  "defaultPort": 3001,
+  "verbose": false,
+  "checkUpdates": true
+}
+```
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `defaultPort` | number | 3000 | Default port for dev server |
+| `verbose` | boolean | false | Enable verbose output by default |
+| `checkUpdates` | boolean | true | Check for CLI updates on startup |
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="docs.json not found">
+    Make sure you're in a directory with a `docs.json` file.
+
+    **Solutions:**
+    - Run `jamdesk init` to create a new project
+    - Check that you're in the correct directory
+    - Verify the file is named exactly `docs.json` (not `doc.json` or similar)
+  </Accordion>
+
+  <Accordion title="Dev server won't start">
+    The development server may fail to start for several reasons.
+
+    **Try these steps:**
+    1. Run `jamdesk doctor` to check your environment
+    2. Run `jamdesk clean` to clear the cache
+    3. Use `jamdesk dev --verbose` for detailed error output
+    4. Check that Node.js v20+ is installed: `node --version`
+  </Accordion>
+
+  <Accordion title="Slow first run">
+    The first run installs dependencies to `~/.jamdesk/node_modules`.
+
+    This is normal and only happens once. Subsequent runs will be much faster.
+  </Accordion>
+
+  <Accordion title="Port already in use">
+    Another process is using the default port.
+
+    **Solutions:**
+    ```bash
+    # Use a different port
+    jamdesk dev --port 3001
+
+    # Or set a default in ~/.jamdeskrc
+    { "defaultPort": 3001 }
+    ```
+  </Accordion>
+
+  <Accordion title="Permission denied errors">
+    You may not have write permissions to the cache directory.
+
+    **Solutions:**
+    1. Check permissions on `~/.jamdesk`: `ls -la ~/.jamdesk`
+    2. Fix ownership: `sudo chown -R $(whoami) ~/.jamdesk`
+    3. Run `jamdesk clean` and try again
+  </Accordion>
+</AccordionGroup>
+
+## What's Next?
+
+<CardGroup cols={2}>
+  <Card title="docs.json Reference" icon="file-code" href="/config/docs-json-reference">
+    Complete configuration reference
+  </Card>
+  <Card title="Components" icon="puzzle-piece" href="/components/overview">
+    Explore available MDX components
+  </Card>
+</CardGroup>
