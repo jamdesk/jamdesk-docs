@@ -1,107 +1,149 @@
 ---
 title: Monorepo Support
-description: Configure Jamdesk for documentation in monorepos
+description: Configure Jamdesk to build documentation from a subdirectory in your repository
 ---
 
-Jamdesk works seamlessly with monorepos. Keep your documentation alongside your code and deploy automatically.
+Keep your documentation alongside your code. Jamdesk works seamlessly with monorepos and any repository where docs aren't at the root.
 
-## What is a Monorepo?
+<Note>
+**Prerequisites:** You need a [Jamdesk project](/setup/creating-projects) connected to a [GitHub repository](/setup/connecting-github) before configuring monorepo support.
+</Note>
 
-A monorepo is a single repository containing multiple projects or packages:
-
-```
-my-company/
-├── apps/
-│   ├── web/
-│   └── mobile/
-├── packages/
-│   ├── ui/
-│   └── utils/
-└── docs/              # Documentation lives here
-    ├── docs.json
-    └── introduction.mdx
-```
-
-## Configuring the Docs Path
-
-When your `docs.json` isn't in the repository root, specify its location in project settings:
+## Quick Setup
 
 <Steps>
   <Step title="Open project settings">
-    Go to your project in the [Jamdesk dashboard](https://app.jamdesk.com) and click **Settings**.
+    Go to your project in the [Jamdesk dashboard](https://app.jamdesk.com) and navigate to **Settings**.
   </Step>
 
-  <Step title="Set the docs path">
-    Under **Repository**, find the **Docs Path** field.
+  <Step title="Enable monorepo mode">
+    Under the **Git Repository** section, toggle on **Set up as monorepo**.
 
-    Enter the path to the directory containing `docs.json`:
+    <Frame>
+      <img src="/images/help-center/dashboard/monorepo-toggle.webp" alt="Monorepo toggle in project settings" />
+    </Frame>
+  </Step>
 
-    | Monorepo Structure | Docs Path |
-    |-------------------|-----------|
-    | `docs/docs.json` | `docs` |
-    | `packages/docs/docs.json` | `packages/docs` |
-    | `apps/website/docs/docs.json` | `apps/website/docs` |
+  <Step title="Enter your docs path">
+    Specify the path to the directory containing your `docs.json` file.
+
+    <Frame>
+      <img src="/images/help-center/dashboard/docs-path-input.webp" alt="Docs path input showing preview" />
+    </Frame>
+
+    The preview shows where Jamdesk will look for your configuration file.
   </Step>
 
   <Step title="Save and rebuild">
-    Click **Save** and trigger a rebuild to apply the changes.
+    Click **Save Changes** to apply. Your next build will use the new path.
   </Step>
 </Steps>
 
+## Understanding the Docs Path
+
+The docs path tells Jamdesk where to find your `docs.json` configuration file within the repository.
+
+<Warning>
+Enter only the directory path, not the filename. Use `docs` not `docs/docs.json`.
+</Warning>
+
+### Path Examples
+
+| Repository Structure | Docs Path Value |
+|---------------------|-----------------|
+| `my-repo/docs/docs.json` | `docs` |
+| `my-repo/packages/docs/docs.json` | `packages/docs` |
+| `my-repo/apps/website/docs/docs.json` | `apps/website/docs` |
+| `my-repo/documentation/docs.json` | `documentation` |
+
+### What Gets Included
+
+When you set a docs path, Jamdesk only processes files within that directory:
+
+- **Content files** (`.mdx`, `.md`) are compiled into pages
+- **Assets** in subdirectories (like `images/`) are included
+- **Configuration** (`docs.json`) defines your site
+
+Files outside the docs path are ignored during builds.
+
 ## Common Monorepo Patterns
 
-### Dedicated docs directory
+Choose the pattern that matches your project structure:
 
-```
-monorepo/
-├── packages/
-├── apps/
-└── docs/                    # Docs path: docs
-    ├── docs.json
-    ├── introduction.mdx
-    └── guides/
-```
+<Tabs>
+  <Tab title="Dedicated /docs">
+    Documentation in a top-level directory.
 
-### Docs package
+    ```
+    monorepo/
+    ├── packages/
+    ├── apps/
+    └── docs/                    # Docs path: docs
+        ├── docs.json
+        ├── introduction.mdx
+        └── guides/
+    ```
 
-```
-monorepo/
-├── packages/
-│   ├── core/
-│   ├── cli/
-│   └── docs/                # Docs path: packages/docs
-│       ├── docs.json
-│       └── pages/
-└── apps/
-```
+    **Docs path:** `docs`
+  </Tab>
 
-### Inside an app
+  <Tab title="Package in /packages">
+    Documentation as a workspace package.
 
-```
-monorepo/
-├── apps/
-│   └── website/
-│       ├── src/
-│       └── docs/            # Docs path: apps/website/docs
-│           ├── docs.json
-│           └── introduction.mdx
-└── packages/
-```
+    ```
+    monorepo/
+    ├── packages/
+    │   ├── core/
+    │   ├── cli/
+    │   └── docs/                # Docs path: packages/docs
+    │       ├── docs.json
+    │       └── pages/
+    └── apps/
+    ```
 
-### Subdirectory in root
+    **Docs path:** `packages/docs`
+  </Tab>
 
-```
-monorepo/
-├── src/
-├── tests/
-└── documentation/           # Docs path: documentation
-    ├── docs.json
-    └── getting-started.mdx
-```
+  <Tab title="Inside an App">
+    Documentation nested within an application.
 
-## Asset Paths in Monorepos
+    ```
+    monorepo/
+    ├── apps/
+    │   └── website/
+    │       ├── src/
+    │       └── docs/            # Docs path: apps/website/docs
+    │           ├── docs.json
+    │           └── introduction.mdx
+    └── packages/
+    ```
 
-When your docs are in a subdirectory, asset paths in `docs.json` are relative to that directory:
+    **Docs path:** `apps/website/docs`
+  </Tab>
+
+  <Tab title="Custom Directory">
+    Any custom directory name.
+
+    ```
+    monorepo/
+    ├── src/
+    ├── tests/
+    └── documentation/           # Docs path: documentation
+        ├── docs.json
+        └── getting-started.mdx
+    ```
+
+    **Docs path:** `documentation`
+  </Tab>
+</Tabs>
+
+## Working with Assets
+
+Asset paths in `docs.json` are always relative to your docs directory, not the repository root.
+
+### Example
+
+If your docs are in `packages/docs/`:
 
 ```json title="packages/docs/docs.json"
 {
@@ -112,16 +154,38 @@ When your docs are in a subdirectory, asset paths in `docs.json` are relative to
 }
 ```
 
-This references `packages/docs/images/logo.svg`, not the repository root.
+These paths reference:
+- `packages/docs/images/logo.svg`
+- `packages/docs/images/favicon.svg`
+
+<Warning>
+Do not use absolute paths from the repository root. This will not work:
+
+```json
+"favicon": "/packages/docs/images/favicon.svg"
+```
+</Warning>
+
+### In MDX Files
+
+The same rule applies to images in your content:
+
+```mdx
+![Screenshot](/images/screenshot.png)
+```
+
+This references an image at `[docs-path]/images/screenshot.png`.
 
 ## Internal Links
 
-Internal links work the same regardless of monorepo structure. Use paths relative to your docs directory:
+Internal links work the same regardless of your repository structure. Use paths relative to your docs root:
 
 ```mdx
 [See the API guide](/guides/api)
 [Installation steps](/getting-started#installation)
 ```
+
+These paths match your navigation structure, not your file system.
 
 ## Build Behavior
 
@@ -130,58 +194,69 @@ Jamdesk only watches for changes within your configured docs path:
 - Changes to `packages/docs/**` trigger a build
 - Changes to `packages/core/**` do not trigger a build
 
-This keeps builds fast and relevant.
+This keeps builds fast and focused on documentation changes.
 
 <Tip>
-If you need to rebuild when other packages change (e.g., generated API docs), use a manual rebuild or webhook trigger.
+**Need to rebuild when other code changes?**
+
+If you generate documentation from source code (like API docs from code comments), trigger a manual rebuild from the dashboard or set up a webhook in your CI pipeline.
 </Tip>
 
 ## Workspace Tools Compatibility
 
-Jamdesk works with all major monorepo tools:
+Jamdesk works with all major monorepo tools. No special configuration is needed beyond setting the docs path.
 
 | Tool | Supported |
 |------|-----------|
-| npm workspaces | ✅ |
-| Yarn workspaces | ✅ |
-| pnpm workspaces | ✅ |
-| Turborepo | ✅ |
-| Nx | ✅ |
-| Lerna | ✅ |
-
-No special configuration is needed. Just set the docs path correctly.
+| npm workspaces | Yes |
+| Yarn workspaces | Yes |
+| pnpm workspaces | Yes |
+| Turborepo | Yes |
+| Nx | Yes |
+| Lerna | Yes |
 
 ## Troubleshooting
 
-### "docs.json not found" error
+<AccordionGroup>
+  <Accordion title="docs.json not found error" icon="circle-exclamation">
+    1. Verify the exact path in your repository matches what you entered
+    2. Ensure `docs.json` exists at that location
+    3. Check for typos - paths are case-sensitive
+    4. Remember: use `docs` not `docs/docs.json`
 
-Verify the docs path matches your repository structure:
+    **Quick check:** In your repository, the file should exist at `[your-docs-path]/docs.json`
+  </Accordion>
 
-1. Check the exact path in your repository
-2. Ensure `docs.json` exists at that location
-3. Path should not include `docs.json` itself (use `docs` not `docs/docs.json`)
+  <Accordion title="Assets not loading" icon="image">
+    Asset paths must be relative to your docs directory:
 
-### Assets not loading
+    ```json
+    // Correct - relative to docs directory
+    "favicon": "/images/favicon.svg"
 
-Confirm asset paths are relative to your docs directory:
+    // Wrong - absolute from repo root
+    "favicon": "/packages/docs/images/favicon.svg"
+    ```
 
-```json
-// ✅ Correct - relative to docs directory
-"favicon": "/images/favicon.svg"
+    Check that your images actually exist in `[docs-path]/images/`.
+  </Accordion>
 
-// ❌ Wrong - absolute from repo root
-"favicon": "/packages/docs/images/favicon.svg"
-```
+  <Accordion title="Changes not triggering builds" icon="rotate">
+    Only changes within your configured docs path trigger automatic builds.
 
-### Changes not triggering builds
+    1. Verify you're modifying files inside the docs path
+    2. Check that you're pushing to the correct branch
+    3. View webhook delivery status in GitHub repository settings
 
-Ensure you're modifying files within the configured docs path. Changes outside that directory won't trigger automatic builds.
+    If you need builds triggered by changes outside the docs path, use manual rebuilds or CI webhooks.
+  </Accordion>
+</AccordionGroup>
 
 ## What's Next?
 
 <CardGroup cols={2}>
   <Card title="Directory Structure" icon="folder-tree" href="/setup/directory-structure">
-    Best practices for organizing docs
+    Best practices for organizing documentation files
   </Card>
   <Card title="Deployment" icon="rocket" href="/development/deployment">
     How builds and deployments work
