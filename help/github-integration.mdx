@@ -1,0 +1,214 @@
+---
+title: Understanding GitHub Integration
+description: Learn about the two types of GitHub connections and how they work together
+---
+
+Jamdesk uses **two complementary GitHub connections** that serve different purposes. Understanding the difference helps you set up your team correctly and troubleshoot issues.
+
+<Info>
+**TL;DR:** The GitHub App gives Jamdesk access to your repository. Linking your personal account ensures your commits are attributed to you.
+</Info>
+
+## Overview
+
+| Connection | Purpose | Scope | Required? |
+|------------|---------|-------|-----------|
+| **GitHub App** | Repository access & webhooks | Per-project | Yes |
+| **Personal Account** | User identity & attribution | Per-user | Recommended |
+
+## GitHub App (Project-level)
+
+The **Jamdesk GitHub App** is installed on your GitHub account or organization. It grants Jamdesk permission to access specific repositories.
+
+### What it does
+
+- **Reads repository content** - Clones your docs to build them
+- **Receives webhooks** - Gets notified when you push changes
+- **Reports build status** - Shows deployment status on commits
+
+### Why you need it
+
+Without the GitHub App installed, Jamdesk cannot:
+- Access your repository to build documentation
+- Automatically deploy when you push changes
+- Show build status on GitHub commits
+
+### How it works
+
+<Steps>
+  <Step title="Install the GitHub App">
+    When you create a project, you'll install the Jamdesk GitHub App on your GitHub account.
+  </Step>
+  <Step title="Grant repository access">
+    Choose which repositories Jamdesk can access - either all repositories or specific ones.
+  </Step>
+  <Step title="Connect to a project">
+    In Jamdesk, select which repository and branch to use for each project.
+  </Step>
+  <Step title="Push triggers builds">
+    Every push to your configured branch automatically triggers a deployment.
+  </Step>
+</Steps>
+
+### One app, multiple projects
+
+A single GitHub App installation can power multiple Jamdesk projects:
+- Install the app once on your account or organization
+- Connect different repositories to different Jamdesk projects
+- Each project has its own branch and path configuration
+
+<Tip>
+For organizations, an admin only needs to install the GitHub App once. Then any team member can create Jamdesk projects using repositories the app has access to.
+</Tip>
+
+## Personal GitHub Account (User-level)
+
+Linking your **personal GitHub account** associates your GitHub identity with your Jamdesk profile. This is separate from the GitHub App.
+
+### What it does
+
+- **Identifies you** - Associates your GitHub username with your Jamdesk account
+- **Attributes builds** - Shows who triggered each deployment
+- **Team visibility** - Other team members can see who made changes
+
+### Why you need it
+
+When you push to GitHub, Jamdesk needs to determine which user triggered the build. Without your account linked:
+
+- Jamdesk falls back to matching by email address
+- If your Git commit email differs from your Jamdesk email, attribution fails
+- Build history may show "Unknown user" for your commits
+
+<Warning>
+**Common issue:** Your Git is configured with a personal email, but you signed up for Jamdesk with a work email. Link your GitHub account to ensure proper attribution.
+</Warning>
+
+### How to link your account
+
+<Steps>
+  <Step title="Go to User Settings">
+    Click your avatar in the top right, then select **User Settings**.
+  </Step>
+  <Step title="Find GitHub Account section">
+    Scroll to the **GitHub Account** card.
+  </Step>
+  <Step title="Click Link GitHub Account">
+    A popup opens to GitHub. Authorize Jamdesk to read your profile.
+  </Step>
+  <Step title="Confirm connection">
+    Your GitHub username appears in your Jamdesk profile.
+  </Step>
+</Steps>
+
+## How They Work Together
+
+Think of them as two separate keys:
+
+| Key | Opens | Owned by |
+|-----|-------|----------|
+| GitHub App | Access to repositories | Project/Organization |
+| Personal Link | Your identity | Individual user |
+
+### Team Example
+
+Consider a team with 3 developers working on company docs:
+
+1. **Admin installs GitHub App** on the organization
+2. **Admin creates Jamdesk project** connected to docs repo
+3. **Each developer links their personal account**
+
+Now when any developer pushes:
+- The **GitHub App** allows Jamdesk to read the repo and build
+- The **Personal link** identifies who triggered the build
+
+### Solo Developer Example
+
+Even as a solo developer, both connections serve different purposes:
+- **GitHub App** - Connects your repo to Jamdesk
+- **Personal link** - Ensures your commits show your name in build history
+
+## Disconnecting & Unlinking
+
+Understanding what each action affects helps you troubleshoot and manage access.
+
+### Disconnect GitHub (Project Settings)
+
+**What it does:** Removes the repository connection from a single Jamdesk project.
+
+**Effects:**
+- Automatic deployments stop for that project
+- The GitHub App stays installed on GitHub
+- Other Jamdesk projects are unaffected
+- Your personal account link is unaffected
+
+**When to use:** You want to connect a different repository, or temporarily stop deployments.
+
+**How to reconnect:** Go to Project Settings → Git Repository and select a repository.
+
+### Unlink GitHub (User Settings)
+
+**What it does:** Removes your GitHub identity from your Jamdesk profile.
+
+**Effects:**
+- Your GitHub username no longer appears in your profile
+- Build attribution falls back to email matching
+- All repository connections remain intact
+- The GitHub App stays installed
+
+**When to use:** You want to link a different GitHub account, or remove the connection.
+
+**How to re-link:** Go to User Settings → GitHub Account → Link GitHub Account.
+
+### Uninstall GitHub App (On GitHub)
+
+**What it does:** Completely removes Jamdesk's access to your GitHub account.
+
+**Effects:**
+- **All** Jamdesk projects using this installation lose access
+- Automatic deployments stop for all affected projects
+- Webhooks are removed
+- Personal account links are unaffected
+
+<Warning>
+Only uninstall the GitHub App if you want to remove Jamdesk access from ALL your repositories. This affects every Jamdesk project connected to your GitHub account.
+</Warning>
+
+**How to uninstall:**
+1. Go to [GitHub Settings → Applications → Installed GitHub Apps](https://github.com/settings/installations)
+2. Find "Jamdesk" and click **Configure**
+3. Scroll down and click **Uninstall**
+
+## Quick Reference
+
+| Action | Location | Scope | Reversible? |
+|--------|----------|-------|-------------|
+| **Disconnect GitHub** | Project Settings → Git Repository | Single project | Yes - reconnect anytime |
+| **Unlink GitHub** | User Settings → GitHub Account | Your account | Yes - re-link anytime |
+| **Uninstall GitHub App** | GitHub Settings | All projects | Yes - reinstall |
+
+## Troubleshooting
+
+### "My builds show 'Unknown user'"
+Your personal GitHub account isn't linked. Go to **User Settings → Link GitHub Account**.
+
+### "Repository not showing up"
+The GitHub App doesn't have access to that repository. Go to [GitHub Settings](https://github.com/settings/installations), find Jamdesk, and add the repository.
+
+### "Builds aren't triggering"
+1. Check the repository is connected in **Project Settings → Git Repository**
+2. Verify you're pushing to the configured branch
+3. Check webhook delivery in GitHub repository settings
+
+### "I can't access organization repositories"
+An organization admin must approve the GitHub App installation. Ask your admin to install or approve Jamdesk in the organization settings.
+
+## What's Next?
+
+<CardGroup cols={2}>
+  <Card title="Connecting GitHub" icon="github" href="/setup/connecting-github">
+    Step-by-step setup guide
+  </Card>
+  <Card title="GitHub App Troubleshooting" icon="wrench" href="/help/github-app">
+    Fix common installation issues
+  </Card>
+</CardGroup>
