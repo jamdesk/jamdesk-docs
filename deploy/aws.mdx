@@ -1,0 +1,122 @@
+---
+title: AWS Route 53 & CloudFront
+description: Serve Jamdesk docs at a /docs subpath using AWS CloudFront and Route 53
+---
+
+Use [Amazon CloudFront](https://aws.amazon.com/cloudfront/) as a CDN to proxy documentation requests to Jamdesk. This guide covers setting up CloudFront with Route 53 for DNS.
+
+## Prerequisites
+
+- An AWS account with CloudFront and Route 53 access
+- Your domain managed in Route 53 (or ability to update DNS elsewhere)
+- Your Jamdesk subdomain (found in dashboard settings)
+
+## Step 1: Create a CloudFront Distribution
+
+1. Open the [CloudFront console](https://console.aws.amazon.com/cloudfront/)
+2. Click **Create Distribution**
+3. Configure the origin:
+
+| Setting | Value |
+|---------|-------|
+| Origin domain | `YOUR_SLUG.jamdesk.app` |
+| Protocol | HTTPS only |
+| Name | `jamdesk-docs-origin` |
+
+<Note>
+Replace `YOUR_SLUG` with your actual Jamdesk subdomain.
+</Note>
+
+## Step 2: Configure Origin Settings
+
+In the origin settings, add a custom header to identify your domain:
+
+| Header name | Value |
+|-------------|-------|
+| `X-Forwarded-Host` | `yoursite.com` |
+
+This header tells Jamdesk which domain is making the request so URLs render correctly.
+
+## Step 3: Create a Cache Behavior for /docs
+
+Add a behavior to route `/docs/*` requests to your Jamdesk origin:
+
+1. Go to the **Behaviors** tab
+2. Click **Create Behavior**
+3. Configure:
+
+| Setting | Value |
+|---------|-------|
+| Path pattern | `/docs/*` |
+| Origin | `jamdesk-docs-origin` |
+| Viewer protocol policy | Redirect HTTP to HTTPS |
+| Cache policy | CachingOptimized |
+| Origin request policy | AllViewerExceptHostHeader |
+
+<Warning>
+The `AllViewerExceptHostHeader` policy is required. It forwards all headers except `Host`, allowing Jamdesk to receive the necessary request information.
+</Warning>
+
+## Step 4: Add Alternate Domain Name
+
+1. In the **General** tab, click **Edit**
+2. Under **Alternate domain name (CNAME)**, add `yoursite.com`
+3. Select or request an SSL certificate for your domain
+
+## Step 5: Configure Route 53
+
+Create an alias record pointing to your CloudFront distribution:
+
+1. Open the [Route 53 console](https://console.aws.amazon.com/route53/)
+2. Select your hosted zone
+3. Click **Create Record**
+4. Configure:
+
+| Setting | Value |
+|---------|-------|
+| Record name | `yoursite.com` (or leave blank for apex) |
+| Record type | A |
+| Alias | Yes |
+| Route traffic to | CloudFront distribution |
+| Distribution | Select your distribution |
+
+## Step 6: Verify
+
+After DNS propagation (usually 5-15 minutes), visit `https://yoursite.com/docs` to confirm your documentation loads correctly.
+
+## Complete CloudFront Configuration Summary
+
+```
+Distribution Settings:
+├── Origin: YOUR_SLUG.jamdesk.app
+│   └── Custom Header: X-Forwarded-Host = yoursite.com
+├── Behavior: /docs/*
+│   ├── Cache Policy: CachingOptimized
+│   └── Origin Request Policy: AllViewerExceptHostHeader
+└── Alternate Domain: yoursite.com (with SSL certificate)
+```
+
+## Troubleshooting
+
+<Accordion title="403 Forbidden errors">
+Ensure the origin domain is exactly `YOUR_SLUG.jamdesk.app` without `https://` prefix.
+</Accordion>
+
+<Accordion title="Mixed content warnings">
+Verify the Viewer protocol policy is set to "Redirect HTTP to HTTPS" and your SSL certificate is valid.
+</Accordion>
+
+<Accordion title="Stale content after updates">
+Create a CloudFront invalidation for `/docs/*` to clear cached content after publishing changes.
+</Accordion>
+
+## What's Next?
+
+<CardGroup cols={2}>
+  <Card title="Vercel" icon="triangle" href="/deploy/vercel">
+    Alternative: Use Vercel rewrites
+  </Card>
+  <Card title="All Options" icon="grid-2" href="/deploy/overview">
+    Back to overview
+  </Card>
+</CardGroup>
