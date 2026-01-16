@@ -20,6 +20,12 @@ cd builder && ./jd dev jamdesk-docs
 
 The dev server runs at `http://localhost:3000/introduction` by default.
 
+### IMPORTANT: Development Server
+
+**NEVER start a development server without explicit user permission.** Always ask the user first before running any dev server command, even in auto or bypass mode. The user may already have a server running in another terminal.
+
+If you need to test changes, ask: "Should I start the dev server, or do you already have one running?"
+
 ## Project Structure
 
 ```
