@@ -1,0 +1,190 @@
+---
+title: Reverse Proxy
+description: Configure nginx, Apache, or other reverse proxies to serve Jamdesk docs at a /docs subpath
+---
+
+Use a reverse proxy to serve your Jamdesk documentation at a `/docs` subpath. This guide covers nginx, Apache, and general proxy configuration.
+
+## Prerequisites
+
+- Access to your web server configuration
+- Your Jamdesk subdomain (found in dashboard settings)
+
+## nginx
+
+Add a location block to proxy `/docs` requests to Jamdesk:
+
+```nginx title="nginx.conf"
+server {
+    listen 443 ssl;
+    server_name yoursite.com;
+
+    # Your existing configuration...
+
+    # Proxy /docs to Jamdesk
+    location /docs {
+        proxy_pass https://YOUR_SLUG.jamdesk.app;
+        proxy_ssl_server_name on;
+
+        proxy_set_header Host YOUR_SLUG.jamdesk.app;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+```
+
+<Note>
+Replace `YOUR_SLUG` with your actual Jamdesk subdomain.
+</Note>
+
+<Warning>
+**Path handling matters.** The `proxy_pass` URL has no trailing path, so nginx preserves the original request path. A request to `/docs/page` proxies to `jamdesk.app/docs/page`. If you add a trailing slash (`proxy_pass https://...jamdesk.app/`), the `/docs` prefix gets stripped. Keep it exactly as shown above.
+</Warning>
+
+After updating your configuration, reload nginx:
+
+```bash
+sudo nginx -t && sudo systemctl reload nginx
+```
+
+## Apache
+
+Use `mod_proxy` to forward `/docs` requests to Jamdesk:
+
+```apache title="httpd.conf or .htaccess"
+<VirtualHost *:443>
+    ServerName yoursite.com
+
+    # Your existing configuration...
+
+    # Enable proxy modules
+    ProxyRequests Off
+    SSLProxyEngine On
+
+    # Proxy /docs to Jamdesk
+    ProxyPass /docs https://YOUR_SLUG.jamdesk.app/docs
+    ProxyPassReverse /docs https://YOUR_SLUG.jamdesk.app/docs
+
+    <Location /docs>
+        RequestHeader set X-Forwarded-Host "yoursite.com"
+        RequestHeader set X-Forwarded-Proto "https"
+    </Location>
+</VirtualHost>
+```
+
+Ensure the required modules are enabled:
+
+```bash
+sudo a2enmod proxy proxy_http ssl headers
+sudo systemctl reload apache2
+```
+
+## Caddy
+
+[Caddy](https://caddyserver.com/) provides simple reverse proxy configuration with automatic HTTPS:
+
+```caddy title="Caddyfile"
+yoursite.com {
+    # Your existing configuration...
+
+    handle /docs* {
+        reverse_proxy https://YOUR_SLUG.jamdesk.app {
+            header_up Host {upstream_hostport}
+            header_up X-Forwarded-Host {host}
+        }
+    }
+
+    # Handle other routes
+    handle {
+        # Your main site configuration
+    }
+}
+```
+
+Reload Caddy after changes:
+
+```bash
+sudo systemctl reload caddy
+```
+
+## Traefik
+
+For [Traefik](https://traefik.io/) users, configure a router and service:
+
+```yaml title="traefik.yml"
+http:
+  routers:
+    docs-router:
+      rule: "Host(`yoursite.com`) && PathPrefix(`/docs`)"
+      service: jamdesk-docs
+      tls: {}
+
+  services:
+    jamdesk-docs:
+      loadBalancer:
+        servers:
+          - url: "https://YOUR_SLUG.jamdesk.app"
+        passHostHeader: false
+```
+
+## HAProxy
+
+For [HAProxy](https://www.haproxy.org/), add backend and ACL rules:
+
+```haproxy title="haproxy.cfg"
+frontend https
+    bind *:443 ssl crt /etc/ssl/certs/yoursite.pem
+
+    # Route /docs to Jamdesk backend
+    acl is_docs path_beg /docs
+    use_backend jamdesk_docs if is_docs
+
+    # Default backend for other requests
+    default_backend main_site
+
+backend jamdesk_docs
+    server jamdesk YOUR_SLUG.jamdesk.app:443 ssl verify none
+    http-request set-header Host YOUR_SLUG.jamdesk.app
+    http-request set-header X-Forwarded-Host %[req.hdr(host)]
+```
+
+## Required Headers
+
+Regardless of which proxy you use, ensure these headers are set:
+
+| Header | Value | Purpose |
+|--------|-------|---------|
+| `Host` | `YOUR_SLUG.jamdesk.app` | Identifies the request to Jamdesk |
+| `X-Forwarded-Host` | Your domain | Tells Jamdesk which domain to use in URLs |
+| `X-Forwarded-Proto` | `https` | Ensures secure URL generation |
+
+## Troubleshooting
+
+<Accordion title="502 Bad Gateway">
+Verify the proxy can reach `YOUR_SLUG.jamdesk.app` over HTTPS. Check firewall rules and DNS resolution.
+</Accordion>
+
+<Accordion title="SSL certificate errors">
+Enable SSL/TLS for the upstream connection. For nginx, add `proxy_ssl_server_name on;`. For Apache, enable `SSLProxyEngine On`.
+</Accordion>
+
+<Accordion title="Assets loading from wrong domain">
+Ensure the `X-Forwarded-Host` header is set correctly. This tells Jamdesk which domain to use for asset URLs and internal links.
+</Accordion>
+
+<Accordion title="Redirect loops">
+Check that your proxy isn't following redirects. The proxy should forward the response as-is without additional redirect handling.
+</Accordion>
+
+## What's Next?
+
+<CardGroup cols={2}>
+  <Card title="Cloudflare Workers" icon="cloud" href="/deploy/cloudflare">
+    Alternative: Use Cloudflare
+  </Card>
+  <Card title="All Options" icon="grid-2" href="/deploy/overview">
+    Back to overview
+  </Card>
+</CardGroup>

@@ -1,0 +1,148 @@
+---
+title: Cloudflare Workers
+description: Proxy your Jamdesk docs through Cloudflare Workers at a /docs subpath
+---
+
+Use [Cloudflare Workers](https://workers.cloudflare.com/) to proxy documentation requests from your domain to Jamdesk. Workers run at the edge, providing fast response times globally.
+
+## Prerequisites
+
+- A Cloudflare account with your domain configured
+- [Wrangler CLI](https://developers.cloudflare.com/workers/wrangler/install-and-update/) installed
+- Your Jamdesk subdomain (found in dashboard settings)
+
+## Step 1: Create a Worker
+
+Create a new directory for your Worker and initialize it:
+
+```bash
+mkdir docs-proxy && cd docs-proxy
+npm init -y
+```
+
+## Step 2: Add the Worker Code
+
+Create `index.js` with the following code:
+
+```javascript title="index.js"
+const JAMDESK_HOST = "YOUR_SLUG.jamdesk.app";
+
+export default {
+  async fetch(request) {
+    const url = new URL(request.url);
+
+    // Only proxy /docs paths
+    if (!url.pathname.startsWith("/docs")) {
+      return fetch(request);
+    }
+
+    // Rewrite the request to Jamdesk
+    const proxyUrl = new URL(request.url);
+    proxyUrl.hostname = JAMDESK_HOST;
+
+    // Clone headers and add proxy headers
+    const headers = new Headers(request.headers);
+    headers.set("Host", JAMDESK_HOST);
+    headers.set("X-Forwarded-Host", url.hostname);
+    headers.set("X-Forwarded-Proto", "https");
+
+    const proxyRequest = new Request(proxyUrl, {
+      method: request.method,
+      headers: headers,
+      body: request.body,
+    });
+
+    return fetch(proxyRequest);
+  },
+};
+```
+
+<Note>
+Replace `YOUR_SLUG` with your actual Jamdesk subdomain (e.g., `acme` if your docs are at `acme.jamdesk.app`).
+</Note>
+
+## Step 3: Configure wrangler.toml
+
+Create `wrangler.toml` to configure your Worker:
+
+```toml title="wrangler.toml"
+name = "docs-proxy"
+main = "index.js"
+compatibility_date = "2024-01-01"
+
+# Route configuration - replace with your domain
+routes = [
+  { pattern = "yoursite.com/docs*", zone_name = "yoursite.com" }
+]
+```
+
+## Step 4: Deploy
+
+Deploy your Worker to Cloudflare:
+
+```bash
+npx wrangler deploy
+```
+
+## Step 5: Verify
+
+Visit `https://yoursite.com/docs` to confirm your documentation is being served correctly.
+
+## Alternative: Service Worker Syntax
+
+If you prefer the older Service Worker syntax (compatible with older Workers):
+
+```javascript title="index.js"
+const JAMDESK_HOST = "YOUR_SLUG.jamdesk.app";
+
+addEventListener("fetch", (event) => {
+  event.respondWith(handleRequest(event.request));
+});
+
+async function handleRequest(request) {
+  const url = new URL(request.url);
+
+  if (!url.pathname.startsWith("/docs")) {
+    return fetch(request);
+  }
+
+  const proxyUrl = new URL(request.url);
+  proxyUrl.hostname = JAMDESK_HOST;
+
+  const headers = new Headers(request.headers);
+  headers.set("Host", JAMDESK_HOST);
+  headers.set("X-Forwarded-Host", url.hostname);
+  headers.set("X-Forwarded-Proto", "https");
+
+  return fetch(new Request(proxyUrl, {
+    method: request.method,
+    headers: headers,
+    body: request.body,
+  }));
+}
+```
+
+## Troubleshooting
+
+<Accordion title="404 errors on documentation pages">
+Ensure your route pattern includes the wildcard: `yoursite.com/docs*` (not just `yoursite.com/docs`).
+</Accordion>
+
+<Accordion title="Assets not loading correctly">
+Check that the `X-Forwarded-Host` header is set correctly. This tells Jamdesk which domain to use for asset URLs.
+</Accordion>
+
+<Accordion title="Worker not triggering">
+Verify your domain is proxied through Cloudflare (orange cloud icon in DNS settings) and the route is correctly configured.
+</Accordion>
+
+## What's Next?
+
+<CardGroup cols={2}>
+  <Card title="AWS CloudFront" icon="aws" href="/deploy/aws">
+    Alternative: Use AWS for proxying
+  </Card>
+  <Card title="All Options" icon="grid-2" href="/deploy/overview">
+    Back to overview
+  </Card>
+</CardGroup>

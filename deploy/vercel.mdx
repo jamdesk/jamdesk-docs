@@ -1,0 +1,127 @@
+---
+title: Vercel
+description: Host Jamdesk docs at a /docs subpath using Vercel rewrites
+---
+
+Use [Vercel rewrites](https://vercel.com/docs/edge-network/rewrites) to proxy documentation requests to Jamdesk. Rewrites happen at the edge and don't change the URL in the browser.
+
+## Prerequisites
+
+- A project deployed on Vercel
+- Your Jamdesk subdomain (found in dashboard settings)
+
+## Step 1: Update vercel.json
+
+Add a `rewrites` configuration to your `vercel.json` file. If the file doesn't exist, create it in your project root:
+
+```json title="vercel.json"
+{
+  "rewrites": [
+    {
+      "source": "/docs",
+      "destination": "https://YOUR_SLUG.jamdesk.app/docs"
+    },
+    {
+      "source": "/docs/:path*",
+      "destination": "https://YOUR_SLUG.jamdesk.app/docs/:path*"
+    }
+  ]
+}
+```
+
+<Note>
+Replace `YOUR_SLUG` with your actual Jamdesk subdomain (e.g., `acme` if your docs are at `acme.jamdesk.app`).
+</Note>
+
+## Step 2: Deploy
+
+Deploy your changes to Vercel:
+
+```bash
+vercel --prod
+```
+
+Or push to your connected Git repository to trigger an automatic deployment.
+
+## Step 3: Verify
+
+Visit `https://yoursite.com/docs` to confirm your documentation is being served correctly.
+
+## Understanding the Configuration
+
+| Property | Description |
+|----------|-------------|
+| `source` | The path pattern on your domain that triggers the rewrite |
+| `destination` | The URL to proxy the request to |
+| `:path*` | A wildcard that captures all path segments after `/docs/` |
+
+The two rewrite rules handle:
+1. The base `/docs` path (e.g., `yoursite.com/docs`)
+2. All nested paths (e.g., `yoursite.com/docs/getting-started`)
+
+## Adding to Existing Rewrites
+
+If you already have rewrites configured, add the Jamdesk rules to your existing array:
+
+```json title="vercel.json"
+{
+  "rewrites": [
+    { "source": "/api/:path*", "destination": "/api/:path*" },
+    { "source": "/docs", "destination": "https://YOUR_SLUG.jamdesk.app/docs" },
+    { "source": "/docs/:path*", "destination": "https://YOUR_SLUG.jamdesk.app/docs/:path*" }
+  ]
+}
+```
+
+<Warning>
+Rewrite order matters. Place more specific rules before general ones.
+</Warning>
+
+## Using next.config.js (Next.js Projects)
+
+For Next.js projects, you can alternatively configure rewrites in `next.config.js`:
+
+```javascript title="next.config.js"
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  async rewrites() {
+    return [
+      {
+        source: "/docs",
+        destination: "https://YOUR_SLUG.jamdesk.app/docs",
+      },
+      {
+        source: "/docs/:path*",
+        destination: "https://YOUR_SLUG.jamdesk.app/docs/:path*",
+      },
+    ];
+  },
+};
+
+export default nextConfig;
+```
+
+## Troubleshooting
+
+<Accordion title="Rewrites not working">
+Ensure `vercel.json` is in your project root and properly formatted. Check the Vercel deployment logs for configuration errors.
+</Accordion>
+
+<Accordion title="404 on nested pages">
+Verify you have both rewrite rules - one for `/docs` and one for `/docs/:path*`. Missing the wildcard rule causes nested pages to fail.
+</Accordion>
+
+<Accordion title="Infinite redirect loops">
+Check that your destination URL uses `https://` and points to `jamdesk.app`, not your own domain.
+</Accordion>
+
+## What's Next?
+
+<CardGroup cols={2}>
+  <Card title="Reverse Proxy" icon="server" href="/deploy/reverse-proxy">
+    Alternative: nginx, Apache, Caddy
+  </Card>
+  <Card title="All Options" icon="grid-2" href="/deploy/overview">
+    Back to overview
+  </Card>
+</CardGroup>
