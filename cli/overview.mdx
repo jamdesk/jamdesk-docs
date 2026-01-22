@@ -178,19 +178,36 @@ Run `jamdesk <command> --help` for detailed information about any command.
 ### Migration
 
 <Accordion title="jamdesk migrate" icon="right-left">
-  Migrate documentation from Mintlify to Jamdesk.
+  Migrate documentation from Mintlify to Jamdesk, or extract React hook components from existing Jamdesk projects.
 
   ```bash
-  cd /path/to/mintlify-docs
   jamdesk migrate
   ```
 
-  The interactive wizard will:
+  **For Mintlify projects**, the interactive wizard will:
   1. Detect your Mintlify configuration (mint.json)
   2. Ask where to save the migrated docs
   3. Ask for the new directory name (default: `jamdesk-docs`)
   4. Let you choose a theme (Jam, Nebula, or Pulsar)
   5. Copy all files and convert the configuration
+  6. Extract React hook components to `/snippets` automatically
+
+  **For existing Jamdesk projects**, the command scans for inline components using React hooks and extracts them to snippet files.
+
+  **Automatic Hook Extraction**
+
+  Inline MDX components that use React hooks (`useState`, `useEffect`, etc.) are automatically extracted to snippet files. This is required because inline components are server-rendered and cannot use client-side hooks.
+
+  For example, this inline component:
+
+  ```jsx
+  export const Counter = () => {
+    const [count, setCount] = useState(0);
+    return <button onClick={() => setCount(c => c + 1)}>{count}</button>;
+  };
+  ```
+
+  Becomes a snippet file at `/snippets/counter.tsx` with `'use client'` directive, and the MDX file gets an import statement instead.
 
   **Supported conversions:**
 
@@ -203,6 +220,7 @@ Run `jamdesk <command> --help` for detailed information about any command.
   | `navigation` | `navigation.groups` |
   | `footerSocials` | `footer.socials` |
   | `mint.json` | Renamed to `docs.json` |
+  | Inline components with hooks | Extracted to `/snippets` |
 </Accordion>
 
 ### Maintenance
