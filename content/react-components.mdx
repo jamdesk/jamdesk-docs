@@ -85,11 +85,15 @@ export const FeatureCard = ({ title, children }) => (
 
 - **Arrow functions only**: Use `export const` syntax. The `export function` syntax is not supported.
 - **No imports**: You cannot import external packages or other files
-- **No hooks**: React hooks like `useState` and `useEffect` will cause runtime errors (components are server-rendered)
+- **No hooks**: React hooks (`useState`, `useEffect`, `useRef`, etc.) are not available. Components are server-rendered during build, and hooks only work client-side. For interactive components, use snippet files instead (see troubleshooting below).
 - **Server-side only**: Components render on the server; no client-side interactivity or event handlers
 - **Tailwind only**: Use Tailwind CSS classes for styling; CSS-in-JS is not available
 - **Strict syntax**: Syntax errors in inline components will fail the build with a clear error message
 - **PascalCase names**: Component names must start with a capital letter and contain only letters and numbers (no underscores)
+
+<Warning>
+**Need React hooks?** Inline components cannot use `useState`, `useEffect`, or other hooks because they're rendered on the server during build. For interactive components that need state or effects, create a snippet file with the `'use client'` directive (see troubleshooting section below).
+</Warning>
 
 ## Best practices
 
@@ -197,5 +201,38 @@ export const MyComponent = ({ prop }) => (
 export const HeroCard = ({ title }) => (
   <div>{title}</div>
 );
+```
+</Accordion>
+
+<Accordion title="useState is not defined (or useEffect, useRef, etc.)">
+**Error:** `ReferenceError: useState is not defined`
+
+**Cause:** React hooks are not available in inline components. Inline components are server-rendered during the build process, and hooks only work in client-side React components.
+
+**Solution:** For interactive components that need state or effects, create a snippet file instead:
+
+1. Create a file in your `/snippets` directory (e.g., `/snippets/counter.tsx`)
+2. Add `'use client'` at the top of the file
+3. Import and use it in your MDX
+
+```tsx title="/snippets/counter.tsx"
+'use client';
+
+import { useState } from 'react';
+
+export function Counter() {
+  const [count, setCount] = useState(0);
+  return (
+    <button onClick={() => setCount(c => c + 1)}>
+      Count: {count}
+    </button>
+  );
+}
+```
+
+```mdx title="your-page.mdx"
+import { Counter } from '/snippets/counter';
+
+<Counter />
 ```
 </Accordion>
