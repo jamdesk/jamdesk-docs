@@ -8,7 +8,7 @@ Use [Cloudflare Workers](https://workers.cloudflare.com/) to proxy documentation
 ## Prerequisites
 
 - A Cloudflare account with your domain configured
-- [Wrangler CLI](https://developers.cloudflare.com/workers/wrangler/install-and-update/) installed
+- [Wrangler CLI](https://developers.cloudflare.com/workers/wrangler/install-and-update/) v3.0+ installed
 - Your Jamdesk subdomain (found in dashboard settings)
 
 ## Quick Setup with CLI
@@ -20,16 +20,54 @@ npx jamdesk deploy cloudflare
 ```
 
 This interactive command will:
-1. Check that wrangler is installed
-2. Ask for your project slug and domain
-3. Generate all required files
-4. Optionally deploy to Cloudflare
+1. Check that wrangler 3.0+ is installed
+2. Verify your Cloudflare account and show available domains
+3. Auto-detect your project slug from `docs.json`
+4. Let you select your target domain from your Cloudflare zones
+5. Generate all required files
+6. Optionally deploy to Cloudflare
+
+### Account Selection
+
+The CLI verifies you're logged into the correct Cloudflare account before proceeding. If you have access to multiple Cloudflare accounts (common for agencies or teams), you'll be prompted to choose:
+
+```
+Step 2: Verifying Cloudflare account...
+✓ Logged in as: you@example.com
+? Select the Cloudflare account to use:
+❯ Your Personal Account
+  Company Team Account
+  [ Switch to different login ]
+```
+
+After selecting an account, only domains from that account will be available for zone selection:
+
+```
+✓ Using account: Company Team Account
+✓ Domains: 3 available for Workers routing
+```
+
+<Note>
+Make sure you select the Cloudflare account that has the domain you want to deploy to. Each account has its own set of domains, and you can only create Workers routes for domains in the selected account.
+</Note>
+
+### CI/Scripted Deployment
 
 For CI/scripting, use flags to skip prompts:
 
 ```bash
 jamdesk deploy cloudflare --slug myproject --domain example.com --skip-deploy --yes
 ```
+
+| Option | Description |
+|--------|-------------|
+| `--slug` | Jamdesk project slug (skip auto-detection) |
+| `--domain` | Target domain (e.g., yoursite.com) |
+| `--path` | Path prefix (default: /docs) |
+| `--output-dir` | Output directory (default: cloudflare-worker/) |
+| `--skip-deploy` | Generate files only, don't deploy |
+| `--force` | Overwrite existing directory |
+| `--yes` | Skip all prompts (CI mode) |
 
 If you prefer manual setup, continue with the steps below.
 
@@ -150,6 +188,29 @@ async function handleRequest(request) {
 
 ## Troubleshooting
 
+<Accordion title="No domains found in this account">
+The CLI shows your available domains before zone selection. If you see "No domains found":
+1. Verify you're logged into the correct Cloudflare account
+2. Check that your domain is added and active in the Cloudflare dashboard
+3. Run the CLI again and select "No" when asked to continue with the current account to switch accounts
+</Accordion>
+
+<Accordion title="Wrong Cloudflare account">
+If you have multiple Cloudflare accounts:
+1. Run `jamdesk deploy cloudflare`
+2. When prompted to select an account, choose the one with your domain
+3. If you need a completely different login, select **"Switch to different login"**
+4. The CLI will log you out and prompt you to log in with the correct credentials
+</Accordion>
+
+<Accordion title="Zone not found during deployment">
+This error means the selected zone doesn't match your Cloudflare account. Either:
+- You selected a zone that belongs to a different account
+- The zone was removed from Cloudflare
+
+Fix: Re-run the CLI and select the correct zone from the list, or switch to the account that owns the zone.
+</Accordion>
+
 <Accordion title="404 errors on documentation pages">
 Ensure your route pattern includes the wildcard: `yoursite.com/docs*` (not just `yoursite.com/docs`).
 </Accordion>
@@ -160,4 +221,12 @@ Check that the `X-Forwarded-Host` header is set correctly. This tells Jamdesk wh
 
 <Accordion title="Worker not triggering">
 Verify your domain is proxied through Cloudflare (orange cloud icon in DNS settings) and the route is correctly configured.
+</Accordion>
+
+<Accordion title="Wrangler version too old">
+The CLI requires wrangler 3.0+. Update with:
+
+```bash
+npm install -g wrangler@latest
+```
 </Accordion>
