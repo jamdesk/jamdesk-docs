@@ -114,3 +114,60 @@ Verify you have both rewrite rules - one for `/docs` and one for `/docs/:path*`.
 <Accordion title="Infinite redirect loops">
 Check that your destination URL uses `https://` and points to `jamdesk.app`, not your own domain.
 </Accordion>
+
+## Custom Domain Verification
+
+Vercel rewrites work by proxying requests to your Jamdesk subdomain (`YOUR_SLUG.jamdesk.app`). This basic setup doesn't require domain verification.
+
+If you've configured a custom domain in the Jamdesk dashboard with the "Host at /docs" option, you'll need to use Edge Middleware instead of simple rewrites to set the required verification header.
+
+### Using Edge Middleware
+
+Create a `middleware.ts` file in your project root:
+
+```typescript middleware.ts
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+
+const JAMDESK_HOST = 'YOUR_SLUG.jamdesk.app';
+
+export function middleware(request: NextRequest) {
+  const url = request.nextUrl;
+
+  // Only proxy /docs paths
+  if (!url.pathname.startsWith('/docs')) {
+    return NextResponse.next();
+  }
+
+  // Rewrite to Jamdesk
+  const destination = new URL(url.pathname + url.search, `https://${JAMDESK_HOST}`);
+
+  const response = NextResponse.rewrite(destination);
+
+  // Required for domain verification
+  response.headers.set('X-Jamdesk-Forwarded-Host', url.hostname);
+
+  return response;
+}
+
+export const config = {
+  matcher: '/docs/:path*',
+};
+```
+
+<Note>
+Replace `YOUR_SLUG` with your actual Jamdesk subdomain.
+</Note>
+
+<Warning>
+The `X-Jamdesk-Forwarded-Host` header is required for domain verification. Your domain must be verified in the Jamdesk dashboard before the middleware will serve content.
+</Warning>
+
+### When to Use Middleware vs Rewrites
+
+| Approach | Use When |
+|----------|----------|
+| **Rewrites** | Basic setup without custom domain verification |
+| **Edge Middleware** | Custom domain with "Host at /docs" option enabled |
+
+If you don't need custom domain verification, the simpler rewrites approach is sufficient.

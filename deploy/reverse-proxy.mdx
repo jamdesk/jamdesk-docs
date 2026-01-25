@@ -31,6 +31,8 @@ server {
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Host $host;
         proxy_set_header X-Forwarded-Proto $scheme;
+        # Required for domain verification
+        proxy_set_header X-Jamdesk-Forwarded-Host $host;
     }
 }
 ```
@@ -70,6 +72,8 @@ Use `mod_proxy` to forward `/docs` requests to Jamdesk:
     <Location /docs>
         RequestHeader set X-Forwarded-Host "yoursite.com"
         RequestHeader set X-Forwarded-Proto "https"
+        # Required for domain verification
+        RequestHeader set X-Jamdesk-Forwarded-Host "yoursite.com"
     </Location>
 </VirtualHost>
 ```
@@ -93,6 +97,8 @@ yoursite.com {
         reverse_proxy https://YOUR_SLUG.jamdesk.app {
             header_up Host {upstream_hostport}
             header_up X-Forwarded-Host {host}
+            # Required for domain verification
+            header_up X-Jamdesk-Forwarded-Host {host}
         }
     }
 
@@ -148,6 +154,8 @@ backend jamdesk_docs
     server jamdesk YOUR_SLUG.jamdesk.app:443 ssl verify none
     http-request set-header Host YOUR_SLUG.jamdesk.app
     http-request set-header X-Forwarded-Host %[req.hdr(host)]
+    # Required for domain verification
+    http-request set-header X-Jamdesk-Forwarded-Host %[req.hdr(host)]
 ```
 
 ## Required Headers
@@ -159,6 +167,11 @@ Regardless of which proxy you use, ensure these headers are set:
 | `Host` | `YOUR_SLUG.jamdesk.app` | Identifies the request to Jamdesk |
 | `X-Forwarded-Host` | Your domain | Tells Jamdesk which domain to use in URLs |
 | `X-Forwarded-Proto` | `https` | Ensures secure URL generation |
+| `X-Jamdesk-Forwarded-Host` | Your domain | Required for domain verification |
+
+<Warning>
+The `X-Jamdesk-Forwarded-Host` header is required for domain verification. Your domain must be verified in the Jamdesk dashboard before the proxy will serve content.
+</Warning>
 
 ## Troubleshooting
 
@@ -176,4 +189,15 @@ Ensure the `X-Forwarded-Host` header is set correctly. This tells Jamdesk which 
 
 <Accordion title="Redirect loops">
 Check that your proxy isn't following redirects. The proxy should forward the response as-is without additional redirect handling.
+</Accordion>
+
+<Accordion title="403 Domain not authorized error">
+If you see "Domain is not authorized to serve this content":
+
+1. Verify your domain is registered in the Jamdesk dashboard
+2. Complete DNS verification (TXT record) for your domain
+3. Ensure the `X-Jamdesk-Forwarded-Host` header is set in your proxy configuration
+4. Check that your domain maps to the correct project
+
+The domain must be verified before the proxy can serve documentation.
 </Accordion>

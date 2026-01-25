@@ -29,13 +29,18 @@ Replace `YOUR_SLUG` with your actual Jamdesk subdomain.
 
 ## Step 2: Configure Origin Settings
 
-In the origin settings, add a custom header to identify your domain:
+In the origin settings, add custom headers to identify your domain:
 
 | Header name | Value |
 |-------------|-------|
 | `X-Forwarded-Host` | `yoursite.com` |
+| `X-Jamdesk-Forwarded-Host` | `yoursite.com` |
 
-This header tells Jamdesk which domain is making the request so URLs render correctly.
+These headers tell Jamdesk which domain is making the request. The `X-Jamdesk-Forwarded-Host` header is required for domain verification.
+
+<Warning>
+Your domain must be verified in the Jamdesk dashboard before CloudFront will serve content. Complete the DNS verification process after adding your domain.
+</Warning>
 
 ## Step 3: Create a Cache Behavior for /docs
 
@@ -89,7 +94,8 @@ After DNS propagation (usually 5-15 minutes), visit `https://yoursite.com/docs` 
 ```
 Distribution Settings:
 ├── Origin: YOUR_SLUG.jamdesk.app
-│   └── Custom Header: X-Forwarded-Host = yoursite.com
+│   ├── Custom Header: X-Forwarded-Host = yoursite.com
+│   └── Custom Header: X-Jamdesk-Forwarded-Host = yoursite.com
 ├── Behavior: /docs/*
 │   ├── Cache Policy: CachingOptimized
 │   └── Origin Request Policy: AllViewerExceptHostHeader
@@ -108,4 +114,15 @@ Verify the Viewer protocol policy is set to "Redirect HTTP to HTTPS" and your SS
 
 <Accordion title="Stale content after updates">
 Create a CloudFront invalidation for `/docs/*` to clear cached content after publishing changes.
+</Accordion>
+
+<Accordion title="403 Domain not authorized error">
+If you see "Domain is not authorized to serve this content":
+
+1. Verify your domain is registered in the Jamdesk dashboard
+2. Complete DNS verification (TXT record) for your domain
+3. Ensure both `X-Forwarded-Host` and `X-Jamdesk-Forwarded-Host` custom headers are set in your origin configuration
+4. Check that your domain maps to the correct project
+
+The domain must be verified before CloudFront can serve documentation.
 </Accordion>
