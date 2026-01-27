@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is the **official Jamdesk documentation** - a content project containing MDX files that document the Jamdesk platform itself. It's built by the Jamdesk builder service and served at `docs.jamdesk.com`.
+This is the **official Jamdesk documentation** - a content project containing MDX files that document the Jamdesk platform itself. It's built by the Jamdesk builder service and served at `jamdesk.com/docs`.
 
 > **Build internals:** For MDX components, themes, and build service details, see `builder/CLAUDE.md`.
 
