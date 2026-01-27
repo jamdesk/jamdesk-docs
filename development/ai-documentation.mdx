@@ -1,0 +1,182 @@
+---
+title: AI-Assisted Documentation
+description: Use Claude Code to automatically update your Jamdesk docs when your code changes
+---
+
+Keep your documentation in sync with your code using the `/update-jamdesk` skill for Claude Code. When you implement user-facing features, this skill helps you create or update documentation automatically.
+
+## Prerequisites
+
+- [Claude Code](https://claude.ai/code) installed and configured
+- A Jamdesk documentation project with `docs.json`
+- Optional: [Jamdesk CLI](/cli/overview) for verification (`npm install -g jamdesk`)
+
+## Quick Start
+
+<Steps>
+  <Step title="Create Config File">
+    Create a `.jamdesk-docs-path` file in your code repository pointing to your docs:
+
+    ```yaml .jamdesk-docs-path
+    docs_path: ../my-docs
+    ```
+
+    The path can be relative (from the config file) or absolute.
+  </Step>
+  <Step title="Run the Skill">
+    After implementing a feature, run:
+
+    ```
+    /update-jamdesk
+    ```
+
+    Claude will analyze your changes and ask clarifying questions before writing documentation.
+  </Step>
+  <Step title="Review and Commit">
+    Review the generated documentation, then Claude will verify it with `jamdesk validate` and `jamdesk broken-links` before committing.
+  </Step>
+</Steps>
+
+## Config File Format
+
+The `.jamdesk-docs-path` file tells Claude where your documentation lives.
+
+**Simple format** - just the path:
+
+```
+../my-docs
+```
+
+**Full format** - with options:
+
+```yaml .jamdesk-docs-path
+# Path to documentation repository
+docs_path: ../my-docs
+
+# Optional: Branch for doc updates (default: main)
+docs_branch: main
+```
+
+<Note>
+  The config file is discovered by walking up from your current directory to the git root. Place it in your repository root for best results.
+</Note>
+
+## How It Works
+
+When you run `/update-jamdesk`, Claude:
+
+1. **Locates your docs** - Finds the `.jamdesk-docs-path` config file
+2. **Asks questions** - Clarifies branch strategy, scope, and content
+3. **Analyzes existing docs** - Searches for related content to update or extend
+4. **Writes documentation** - Creates or updates pages following Jamdesk standards
+5. **Verifies** - Runs `jamdesk validate` and `jamdesk broken-links`
+6. **Commits** - Stages changes and offers to commit/push/PR
+
+## Example Session
+
+```
+User: I just added a webhook feature. Can you document it?
+
+Claude: I'm using the update-jamdesk skill to update your documentation.
+
+Found .jamdesk-docs-path: ../customer-docs
+
+How should I handle changes to the docs repository?
+1. Create a new feature branch (recommended)
+2. Update directly on main
+
+User: 1
+
+Claude: Based on the webhook implementation, I plan to:
+- Create: webhooks/overview.mdx
+- Update: getting-started.mdx (add link)
+
+Any changes to this plan?
+
+User: Looks good
+
+Claude: [Creates documentation...]
+
+✓ jamdesk validate passed
+✓ jamdesk broken-links passed
+
+Commit these changes?
+```
+
+## Preview Mode
+
+Run with `--preview` to see what would change without making edits:
+
+```
+/update-jamdesk --preview
+```
+
+This is useful for:
+- Checking what documentation needs updating
+- Reviewing proposed changes before committing
+- Understanding the skill's analysis without side effects
+
+## Proactive Suggestions
+
+After committing user-facing code changes, Claude may suggest:
+
+```
+Tip: These changes affect user-facing features.
+Run /update-jamdesk to update your documentation.
+```
+
+This appears when:
+- You have a `.jamdesk-docs-path` config file, AND
+- Your commit includes files matching user-facing patterns (API, CLI, components)
+
+## Installing the Skill
+
+The `/update-jamdesk` skill is available in two ways:
+
+<Tabs>
+  <Tab title="Portable (Recommended)">
+    Download the skill to your project's `.claude/skills/` directory:
+
+    Copy the skill file from the Jamdesk docs repository to your project:
+
+    ```bash
+    mkdir -p .claude/skills/update-jamdesk
+    # Copy from your local jamdesk-docs clone, or download from the docs site
+    cp path/to/jamdesk-docs/skills/update-jamdesk/SKILL.md .claude/skills/update-jamdesk/
+    ```
+
+    This makes the skill available to anyone working on your project. Commit it to your repository.
+  </Tab>
+  <Tab title="Global">
+    Add to your global Claude Code skills directory (`~/.claude/skills/`) for personal use across all projects.
+  </Tab>
+</Tabs>
+
+<Note>
+  After installing, restart Claude Code or start a new session for the skill to be recognized.
+</Note>
+
+## Troubleshooting
+
+<Accordion title="Skill not recognized">
+  Make sure the skill file is at `.claude/skills/update-jamdesk/SKILL.md` and restart your Claude Code session.
+</Accordion>
+
+<Accordion title="Config file not found">
+  Create `.jamdesk-docs-path` in your repository root with the path to your docs directory. The skill searches from your current directory up to the git root.
+</Accordion>
+
+<Accordion title="jamdesk CLI not installed">
+  Install with `npm install -g jamdesk`. The skill will work without it but won't run automated validation.
+</Accordion>
+
+## What's Next?
+
+<CardGroup cols={2}>
+  <Card title="CLI Overview" icon="terminal" href="/cli/overview">
+    Learn about the jamdesk CLI for local development
+  </Card>
+  <Card title="Writing Content" icon="pen-nib" href="/content/mdx-basics">
+    MDX syntax and components for documentation
+  </Card>
+</CardGroup>
