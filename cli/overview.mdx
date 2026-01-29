@@ -80,6 +80,7 @@ Run `jamdesk <command> --help` for detailed information about any command.
   ```
 
   **Features:**
+  - Automatic validation on startup (docs.json schema and MDX syntax)
   - Hot reload on MDX file changes
   - Automatic navigation rebuild on docs.json changes
   - Full search functionality
@@ -110,18 +111,27 @@ Run `jamdesk <command> --help` for detailed information about any command.
 ### Validation
 
 <Accordion title="jamdesk validate" icon="check">
-  Validate your `docs.json` configuration and OpenAPI specs.
+  Validate your `docs.json` configuration, MDX syntax, and OpenAPI specs.
 
   ```bash
   jamdesk validate
+  jamdesk validate --skip-mdx
   ```
 
   **Checks for:**
-  - Valid JSON syntax
+  - Valid JSON syntax in docs.json
   - Required fields (name, navigation)
   - Valid theme values
+  - MDX syntax errors (e.g., unescaped `<` characters)
   - OpenAPI spec validation (if configured)
   - Schema compliance
+
+  **Options:**
+
+  | Flag | Description |
+  |------|-------------|
+  | `--skip-mdx` | Skip MDX syntax validation |
+  | `-v, --verbose` | Show detailed validation output |
 
   Run this before deploying to catch errors early.
 </Accordion>
@@ -260,6 +270,25 @@ Create `~/.jamdeskrc` to set default options:
 ## Troubleshooting
 
 <AccordionGroup>
+  <Accordion title="MDX syntax errors">
+    MDX files are parsed as JSX, so certain characters have special meaning.
+
+    **Common issue:** The `<` character is interpreted as the start of a JSX tag.
+
+    ```
+    ✗ Found 1 MDX syntax error(s)
+
+      getting-started.mdx:42
+        Unexpected character `5` (U+0035) before name
+        Fix: A < character is being parsed as JSX. Use &lt; or rewrite
+    ```
+
+    **Solutions:**
+    - Use `&lt;` for literal less-than: `Values &lt;50% are low`
+    - Rewrite to avoid the character: `"Below 50%"` instead of `"<50%"`
+    - Run `jamdesk validate` for detailed error messages with line numbers
+  </Accordion>
+
   <Accordion title="docs.json not found">
     Make sure you're in a directory with a `docs.json` file.
 
