@@ -1,45 +1,110 @@
 ---
 title: How Jamdesk Works
-description: Understanding the build and deployment pipeline
+description: Learn how Jamdesk builds and deploys your documentation—from GitHub push to global CDN in under 60 seconds
 ---
 
-Jamdesk handles the entire documentation lifecycle from source to production.
+Jamdesk automates the entire documentation lifecycle. Push your MDX files to GitHub, and Jamdesk handles building, optimizing, and deploying to a global CDN—typically in under 60 seconds.
 
-## The Pipeline
+## Architecture Overview
 
+```mermaid
+flowchart LR
+    subgraph Source["Your Repository"]
+        A[("MDX Files")]
+        B[("docs.json")]
+    end
+
+    subgraph Jamdesk["Jamdesk Platform"]
+        C["Build Service"]
+        D["Validation"]
+        E["Compilation"]
+    end
+
+    subgraph Delivery["Global Delivery"]
+        F[("Cloudflare R2")]
+        G["Edge Cache"]
+    end
+
+    Source -->|"git push"| C
+    C --> D --> E
+    E -->|"Deploy"| F
+    F --> G
+    G -->|"< 100ms"| H["Your Users"]
 ```
-GitHub Repo → Jamdesk Build Service → CDN (Cloudflare R2) → Your Users
-```
 
-### 1. Source Control
+## The Build Pipeline
 
-Your documentation lives in a GitHub repository as MDX files alongside a `docs.json` configuration file.
+<Steps>
+  <Step title="Source Detection">
+    Jamdesk monitors your connected GitHub branch. When you push changes, a webhook triggers the build pipeline automatically. You can also trigger builds manually from the dashboard or via API.
+  </Step>
+  <Step title="Content Retrieval">
+    The build service clones your repository and locates your documentation—either at the root or in a subdirectory for monorepo setups.
+  </Step>
+  <Step title="Validation">
+    Before building, Jamdesk validates your configuration:
+    - `docs.json` syntax and schema
+    - All pages referenced in navigation exist
+    - MDX syntax is valid
+    - OpenAPI specs parse correctly (if configured)
+  </Step>
+  <Step title="Compilation">
+    MDX files are compiled to optimized HTML with:
+    - React components rendered to static HTML
+    - Syntax highlighting applied via Shiki
+    - Search index generated
+    - Meta tags and Open Graph images created
+  </Step>
+  <Step title="Deployment">
+    The built site uploads to Cloudflare R2, then propagates to edge locations globally.
+  </Step>
+</Steps>
 
-### 2. Automatic Builds
+## What Triggers a Build
 
-When you push to your connected branch, Jamdesk:
+| Trigger | How It Works | Use Case |
+|---------|--------------|----------|
+| **Git Push** | Webhook fires on push to connected branch | Normal development workflow |
+| **Dashboard** | Click "Rebuild" in project settings | Force refresh after config changes |
+| **API** | `POST /api/builds` with project token | CI/CD pipelines, automated workflows |
 
-1. Pulls your latest content
-2. Validates your configuration
-3. Compiles MDX to optimized HTML
-4. Applies your theme and styling
+<Tip>
+Builds are debounced—if you push multiple commits quickly, Jamdesk waits for activity to settle before building.
+</Tip>
 
-### 3. Global CDN
+## Security & Infrastructure
 
-Built sites are deployed to Cloudflare R2 with edge caching worldwide. Your users get fast load times regardless of location.
+<CardGroup cols={2}>
+  <Card title="Source Protection" icon="shield-check">
+    GitHub App uses minimal permissions—read-only access to your selected repositories.
+  </Card>
+  <Card title="Build Isolation" icon="box">
+    Each build runs in an isolated container. Your code never touches other customers' builds.
+  </Card>
+  <Card title="Encrypted Delivery" icon="lock">
+    All traffic served over HTTPS with automatic SSL certificates.
+  </Card>
+  <Card title="Global Edge Network" icon="globe">
+    Built sites deploy to Cloudflare's network with 300+ edge locations.
+  </Card>
+</CardGroup>
 
-### 4. Custom Domains
+## Performance
 
-Connect your own domain with automatic SSL certificates, or use the provided `*.jamdesk.dev` subdomain.
+| Metric | Typical Value |
+|--------|---------------|
+| Build time | 30-60 seconds |
+| Deploy propagation | < 30 seconds |
+| First byte (edge) | < 50ms |
+| Full page load | < 500ms |
 
-## Build Triggers
+## Next Steps
 
-Builds are triggered by:
-
-- **GitHub push** to your connected branch
-- **Manual rebuild** from the dashboard
-- **API call** for CI/CD integration
-
-<Info>
-  Builds typically complete in 30-60 seconds for most documentation sites.
-</Info>
+<CardGroup cols={2}>
+  <Card title="Create Your First Project" icon="plus" href="/setup/creating-projects">
+    Set up a new documentation site in the dashboard
+  </Card>
+  <Card title="Connect GitHub" icon="github" href="/setup/connecting-github">
+    Link your repository to enable automatic builds
+  </Card>
+</CardGroup>
