@@ -1,0 +1,199 @@
+---
+title: MCP Integration
+description: Connect AI coding assistants like Claude Code and Cursor to your documentation via the Model Context Protocol
+---
+
+Every Jamdesk documentation site includes a built-in MCP (Model Context Protocol) server. This lets AI coding assistants search your docs and retrieve page content directly, giving them accurate context about your project.
+
+## What is MCP?
+
+The [Model Context Protocol](https://modelcontextprotocol.io) is an open standard that allows AI tools to access external data sources. Your Jamdesk docs expose two tools via MCP:
+
+| Tool | Purpose |
+|------|---------|
+| `searchDocs` | Search documentation by keyword, returns ranked results |
+| `getPage` | Retrieve full content of a specific page |
+
+## Quick Setup
+
+<Tabs>
+  <Tab title="Claude Code">
+    Add your docs as an MCP server:
+
+    ```bash
+    claude mcp add --transport http my-docs https://my-project.jamdesk.app/_mcp
+    ```
+
+    Replace `my-project` with your Jamdesk subdomain.
+
+    Now when you ask Claude about your project, it can search and read your documentation directly.
+  </Tab>
+  <Tab title="Cursor">
+    Add to your project's `.cursor/mcp.json`:
+
+    ```json
+    {
+      "mcpServers": {
+        "my-docs": {
+          "url": "https://my-project.jamdesk.app/_mcp"
+        }
+      }
+    }
+    ```
+
+    Cursor will automatically connect to your docs when you open the project.
+  </Tab>
+</Tabs>
+
+<Note>
+  Custom domains work too. If your docs are at `docs.example.com`, use `https://docs.example.com/_mcp` as the endpoint.
+</Note>
+
+## Available Tools
+
+### searchDocs
+
+Search your documentation and get ranked results.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `query` | string | Yes | Search terms (e.g., "authentication", "getting started") |
+| `limit` | number | No | Max results (default: 10, max: 50) |
+| `type` | string | No | Filter by content type: `all`, `api`, `guide`, `quickstart`, `help`, `component` |
+
+**Example request:**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "tools/call",
+  "params": {
+    "name": "searchDocs",
+    "arguments": {
+      "query": "authentication",
+      "limit": 5
+    }
+  }
+}
+```
+
+**Example response:**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "content": [{
+      "type": "text",
+      "text": "{\"query\":\"authentication\",\"total\":1,\"results\":[{\"title\":\"Authentication\",\"description\":\"How to authenticate API requests\",\"url\":\"/docs/api/authentication\",\"type\":\"api\",\"score\":0.95}]}"
+    }]
+  }
+}
+```
+
+### getPage
+
+Retrieve the full content of a specific documentation page.
+
+**Parameters:**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `slug` | string | Yes | Page path without `/docs` prefix (e.g., `api/authentication`) |
+
+**Example request:**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 2,
+  "method": "tools/call",
+  "params": {
+    "name": "getPage",
+    "arguments": {
+      "slug": "api/authentication"
+    }
+  }
+}
+```
+
+**Example response:**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 2,
+  "result": {
+    "content": [{
+      "type": "text",
+      "text": "{\"title\":\"Authentication\",\"description\":\"How to authenticate\",\"content\":\"## Overview\\n\\nUse API keys to authenticate...\",\"url\":\"/docs/api/authentication\"}"
+    }]
+  }
+}
+```
+
+## Testing the Endpoint
+
+You can test your MCP endpoint directly with curl:
+
+```bash
+# List available tools
+curl -X POST https://my-project.jamdesk.app/_mcp \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}'
+
+# Search for content
+curl -X POST https://my-project.jamdesk.app/_mcp \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"searchDocs","arguments":{"query":"getting started"}}}'
+```
+
+## How It Works
+
+The MCP endpoint uses a pre-built search index that's generated when your docs are built. This index is optimized for fast, relevant search results:
+
+- **BM25 ranking** - Results are ranked by relevance using the BM25 algorithm
+- **Fuzzy matching** - Handles typos (1-character tolerance)
+- **Field boosting** - Titles and section headers are weighted higher than body content
+- **Type filtering** - Filter results by content type (API, guide, etc.)
+
+The search index updates automatically whenever you rebuild your documentation.
+
+## Rate Limits
+
+The MCP endpoint has a rate limit of **60 requests per minute** per IP address. This is sufficient for normal AI assistant usage. If you exceed the limit, you'll receive a 429 response.
+
+## Troubleshooting
+
+<Accordion title="MCP server not connecting">
+  Verify your endpoint URL is correct and accessible:
+
+  ```bash
+  curl https://my-project.jamdesk.app/_mcp
+  ```
+
+  You should see a JSON response with server info. If not, check that your docs have been built at least once.
+</Accordion>
+
+<Accordion title="Search returns no results">
+  The search index is generated at build time. If you recently added content, trigger a rebuild from your Jamdesk dashboard to update the index.
+</Accordion>
+
+<Accordion title="getPage returns null">
+  Make sure the slug matches your page path exactly (without the `.mdx` extension). For example, if your page is at `api/authentication.mdx`, use `api/authentication` as the slug.
+</Accordion>
+
+## What's Next?
+
+<CardGroup cols={2}>
+  <Card title="AI-Assisted Writing" icon="wand-magic-sparkles" href="/development/ai-writing">
+    Tips for using AI tools to write documentation
+  </Card>
+  <Card title="Search Analytics" icon="chart-line" href="/setup/search-analytics">
+    Track what users search for in your docs
+  </Card>
+</CardGroup>
