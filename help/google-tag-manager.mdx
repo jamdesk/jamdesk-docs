@@ -1,0 +1,126 @@
+---
+title: Google Tag Manager Integration
+description: Manage all your tracking tags with Google Tag Manager
+---
+
+Google Tag Manager (GTM) lets you manage analytics, marketing pixels, and other tracking tags without editing code.
+
+<Info>
+GTM container IDs start with `GTM-`. If you just need Google Analytics, see [Google Analytics Integration](/help/google-analytics) for a simpler setup.
+</Info>
+
+## When to Use GTM
+
+Use Google Tag Manager when you need:
+
+- **Multiple tracking tools** - GA4, Facebook Pixel, LinkedIn, etc.
+- **Marketing team control** - Let marketers add tags without developer help
+- **Advanced triggers** - Track button clicks, form submissions, video views
+- **A/B testing integration** - Connect tools like Google Optimize
+
+For basic analytics only, adding GA4 directly is simpler.
+
+## Getting Your Container ID
+
+1. Go to [Google Tag Manager](https://tagmanager.google.com/)
+2. Select your account and container (or create new ones)
+3. Copy the **Container ID** from the top of the page (starts with `GTM-`)
+
+## Adding GTM to Your Docs
+
+Add the container ID to your `docs.json`:
+
+```json
+{
+  "name": "My Docs",
+  "integrations": {
+    "gtm": {
+      "tagId": "GTM-XXXXXXX"
+    }
+  }
+}
+```
+
+Replace `GTM-XXXXXXX` with your actual container ID.
+
+## Setting Up GA4 Through GTM
+
+If you want to use GA4 through GTM instead of adding it directly:
+
+1. In GTM, go to **Tags** → **New**
+2. Choose **Google Analytics: GA4 Configuration**
+3. Enter your GA4 Measurement ID (starts with `G-`)
+4. Set trigger to **All Pages**
+5. **Publish** your container
+
+<Warning>
+If you configure GA4 through GTM, don't also add it directly in `docs.json`. This causes duplicate tracking.
+</Warning>
+
+## Verifying the Installation
+
+### Using GTM Preview Mode
+
+1. In GTM, click **Preview** in the top right
+2. Enter your documentation site URL
+3. A debug window shows which tags fire on each page
+
+### Using Browser Developer Tools
+
+1. Open your site with Developer Tools (F12)
+2. Go to **Network** tab
+3. Filter for `gtm.js` or `googletagmanager`
+4. You should see requests being made
+
+## Common GTM Tags for Docs
+
+### Track Outbound Links
+
+Create a tag to track when users click external links:
+
+1. **Tag**: Google Analytics: GA4 Event
+2. **Event Name**: `click`
+3. **Trigger**: Click - Just Links, where Click URL doesn't contain your domain
+
+### Track Search Usage
+
+Track when users interact with the search feature:
+
+1. **Tag**: Google Analytics: GA4 Event
+2. **Event Name**: `search`
+3. **Trigger**: Custom event matching your search interaction
+
+### Track Time on Page
+
+Understand how long users spend reading:
+
+1. **Tag**: Google Analytics: GA4 Event
+2. **Event Name**: `timing`
+3. **Trigger**: Timer trigger (e.g., every 30 seconds)
+
+## Troubleshooting
+
+<Accordion title="Tags not firing">
+  1. **Check container ID** - Must start with `GTM-`
+  2. **Publish your container** - Unpublished changes won't appear on your site
+  3. **Use Preview mode** - GTM's preview shows which tags fire on each page
+</Accordion>
+
+<Accordion title="Duplicate data in Google Analytics">
+  If you have GA4 configured both:
+  - Directly in `docs.json` (`integrations.ga4`)
+  - Through GTM as a GA4 tag
+
+  You'll get duplicate page views. Remove one of them.
+</Accordion>
+
+## Related Articles
+
+<CardGroup cols={2}>
+  <Card title="Google Analytics" icon="chart-simple" href="/help/google-analytics">
+    Add GA4 directly without GTM
+  </Card>
+  <Card title="Project Analytics" icon="chart-line" href="/setup/project-analytics">
+    View built-in Jamdesk analytics
+  </Card>
+</CardGroup>
