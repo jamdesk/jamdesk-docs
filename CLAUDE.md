@@ -79,11 +79,11 @@ Content organized logically with clear headings.
 
 ## What's Next?
 
-<CardGroup cols={2}>
+<Columns cols={2}>
   <Card title="Related Topic" icon="icon-name" href="/path">
     Brief description
   </Card>
-</CardGroup>
+</Columns>
 ```
 
 ### Writing Style
@@ -142,11 +142,11 @@ dev -p
 **Cards** - Use for navigation and feature highlights:
 
 ```mdx
-<CardGroup cols={2}>
+<Columns cols={2}>
   <Card title="Quick Start" icon="rocket" href="/quickstart">
     Get up and running in 5 minutes
   </Card>
-</CardGroup>
+</Columns>
 ```
 
 **Callouts** - Use sparingly for important information:
@@ -161,7 +161,7 @@ dev -p
 
 Components are globally available in all MDX files:
 
-**Layout**: `Card`, `CardGroup`, `Tabs`, `Tab`, `Accordion`, `AccordionGroup`, `Steps`, `Step`, `Expandable`, `Frame`, `CodeGroup`
+**Layout**: `Card`, `Columns`, `Tabs`, `Tab`, `Accordion`, `AccordionGroup`, `Steps`, `Step`, `Expandable`, `Frame`, `CodeGroup`
 
 **Callouts**: `Note`, `Info`, `Warning`, `Tip`, `Check`, `Danger`
 
