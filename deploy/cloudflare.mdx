@@ -5,6 +5,15 @@ description: Proxy your Jamdesk docs through Cloudflare Workers at a /docs subpa
 
 Use [Cloudflare Workers](https://workers.cloudflare.com/) to proxy documentation requests from your domain to Jamdesk. Workers run at the edge, providing fast response times globally.
 
+## How It Works
+
+The Worker forwards requests to your Jamdesk subdomain while passing along the original domain in the `X-Jamdesk-Forwarded-Host` header. Jamdesk uses this header to:
+
+1. **Verify your domain** - Ensures only authorized domains can serve your docs
+2. **Apply correct configuration** - Uses your domain's `hostAtDocs` setting from the dashboard
+
+This means the Worker is a **one-time setup**. If you later change your custom domain or configuration in the Jamdesk dashboard, the Worker doesn't need to be updated - all routing decisions are made server-side.
+
 ## Prerequisites
 
 - A Cloudflare account with your domain configured
@@ -129,7 +138,12 @@ Replace `YOUR_SLUG` with your actual Jamdesk subdomain (e.g., `acme` if your doc
 </Note>
 
 <Warning>
-The `X-Jamdesk-Forwarded-Host` header is required for domain verification. Your domain must be verified in the Jamdesk dashboard before the Worker will serve content.
+The `X-Jamdesk-Forwarded-Host` header is **required**. It enables:
+- Domain verification (your domain must be registered in the dashboard)
+- Correct URL generation for links and assets
+- Proper `hostAtDocs` configuration from your dashboard settings
+
+Without this header, requests will be rejected with a 403 error.
 </Warning>
 
 ### Step 3: Configure wrangler.toml
