@@ -1,44 +1,41 @@
 ---
-title: Hosting at /docs Subpath
-description: Serve your Jamdesk documentation at a subpath like yoursite.com/docs
+title: Deployment Overview
+description: Deploy Jamdesk docs on a subdomain, custom domain, or /docs subpath
 ---
 
-Host your documentation at a `/docs` subpath on your primary domain. This keeps your docs integrated with your main website while maintaining a consistent brand experience.
+Jamdesk deploys your docs automatically to a `*.jamdesk.app` subdomain. When you are ready to go live on your own domain, you can choose a custom subdomain (like `docs.example.com`) or host at a `/docs` subpath on your main site.
 
-## Why Use a Subpath?
+## Deployment Options
 
-Hosting docs at `yoursite.com/docs` instead of a subdomain like `docs.yoursite.com` provides:
+| Option | Best For | Setup Complexity |
+|--------|----------|------------------|
+| **Jamdesk subdomain** (`your-project.jamdesk.app`) | Fastest launch, zero DNS work | Low |
+| **Custom subdomain** (`docs.example.com`) | Production docs with your brand | Medium |
+| **Subpath hosting** (`example.com/docs`) | Keep docs on the main domain | High |
 
-- **Better SEO** - Documentation pages contribute to your main domain's authority
-- **Unified experience** - Users stay on your primary domain
-- **Simpler navigation** - No context switching between domains
+## Default Hosting (No Setup)
 
-## How It Works
+Every project ships live on a Jamdesk subdomain as soon as you connect a repo. This is the simplest option for internal docs, previews, or early launches.
 
-Your web server or CDN proxies requests from `/docs/*` to your Jamdesk site while preserving the original URL in the browser:
+## Custom Domain (Subdomain)
 
-```mermaid
-sequenceDiagram
-    participant User
-    participant Proxy as Your Proxy
-    participant Jamdesk as [slug].jamdesk.app
+Use your own subdomain (for example, `docs.example.com`) for a production-ready docs experience. You will add DNS records and verify ownership in the Jamdesk dashboard.
 
-    User->>Proxy: GET yoursite.com/docs/getting-started
-    Proxy->>Jamdesk: Forward with X-Jamdesk-Forwarded-Host: yoursite.com
-    Jamdesk-->>Proxy: HTML response
-    Proxy-->>User: Served with yoursite.com/docs URLs
-```
+<Note>
+DNS verification and SSL are handled automatically once the records are in place. See [Custom Domains](/help/custom-domains) for setup and troubleshooting.
+</Note>
 
-The proxy passes the `X-Jamdesk-Forwarded-Host` header with your domain. Jamdesk uses this to:
+## Subpath Hosting (/docs)
 
-1. **Verify your domain** is authorized to serve the content
-2. **Apply your configuration** from the dashboard
+Host docs at `example.com/docs` by proxying traffic to Jamdesk. This is ideal when you want docs to live under your main marketing domain.
 
-This means your proxy configuration is a **one-time setup** - if you change settings in the dashboard, the proxy doesn't need to be updated.
+<Info>
+Subpath hosting requires a proxy or CDN layer to forward requests and set the `X-Jamdesk-Forwarded-Host` header. See [Subpath Hosting](/deploy/subpath-hosting).
+</Info>
 
-## Setup by Provider
+## Provider Guides
 
-Choose your hosting provider to get started:
+Choose your infrastructure to implement subpath hosting:
 
 <Columns cols={2}>
   <Card title="Cloudflare" icon="cloud" href="/deploy/cloudflare">
@@ -48,25 +45,20 @@ Choose your hosting provider to get started:
     Configure CloudFront with Route 53
   </Card>
   <Card title="Vercel" icon="triangle" href="/deploy/vercel">
-    Add rewrites to vercel.json
+    Add rewrites or edge middleware
   </Card>
   <Card title="Reverse Proxy" icon="server" href="/deploy/reverse-proxy">
     nginx, Apache, or other proxy servers
   </Card>
 </Columns>
 
-## Prerequisites
+## What's Next?
 
-Before configuring your proxy:
-
-1. **Enable subpath hosting** in your [Jamdesk dashboard](https://dashboard.jamdesk.com) under Settings → Custom Domain
-2. **Toggle "Host at /docs"** to on
-3. **Add your domain** (e.g., `yoursite.com`)
-
-Your Jamdesk subdomain (e.g., `acme.jamdesk.app`) will be displayed in the dashboard - you'll need this for your proxy configuration.
-
-<Note>
-Toggling "Host at /docs" on or off triggers an automatic rebuild of your documentation. This is required because the URL structure changes between `/introduction` and `/docs/introduction`.
-</Note>
-
-Once you've configured your proxy, test by visiting `https://yoursite.com/docs`. Your documentation should load with all assets and links working correctly.
+<Columns cols={2}>
+  <Card title="Subpath Hosting" icon="folder-tree" href="/deploy/subpath-hosting">
+    Host docs at /docs on your main domain
+  </Card>
+  <Card title="Custom Domains" icon="globe" href="/help/custom-domains">
+    Verify DNS and troubleshoot domain setup
+  </Card>
+</Columns>
