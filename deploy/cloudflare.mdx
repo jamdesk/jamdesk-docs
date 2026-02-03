@@ -100,13 +100,24 @@ Create `index.js` with the following code:
 ```javascript index.js
 const JAMDESK_HOST = "YOUR_SLUG.jamdesk.app";
 
+// Paths to proxy to Jamdesk
+const PROXY_PATHS = [
+  "/docs",    // Documentation pages
+  "/_next/",  // Next.js static assets
+  "/_jd/",    // Jamdesk assets (fonts, images, branding, analytics)
+];
+
 export default {
   async fetch(request) {
     const url = new URL(request.url);
     const path = url.pathname;
 
-    // Only proxy /docs or /docs/* paths (not /docs.json)
-    if (!(path === "/docs" || path.startsWith("/docs/"))) {
+    // Check if this path should be proxied
+    const shouldProxy = PROXY_PATHS.some(prefix =>
+      path === prefix || path.startsWith(prefix.endsWith("/") ? prefix : prefix + "/")
+    );
+
+    if (!shouldProxy) {
       return fetch(request);
     }
 
@@ -157,9 +168,15 @@ compatibility_date = "2024-01-01"
 
 # Route configuration - replace with your domain
 routes = [
-  { pattern = "yoursite.com/docs*", zone_name = "yoursite.com" }
+  { pattern = "yoursite.com/docs*", zone_name = "yoursite.com" },
+  { pattern = "yoursite.com/_next/*", zone_name = "yoursite.com" },
+  { pattern = "yoursite.com/_jd/*", zone_name = "yoursite.com" },
 ]
 ```
+
+<Note>
+The `/_next/` and `/_jd/` routes are required for Next.js assets and Jamdesk resources (fonts, images, branding) to load correctly.
+</Note>
 
 ### Step 4: Deploy
 
@@ -180,6 +197,13 @@ If you prefer the older Service Worker syntax (compatible with older Workers):
 ```javascript index.js
 const JAMDESK_HOST = "YOUR_SLUG.jamdesk.app";
 
+// Paths to proxy to Jamdesk
+const PROXY_PATHS = [
+  "/docs",    // Documentation pages
+  "/_next/",  // Next.js static assets
+  "/_jd/",    // Jamdesk assets (fonts, images, branding, analytics)
+];
+
 addEventListener("fetch", (event) => {
   event.respondWith(handleRequest(event.request));
 });
@@ -188,8 +212,12 @@ async function handleRequest(request) {
   const url = new URL(request.url);
   const path = url.pathname;
 
-  // Only proxy /docs or /docs/* paths (not /docs.json)
-  if (!(path === "/docs" || path.startsWith("/docs/"))) {
+  // Check if this path should be proxied
+  const shouldProxy = PROXY_PATHS.some(prefix =>
+    path === prefix || path.startsWith(prefix.endsWith("/") ? prefix : prefix + "/")
+  );
+
+  if (!shouldProxy) {
     return fetch(request);
   }
 
