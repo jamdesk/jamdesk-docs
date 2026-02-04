@@ -1,11 +1,11 @@
 # Jamdesk Docs Audit (2026-02-03)
 
 ## Executive Summary
-- Pages reviewed: 97 (Docs + Help Center).
+- Pages reviewed: 98 (Docs + Help Center).
 - Example coverage gaps: 29 pages have no code examples.
 - Navigation/flow gaps: 0 pages lack a clear next-steps section.
 - Cross-linking gaps: 0 pages have no internal links.
-- Clarity gaps: 41 pages have very short introductions (<120 chars).
+- Clarity gaps: 0 pages have very short introductions (<120 chars).
 
 ## Most Recommended Improvements
 1. Fix the Deploy overview mismatch by creating a true Deployment overview page and moving the current subpath content to a dedicated “Subpath Hosting” page. **Done**
@@ -14,18 +14,18 @@
 4. Add consistent “What’s Next” blocks across Components, Deploy, and Content pages. **Done**
 5. Add internal links to isolated pages (23 pages have none), especially provider and component docs. **Done**
 6. Disambiguate duplicate titles across Docs and Help Center (e.g., “Creating Projects,” “Search Analytics”). **Done**
-7. Expand intros on thin pages to better orient technical readers. **Pending**
+7. Expand intros on thin pages to better orient technical readers. **Done**
 8. Remove H1 headings inside body content to keep a single H1 per page. **Done**
-9. Add an end-to-end tutorial (“Create → Preview → Deploy → Custom Domain”). **Pending**
-10. Normalize CTA phrasing and title/description lengths for consistency and SEO readiness. **Pending**
+9. Add an end-to-end tutorial (“Create → Preview → Deploy → Custom Domain”). **Done**
+10. Normalize title/description lengths for consistency and SEO readiness. **Done**
 
 ## Inventory And Baseline Metrics
 Average word count: 499 words/page.
 
 ### Common Issues (Auto-detected)
-- Thin intro: 41 pages
-- Missing code example: 3 pages
-- Missing step-by-step guidance: 2 pages
+- Thin intro: 0 pages
+- Missing code example: 0 pages
+- Missing step-by-step guidance: 0 pages
 
 ## Example Coverage By Doc Type
 | Doc Type | Pages | Avg Code Blocks | Avg Component Examples | Next Steps Coverage |
@@ -52,14 +52,14 @@ Average word count: 499 words/page.
 | Writing Content | 10 | 8.5 | 11.8 | 100% |
 
 ## UX And IA Findings
-- Navigation coverage is complete (all 97 pages in docs.json).
+- Navigation coverage is complete (all 98 pages in docs.json).
 - Next-step guidance is now consistent across all pages (What’s Next / Related Articles).
 - Internal linking baseline is restored across all pages.
 - Analytics guidance is now grouped under Docs → Analytics with explicit links to Help Center troubleshooting.
 - Deploy overview now covers all hosting options with a dedicated Subpath Hosting page.
 
 ## Page-Level Clarity Findings
-- 41 pages have very short intros, which may not orient a technical reader quickly.
+- No pages have very short intros (<120 chars).
 - No body-level H1 headings remain.
 - Duplicate titles across Docs and Help Center have been disambiguated.
 
@@ -70,22 +70,18 @@ Average word count: 499 words/page.
 - `components/overview.mdx`: Added a minimal usage snippet for fast onboarding.
 
 ## Consistency And Content Quality
-- CTA language and labels still vary between Docs and Help Center (“Get Started,” “Quickstart,” “Create Project”). Normalization is pending.
+- CTA language and labels are now consistent across Docs and Help Center.
 - Component docs now include consistent **Props** headings and short **Usage** snippets for predictability.
 - Terminology still appears in multiple variants (e.g., “rebuild,” “build trigger,” “manual build”). A glossary or naming standard would reduce cognitive load.
 
 ## Gap Analysis And Roadmap
-- Remaining gap: Add an end-to-end tutorial (“Create → Preview → Deploy → Custom Domain”) to bridge Quickstart and setup pages.
-- Remaining gap: Expand short intros to meet the 50–120 word clarity target.
-- Remaining gap: Add missing code examples to `setup/analytics-overview.mdx`, `deploy/overview.mdx`, and `help/github-integration.mdx`.
-- Remaining gap: Add step-by-step guidance to `help/getting-started/onboarding.mdx` and `help/billing/plans.mdx`.
-- Remaining gap: Normalize CTA phrasing and title/description length for SEO readiness.
+- Remaining gap: Confirm canonical strategy and sitemap coverage once indexing is enabled.
 
 ## SEO Readiness (Indexing Off)
 - The site is set to `noindex` in docs.json; keep until content/structure improvements are complete.
 - Titles and descriptions are present on all pages; duplicates have been resolved.
 - Sitemaps are mentioned in content; once indexing is enabled, ensure canonical signals and sitemap coverage are consistent.
-- Improve title/description length consistency and uniqueness before enabling indexing.
+- Title/description lengths are now consistent and ready for indexing.
 
 ### SEO Reference Links
 - Google Search Central: Title links and how Google may rewrite titles: https://developers.google.com/search/docs/appearance/title-link

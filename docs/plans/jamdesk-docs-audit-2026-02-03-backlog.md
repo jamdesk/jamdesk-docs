@@ -18,7 +18,7 @@ _Order matters: complete in sequence due to dependencies._
 - [x] **1.1** Create a true Deployment overview page that covers default subdomain hosting, custom domains, and subpath hosting; move current `/deploy/overview` content to a dedicated "Subpath Hosting" page and update navigation to match reader expectations.
 - [x] **1.2** Add a dedicated "Builds API / Build Triggers" reference page that consolidates rebuild endpoints, auth, rate limits, and examples now scattered across Help and Development pages.
 - [x] **1.3** Unify Analytics guidance by adding a developer-facing "Analytics Overview" page and cross-linking to Help Center troubleshooting; reduce duplication between `setup/*-analytics` and `help/analytics/*`.
-- [ ] **1.4** Create an end-to-end tutorial guide: “Create → Preview → Deploy → Custom Domain,” and link it from Quickstart and Setup.
+- [x] **1.4** Create an end-to-end tutorial guide: “Create → Preview → Deploy → Custom Domain,” and link it from Quickstart and Setup.
 
 ## P2 (Medium Impact)
 
@@ -28,8 +28,8 @@ _Order matters: complete in sequence due to dependencies._
 - [x] **2.4** Add minimum actionable examples to docs pages missing code or concrete walkthroughs: `setup/creating-projects.mdx`, `setup/migration.mdx`, `setup/project-analytics.mdx`, `setup/search-analytics.mdx`, `development/ai-writing.mdx`, `components/overview.mdx`.
 - [x] **2.5** Standardize component pages with a consistent "Props" section pattern and a short "Usage" snippet to improve predictability.
 - [x] **2.6** Run broken link audit to verify all existing internal links resolve (not just "no links" pages).
-- [ ] **2.7** Add missing code examples to remaining pages: `setup/analytics-overview.mdx`, `deploy/overview.mdx`, `help/github-integration.mdx`.
-- [ ] **2.8** Add step-by-step guidance to pages missing procedures: `help/getting-started/onboarding.mdx`, `help/billing/plans.mdx`.
+- [x] **2.7** Add missing code examples to remaining pages: `setup/analytics-overview.mdx`, `deploy/overview.mdx`, `help/github-integration.mdx`.
+- [x] **2.8** Add step-by-step guidance to pages missing procedures: `help/getting-started/onboarding.mdx`, `help/billing/plans.mdx`.
 
 ## P3 (Low Impact)
 
@@ -40,15 +40,15 @@ _Order matters: complete in sequence due to dependencies._
   - `deploy/cloudflare.mdx`
   - `content/mdx-basics.mdx`
   - `help/custom-domains.mdx`
-- [ ] **3.2** Normalize CTA phrasing across Docs and Help Center for consistency ("Get Started," "Quickstart," "Create Project").
-- [ ] **3.3** Expand intros on thin pages (<120 characters) with a 2–3 sentence context + audience framing.
+- [x] **3.2** Normalize CTA phrasing across Docs and Help Center for consistency ("Get Started," "Quickstart," "Create Project").
+- [x] **3.3** Expand intros on thin pages (<120 characters) with a 2–3 sentence context + audience framing.
 - [x] **3.4** Audit images/media: check for missing alt text, broken images, and outdated screenshots.
 
 ## SEO Readiness (Indexing Off)
 
 _Prerequisite for enabling search indexing. Complete P2.1-P2.3 first to establish link structure._
 
-- [ ] **SEO.1** Align title and description lengths across all pages (target ~50–60 chars for titles, ~120–160 for descriptions) before enabling indexing.
+- [x] **SEO.1** Align title and description lengths across all pages (target ~50–60 chars for titles, ~120–160 for descriptions) before enabling indexing.
 - [x] **SEO.2** Add internal links and next steps to strengthen crawl paths and topical clustering. _Covered by P2.1 and P2.2._
 - [ ] **SEO.3** Confirm canonical strategy and sitemap coverage once indexing is enabled.
 
