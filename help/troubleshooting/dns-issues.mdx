@@ -1,0 +1,177 @@
+---
+title: DNS Troubleshooting
+description: Fix common DNS issues when setting up custom domains. Covers propagation delays, CNAME conflicts, and verification failures.
+---
+
+DNS configuration issues are the most common cause of custom domain problems. This guide covers diagnosis and fixes.
+
+## Check DNS Propagation
+
+DNS changes can take up to 48 hours to propagate globally, though most complete within a few hours.
+
+Check propagation status:
+
+```bash
+# Check if your CNAME is resolving
+dig CNAME docs.yourdomain.com
+
+# Or use nslookup
+nslookup -type=CNAME docs.yourdomain.com
+```
+
+Expected output shows your CNAME pointing to `cname.vercel-dns.com`:
+
+```
+docs.yourdomain.com. 300 IN CNAME cname.vercel-dns.com.
+```
+
+Online tools like [whatsmydns.net](https://www.whatsmydns.net/) show propagation across multiple regions.
+
+## Common Issues
+
+### CNAME Not Resolving
+
+**Symptom**: `dig` shows no CNAME record or shows incorrect target.
+
+**Causes**:
+- Record not saved in DNS provider
+- Typo in record name or value
+- DNS propagation still in progress
+
+**Fix**:
+1. Log into your DNS provider
+2. Verify the CNAME record exists with correct values
+3. Wait 15-30 minutes and check again
+
+### CNAME at Root Domain
+
+**Symptom**: Can't add CNAME for `yourdomain.com` (without subdomain).
+
+**Cause**: DNS standards prohibit CNAME records at the zone apex (root domain).
+
+**Fix**: Use `docs.yourdomain.com` instead, or use Jamdesk's subpath hosting at `yourdomain.com/docs` with a reverse proxy.
+
+### Cloudflare Proxy Conflicts
+
+**Symptom**: SSL errors or redirect loops when using Cloudflare.
+
+**Cause**: Cloudflare's proxy (orange cloud) can interfere with Vercel's SSL.
+
+**Fix**:
+1. In Cloudflare DNS settings, click the orange cloud icon
+2. Change to "DNS only" (gray cloud) for your docs subdomain
+3. Let Vercel handle SSL
+
+### Conflicting Records
+
+**Symptom**: CNAME verification fails even though record looks correct.
+
+**Cause**: An existing A record conflicts with the CNAME.
+
+**Fix**:
+1. Check for A records on the same subdomain
+2. Delete conflicting A records
+3. Ensure only the CNAME remains
+
+```bash
+# Check for A records
+dig A docs.yourdomain.com
+```
+
+### TXT Verification Failing
+
+**Symptom**: TXT record for subpath hosting won't verify.
+
+**Causes**:
+- Record added to wrong domain
+- Typo in record value
+- Existing TXT records causing issues
+
+**Fix**:
+1. Verify the TXT record is at `_jamdesk.yourdomain.com`
+2. Copy the exact verification value from the dashboard
+3. Check for conflicting TXT records
+
+```bash
+# Check TXT records
+dig TXT _jamdesk.yourdomain.com
+```
+
+### SSL Certificate Not Issuing
+
+**Symptom**: Domain shows as "pending" indefinitely.
+
+**Causes**:
+- CAA records blocking certificate issuance
+- DNS not fully propagated
+- Domain unreachable
+
+**Fix**:
+
+Check for CAA records:
+```bash
+dig CAA yourdomain.com
+```
+
+If CAA records exist, add one allowing Let's Encrypt:
+```
+yourdomain.com. CAA 0 issue "letsencrypt.org"
+```
+
+## Diagnostic Commands
+
+```bash
+# Full DNS lookup
+dig +trace docs.yourdomain.com
+
+# Check all record types
+dig ANY docs.yourdomain.com
+
+# Check specific nameservers
+dig @8.8.8.8 docs.yourdomain.com
+
+# Check TTL (time to live)
+dig +noall +answer docs.yourdomain.com
+```
+
+## DNS Provider-Specific Notes
+
+### Cloudflare
+- Set proxy status to "DNS only" (gray cloud)
+- Disable "Always Use HTTPS" for docs subdomain
+
+### GoDaddy
+- CNAME target should NOT end with a period
+- Changes may take longer to propagate
+
+### Namecheap
+- Use "CNAME Record" type
+- Host field is just the subdomain (`docs`, not `docs.yourdomain.com`)
+
+### Route 53
+- CNAME target MUST end with a period (`cname.vercel-dns.com.`)
+- Evaluate target health: No
+
+## When to Contact Support
+
+Contact support if:
+- DNS records verified correct but domain still pending after 48 hours
+- SSL certificate errors persist after following all steps
+- Seeing errors specific to Jamdesk infrastructure
+
+Include in your support request:
+- Your domain name
+- DNS provider name
+- Output of `dig` commands
+- Screenshot of DNS configuration
+
+## What's Next?
+
+<Columns cols={2}>
+  <Card title="Custom Domains Setup" icon="globe" href="/help/custom-domains">
+    Full custom domain setup guide
+  </Card>
+  <Card title="Subpath Hosting" icon="route" href="/deploy/subpath-hosting">
+    Host at yourdomain.com/docs
+  </Card>
+</Columns>

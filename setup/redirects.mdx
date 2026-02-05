@@ -1,0 +1,189 @@
+---
+title: Redirects
+description: Set up URL redirects for moved pages, renamed routes, and legacy URLs. Supports exact matches and pattern-based redirects.
+---
+
+Redirects forward users from old URLs to new ones. Use them when reorganizing docs, renaming pages, or maintaining links from previous documentation versions.
+
+## Configuration
+
+Add redirects to your `docs.json`:
+
+```json docs.json
+{
+  "redirects": [
+    {
+      "source": "/old-page",
+      "destination": "/new-page"
+    },
+    {
+      "source": "/guides/setup",
+      "destination": "/getting-started"
+    }
+  ]
+}
+```
+
+## Redirect Types
+
+### Exact Match
+
+Redirects a specific URL:
+
+```json
+{
+  "source": "/api/v1/users",
+  "destination": "/api/v2/users"
+}
+```
+
+`/api/v1/users` → `/api/v2/users`
+
+### Wildcard Match
+
+Use `*` to match path segments:
+
+```json
+{
+  "source": "/blog/*",
+  "destination": "/articles/*"
+}
+```
+
+`/blog/hello-world` → `/articles/hello-world`
+
+### Prefix Match
+
+Redirect all paths under a prefix:
+
+```json
+{
+  "source": "/v1/*",
+  "destination": "/v2/*"
+}
+```
+
+`/v1/api/users` → `/v2/api/users`
+
+## HTTP Status Codes
+
+By default, redirects return a `308` (permanent redirect). Specify a different status:
+
+```json
+{
+  "source": "/old-page",
+  "destination": "/new-page",
+  "statusCode": 307
+}
+```
+
+| Status | Type | Use Case |
+|--------|------|----------|
+| `301` | Permanent (GET) | Moved permanently, changes POST to GET |
+| `302` | Temporary (GET) | Temporary move, changes POST to GET |
+| `307` | Temporary | Temporary move, preserves HTTP method |
+| `308` | Permanent | Moved permanently, preserves HTTP method |
+
+Use `308` for most documentation redirects. Use `307` for temporary moves during migrations.
+
+## Common Patterns
+
+### Reorganizing Documentation
+
+When restructuring your navigation:
+
+```json
+{
+  "redirects": [
+    { "source": "/setup", "destination": "/getting-started" },
+    { "source": "/setup/install", "destination": "/getting-started/installation" },
+    { "source": "/setup/config", "destination": "/getting-started/configuration" }
+  ]
+}
+```
+
+### API Version Migration
+
+When deprecating an API version:
+
+```json
+{
+  "redirects": [
+    { "source": "/api/v1/*", "destination": "/api/v2/*" }
+  ]
+}
+```
+
+### External Redirects
+
+Redirect to external URLs:
+
+```json
+{
+  "source": "/community",
+  "destination": "https://discord.gg/your-server"
+}
+```
+
+### Preserving SEO
+
+When pages have existing search rankings:
+
+```json
+{
+  "redirects": [
+    {
+      "source": "/tutorials/getting-started-with-api",
+      "destination": "/quickstart",
+      "statusCode": 301
+    }
+  ]
+}
+```
+
+## Redirect Order
+
+Redirects are evaluated in order. More specific rules should come before wildcards:
+
+```json
+{
+  "redirects": [
+    { "source": "/api/v1/special-endpoint", "destination": "/api/special" },
+    { "source": "/api/v1/*", "destination": "/api/v2/*" }
+  ]
+}
+```
+
+The first matching rule wins.
+
+## Limitations
+
+- Redirects only apply to documentation paths
+- Query parameters are preserved automatically
+- Hash fragments are preserved automatically
+- Maximum 1000 redirects per project
+
+## Testing Redirects
+
+After adding redirects:
+
+1. Deploy your changes
+2. Visit the old URL directly
+3. Verify you land on the new destination
+4. Check the HTTP status code in browser dev tools
+
+```bash
+# Check redirect with curl
+curl -I https://docs.example.com/old-page
+```
+
+## What's Next?
+
+<Columns cols={2}>
+  <Card title="Custom Domains" icon="globe" href="/deploy/custom-domains">
+    Set up your own domain
+  </Card>
+  <Card title="Navigation" icon="sitemap" href="/navigation/overview">
+    Organize your documentation structure
+  </Card>
+</Columns>
