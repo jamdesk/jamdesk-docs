@@ -1,34 +1,18 @@
 ---
-title: Deployment
-description: Deploy your documentation to production with automatic builds
+title: Deployment Workflow
+description: Push to GitHub and your docs deploy automatically. Learn the workflow from local changes to live documentation.
 ---
 
-Jamdesk handles deployment automatically. Connect your GitHub repository, push changes, and your docs go live within minutes.
+Jamdesk handles deployment automatically. Push to your connected GitHub branch and your docs go live within minutes.
 
-## Deployment Lifecycle
-
-```mermaid
-flowchart TD
-    A["Git Push"] -->|webhook| B["Build Triggered"]
-    C["Manual Rebuild"] --> B
-    D["API Call"] --> B
-
-    B --> E{"Validation"}
-    E -->|pass| F["Build & Compile"]
-    E -->|fail| G["Error in Dashboard"]
-
-    F --> H["Deploy to CDN"]
-    H --> I["Cache Purge"]
-    I --> J["Live on Edge"]
-
-    G -->|"fix & retry"| A
-```
-
-## How It Works
+## The Workflow
 
 <Steps>
+  <Step title="Make changes locally">
+    Edit your MDX files and preview with `jamdesk dev`.
+  </Step>
   <Step title="Push to GitHub">
-    Commit and push your changes to the connected branch:
+    Commit and push to your connected branch:
 
     ```bash
     git add .
@@ -36,23 +20,14 @@ flowchart TD
     git push
     ```
   </Step>
-  <Step title="Automatic Build">
-    Jamdesk detects your push and starts building. Your MDX files are compiled to optimized HTML with:
-    - Minified CSS and JavaScript
-    - Optimized images
-    - Generated search index
-    - Pre-rendered pages
-  </Step>
-  <Step title="Global CDN">
-    Built files deploy to a global CDN. Your docs load fast from anywhere in the world.
+  <Step title="Automatic deployment">
+    Jamdesk detects your push, builds your docs, and deploys to the CDN. Most sites build in 30-90 seconds.
   </Step>
 </Steps>
 
-Build times depend on project size. Most docs sites build in 30-90 seconds.
-
 ## Deployment Status
 
-Check your deployment status in the Jamdesk dashboard:
+Check status in the dashboard under **Deployments**:
 
 | Status | Meaning |
 |--------|---------|
@@ -63,71 +38,16 @@ Check your deployment status in the Jamdesk dashboard:
 
 ## Manual Rebuild
 
-Sometimes you need to rebuild without pushing changes:
+Trigger a rebuild without pushing:
 
-1. Go to your project in the [Jamdesk dashboard](https://dashboard.jamdesk.com)
-2. Open **Settings**
-3. Click **Rebuild**
+1. Go to **Settings** in your project
+2. Click **Rebuild**
 
-Use this when:
-- Updating environment variables
-- Fixing a stuck build
-- Refreshing after platform updates
-
-## Custom Domains
-
-### Adding a Domain
-
-<Steps>
-  <Step title="Add domain in dashboard">
-    Go to **Settings** → **Domains** → **Add Domain**
-
-    Enter your domain (e.g., `docs.example.com`)
-  </Step>
-  <Step title="Configure DNS">
-    Add a CNAME record pointing to your Jamdesk URL:
-
-    ```
-    docs.example.com  CNAME  your-project.jamdesk.app
-    ```
-  </Step>
-  <Step title="Wait for verification">
-    DNS changes can take up to 48 hours. Jamdesk will show "Verified" when ready.
-  </Step>
-</Steps>
-
-### SSL Certificates
-
-Jamdesk automatically provisions and renews SSL certificates for all domains. No configuration needed.
-
-### Hosting at a Subpath
-
-Want your docs at `yoursite.com/docs` instead of a subdomain? Configure your web server or CDN to proxy requests to Jamdesk.
-
-<Card title="Subpath Deployment Guide" icon="route" href="/deploy/overview">
-  Set up Cloudflare, AWS, Vercel, or nginx to serve docs at /docs
-</Card>
-
-## Environment Variables
-
-Set build-time variables in **Settings** → **Environment**:
-
-```
-ANALYTICS_ID=UA-12345678-1
-API_BASE_URL=https://api.example.com
-```
-
-Access them in your docs with environment variable syntax.
+Use this when updating environment variables or fixing stuck builds.
 
 ## Build Logs
 
-View detailed build logs for debugging:
-
-1. Go to **Deployments** in your project
-2. Click on a specific deployment
-3. View the full build log
-
-Common issues appear in logs:
+When builds fail, check **Deployments** → click a deployment → view logs. Common issues:
 - Invalid MDX syntax
 - Missing images
 - Broken internal links
@@ -135,33 +55,27 @@ Common issues appear in logs:
 
 ## Rollbacks
 
-Need to revert to a previous version?
+Revert to a previous version:
 
 1. Go to **Deployments**
-2. Find the deployment you want to restore
+2. Find the deployment to restore
 3. Click **Rollback**
 
-The previous version goes live immediately while a new build starts.
+The previous version goes live immediately.
 
-## Branch Deployments
+## What's Next?
 
-<Note>
-Branch deployments are available on Pro plans.
-</Note>
-
-Preview changes before merging to main:
-
-1. Push to a feature branch
-2. Jamdesk creates a preview at `branch-name.your-project.jamdesk.app`
-3. Review and merge when ready
-
-## Webhook Integration
-
-Trigger builds from external systems using webhooks:
-
-```bash
-curl -X POST "https://api.jamdesk.com/projects/YOUR_PROJECT/rebuild" \
-  -H "Authorization: Bearer YOUR_API_KEY"
-```
-
-Find your API key in **Settings** → **API**.
+<Columns cols={2}>
+  <Card title="Build & Deploy Lifecycle" icon="rotate" href="/deploy/lifecycle">
+    Detailed build process, triggers, and environment variables
+  </Card>
+  <Card title="Custom Domains" icon="globe" href="/deploy/custom-domains">
+    Set up docs.yourdomain.com
+  </Card>
+  <Card title="CLI Overview" icon="terminal" href="/cli/overview">
+    Local tooling and commands
+  </Card>
+  <Card title="Local Preview" icon="eye" href="/development/local-preview">
+    Preview docs before pushing
+  </Card>
+</Columns>

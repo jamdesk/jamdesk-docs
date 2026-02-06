@@ -1,0 +1,106 @@
+openapi: 3.0.3
+info:
+  title: Acme Support API
+  version: "1.0.0"
+  description: |
+    The Acme Support API lets you create and track customer support tickets.
+    Use it to post new issues from your product and keep users updated on status.
+servers:
+  - url: https://api.acme.com/v1
+security:
+  - bearerAuth: []
+paths:
+  /tickets:
+    post:
+      summary: Create a support ticket
+      description: Create a new ticket for a customer issue or request.
+      operationId: createTicket
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTicketRequest"
+            example:
+              customer_id: "cus_2X9W8"
+              subject: "Export stuck on step 3"
+              priority: "high"
+              tags: ["export", "bug"]
+              message: "The export job fails with error 504 after 2 minutes."
+      responses:
+        "201":
+          description: Ticket created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Ticket"
+              example:
+                id: "tkt_9S8L2"
+                customer_id: "cus_2X9W8"
+                subject: "Export stuck on step 3"
+                priority: "high"
+                status: "open"
+                created_at: "2026-02-04T16:12:00Z"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                code: "invalid_request"
+                message: "subject is required"
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    CreateTicketRequest:
+      type: object
+      required:
+        - customer_id
+        - subject
+        - message
+      properties:
+        customer_id:
+          type: string
+          description: Customer identifier in Acme.
+        subject:
+          type: string
+          description: Short summary of the issue.
+        priority:
+          type: string
+          enum: [low, normal, high, urgent]
+        tags:
+          type: array
+          items:
+            type: string
+        message:
+          type: string
+          description: Detailed problem description.
+    Ticket:
+      type: object
+      properties:
+        id:
+          type: string
+        customer_id:
+          type: string
+        subject:
+          type: string
+        priority:
+          type: string
+        status:
+          type: string
+          enum: [open, pending, resolved]
+        created_at:
+          type: string
+          format: date-time
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string

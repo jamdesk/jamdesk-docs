@@ -1,9 +1,9 @@
 ---
 title: Migration Guide
-description: Migrate your documentation from Mintlify, GitBook, or other platforms to Jamdesk
+description: Moving from another documentation platform? Jamdesk can help automate the transition, or you can migrate manually for full control.
 ---
 
-Moving from another documentation platform? Jamdesk can help automate the transition, or you can migrate manually for full control.
+If you're switching from Mintlify, GitBook, Docusaurus, or another platform, this guide covers automated migration with the CLI and manual setup for full control over the process.
 
 <Info>
 **Markdown yields the best results.** If your current platform supports Markdown export, use it. Jamdesk is built on MDX, so Markdown content migrates cleanly.
@@ -27,35 +27,275 @@ Moving from another documentation platform? Jamdesk can help automate the transi
         ```bash
         jamdesk migrate
         ```
+        This reads your `mint.json`, converts it to `docs.json`, and rewrites component syntax where needed.
       </Step>
       <Step title="Review and adjust">
-        Check the generated `docs.json` and MDX files.
+        Check the generated `docs.json` and MDX files. The CLI handles most conversions, but you should verify component usage and navigation structure.
       </Step>
     </Steps>
 
-    ### What Gets Converted
+    ### Configuration Mapping
 
-    | Mintlify | Jamdesk |
-    |----------|---------|
-    | `mint.json` | `docs.json` |
-    | Navigation structure | Preserved |
-    | Component syntax | Mapped where possible |
+    The CLI converts `mint.json` to `docs.json` automatically, but here's what changes so you can verify the output.
+
+    **Mintlify (`mint.json`):**
+    ```json
+    {
+      "name": "My Docs",
+      "navigation": [
+        { "group": "Getting Started", "pages": ["introduction", "quickstart"] }
+      ],
+      "colors": { "primary": "#0D9373" },
+      "topbarLinks": [{ "name": "Blog", "url": "https://example.com/blog" }]
+    }
+    ```
+
+    **Jamdesk (`docs.json`):**
+    ```json
+    {
+      "$schema": "https://jamdesk.com/docs.json",
+      "name": "My Docs",
+      "theme": "jam",
+      "colors": { "primary": "#0D9373" },
+      "navbar": {
+        "links": [{ "label": "Blog", "href": "https://example.com/blog" }]
+      },
+      "navigation": {
+        "groups": [
+          { "group": "Getting Started", "pages": ["introduction", "quickstart"] }
+        ]
+      }
+    }
+    ```
+
+    ### Component Compatibility
+
+    Most Mintlify components have direct equivalents in Jamdesk. A few have different names or syntax.
+
+    | Mintlify Component | Jamdesk Equivalent | Notes |
+    |---|---|---|
+    | `<Card>` | `<Card>` | Same syntax |
+    | `<CardGroup>` | `<Columns>` | Use `cols` prop for column count |
+    | `<Accordion>` | `<Accordion>` | Same syntax |
+    | `<Tabs>` / `<Tab>` | `<Tabs>` / `<Tab>` | Same syntax |
+    | `<Steps>` / `<Step>` | `<Steps>` / `<Step>` | Same syntax |
+    | `<CodeGroup>` | `<CodeGroup>` | Same syntax |
+    | `<Tip>`, `<Note>`, `<Warning>` | `<Tip>`, `<Note>`, `<Warning>` | Same syntax |
+    | `<ResponseField>` | `<ParamField>` | Different name |
+    | `<Snippet>` | Import from `/snippets/` | Different approach |
+
+    ### Common Issues
+
+    <AccordionGroup>
+      <Accordion title="CardGroup needs to be replaced with Columns">
+        Mintlify's `<CardGroup cols={2}>` becomes `<Columns cols={2}>` in Jamdesk. The `jamdesk migrate` CLI handles this, but check any files you've edited manually.
+
+        ```mdx
+        {/* Before (Mintlify) */}
+        <CardGroup cols={2}>
+          <Card title="First" />
+          <Card title="Second" />
+        </CardGroup>
+
+        {/* After (Jamdesk) */}
+        <Columns cols={2}>
+          <Card title="First" />
+          <Card title="Second" />
+        </Columns>
+        ```
+      </Accordion>
+      <Accordion title="ResponseField becomes ParamField">
+        Rename `<ResponseField>` to `<ParamField>`. Props stay the same.
+
+        ```mdx
+        {/* Before */}
+        <ResponseField name="id" type="string" required>
+          The unique identifier
+        </ResponseField>
+
+        {/* After */}
+        <ParamField name="id" type="string" required>
+          The unique identifier
+        </ParamField>
+        ```
+      </Accordion>
+      <Accordion title="Snippet import syntax differs">
+        Mintlify uses a `<Snippet>` component. In Jamdesk, use standard MDX imports from a `/snippets/` directory.
+
+        ```mdx
+        {/* Before (Mintlify) */}
+        <Snippet file="my-snippet.mdx" />
+
+        {/* After (Jamdesk) */}
+        import MySnippet from '/snippets/my-snippet.mdx'
+
+        <MySnippet />
+        ```
+      </Accordion>
+      <Accordion title="topbarLinks maps to navbar.links">
+        Mintlify's `topbarLinks` and `topbarCtaButton` both map to `navbar.links` in `docs.json`. The `name` field becomes `label`, and `url` becomes `href`.
+      </Accordion>
+    </AccordionGroup>
   </Tab>
 
   <Tab title="From Other Platforms">
-    For GitBook, ReadMe, Docusaurus, Confluence, Notion, or custom setups.
+    For GitBook, Docusaurus, Confluence, Notion, or other documentation tools.
 
-    ### Manual Migration
+    ### From GitBook
+
+    GitBook stores content as Markdown with a `SUMMARY.md` file for navigation.
 
     <Steps>
+      <Step title="Export your content">
+        Export your GitBook space as Markdown. If you're using GitBook's Git sync, your content is already in a Git repo as `.md` files.
+      </Step>
+      <Step title="Convert files to MDX">
+        Rename `.md` files to `.mdx` and add frontmatter to each file:
+
+        ```mdx
+        ---
+        title: Your Page Title
+        description: A short description of the page
+        ---
+
+        Your existing Markdown content here.
+        ```
+      </Step>
+      <Step title="Map navigation from SUMMARY.md">
+        GitBook uses `SUMMARY.md` to define its sidebar. Convert this to `docs.json` navigation groups.
+
+        **GitBook (`SUMMARY.md`):**
+        ```markdown
+        # Summary
+
+        ## Getting Started
+        * [Introduction](introduction.md)
+        * [Quick Start](quickstart.md)
+
+        ## API Reference
+        * [Authentication](api/auth.md)
+        ```
+
+        **Jamdesk (`docs.json`):**
+        ```json
+        {
+          "navigation": {
+            "groups": [
+              {
+                "group": "Getting Started",
+                "pages": ["introduction", "quickstart"]
+              },
+              {
+                "group": "API Reference",
+                "pages": ["api/auth"]
+              }
+            ]
+          }
+        }
+        ```
+      </Step>
+      <Step title="Move images">
+        Move all images to an `/images` directory and update references in your MDX files to use absolute paths (e.g., `/images/screenshot.png`).
+      </Step>
+      <Step title="Test locally">
+        ```bash
+        jamdesk dev
+        ```
+      </Step>
+    </Steps>
+
+    ### From Docusaurus
+
+    Docusaurus projects already use MDX, so most content transfers directly.
+
+    <Steps>
+      <Step title="Copy your MDX files">
+        Copy the contents of your Docusaurus `docs/` directory into your Jamdesk project root. Keep your existing directory structure.
+      </Step>
+      <Step title="Clean up frontmatter">
+        Remove Docusaurus-specific frontmatter fields. Keep `title` and `description`, drop the rest.
+
+        ```mdx
+        ---
+        {/* Remove these Docusaurus fields */}
+        sidebar_position: 3
+        sidebar_label: "Custom Label"
+        slug: /custom-url
+        pagination_next: null
+
+        {/* Keep these */}
+        title: Your Page Title
+        description: A short description
+        ---
+        ```
+      </Step>
+      <Step title="Map sidebars.js to docs.json">
+        Convert your `sidebars.js` category structure to `docs.json` navigation groups.
+
+        **Docusaurus (`sidebars.js`):**
+        ```javascript
+        module.exports = {
+          docs: [
+            {
+              type: 'category',
+              label: 'Getting Started',
+              items: ['intro', 'installation'],
+            },
+          ],
+        };
+        ```
+
+        **Jamdesk (`docs.json`):**
+        ```json
+        {
+          "navigation": {
+            "groups": [
+              {
+                "group": "Getting Started",
+                "pages": ["intro", "installation"]
+              }
+            ]
+          }
+        }
+        ```
+      </Step>
+      <Step title="Replace Docusaurus components">
+        Swap Docusaurus-specific components for Jamdesk equivalents.
+
+        | Docusaurus | Jamdesk | Example |
+        |---|---|---|
+        | `:::note` / `:::tip` / `:::warning` | `<Note>` / `<Tip>` / `<Warning>` | See [callout components](/components/overview) |
+        | `import Tabs from '@theme/Tabs'` | `<Tabs>` (globally available) | No import needed |
+        | `import TabItem from '@theme/TabItem'` | `<Tab>` (globally available) | Use `title` instead of `label` |
+      </Step>
+      <Step title="Test locally">
+        ```bash
+        jamdesk dev
+        ```
+      </Step>
+    </Steps>
+
+    ### From Other Tools
+
+    For Confluence, Notion, ReadMe, or any other platform, the process is the same: get your content into Markdown, then set up the Jamdesk project structure.
+
+    <Steps>
+      <Step title="Export as Markdown">
+        Most platforms have a Markdown or HTML export option. Use Markdown if available. For HTML, convert to Markdown using a tool like [Pandoc](https://pandoc.org/).
+
+        ```bash
+        # Convert HTML to Markdown with Pandoc
+        pandoc input.html -f html -t markdown -o output.md
+        ```
+      </Step>
       <Step title="Create docs.json">
-        Start with a minimal configuration.
+        Start with a minimal configuration and build out your navigation as you add pages.
       </Step>
-      <Step title="Convert content to MDX">
-        Rename `.md` files to `.mdx`. Add frontmatter.
+      <Step title="Convert files to MDX">
+        Rename `.md` files to `.mdx` and add frontmatter (`title`, `description`) to each file.
       </Step>
-      <Step title="Migrate assets">
-        Move images to an `images/` directory.
+      <Step title="Move assets">
+        Move images and other assets to an `/images` directory. Update file references to use absolute paths.
       </Step>
       <Step title="Test locally">
         ```bash
@@ -65,6 +305,26 @@ Moving from another documentation platform? Jamdesk can help automate the transi
     </Steps>
   </Tab>
 </Tabs>
+
+## Sample Jamdesk Configuration
+
+Start with a minimal `docs.json` and expand as you migrate more pages:
+
+```json
+{
+  "$schema": "https://jamdesk.com/docs.json",
+  "name": "My Product Docs",
+  "theme": "jam",
+  "navigation": {
+    "groups": [
+      {
+        "group": "Getting Started",
+        "pages": ["introduction", "quickstart"]
+      }
+    ]
+  }
+}
+```
 
 ## Post-Migration Checklist
 

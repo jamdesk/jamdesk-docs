@@ -1,0 +1,163 @@
+---
+title: Builds API / Triggers
+description: Trigger documentation rebuilds programmatically without pushing commits. Useful for CI pipelines and scheduled updates.
+---
+
+Use the Builds API to trigger documentation rebuilds without pushing new commits. This is useful for CI pipelines, scheduled rebuilds, or content generated outside your docs directory.
+
+## Authentication
+
+All requests use a project API key:
+
+```
+Authorization: Bearer YOUR_API_KEY
+```
+
+Find your API key in **Settings** → **API** for the project.
+
+## Trigger a Rebuild
+
+**POST** `https://api.jamdesk.com/projects/{project_id}/rebuild`
+
+### Example Request
+
+<CodeGroup>
+```bash cURL
+curl -X POST "https://api.jamdesk.com/projects/YOUR_PROJECT_ID/rebuild" \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+```javascript JavaScript
+const projectId = "YOUR_PROJECT_ID";
+const apiKey = "YOUR_API_KEY";
+
+const response = await fetch(
+  `https://api.jamdesk.com/projects/${projectId}/rebuild`,
+  {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${apiKey}`
+    }
+  }
+);
+const build = await response.json();
+console.log(build.buildId, build.status);
+```
+</CodeGroup>
+
+### Response
+
+Successful requests return `200 OK` with build metadata you can use to track progress.
+
+```json
+{
+  "buildId": "build_8f3k2j",
+  "status": "queued",
+  "createdAt": "2026-02-05T10:30:00Z",
+  "commit": {
+    "sha": "a1b2c3d",
+    "message": "Update API docs",
+    "author": "jane@example.com"
+  },
+  "project": {
+    "id": "proj_abc123",
+    "name": "My Docs"
+  }
+}
+```
+
+<Note>
+If you receive a `429` response, retry with exponential backoff. Contact support if you need higher limits.
+</Note>
+
+### Response Fields
+
+<ResponseField name="buildId" type="string">
+  Unique build identifier. Use this to reference the build in the dashboard.
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  Current build status. One of: `queued`, `building`, `deployed`, `failed`.
+</ResponseField>
+
+<ResponseField name="createdAt" type="string">
+  ISO 8601 timestamp of when the build was created.
+</ResponseField>
+
+<ResponseField name="commit.sha" type="string">
+  Short commit hash that triggered the build.
+</ResponseField>
+
+<ResponseField name="commit.message" type="string">
+  Commit message from the source repository.
+</ResponseField>
+
+<ResponseField name="commit.author" type="string">
+  Email address of the commit author.
+</ResponseField>
+
+<ResponseField name="project.id" type="string">
+  Project identifier matching your dashboard project.
+</ResponseField>
+
+<ResponseField name="project.name" type="string">
+  Display name of the project.
+</ResponseField>
+
+## Tracking Build Status
+
+Build status is visible in the dashboard under **Deployments**. Each build moves through these stages:
+
+1. **queued** -- The build is waiting in the queue.
+2. **building** -- The build service is compiling your documentation.
+3. **deployed** -- The build completed and your site is live.
+4. **failed** -- Something went wrong. Check the build logs for details.
+
+If your repository is connected to GitHub, commit status checks update automatically. A green check appears on the commit when the build deploys, or a red X if the build fails. You do not need to poll the API for status updates.
+
+## Error Response Format
+
+Error responses follow a consistent structure:
+
+```json
+{
+  "error": {
+    "code": "unauthorized",
+    "message": "Invalid API key",
+    "status": 401
+  }
+}
+```
+
+<ResponseField name="error.code" type="string">
+  Machine-readable error code. See the table below for possible values.
+</ResponseField>
+
+<ResponseField name="error.message" type="string">
+  Human-readable description of what went wrong.
+</ResponseField>
+
+<ResponseField name="error.status" type="number">
+  HTTP status code matching the response status.
+</ResponseField>
+
+### Error Codes
+
+| Status | Code | Message | Fix |
+|--------|------|---------|-----|
+| **401** | `unauthorized` | Invalid API key | Regenerate the key in **Settings** → **API** |
+| **403** | `forbidden` | Unauthorized project access | Confirm the project ID matches the API key's project |
+| **404** | `project_not_found` | Project not found | Verify the project ID in the dashboard |
+| **429** | `rate_limited` | Too many requests | Back off and retry with exponential backoff |
+| **500** | `internal_error` | Internal server error | Retry after a few seconds. Contact support if it persists |
+
+## Related Articles
+
+<Columns cols={2}>
+  <Card title="Triggering Builds" icon="hammer" href="/help/builds/triggering">
+    Manual and automatic build triggers
+  </Card>
+  <Card title="Monitoring Builds" icon="chart-line" href="/help/builds/monitoring">
+    Track build status and queue
+  </Card>
+</Columns>

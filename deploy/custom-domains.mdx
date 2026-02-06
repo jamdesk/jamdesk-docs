@@ -1,0 +1,113 @@
+---
+title: Custom Domains
+description: Connect your own domain to serve documentation at docs.yourdomain.com. Covers DNS configuration, SSL certificates, and verification.
+---
+
+Serve your documentation from your own domain instead of the default `*.jamdesk.app` subdomain. Custom domains provide branded URLs and integrate with your existing web presence.
+
+<Tip>
+For a step-by-step dashboard walkthrough and DNS troubleshooting, see the [Help Center guide](/help/custom-domains).
+</Tip>
+
+## Setup Overview
+
+<Steps>
+  <Step title="Add domain in dashboard">
+    Go to your project **Settings** → **Domain** and enter your subdomain (e.g., `docs.example.com`).
+  </Step>
+  <Step title="Configure DNS">
+    Add a CNAME record pointing to `cname.vercel-dns.com` at your DNS provider.
+  </Step>
+  <Step title="Verify and wait">
+    Jamdesk verifies ownership and provisions an SSL certificate automatically.
+  </Step>
+</Steps>
+
+## DNS Configuration
+
+Add this CNAME record at your DNS provider:
+
+| Type | Name | Value |
+|------|------|-------|
+| CNAME | `docs` | `cname.vercel-dns.com` |
+
+The "Name" field is just the subdomain portion. For `docs.example.com`, enter `docs`.
+
+<Note>
+DNS changes can take up to 48 hours to propagate, though most complete within minutes. Check status at [whatsmydns.net](https://www.whatsmydns.net/).
+</Note>
+
+## Verification
+
+After adding DNS records, Jamdesk automatically:
+
+1. Detects the CNAME record
+2. Verifies domain ownership
+3. Provisions an SSL certificate via Let's Encrypt
+4. Routes traffic to your documentation
+
+Check verification status in **Settings** → **Domain**. Status shows as:
+- **Pending** - Waiting for DNS propagation
+- **Active** - Domain verified and serving traffic
+- **Error** - Configuration issue (see details in dashboard)
+
+## SSL Certificates
+
+SSL certificates are provisioned automatically and renewed before expiration. HTTPS is required—HTTP requests redirect to HTTPS.
+
+No manual certificate configuration needed.
+
+## Root Domains
+
+CNAME records cannot be set on root domains (`example.com`) due to DNS standards. Options:
+
+1. **Use a subdomain** (recommended): `docs.example.com`
+2. **Use subpath hosting**: Serve docs at `example.com/docs` via reverse proxy
+
+See [Subpath Hosting](/deploy/subpath-hosting) for the second option.
+
+## Multiple Domains
+
+Each project supports one custom domain. For multiple domains pointing to the same docs:
+
+1. Set up your primary domain in Jamdesk
+2. Configure additional domains to redirect to the primary at the DNS/CDN level
+
+## Removing a Domain
+
+To disconnect a custom domain:
+
+1. Go to **Settings** → **Domain**
+2. Click **Remove Domain**
+3. Your docs remain accessible at the `*.jamdesk.app` subdomain
+
+## Cloudflare Users
+
+If using Cloudflare as your DNS provider:
+
+1. Set proxy status to **DNS only** (gray cloud icon)
+2. Let Vercel handle SSL—disable Cloudflare's "Always Use HTTPS" for the docs subdomain
+
+Orange cloud (proxied) mode can cause SSL conflicts and redirect loops.
+
+## Troubleshooting
+
+| Issue | Solution |
+|-------|----------|
+| Domain stuck on "Pending" | Check DNS records with `dig CNAME docs.yourdomain.com` |
+| SSL certificate errors | Ensure no CAA records block Let's Encrypt |
+| Redirect loops | Disable Cloudflare proxy (use gray cloud) |
+| CNAME not resolving | Verify record at DNS provider, wait for propagation |
+
+For detailed diagnostics, see [DNS Troubleshooting](/help/troubleshooting/dns-issues).
+
+## What's Next?
+
+<Columns cols={2}>
+  <Card title="Subpath Hosting" icon="route" href="/deploy/subpath-hosting">
+    Host docs at example.com/docs
+  </Card>
+  <Card title="DNS Troubleshooting" icon="server" href="/help/troubleshooting/dns-issues">
+    Diagnose DNS configuration issues
+  </Card>
+</Columns>
