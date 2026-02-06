@@ -1,0 +1,128 @@
+---
+title: Cursor
+description: Set up Cursor to write Jamdesk documentation with MDX rules and MCP server access.
+---
+
+[Cursor](https://cursor.com) is an AI code editor built on VS Code. Its inline editing (Cmd+K) and chat (Cmd+L) work well for iterative MDX writing — select a paragraph, describe what you want, and Cursor rewrites it in place.
+
+## Quick Setup
+
+<Steps>
+  <Step title="Open your docs project">
+    Open your Jamdesk docs directory in Cursor.
+  </Step>
+  <Step title="Add Cursor rules">
+    Create `.cursor/rules/jamdesk-docs.mdc` with documentation standards so Cursor's AI follows your conventions.
+  </Step>
+  <Step title="Connect MCP server">
+    Add your docs MCP endpoint to `.cursor/mcp.json` so Cursor can search your published documentation.
+  </Step>
+</Steps>
+
+## Cursor Rules Template
+
+Create `.cursor/rules/jamdesk-docs.mdc` in your project root:
+
+```markdown .cursor/rules/jamdesk-docs.mdc
+---
+description: Rules for writing Jamdesk documentation in MDX
+globs: "**/*.mdx"
+---
+
+# Jamdesk MDX Rules
+
+## Page Structure
+
+Every page follows this pattern — no exceptions:
+
+1. Frontmatter with `title` and `description`
+2. Opening paragraph (no heading before it)
+3. Content sections with ## headings
+4. "What's Next?" section at the end with Card links inside Columns
+
+## Components
+
+Only use these — do not invent others:
+
+Layout: Card, Columns, Tabs, Tab, Accordion, AccordionGroup, Steps, Step, Expandable, Frame, CodeGroup
+Callouts: Note, Info, Warning, Tip, Check, Danger
+
+| Use | For |
+|-----|-----|
+| Tabs | Mutually exclusive choices (npm/yarn, OS variants) |
+| Steps | Ordered procedures the reader follows |
+| Accordion | Optional detail that would clutter the page |
+| Card + Columns | Navigation links and feature grids |
+| Note/Tip/Warning | Important context — use sparingly |
+
+Cards always go inside Columns: `<Columns cols={2}><Card ... /></Columns>`
+Icons are Font Awesome Light names: "rocket", "code", "terminal", "book-open"
+
+## Style
+
+- Active voice: "Run this command" not "This command should be run"
+- Start with why, then how
+- One idea per paragraph
+- Code examples must be complete and copy-pasteable
+
+## Common Mistakes
+
+- `<CodeBlock>`, `<Alert>`, `<Section>` don't exist — use the components listed above
+- `<Card>` without `<Columns>` wrapper won't render correctly
+- Missing `description` in frontmatter breaks search and link previews
+- Raw HTML tags should be MDX components instead
+
+## New Pages
+
+When creating a page, add it to `docs.json` navigation. Without this, the page won't appear in the sidebar. Read `docs.json` first to understand the group structure.
+```
+
+## MCP Configuration
+
+Create `.cursor/mcp.json` to connect your published docs:
+
+```json .cursor/mcp.json
+{
+  "mcpServers": {
+    "my-docs": {
+      "url": "https://your-project.jamdesk.app/_mcp"
+    }
+  }
+}
+```
+
+Replace `your-project` with your Jamdesk subdomain. See [MCP Server](/ai/mcp-server) for endpoint details and custom domain setup.
+
+## Workflows
+
+<Tabs>
+  <Tab title="Inline Editing (Cmd+K)">
+    Select text in an MDX file and press **Cmd+K** to describe what you want changed. Works well for:
+    - Rewriting a section for clarity
+    - Adding a code example
+    - Converting text into a component (e.g., wrapping steps in `<Steps>`)
+  </Tab>
+  <Tab title="Chat (Cmd+L)">
+    Open chat with **Cmd+L** and ask questions with your docs as context:
+    - "What components are available for this page?"
+    - "Write a troubleshooting section for [feature]"
+    - "Review this page against our writing standards"
+  </Tab>
+  <Tab title="Composer">
+    Use Composer for multi-file documentation tasks:
+    - Generate a new section with multiple pages
+    - Restructure navigation across files
+    - Bulk-update component usage patterns
+  </Tab>
+</Tabs>
+
+## What's Next?
+
+<Columns cols={2}>
+  <Card title="Claude Code" icon="terminal" href="/ai/claude-code">
+    CLAUDE.md template and full-project context workflows
+  </Card>
+  <Card title="Writing with AI" icon="wand-magic-sparkles" href="/ai/writing-with-ai">
+    Prompting strategies that work across all tools
+  </Card>
+</Columns>
