@@ -1,0 +1,103 @@
+---
+title: Markdown Source
+description: Access raw Markdown source for any documentation page by appending .md to the URL. Structured text for AI tools, scripts, and content pipelines.
+---
+
+AI tools process Markdown more efficiently than rendered HTML. Jamdesk makes the raw Markdown source of every page available by appending `.md` to any URL. No authentication required.
+
+## `.md` URL Extension
+
+Append `.md` to any documentation page URL to get the raw source instead of rendered HTML:
+
+```bash
+# Rendered page
+https://acme.jamdesk.app/getting-started
+
+# Raw Markdown source
+https://acme.jamdesk.app/getting-started.md
+```
+
+This works for any path depth. Here's what the response looks like:
+
+```bash
+curl https://acme.jamdesk.app/getting-started.md
+```
+
+```markdown
+---
+title: Getting Started
+description: Set up your first project in 5 minutes.
+---
+
+Welcome to the getting started guide.
+
+## Prerequisites
+
+<Note>You'll need Node.js 18 or later.</Note>
+```
+
+The response is the exact source file from your repository, including frontmatter and component tags.
+
+### Custom domains
+
+Raw content works on custom domains too. Use the same URL your readers see, with `.md` appended:
+
+```bash
+# Docs served at root
+curl https://docs.example.com/getting-started.md
+
+# Docs served at /docs subpath
+curl https://docs.example.com/docs/getting-started.md
+```
+
+## Content Format
+
+The raw content is Markdown extended with component tags like `<Note>`, `<Steps>`, and `<Tabs>`. Standard Markdown parsers will treat component tags as raw HTML. See [Markdown basics](/content/mdx-basics) for the full syntax reference.
+
+## Response Details
+
+### Headers
+
+| Header | Value | Purpose |
+|--------|-------|---------|
+| `Content-Type` | `text/markdown; charset=utf-8` | Identifies content as Markdown |
+| `Cache-Control` | `public, max-age=0, s-maxage=300, stale-while-revalidate=60` | CDN-cached for 5 minutes, no browser cache |
+| `X-Robots-Tag` | `noindex, nofollow` | Prevents search engine indexing |
+| `Content-Disposition` | `inline` | Displays in browser instead of downloading |
+| `X-Frame-Options` | `DENY` | Prevents embedding in iframes |
+| `Content-Security-Policy` | `default-src 'none'` | Blocks script execution |
+
+### Error responses
+
+| Status | Meaning |
+|--------|---------|
+| `308` | Trailing slash redirect (e.g., `/intro.md/` redirects to `/intro.md`) |
+| `404` | Page does not exist (returns an HTML error page, not Markdown) |
+| `500` | Server error (returns an HTML error page) |
+
+## Use with AI Tools
+
+Markdown source URLs pair well with the [MCP integration](/development/mcp-integration). Use `searchDocs` to find pages by keyword, then fetch raw source for the matched page:
+
+```bash
+# 1. Search for a topic via MCP
+curl -X POST https://acme.jamdesk.app/_mcp \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"searchDocs","arguments":{"query":"authentication"}}}'
+
+# 2. Fetch the raw source of the top result
+curl https://acme.jamdesk.app/guides/authentication.md
+```
+
+This gives AI tools both search and full-source access to your documentation.
+
+## What's Next?
+
+<Columns cols={2}>
+  <Card title="MCP Integration" icon="robot" href="/development/mcp-integration">
+    Connect AI assistants directly to your docs
+  </Card>
+  <Card title="Markdown Basics" icon="pen-nib" href="/content/mdx-basics">
+    Learn the Markdown syntax used in raw content
+  </Card>
+</Columns>
