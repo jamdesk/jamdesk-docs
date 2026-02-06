@@ -1,82 +1,179 @@
 ---
 title: Writing with AI
-description: Use AI tools like Claude, Cursor, Codex, and Copilot to write and maintain Jamdesk documentation. MDX works well with AI models.
+description: Practical strategies for writing Jamdesk documentation with AI tools. Covers effective prompts, review checklists, and common pitfalls.
 ---
 
-Use AI tools like Claude and Cursor to draft, edit, and maintain Jamdesk documentation. This guide covers general principles and workflows. For tool-specific setup, see the dedicated guides for [Claude Code](/ai/claude-code), [Cursor](/ai/cursor), and [Codex](/ai/codex).
+These strategies work regardless of which AI tool you use — Claude Code, Cursor, Codex, Copilot, or anything else. For tool-specific setup, see [Claude Code](/ai/claude-code), [Cursor](/ai/cursor), or [Codex](/ai/codex).
 
 ## Why MDX Works Well with AI
 
-- **Familiar syntax** — AI models are trained on millions of Markdown files
-- **Structured components** — `<Card>`, `<Steps>`, `<Tabs>` have predictable patterns
-- **Plain text** — No binary formats or proprietary schemas
+MDX is one of the easiest formats for AI tools to work with:
 
-## Recommended Tools
+- **Familiar syntax** — AI models are trained on millions of Markdown files, so they produce valid MDX with minimal prompting
+- **Structured components** — `<Card>`, `<Steps>`, `<Tabs>` have predictable patterns that models learn quickly
+- **Plain text** — No binary formats, no proprietary schemas, no build artifacts to interpret
 
-<Columns cols={2}>
-  <Card title="Claude Code" icon="terminal" href="/ai/claude-code">
-    Anthropic's CLI for coding with Claude. Excels at full codebase context.
-  </Card>
-  <Card title="Cursor" icon="text-cursor" href="/ai/cursor">
-    AI-first code editor built on VS Code. Great for iterative doc writing.
-  </Card>
-  <Card title="Codex" icon="code" href="/ai/codex">
-    OpenAI's cloud coding agent. Works with GitHub repos directly.
-  </Card>
-  <Card title="GitHub Copilot" icon="github">
-    Useful for autocompleting MDX components and frontmatter.
-  </Card>
-  <Card title="Windsurf" icon="wind">
-    Codeium's AI editor. Strong at multi-file documentation projects.
-  </Card>
-</Columns>
+## Write Better Prompts
 
-## Other Tools
-
-**GitHub Copilot** — Start typing `<Card` and Copilot completes the structure. Write a comment describing what you want, then let Copilot generate. Accept suggestions line-by-line with tab completion.
-
-**Windsurf** — Use Cascade for multi-file documentation projects. Strong at maintaining consistency across related pages. Works with the same MCP endpoint as Claude and Cursor.
-
-## Keep Docs in Sync
+The difference between mediocre AI docs and good ones is usually the prompt. Be specific about what you want.
 
 <Tabs>
-  <Tab title="Manual prompting">
-    After implementing a feature, prompt your AI tool:
+  <Tab title="Weak Prompts">
+    ```
+    Write docs for the webhook feature.
+    ```
 
     ```
-    I just added [feature]. Update the documentation in /docs to reflect this change.
-    Reference the implementation in /src/[file] for accuracy.
+    Document authentication.
     ```
+
+    ```
+    Create a getting started guide.
+    ```
+
+    These produce generic, bloated output because the AI has no constraints.
   </Tab>
-  <Tab title="Automated with skills">
-    If using Claude Code with the Jamdesk monorepo, run `/update-jamdesk` after implementing user-facing changes. This skill automatically identifies which docs need updates.
+  <Tab title="Strong Prompts">
+    ```
+    Write a page documenting our webhook feature. The reader is a developer
+    integrating webhooks for the first time. Start with a 3-step quickstart,
+    then cover payload format and retry behavior. Reference /src/webhooks
+    for the implementation.
+    ```
+
+    ```
+    Add a troubleshooting section to the authentication page. Cover these
+    three errors: expired tokens, missing scopes, and rate limits. Use
+    Accordions for each error. Keep each answer under 4 lines.
+    ```
+
+    ```
+    Create a getting started guide that gets the reader from zero to a
+    working hello-world in under 2 minutes. No theory, no background.
+    Jump straight into the install command.
+    ```
+
+    Constraints produce focused output. Tell the AI who the reader is, what structure to use, and what to skip.
   </Tab>
 </Tabs>
 
-## Example MDX Skeleton
+### Prompting Patterns That Work
 
-Use this as a starting point for AI-generated pages:
+| Pattern | Example |
+|---------|---------|
+| **Specify the reader** | "The reader is a backend developer who has never used our API" |
+| **Name the structure** | "Use Steps for the setup flow, then Tabs for language variants" |
+| **Set length limits** | "Keep the intro under 2 sentences" or "Each accordion answer should be 3-4 lines" |
+| **Point to source code** | "Reference the implementation in /src/auth for accuracy" |
+| **Say what to skip** | "Don't explain what REST is. Skip the theory." |
+| **Give an example page** | "Match the tone and structure of /quickstart" |
+
+## Review AI Output
+
+AI tools produce structurally correct MDX most of the time. The problems are subtler — tone, accuracy, and bloat. Run through this checklist before committing.
+
+### Voice Check
+
+Read the output out loud. If it sounds like a chatbot, rewrite it. Watch for:
+
+- **Filler phrases** — "It's important to note that", "This allows you to", "In order to"
+- **Hedging** — "You might want to consider", "It's generally recommended"
+- **Empty transitions** — "Now that we've covered X, let's move on to Y"
+- **Buzzwords** — "seamlessly", "robust", "leverage", "streamline"
+
+Cut these. The page will be shorter and better.
+
+### Accuracy Check
+
+AI tools confidently produce wrong information. Verify:
+
+- Do the code examples actually work? Copy-paste and run them.
+- Are config options real? Check against source code.
+- Are component names correct? Only use [components that exist](/components/overview).
+- Does the page describe current behavior, not aspirational features?
+
+### Structure Check
+
+- [ ] Frontmatter has both `title` and `description`
+- [ ] Opening paragraph exists with no heading before it
+- [ ] Page ends with "What's Next?" cards in a `<Columns>` wrapper
+- [ ] New pages are added to `docs.json` navigation
+- [ ] No invented components — only the ones in the [component reference](/components/overview)
+
+## Common AI Mistakes
+
+These show up often enough to watch for:
+
+<AccordionGroup>
+  <Accordion title="Inventing components that don't exist">
+    AI tools generate `<CodeBlock>`, `<Alert>`, `<Section>`, `<Callout>`, and other components that don't exist in Jamdesk. Stick to the components listed in the [overview](/components/overview).
+  </Accordion>
+  <Accordion title="Forgetting docs.json navigation">
+    Creating a page without adding it to `docs.json` is the most common mistake. The page will exist but won't appear in the sidebar. Always update navigation when creating pages.
+  </Accordion>
+  <Accordion title="Over-using callouts">
+    AI tools love wrapping every other paragraph in a `<Note>` or `<Warning>`. One or two callouts per page is plenty. If everything is important, nothing is.
+  </Accordion>
+  <Accordion title="Writing too much">
+    A 200-line page from AI usually has 100 lines of actual content. Look for repeated explanations, unnecessary background, and paragraphs that say the same thing in different words. Cut aggressively.
+  </Accordion>
+  <Accordion title="Generic descriptions">
+    "This powerful feature allows you to..." tells the reader nothing. Replace with what it actually does: "Send HTTP POST requests to your endpoint when events fire."
+  </Accordion>
+</AccordionGroup>
+
+## Keep Docs in Sync
+
+The hard part isn't writing docs — it's keeping them current when code changes.
+
+<Tabs>
+  <Tab title="Manual Prompting">
+    After shipping a feature, prompt your AI tool:
+
+    ```
+    I just added [feature]. Update the docs to reflect this change.
+    Reference the implementation in /src/[file] for accuracy.
+    ```
+  </Tab>
+  <Tab title="Automated with /update-jamdesk">
+    The `/update-jamdesk` skill for Claude Code analyzes your code changes and generates matching doc updates. Run it after implementing user-facing features:
+
+    ```
+    /update-jamdesk
+    ```
+
+    See [Automated Updates](/ai/automated-updates) for the full setup.
+  </Tab>
+</Tabs>
+
+## Page Skeleton
+
+Use this as a starting prompt when asking AI to create a new page:
 
 ```mdx
 ---
-title: Feature Overview
-description: What this feature does and why it matters
+title: Feature Name
+description: One sentence — what this page covers.
 ---
 
-One paragraph explaining the problem and audience.
+Opening paragraph: what problem this solves and who should read this.
+
+## Quick Start
+
+<Steps>
+  <Step title="First step">What to do.</Step>
+  <Step title="Second step">What to do next.</Step>
+</Steps>
 
 ## How It Works
 
-<Steps>
-  <Step title="Step one">Describe the first action.</Step>
-  <Step title="Step two">Describe the second action.</Step>
-</Steps>
+Explain the mechanics. Use code examples.
 
 ## What's Next?
 
 <Columns cols={2}>
-  <Card title="MDX Basics" icon="arrow-right" href="/content/mdx-basics">
-    Link to the next page.
+  <Card title="Related Page" icon="arrow-right" href="/path">
+    Why the reader would go here next
   </Card>
 </Columns>
 ```
@@ -84,10 +181,10 @@ One paragraph explaining the problem and audience.
 ## What's Next?
 
 <Columns cols={2}>
-  <Card title="Automated Doc Updates" icon="rotate" href="/ai/automated-updates">
-    Automatically update docs when code changes
+  <Card title="Automated Updates" icon="rotate" href="/ai/automated-updates">
+    Run `/update-jamdesk` to generate docs from code changes
   </Card>
   <Card title="MDX Components" icon="puzzle-piece" href="/components/overview">
-    Available components for your documentation
+    Full reference for available components
   </Card>
 </Columns>
