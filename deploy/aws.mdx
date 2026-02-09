@@ -42,21 +42,25 @@ These headers tell Jamdesk which domain is making the request. The `X-Jamdesk-Fo
 Your domain must be verified in the Jamdesk dashboard before CloudFront will serve content. Complete the DNS verification process after adding your domain.
 </Warning>
 
-## Step 3: Create a Cache Behavior for /docs
+## Step 3: Create Cache Behaviors
 
-Add a behavior to route `/docs/*` requests to your Jamdesk origin:
+Add behaviors to route `/docs/*` and asset requests to your Jamdesk origin:
 
 1. Go to the **Behaviors** tab
 2. Click **Create Behavior**
-3. Configure:
+3. Create three behaviors with these settings:
 
-| Setting | Value |
-|---------|-------|
-| Path pattern | `/docs/*` |
-| Origin | `jamdesk-docs-origin` |
-| Viewer protocol policy | Redirect HTTP to HTTPS |
-| Cache policy | CachingOptimized |
-| Origin request policy | AllViewerExceptHostHeader |
+| Path pattern | Origin | Cache policy | Origin request policy |
+|-------------|--------|-------------|----------------------|
+| `/docs/*` | `jamdesk-docs-origin` | CachingOptimized | AllViewerExceptHostHeader |
+| `/_next/*` | `jamdesk-docs-origin` | CachingOptimized | AllViewerExceptHostHeader |
+| `/_jd/*` | `jamdesk-docs-origin` | CachingOptimized | AllViewerExceptHostHeader |
+
+Set **Viewer protocol policy** to **Redirect HTTP to HTTPS** for all three.
+
+<Note>
+The `/_next/*` and `/_jd/*` behaviors are required for Next.js static assets (JS, CSS) and Jamdesk resources (fonts, images, branding) to load correctly.
+</Note>
 
 <Warning>
 The `AllViewerExceptHostHeader` policy is required. It forwards all headers except `Host`, allowing Jamdesk to receive the necessary request information.
@@ -97,6 +101,12 @@ Distribution Settings:
 │   ├── Custom Header: X-Forwarded-Host = yoursite.com
 │   └── Custom Header: X-Jamdesk-Forwarded-Host = yoursite.com
 ├── Behavior: /docs/*
+│   ├── Cache Policy: CachingOptimized
+│   └── Origin Request Policy: AllViewerExceptHostHeader
+├── Behavior: /_next/*
+│   ├── Cache Policy: CachingOptimized
+│   └── Origin Request Policy: AllViewerExceptHostHeader
+├── Behavior: /_jd/*
 │   ├── Cache Policy: CachingOptimized
 │   └── Origin Request Policy: AllViewerExceptHostHeader
 └── Alternate Domain: yoursite.com (with SSL certificate)

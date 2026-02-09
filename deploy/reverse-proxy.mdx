@@ -34,6 +34,20 @@ server {
         # Required for domain verification
         proxy_set_header X-Jamdesk-Forwarded-Host $host;
     }
+
+    # Next.js static assets (JS, CSS)
+    location /_next/ {
+        proxy_pass https://YOUR_SLUG.jamdesk.app;
+        proxy_ssl_server_name on;
+        proxy_set_header Host YOUR_SLUG.jamdesk.app;
+    }
+
+    # Jamdesk assets (fonts, images, branding)
+    location /_jd/ {
+        proxy_pass https://YOUR_SLUG.jamdesk.app;
+        proxy_ssl_server_name on;
+        proxy_set_header Host YOUR_SLUG.jamdesk.app;
+    }
 }
 ```
 
@@ -69,6 +83,14 @@ Use `mod_proxy` to forward `/docs` requests to Jamdesk:
     ProxyPass /docs https://YOUR_SLUG.jamdesk.app/docs
     ProxyPassReverse /docs https://YOUR_SLUG.jamdesk.app/docs
 
+    # Next.js static assets (JS, CSS)
+    ProxyPass /_next https://YOUR_SLUG.jamdesk.app/_next
+    ProxyPassReverse /_next https://YOUR_SLUG.jamdesk.app/_next
+
+    # Jamdesk assets (fonts, images, branding)
+    ProxyPass /_jd https://YOUR_SLUG.jamdesk.app/_jd
+    ProxyPassReverse /_jd https://YOUR_SLUG.jamdesk.app/_jd
+
     <Location /docs>
         RequestHeader set X-Forwarded-Host "yoursite.com"
         RequestHeader set X-Forwarded-Proto "https"
@@ -102,6 +124,19 @@ yoursite.com {
         }
     }
 
+    # Next.js static assets and Jamdesk assets
+    handle /_next/* {
+        reverse_proxy https://YOUR_SLUG.jamdesk.app {
+            header_up Host {upstream_hostport}
+        }
+    }
+
+    handle /_jd/* {
+        reverse_proxy https://YOUR_SLUG.jamdesk.app {
+            header_up Host {upstream_hostport}
+        }
+    }
+
     # Handle other routes
     handle {
         # Your main site configuration
@@ -123,7 +158,7 @@ For [Traefik](https://traefik.io/) users, configure a router and service:
 http:
   routers:
     docs-router:
-      rule: "Host(`yoursite.com`) && PathPrefix(`/docs`)"
+      rule: "Host(`yoursite.com`) && (PathPrefix(`/docs`) || PathPrefix(`/_next`) || PathPrefix(`/_jd`))"
       service: jamdesk-docs
       tls: {}
 
@@ -143,9 +178,11 @@ For [HAProxy](https://www.haproxy.org/), add backend and ACL rules:
 frontend https
     bind *:443 ssl crt /etc/ssl/certs/yoursite.pem
 
-    # Route /docs to Jamdesk backend
+    # Route /docs and assets to Jamdesk backend
     acl is_docs path_beg /docs
-    use_backend jamdesk_docs if is_docs
+    acl is_next path_beg /_next
+    acl is_jd path_beg /_jd
+    use_backend jamdesk_docs if is_docs or is_next or is_jd
 
     # Default backend for other requests
     default_backend main_site

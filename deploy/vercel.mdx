@@ -24,6 +24,14 @@ Add a `rewrites` configuration to your `vercel.json` file. If the file doesn't e
     {
       "source": "/docs/:path*",
       "destination": "https://YOUR_SLUG.jamdesk.app/docs/:path*"
+    },
+    {
+      "source": "/_next/:path*",
+      "destination": "https://YOUR_SLUG.jamdesk.app/_next/:path*"
+    },
+    {
+      "source": "/_jd/:path*",
+      "destination": "https://YOUR_SLUG.jamdesk.app/_jd/:path*"
     }
   ]
 }
@@ -32,6 +40,8 @@ Add a `rewrites` configuration to your `vercel.json` file. If the file doesn't e
 <Note>
 Replace `YOUR_SLUG` with your actual Jamdesk subdomain (e.g., `acme` if your docs are at `acme.jamdesk.app`).
 </Note>
+
+The `/_next/` and `/_jd/` rewrites are required for Next.js assets (JS, CSS) and Jamdesk resources (fonts, images, branding) to load correctly.
 
 ## Step 2: Deploy
 
@@ -55,9 +65,10 @@ Visit `https://yoursite.com/docs` to confirm your documentation is being served 
 | `destination` | The URL to proxy the request to |
 | `:path*` | A wildcard that captures all path segments after `/docs/` |
 
-The two rewrite rules handle:
+The rewrite rules handle:
 1. The base `/docs` path (e.g., `yoursite.com/docs`)
 2. All nested paths (e.g., `yoursite.com/docs/getting-started`)
+3. Next.js static assets (`/_next/`) and Jamdesk resources (`/_jd/`)
 
 ## Adding to Existing Rewrites
 
@@ -68,7 +79,9 @@ If you already have rewrites configured, add the Jamdesk rules to your existing 
   "rewrites": [
     { "source": "/api/:path*", "destination": "/api/:path*" },
     { "source": "/docs", "destination": "https://YOUR_SLUG.jamdesk.app/docs" },
-    { "source": "/docs/:path*", "destination": "https://YOUR_SLUG.jamdesk.app/docs/:path*" }
+    { "source": "/docs/:path*", "destination": "https://YOUR_SLUG.jamdesk.app/docs/:path*" },
+    { "source": "/_next/:path*", "destination": "https://YOUR_SLUG.jamdesk.app/_next/:path*" },
+    { "source": "/_jd/:path*", "destination": "https://YOUR_SLUG.jamdesk.app/_jd/:path*" }
   ]
 }
 ```
@@ -93,6 +106,14 @@ const nextConfig = {
       {
         source: "/docs/:path*",
         destination: "https://YOUR_SLUG.jamdesk.app/docs/:path*",
+      },
+      {
+        source: "/_next/:path*",
+        destination: "https://YOUR_SLUG.jamdesk.app/_next/:path*",
+      },
+      {
+        source: "/_jd/:path*",
+        destination: "https://YOUR_SLUG.jamdesk.app/_jd/:path*",
       },
     ];
   },
@@ -143,8 +164,10 @@ const JAMDESK_HOST = 'YOUR_SLUG.jamdesk.app';
 export function middleware(request: NextRequest) {
   const url = request.nextUrl;
 
-  // Only proxy /docs paths
-  if (!url.pathname.startsWith('/docs')) {
+  // Only proxy /docs and asset paths
+  if (!url.pathname.startsWith('/docs') &&
+      !url.pathname.startsWith('/_next') &&
+      !url.pathname.startsWith('/_jd')) {
     return NextResponse.next();
   }
 
@@ -161,7 +184,7 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/docs', '/docs/:path*'],
+  matcher: ['/docs', '/docs/:path*', '/_next/:path*', '/_jd/:path*'],
 };
 ```
 
