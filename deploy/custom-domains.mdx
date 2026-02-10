@@ -1,6 +1,6 @@
 ---
 title: Custom Domains
-description: Serve your docs from docs.yourdomain.com instead of the default *.jamdesk.app subdomain. DNS setup, SSL, and verification steps.
+description: Serve your docs from your own domain instead of the default *.jamdesk.app subdomain. DNS setup for subdomains and apex domains, SSL, and verification.
 ---
 
 Serve your docs from your own domain instead of the default `*.jamdesk.app` subdomain.
@@ -13,10 +13,10 @@ For a step-by-step dashboard walkthrough and DNS troubleshooting, see the [Help 
 
 <Steps>
   <Step title="Add domain in dashboard">
-    Go to your project **Settings** → **Domain** and enter your subdomain (e.g., `docs.example.com`).
+    Go to your project **Settings** → **Domain** and enter your domain (e.g., `docs.example.com` or `example.com`).
   </Step>
   <Step title="Configure DNS">
-    Add a CNAME record pointing to `cname.vercel-dns.com` at your DNS provider.
+    Add the DNS records shown in the dashboard to your DNS provider. The records depend on your domain type (see below).
   </Step>
   <Step title="Verify and wait">
     Jamdesk verifies ownership and provisions an SSL certificate automatically.
@@ -25,13 +25,25 @@ For a step-by-step dashboard walkthrough and DNS troubleshooting, see the [Help 
 
 ## DNS Configuration
 
-Add this CNAME record at your DNS provider:
+The records you need depend on whether you're using a subdomain or an apex (root) domain.
+
+### Subdomains (e.g., docs.example.com)
 
 | Type | Name | Value |
 |------|------|-------|
 | CNAME | `docs` | `cname.vercel-dns.com` |
+| TXT | `_jamdesk.docs` | *(shown in dashboard)* |
 
 The "Name" field is just the subdomain portion. For `docs.example.com`, enter `docs`.
+
+### Apex Domains (e.g., example.com)
+
+| Type | Name | Value |
+|------|------|-------|
+| A | `@` | `76.76.21.21` |
+| TXT | `_jamdesk` | *(shown in dashboard)* |
+
+Apex domains use an A record instead of CNAME because DNS standards (RFC 1034) prohibit CNAME records at the zone apex.
 
 <Note>
 DNS changes can take up to 48 hours to propagate, though most complete within minutes. Check status at [whatsmydns.net](https://www.whatsmydns.net/).
@@ -41,8 +53,8 @@ DNS changes can take up to 48 hours to propagate, though most complete within mi
 
 After adding DNS records, Jamdesk automatically:
 
-1. Detects the CNAME record
-2. Verifies domain ownership
+1. Detects your DNS records (CNAME or A record, plus TXT)
+2. Verifies domain ownership via the TXT record
 3. Provisions an SSL certificate via Let's Encrypt
 4. Routes traffic to your documentation
 
@@ -59,12 +71,9 @@ No manual certificate configuration needed.
 
 ## Root Domains
 
-CNAME records cannot be set on root domains (`example.com`) due to DNS standards. Options:
+Root (apex) domains like `example.com` are fully supported. The dashboard automatically shows the correct records — an A record pointing to `76.76.21.21` instead of a CNAME, since DNS standards prohibit CNAME records at the zone apex.
 
-1. **Use a subdomain** (recommended): `docs.example.com`
-2. **Use subpath hosting**: Serve docs at `example.com/docs` via reverse proxy
-
-See [Subpath Hosting](/deploy/subpath-hosting) for the second option.
+If you prefer a subdomain like `docs.example.com`, that works too.
 
 ## Multiple Domains
 
@@ -94,7 +103,7 @@ Orange cloud (proxied) mode can cause SSL conflicts and redirect loops.
 
 | Issue | Solution |
 |-------|----------|
-| Domain stuck on "Pending" | Check DNS records with `dig CNAME docs.yourdomain.com` |
+| Domain stuck on "Pending" | Check DNS records with `dig` (CNAME for subdomains, A for apex) |
 | SSL certificate errors | Ensure no CAA records block Let's Encrypt |
 | Redirect loops | Disable Cloudflare proxy (use gray cloud) |
 | CNAME not resolving | Verify record at DNS provider, wait for propagation |
