@@ -269,7 +269,10 @@ Ensure your route pattern includes the wildcard: `yoursite.com/docs*` (not just 
 </Accordion>
 
 <Accordion title="Assets not loading correctly">
-Check that the `X-Forwarded-Host` header is set correctly. This tells Jamdesk which domain to use for asset URLs.
+Two common causes:
+
+1. **Missing routes in `wrangler.toml`** — The `routes` array needs patterns for `/_next/*` and `/_jd/*` in addition to `/docs*`. Without them, asset requests bypass the Worker.
+2. **Missing `X-Forwarded-Host` header** — The Worker must set this to your domain so Jamdesk generates correct asset URLs.
 </Accordion>
 
 <Accordion title="403 Domain not authorized error">
@@ -283,8 +286,21 @@ If you see "Domain is not authorized to serve this content":
 The domain must be verified before the Worker can serve documentation.
 </Accordion>
 
-<Accordion title="Worker not triggering">
-Verify your domain is proxied through Cloudflare (orange cloud icon in DNS settings) and the route is correctly configured.
+<Accordion title="Worker not triggering on root (apex) domain">
+Workers only run on **proxied** (orange cloud) DNS records. If your A record is set to "DNS only" (gray cloud), requests go straight to the origin and skip the Worker entirely.
+
+**Fix:** Toggle the A record to proxied (orange cloud) in Cloudflare DNS. Same applies to subdomains — any record with a Worker route must be proxied.
+</Accordion>
+
+<Accordion title="Domain verification stuck on Pending">
+Jamdesk verifies ownership by reading your DNS record values directly. Cloudflare's proxy (orange cloud) masks these values, so verification can't complete.
+
+**Fix:**
+1. Set the DNS record to **DNS only** (gray cloud)
+2. Wait for verification to complete (status changes to **active** in the dashboard)
+3. Switch back to **Proxied** (orange cloud) so the Worker runs
+
+Short version: **gray cloud** to verify → **orange cloud** to serve.
 </Accordion>
 
 <Accordion title="Wrangler version too old">
