@@ -166,17 +166,11 @@ name = "docs-proxy"
 main = "index.js"
 compatibility_date = "2024-01-01"
 
-# Route configuration - replace with your domain
+# Single catch-all route — the worker handles path filtering internally
 routes = [
-  { pattern = "yoursite.com/docs*", zone_name = "yoursite.com" },
-  { pattern = "yoursite.com/_next/*", zone_name = "yoursite.com" },
-  { pattern = "yoursite.com/_jd/*", zone_name = "yoursite.com" },
+  { pattern = "yoursite.com/*", zone_name = "yoursite.com" },
 ]
 ```
-
-<Note>
-The `/_next/` and `/_jd/` routes are required for Next.js assets and Jamdesk resources (fonts, images, branding) to load correctly.
-</Note>
 
 ### Step 4: Deploy
 
@@ -265,14 +259,14 @@ Fix: Re-run the CLI and select the correct zone from the list, or switch to the 
 </Accordion>
 
 <Accordion title="404 errors on documentation pages">
-Ensure your route pattern includes the wildcard: `yoursite.com/docs*` (not just `yoursite.com/docs`).
+Ensure your route pattern uses a catch-all: `yoursite.com/*` (not just `yoursite.com/docs*`). The Worker's internal `shouldProxy()` function handles path filtering.
 </Accordion>
 
 <Accordion title="Assets not loading correctly">
 Two common causes:
 
-1. **Missing routes in `wrangler.toml`** — The `routes` array needs patterns for `/_next/*` and `/_jd/*` in addition to `/docs*`. Without them, asset requests bypass the Worker.
-2. **Missing `X-Forwarded-Host` header** — The Worker must set this to your domain so Jamdesk generates correct asset URLs.
+1. **Worker not running** — Ensure your DNS record is set to **Proxied** (orange cloud) in Cloudflare. Workers only run on proxied records.
+2. **Missing `X-Forwarded-Host` header** — The Worker must set this header so Jamdesk generates correct asset URLs.
 </Accordion>
 
 <Accordion title="403 Domain not authorized error">
