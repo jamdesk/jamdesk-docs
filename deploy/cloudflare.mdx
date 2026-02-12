@@ -139,7 +139,14 @@ export default {
       body: request.body,
     });
 
-    return fetch(proxyRequest);
+    // Cache all content types at Cloudflare edge (CF doesn't cache HTML by default).
+    // Cache duration is controlled by upstream Cache-Control headers.
+    return fetch(proxyRequest, {
+      cf: {
+        cacheEverything: true,
+        cacheTtlByStatus: { "500-599": 0 },
+      },
+    });
   },
 };
 ```
@@ -236,11 +243,18 @@ async function handleRequest(request) {
   // Required for domain verification
   headers.set("X-Jamdesk-Forwarded-Host", url.hostname);
 
+  // Cache all content types at Cloudflare edge (CF doesn't cache HTML by default).
+  // Cache duration is controlled by upstream Cache-Control headers.
   return fetch(new Request(proxyUrl, {
     method: request.method,
     headers: headers,
     body: request.body,
-  }));
+  }), {
+    cf: {
+      cacheEverything: true,
+      cacheTtlByStatus: { "500-599": 0 },
+    },
+  });
 }
 ```
 
@@ -306,6 +320,12 @@ Jamdesk verifies ownership by reading your DNS record values directly. Cloudflar
 3. Switch back to **Proxied** (orange cloud) so the Worker runs
 
 Short version: **gray cloud** to verify → **orange cloud** to serve.
+</Accordion>
+
+<Accordion title="How caching works">
+The Worker enables Cloudflare edge caching for all content types, including HTML. Cache duration is controlled by the upstream response headers — HTML is cached for 5 minutes, while static assets like images and fonts are cached much longer.
+
+After a deploy, updated content will appear within 5 minutes without any action needed. If you need to force-refresh immediately, use Cloudflare's **Purge Cache** feature in your dashboard (Caching → Configuration → Purge Everything).
 </Accordion>
 
 <Accordion title="Wrangler version too old">
