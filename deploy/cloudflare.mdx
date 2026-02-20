@@ -133,18 +133,23 @@ export default {
     // Required for domain verification
     headers.set("X-Jamdesk-Forwarded-Host", url.hostname);
 
+    // Don't follow redirects — let the browser handle them so the URL updates.
+    // Without this, redirects happen internally and the browser URL doesn't change,
+    // which causes the sidebar to mis-highlight the active page.
     const proxyRequest = new Request(proxyUrl, {
       method: request.method,
-      headers: headers,
+      headers,
       body: request.body,
+      redirect: "manual",
     });
 
     // Cache all content types at Cloudflare edge (CF doesn't cache HTML by default).
     // Cache duration is controlled by upstream Cache-Control headers.
+    // Never cache redirects or errors — they must always hit origin.
     return fetch(proxyRequest, {
       cf: {
         cacheEverything: true,
-        cacheTtlByStatus: { "500-599": 0 },
+        cacheTtlByStatus: { "300-399": 0, "500-599": 0 },
       },
     });
   },
@@ -243,16 +248,16 @@ async function handleRequest(request) {
   // Required for domain verification
   headers.set("X-Jamdesk-Forwarded-Host", url.hostname);
 
-  // Cache all content types at Cloudflare edge (CF doesn't cache HTML by default).
-  // Cache duration is controlled by upstream Cache-Control headers.
+  // Don't follow redirects — let the browser handle them so the URL updates
   return fetch(new Request(proxyUrl, {
     method: request.method,
-    headers: headers,
+    headers,
     body: request.body,
+    redirect: "manual",
   }), {
     cf: {
       cacheEverything: true,
-      cacheTtlByStatus: { "500-599": 0 },
+      cacheTtlByStatus: { "300-399": 0, "500-599": 0 },
     },
   });
 }
