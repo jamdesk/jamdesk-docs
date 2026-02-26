@@ -48,6 +48,15 @@ server {
         proxy_ssl_server_name on;
         proxy_set_header Host YOUR_SLUG.jamdesk.app;
     }
+
+    # AI chat endpoint
+    location /_chat {
+        proxy_pass https://YOUR_SLUG.jamdesk.app;
+        proxy_ssl_server_name on;
+        proxy_set_header Host YOUR_SLUG.jamdesk.app;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header X-Jamdesk-Forwarded-Host $host;
+    }
 }
 ```
 
@@ -90,6 +99,10 @@ Use `mod_proxy` to forward `/docs` requests to Jamdesk:
     # Jamdesk assets (fonts, images, branding)
     ProxyPass /_jd https://YOUR_SLUG.jamdesk.app/_jd
     ProxyPassReverse /_jd https://YOUR_SLUG.jamdesk.app/_jd
+
+    # AI chat endpoint
+    ProxyPass /_chat https://YOUR_SLUG.jamdesk.app/_chat
+    ProxyPassReverse /_chat https://YOUR_SLUG.jamdesk.app/_chat
 
     <Location /docs>
         RequestHeader set X-Forwarded-Host "yoursite.com"
@@ -137,6 +150,14 @@ yoursite.com {
         }
     }
 
+    handle /_chat {
+        reverse_proxy https://YOUR_SLUG.jamdesk.app {
+            header_up Host {upstream_hostport}
+            header_up X-Forwarded-Host {host}
+            header_up X-Jamdesk-Forwarded-Host {host}
+        }
+    }
+
     # Handle other routes
     handle {
         # Your main site configuration
@@ -158,7 +179,7 @@ For [Traefik](https://traefik.io/) users, configure a router and service:
 http:
   routers:
     docs-router:
-      rule: "Host(`yoursite.com`) && (PathPrefix(`/docs`) || PathPrefix(`/_next`) || PathPrefix(`/_jd`))"
+      rule: "Host(`yoursite.com`) && (PathPrefix(`/docs`) || PathPrefix(`/_next`) || PathPrefix(`/_jd`) || PathPrefix(`/_chat`))"
       service: jamdesk-docs
       tls: {}
 
@@ -182,7 +203,8 @@ frontend https
     acl is_docs path_beg /docs
     acl is_next path_beg /_next
     acl is_jd path_beg /_jd
-    use_backend jamdesk_docs if is_docs or is_next or is_jd
+    acl is_chat path_beg /_chat
+    use_backend jamdesk_docs if is_docs or is_next or is_jd or is_chat
 
     # Default backend for other requests
     default_backend main_site
