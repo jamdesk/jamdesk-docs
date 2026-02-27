@@ -1,0 +1,116 @@
+---
+title: AI Chat
+description: Every Jamdesk docs site includes a built-in AI chat assistant. Visitors ask questions and get answers with citations from your documentation.
+---
+
+Every Jamdesk site includes a chat assistant that answers visitor questions from your documentation. It retrieves relevant sections, sends them to Claude, and streams a response with links back to the source pages. Chat is enabled by default on all plans at no additional cost.
+
+![AI Chat panel showing a conversation with citation links](/images/ai/chat-conversation.webp)
+
+## Use Cases
+
+<Tabs>
+  <Tab title="API onboarding">
+    A developer integrating your API asks: *"How do I authenticate requests?"*
+
+    Chat retrieves your authentication page, returns the exact steps with a code example, and links to the source page.
+  </Tab>
+  <Tab title="Troubleshooting">
+    A user stuck on a problem asks: *"My build is failing with a timeout error"*
+
+    Chat finds your troubleshooting guide and returns the relevant fix without the user having to scan multiple pages.
+  </Tab>
+  <Tab title="Quick reference">
+    A returning user asks: *"What parameters does the /users endpoint accept?"*
+
+    Chat pulls the endpoint documentation and returns the parameter table with types and descriptions.
+  </Tab>
+</Tabs>
+
+## How It Works
+
+<Steps>
+  <Step title="Build indexes your docs">
+    During each build, Jamdesk splits your pages into sections and stores them as searchable embeddings.
+  </Step>
+  <Step title="Visitor asks a question">
+    The "Ask AI" button (or Cmd+I / Ctrl+I) opens a chat panel on any page.
+  </Step>
+  <Step title="AI answers from your docs">
+    Relevant sections are retrieved, sent to Claude as context, and the response streams back with citation links to the source pages.
+  </Step>
+</Steps>
+
+## Features
+
+| Feature | Detail |
+|---------|--------|
+| Streaming responses | Answers arrive in real-time |
+| Citation links | Each answer links to the docs pages it drew from |
+| Disambiguation | When a question matches multiple topics, the AI asks which one the visitor means |
+| Conversation context | 10-message history, persisted per browser tab |
+| Starter questions | Auto-generated from your docs, or set your own in docs.json |
+| Keyboard shortcuts | Cmd+I / Ctrl+I to toggle, Escape to close |
+| Markdown rendering | Code blocks, tables, and lists render inside responses |
+
+![Chat panel empty state with starter questions](/images/ai/chat-panel.webp)
+
+## Configuration
+
+```json docs.json
+{
+  "chat": {
+    "enabled": true,
+    "starterQuestions": [
+      "How do I get started?",
+      "What API endpoints are available?"
+    ]
+  }
+}
+```
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `enabled` | boolean | `true` | Set `false` to remove the chat panel and keyboard shortcut from your site |
+| `starterQuestions` | string[] | auto-generated | Up to 4 questions shown when the panel opens (5-200 chars each). Auto-generated during builds when omitted. Set to `[]` to show none |
+
+<Note>
+Chat is enabled by default. You only need the `chat` field in docs.json to customize starter questions or disable it entirely.
+</Note>
+
+To disable chat, set `enabled` to `false`:
+
+```json docs.json
+{
+  "chat": {
+    "enabled": false
+  }
+}
+```
+
+## Limits
+
+| Limit | Value |
+|-------|-------|
+| Max message length | 2,000 characters |
+| Max response length | 2,048 tokens |
+| Rate limit | 10 requests / 60 seconds per visitor per site |
+| Conversation history | 10 messages per tab |
+| Starter questions | 4 max |
+
+Chat works on custom domains. The `/_chat` endpoint is same-origin, so it functions on any domain where your docs are served.
+
+<Accordion title="How the retrieval pipeline works">
+  During each build, Jamdesk splits your pages into sections and stores vector embeddings for each one. When a visitor asks a question, the system runs a hybrid search (keyword matching combined with semantic similarity) to find the most relevant sections across your docs. Those sections are sent to Claude as context with instructions to answer only from the provided documentation. Citations are extracted by matching page references in Claude's response against the retrieved sections.
+</Accordion>
+
+## What's Next?
+
+<Columns cols={2}>
+  <Card title="MCP Server" icon="robot" href="/ai/mcp-server">
+    Let AI tools search and query your docs programmatically
+  </Card>
+  <Card title="docs.json Reference" icon="file-lines" href="/config/docs-json-reference">
+    All configuration fields including chat settings
+  </Card>
+</Columns>
