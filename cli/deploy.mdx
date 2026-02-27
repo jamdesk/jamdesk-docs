@@ -1,0 +1,134 @@
+---
+title: CLI Deploy
+description: Deploy documentation directly from the command line — upload, build, and go live without pushing to GitHub.
+---
+
+The `deploy` command packages your docs, uploads them to Jamdesk, and triggers a build from the terminal. Use it for quick iterations, testing changes, or projects not connected to a GitHub repo.
+
+## Quick Start
+
+```bash
+jamdesk login        # First time only
+jamdesk deploy       # From your project directory
+```
+
+## Options
+
+| Flag | Description |
+|------|-------------|
+| `--detach` | Queue the build and exit immediately (prints a dashboard link) |
+| `--full-rebuild` | Force a full rebuild, bypassing the build cache |
+| `--project <id>` | Deploy to a specific project ID (skips interactive selection) |
+
+`jamdesk push` is an alias for `jamdesk deploy`.
+
+## How It Works
+
+<Steps>
+  <Step title="Authenticate">
+    Verifies your session is valid. If your token has expired, you'll be prompted to run `jamdesk login`.
+  </Step>
+  <Step title="Load config">
+    Reads and validates `docs.json` from the current directory.
+  </Step>
+  <Step title="Resolve project">
+    Reads `projectId` from `docs.json`. If it's missing (first deploy), the CLI prompts you to select from your projects. Your choice is saved back to `docs.json` so the next deploy skips the prompt.
+
+    Use `--project <id>` to override.
+  </Step>
+  <Step title="Package files">
+    Creates a compressed tarball of your docs, respecting `.gitignore`. If any files look like they might contain secrets, the CLI prints a warning (but doesn't block the upload).
+  </Step>
+  <Step title="Upload">
+    Sends the tarball to Jamdesk via a presigned URL. Maximum upload size is 100 MB.
+  </Step>
+  <Step title="Build">
+    Queues a build and polls for status, printing each phase as it completes. Press Ctrl+C to stop polling — the build continues in the background.
+  </Step>
+  <Step title="Done">
+    Prints the live URL when the build finishes.
+  </Step>
+</Steps>
+
+## Build Phases
+
+During polling, you'll see each phase complete in sequence:
+
+| Phase | Description |
+|-------|-------------|
+| Extracting files | Unpacking the uploaded tarball |
+| Validating configuration | Checking `docs.json` schema and content |
+| Preparing content | Processing MDX files and assets |
+| Building documentation | Compiling pages and generating static artifacts |
+| Uploading to CDN | Pushing built output to the edge network |
+| Refreshing cache | Purging stale content from the CDN |
+
+## File Exclusions
+
+The following are always excluded from uploads, regardless of your `.gitignore`:
+
+`.git`, `node_modules`, `.next`, `.env`, `.env.*`, `*.pem`, `*.key`, `credentials.json`, `.gcloud`, `.DS_Store`, `Thumbs.db`
+
+Everything in your `.gitignore` is also excluded.
+
+### Secret file warnings
+
+The CLI warns (but doesn't block) when it detects files that look like secrets:
+
+- `.env` and `.env.*` files
+- `*.pem` and `*.key` files
+- `credentials.json`
+- `service_account*.json`
+- Files starting with `secret`
+
+Add them to `.gitignore` to suppress the warning and exclude them from uploads.
+
+## Error Reference
+
+| Error | Code | Cause | Fix |
+|-------|------|-------|-----|
+| Not logged in | `AUTH_REQUIRED` | No stored credentials | `jamdesk login` |
+| Session expired | `AUTH_EXPIRED` | Token refresh failed | `jamdesk login` |
+| Access denied | `FORBIDDEN` | Not a member of this project | Check project membership in dashboard |
+| Project not found | `NOT_FOUND` | Invalid project ID | Verify ID or remove `projectId` from docs.json |
+| Build in progress | `BUILD_IN_PROGRESS` | Another build is running | Wait or check dashboard |
+| Upload too large | `TOO_LARGE` | Project exceeds 100 MB | Exclude large files via `.gitignore` |
+| No files | `EMPTY_PROJECT` | All files excluded | Check `.gitignore` |
+| Config invalid | `CONFIG_NOT_FOUND` | Missing or invalid `docs.json` | Run from project root, check config |
+| Upload failed | `UPLOAD_FAILED` | Network issue during upload | Check internet, retry |
+| Build failed | `BUILD_FAILED` | Build service error | Check build logs in dashboard |
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title='"A build is already in progress"'>
+    Only one build runs at a time per project. Wait for the current build to finish — check status in the dashboard under **Deployments**.
+  </Accordion>
+
+  <Accordion title='"docs.json not found or invalid"'>
+    Make sure you're running the command from the directory that contains `docs.json`. Run `jamdesk validate` to check for config errors.
+  </Accordion>
+
+  <Accordion title='"Upload too large"'>
+    The 100 MB limit applies to the compressed tarball of all non-excluded files. Review what's being included — large images, videos, or data files are common causes. Add them to `.gitignore` to exclude.
+  </Accordion>
+
+  <Accordion title="Deploy hangs during polling">
+    Press Ctrl+C to exit — the build keeps running in the background. Check the dashboard for status. If this happens consistently, your network may be dropping the polling requests.
+  </Accordion>
+
+  <Accordion title='"No projects found"'>
+    You need at least one project in your Jamdesk account. Create one at [dashboard.jamdesk.com](https://dashboard.jamdesk.com).
+  </Accordion>
+</AccordionGroup>
+
+## What's Next?
+
+<Columns cols={2}>
+  <Card title="Deployment Workflow" icon="rotate" href="/development/deployment">
+    GitHub auto-deploy and deployment status
+  </Card>
+  <Card title="Authentication" icon="key" href="/cli/authentication">
+    Login flow, sessions, and troubleshooting
+  </Card>
+</Columns>

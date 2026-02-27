@@ -1,0 +1,140 @@
+---
+title: Authentication
+description: Log in, manage sessions, and understand how the CLI authenticates with Jamdesk.
+---
+
+The CLI uses browser-based authentication to connect to your Jamdesk account. You need to log in before deploying.
+
+## Login
+
+```bash
+jamdesk login
+```
+
+This opens the Jamdesk dashboard in your browser for authentication. Under the hood:
+
+1. The CLI starts a local HTTP server on `127.0.0.1:9876` (falls back to an OS-assigned port if 9876 is busy)
+2. Your browser opens to `dashboard.jamdesk.com/cli-auth`
+3. You authenticate using any dashboard login method (email/password, Google, GitHub)
+4. The dashboard sends your credentials back to the CLI's local server
+5. Credentials are stored in `~/.jamdeskrc`
+
+A state parameter is verified on callback to prevent cross-site request forgery. The login flow times out after 2 minutes.
+
+```bash Expected output
+$ jamdesk login
+ℹ Open this URL in your browser to log in:
+
+  https://dashboard.jamdesk.com/cli-auth?port=9876&state=abc123...
+
+ℹ Waiting for authentication...
+✔ Logged in as you@example.com
+```
+
+**Headless and SSH environments**: The URL is always printed to the terminal, even when the browser can't be opened. Copy and paste it into any browser.
+
+## Logout
+
+```bash
+jamdesk logout
+```
+
+Clears stored credentials from `~/.jamdeskrc`. Does nothing if you're not logged in.
+
+```bash Expected output
+$ jamdesk logout
+✔ Logged out (you@example.com)
+```
+
+## Whoami
+
+```bash
+jamdesk whoami
+```
+
+Shows your authenticated email and validates the session by refreshing the token. This is a live check, not a local cache read.
+
+Three possible states:
+
+<CodeGroup>
+```bash Logged in
+$ jamdesk whoami
+✔ Logged in as you@example.com
+```
+
+```bash Session expired
+$ jamdesk whoami
+⚠ Logged in as you@example.com (session expired)
+  Run `jamdesk login` to re-authenticate.
+```
+
+```bash Not logged in
+$ jamdesk whoami
+ℹ Not logged in. Run `jamdesk login` to authenticate.
+```
+</CodeGroup>
+
+## How Sessions Work
+
+Credentials are stored in `~/.jamdeskrc` as JSON with `0600` permissions (owner-only read/write):
+
+```json ~/.jamdeskrc
+{
+  "auth": {
+    "refreshToken": "AGK...",
+    "email": "you@example.com",
+    "uid": "abc123",
+    "expiresAt": 1700000000000
+  }
+}
+```
+
+The CLI uses a **refresh token + ID token** architecture:
+
+- **ID tokens** expire in ~1 hour and are used for API calls
+- The CLI **auto-refreshes** ID tokens using the stored refresh token, with a 5-minute buffer before expiry
+- Refresh tokens are long-lived but can be revoked (password change, account deletion)
+- If the refresh token is permanently invalid (`TOKEN_EXPIRED`, `USER_NOT_FOUND`, `INVALID_REFRESH_TOKEN`), stored auth is cleared automatically
+
+You don't need to manage tokens manually. The CLI handles refreshes transparently on every authenticated command.
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Login times out after 2 minutes">
+    The CLI's local callback server may be blocked by a firewall. Copy the printed URL and open it manually in your browser.
+
+    If port 9876 is in use by another process, the CLI will pick a different port automatically — check the URL in the terminal output.
+  </Accordion>
+
+  <Accordion title='"Session expired" on every command'>
+    Your refresh token is no longer valid. This happens after password changes or long periods of inactivity.
+
+    Run `jamdesk login` to get a fresh session.
+  </Accordion>
+
+  <Accordion title="Browser doesn't open">
+    This is expected in headless environments (SSH, Docker, CI). Copy the URL from the terminal and open it in any browser that can reach your machine's callback port.
+  </Accordion>
+
+  <Accordion title='"Not logged in" right after logging in'>
+    Check that `~/.jamdeskrc` exists and contains an `auth` key:
+
+    ```bash
+    cat ~/.jamdeskrc
+    ```
+
+    File permissions should be `0600`. If the file is missing, your home directory may have permission issues — check with `ls -la ~`.
+  </Accordion>
+</AccordionGroup>
+
+## What's Next?
+
+<Columns cols={2}>
+  <Card title="CLI Deploy" icon="cloud-arrow-up" href="/cli/deploy">
+    Deploy your docs from the terminal
+  </Card>
+  <Card title="CLI Overview" icon="terminal" href="/cli/overview">
+    All CLI commands at a glance
+  </Card>
+</Columns>
