@@ -1,0 +1,237 @@
+---
+title: CLI Issues
+description: Fix CLI login failures, deploy errors, dev server crashes, and other command-line problems.
+---
+
+Running into a CLI error? Match your problem below.
+
+## Authentication Issues
+
+<AccordionGroup>
+  <Accordion title='"Not logged in" or "Session expired"'>
+    Your stored credentials are missing or the refresh token is no longer valid.
+
+    **Fix:** Run `jamdesk login` to start a fresh session. This replaces whatever was in `~/.jamdeskrc`.
+
+    If the error keeps coming back immediately after logging in, check that `~/.jamdeskrc` was written:
+
+    ```bash
+    cat ~/.jamdeskrc
+    ```
+
+    The file should contain an `auth` object with `refreshToken`, `email`, and `uid`. If it's empty or missing, your home directory may have permission issues.
+  </Accordion>
+
+  <Accordion title="Login times out">
+    The CLI starts a local server on port 9876 to receive the auth callback from your browser. If the callback never arrives, the login times out after 2 minutes.
+
+    **Common causes:**
+    - A firewall is blocking the local server
+    - The browser tab was closed before completing authentication
+    - Port 9876 is taken (the CLI auto-picks another port, but the URL must match)
+
+    **Fix:** Copy the URL printed in the terminal and open it manually. Check that the port number in the URL matches what the CLI is listening on.
+  </Accordion>
+
+  <Accordion title="Browser doesn't open during login">
+    Normal in headless environments (SSH sessions, Docker containers, CI runners). The login URL is always printed to the terminal, even when no browser is available.
+
+    Copy it and open in any browser that can reach your machine on the callback port.
+  </Accordion>
+
+  <Accordion title='"session expired" after password change'>
+    Changing your Jamdesk password invalidates all existing refresh tokens. The CLI detects this (`TOKEN_EXPIRED` or `INVALID_REFRESH_TOKEN`) and clears stored auth automatically.
+
+    Run `jamdesk login` again.
+  </Accordion>
+</AccordionGroup>
+
+## Deploy Errors
+
+<AccordionGroup>
+  <Accordion title='"A build is already in progress"'>
+    Only one build runs at a time per project. The CLI returns this error (code `BUILD_IN_PROGRESS`) when a build is queued or running.
+
+    **Fix:** Wait for the current build to finish. Check **Deployments** in the dashboard for status. If a build appears stuck, ask the project owner to check the dashboard.
+  </Accordion>
+
+  <Accordion title='"docs.json not found or invalid"'>
+    No `docs.json` in the current directory, or it has JSON syntax errors.
+
+    **Fix:**
+    1. Make sure you're in the right directory: `ls docs.json`
+    2. Run `jamdesk validate` for specific error details
+    3. Check for missing commas, unclosed brackets, or trailing commas (the CLI uses JSON, not JSON5 for docs.json)
+  </Accordion>
+
+  <Accordion title='"Upload too large"'>
+    Your compressed tarball exceeds the 100 MB limit. Everything not excluded by `.gitignore` or the built-in exclusion list gets packaged.
+
+    **Fix:** Check what's being included. Common culprits: video files, large PDFs, uncompressed images, data dumps. Add them to `.gitignore`.
+
+    Always excluded regardless of `.gitignore`: `.git`, `node_modules`, `.next`, `.env*`, `*.pem`, `*.key`, `credentials.json`, `.DS_Store`.
+  </Accordion>
+
+  <Accordion title='"No files to deploy"'>
+    Every file matched an exclusion pattern. Nothing left to upload.
+
+    **Fix:** Check your `.gitignore`. If it's blocking MDX files or `docs.json`, the CLI has nothing to work with.
+  </Accordion>
+
+  <Accordion title='"Project not found" or "Access denied"'>
+    Either the `projectId` in `docs.json` doesn't match any project in your account, or you're not a member of that project.
+
+    **Fix:**
+    - Remove the `projectId` field from `docs.json` and re-run `jamdesk deploy` to pick a new project
+    - Verify you're logged in as the right account: `jamdesk whoami`
+    - Check project membership in the dashboard
+  </Accordion>
+
+  <Accordion title="Deploy hangs during build polling">
+    Build status is polled every 2 seconds. If your network is flaky, up to 3 consecutive poll failures are tolerated before the CLI gives up.
+
+    **Fix:** Press Ctrl+C. The build keeps running in the background. Check the dashboard for status. A link is printed when you exit.
+  </Accordion>
+
+  <Accordion title="Build failed">
+    Upload succeeded, but the build itself failed. You'll see the error from the build service in your terminal.
+
+    **Fix:** Check the build log in the dashboard under **Deployments**. Common causes: MDX syntax errors, missing pages referenced in navigation, invalid OpenAPI specs. Run `jamdesk validate` locally to catch these before deploying.
+  </Accordion>
+
+  <Accordion title="Secret file warnings">
+    You'll see a warning when files look like secrets (`.env`, `*.pem`, `*.key`, `credentials.json`, files starting with `secret`). This is a warning, not a blocker.
+
+    **Fix:** Add the files to `.gitignore` to exclude them from uploads. If they're intentional (e.g., example key files in your docs), ignore the warning.
+  </Accordion>
+</AccordionGroup>
+
+## Dev Server Issues
+
+<AccordionGroup>
+  <Accordion title="Dev server won't start">
+    Several things can prevent startup.
+
+    **Try in order:**
+    1. `jamdesk doctor` to check Node.js version (v20+ required) and environment
+    2. `jamdesk clean` to clear cached dependencies
+    3. `jamdesk dev --verbose` for detailed error output
+    4. `jamdesk dev --clean` to clear the build cache before starting
+  </Accordion>
+
+  <Accordion title="Port already in use">
+    The CLI tries 10 consecutive ports starting from your requested port (default 3000). If all 10 are taken, it fails.
+
+    **Fix:**
+    ```bash
+    # Find what's using the port
+    lsof -i :3000
+
+    # Pick a different port
+    jamdesk dev --port 3001
+
+    # Or set a permanent default
+    echo '{"defaultPort": 3001}' > ~/.jamdeskrc
+    ```
+  </Accordion>
+
+  <Accordion title="Turbopack cache corruption">
+    If the dev server is killed mid-compilation (force quit, system crash), the `.next` cache can corrupt. You'll see "corrupted database" or panic errors on next startup.
+
+    **Fix:**
+    ```bash
+    jamdesk dev --clean
+    ```
+
+    This wipes the `.next` directory and starts fresh.
+  </Accordion>
+
+  <Accordion title="Slow first run">
+    The first `jamdesk dev` installs runtime dependencies to `~/.jamdesk/node_modules`. This happens once and can take 1-2 minutes on slower connections.
+
+    Subsequent runs skip the install unless the CLI version changes.
+  </Accordion>
+
+  <Accordion title="Dependency install fails or hangs">
+    If `npm install` hangs during the first run, there's a 5-minute timeout.
+
+    **Fix:**
+    1. Check your internet connection
+    2. `jamdesk clean` to clear partial installs
+    3. Try again
+    4. If npm is consistently slow, check your npm registry configuration: `npm config get registry`
+  </Accordion>
+</AccordionGroup>
+
+## Validation & Link Checking
+
+<AccordionGroup>
+  <Accordion title="MDX syntax errors">
+    MDX treats `<` as a JSX tag opener. Writing `<50%` causes a parse error.
+
+    **Fix:** Escape with `&lt;` or rewrite. Run `jamdesk validate` for line numbers and suggestions.
+  </Accordion>
+
+  <Accordion title="Broken links found">
+    `jamdesk broken-links` found internal links pointing to pages that don't exist.
+
+    **Fix:** Check the file paths. Common mistakes: wrong case (`Quickstart` vs `quickstart`), including the `.mdx` extension, or old paths that were renamed.
+
+    The CLI suggests corrections for close matches (within 3 characters of a typo).
+  </Accordion>
+
+  <Accordion title="OpenAPI spec validation fails">
+    The CLI validates OpenAPI specs referenced in `docs.json`. Failures include invalid `$ref` references, missing required fields, or syntax errors.
+
+    **Fix:** Run `jamdesk openapi-check path/to/spec.yaml` for detailed output. Use the [Swagger Editor](https://editor.swagger.io) to debug complex specs.
+
+    <Note>Swagger 2.0 specs show a warning but still pass validation.</Note>
+  </Accordion>
+</AccordionGroup>
+
+## General Issues
+
+<AccordionGroup>
+  <Accordion title="Command not found: jamdesk">
+    Not installed globally, or your shell can't find the binary.
+
+    **Fix:**
+    ```bash
+    npm install -g jamdesk
+    ```
+
+    If you installed with `curl`, make sure `~/.jamdesk/bin` is in your `PATH`.
+  </Accordion>
+
+  <Accordion title="Permission denied errors">
+    Write access is needed for `~/.jamdesk` (cache) and `~/.jamdeskrc` (credentials).
+
+    **Fix:**
+    ```bash
+    ls -la ~/.jamdesk ~/.jamdeskrc
+    sudo chown -R $(whoami) ~/.jamdesk ~/.jamdeskrc
+    ```
+  </Accordion>
+
+  <Accordion title="Update fails">
+    `jamdesk update` wraps `npm install -g jamdesk@latest`. If npm has permission issues or the registry is unreachable, it fails.
+
+    **Fix:** Update manually:
+    ```bash
+    npm install -g jamdesk@latest
+    ```
+
+    If that also fails, check `npm config get registry` and try `sudo npm install -g jamdesk@latest`.
+  </Accordion>
+</AccordionGroup>
+
+## Still Stuck?
+
+<Columns cols={2}>
+  <Card title="CLI Overview" icon="terminal" href="/cli/overview">
+    Full command reference
+  </Card>
+  <Card title="Contact Support" icon="headset" href="/help/support/contact">
+    Include the full error output
+  </Card>
+</Columns>
