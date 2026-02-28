@@ -1,209 +1,72 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
-
-## Project Overview
-
-This is the **official Jamdesk documentation** - a content project containing MDX files that document the Jamdesk platform itself. It's built by the Jamdesk builder service and served at `jamdesk.com/docs`.
+Official Jamdesk documentation — served at `jamdesk.com/docs`.
 
 > **Build internals:** For MDX components, themes, and build service details, see `builder/CLAUDE.md`.
 
-## Development Commands
+## Development
+
+**NEVER start a dev server without explicit user permission.**
 
 ```bash
-# From the jamdesk monorepo root (../..):
+# From the jamdesk monorepo root:
 cd builder/build-service && node scripts/dev-project.cjs jamdesk-docs
-
-# Or using the builder CLI (if linked):
-cd builder && ./jd dev jamdesk-docs
 ```
 
-The dev server runs at `http://localhost:3000/introduction` by default.
+Dev server runs at `http://localhost:3000/introduction`. This project does NOT have `hostAtDocs` in docs.json — it's set at infrastructure level (Cloudflare Worker + middleware), so local dev serves at root, not `/docs`.
 
-### IMPORTANT: Development Server
+**Sidebar titles from frontmatter** only update on dev server restart (enhance-navigation runs once at startup).
 
-**NEVER start a development server without explicit user permission.** Always ask the user first before running any dev server command, even in auto or bypass mode. The user may already have a server running in another terminal.
+## Structure
 
-If you need to test changes, ask: "Should I start the dev server, or do you already have one running?"
-
-## Project Structure
+Two tabs: **Docs** (technical documentation) and **Help Center** (dashboard/product support).
 
 ```
 jamdesk-docs/
-├── docs.json           # Site configuration (theme, colors, navigation)
-├── introduction.mdx    # Root-level pages
+├── docs.json              # Navigation, theme (jam), colors, redirects
+├── introduction.mdx       # Root pages
 ├── quickstart.mdx
-├── how-jamdesk-works.mdx
-├── cli/                # CLI documentation
-│   └── overview.mdx
-├── components/         # Component documentation
-│   ├── overview.mdx
-│   ├── card.mdx
-│   ├── tabs.mdx
-│   ├── accordion.mdx
-│   ├── steps.mdx
-│   ├── expandable.mdx
-│   ├── frame.mdx
-│   └── code-group.mdx
-├── config/             # Configuration reference
-│   └── docs-json-reference.mdx
-├── content/            # Writing content guides
-│   └── code-blocks.mdx
-├── navigation/         # Navigation docs
-│   └── overview.mdx
-└── images/             # Logo and favicon SVGs
+├── setup/                 # Project setup, analytics, GitHub, monorepo, redirects
+├── ai/                    # AI features (chat, MCP, llms.txt, Claude Code, Cursor, Codex)
+├── components/            # 22 MDX component pages (card, tabs, accordion, steps, etc.)
+├── content/               # Writing guides (code blocks, frontmatter, MDX, SEO, snippets)
+├── customization/         # Theming, branding, custom CSS
+├── deploy/                # Deployment (custom domains, Vercel, Cloudflare, AWS, reverse proxy)
+├── development/           # Local preview, VS Code extension
+├── cli/                   # CLI docs (overview, auth, deploy)
+├── api-reference/         # OpenAPI example pages
+├── navigation/            # Navigation configuration
+├── reference/             # Changelog
+├── help/                  # Help Center (dashboard guides, troubleshooting, billing, FAQ)
+│   ├── getting-started/   # Onboarding, first build, dashboard tour
+│   ├── account/           # Settings, password, GitHub linking
+│   ├── projects/          # Creating, settings, team members, ownership transfer
+│   ├── builds/            # Triggering, monitoring, troubleshooting
+│   ├── billing/           # Plans, subscription management
+│   ├── troubleshooting/   # Error reference, DNS, build failures, login issues
+│   └── support/           # Contact, security
+├── openapi/               # OpenAPI spec files
+└── images/                # Logos, favicons
 ```
 
-## Key Files
+## Writing Guidelines
 
-- **docs.json**: Central configuration - theme (`jam`), colors, navigation structure, branding
-- **MDX files**: Documentation pages with frontmatter (`title`, `description`)
+- Every page needs `title` and `description` frontmatter
+- Start with the why, then show how — working examples for every feature
+- Use `<Columns>`, `<Card>`, `<Tabs>`, `<Steps>`, `<Accordion>`, `<Note>`/`<Warning>`/`<Tip>` — all globally available
+- Page paths in `docs.json` navigation omit `.mdx` extension
+- Icons use Font Awesome names (e.g., `book-open`, `code`, `rocket`)
+- Link to related pages at bottom with "What's Next?" cards
 
-## Writing Great Documentation
+## Adding Pages
 
-### Page Structure
-
-Every page should follow this pattern:
-
-```mdx
----
-title: Page Title
-description: Brief description for SEO and previews
----
-
-Opening paragraph explaining what this page covers.
-
-## First Section
-
-Content organized logically with clear headings.
-
-## What's Next?
-
-<Columns cols={2}>
-  <Card title="Related Topic" icon="icon-name" href="/path">
-    Brief description
-  </Card>
-</Columns>
-```
-
-### Writing Style
-
-1. **Start with the why** - Explain what problem something solves before how to use it
-2. **Use progressive disclosure** - Simple examples first, advanced options later
-3. **Show, don't tell** - Include working examples for every feature
-4. **Be concise** - One idea per paragraph, remove unnecessary words
-5. **Use active voice** - "Run this command" not "This command should be run"
-
-### Code Examples
-
-Always include complete, runnable examples:
-
-```mdx
-```bash
-# Good: Complete command with context
-jamdesk dev --port 3001
-```
-
-```bash
-# Bad: Incomplete or unclear
-dev -p
-```
-```
-
-### Component Usage Best Practices
-
-**Tabs** - Use for mutually exclusive options (npm vs yarn, languages):
-
-```mdx
-<Tabs>
-  <Tab title="npm">npm install jamdesk</Tab>
-  <Tab title="yarn">yarn add jamdesk</Tab>
-</Tabs>
-```
-
-**Accordions** - Use for optional/advanced content that shouldn't clutter the page:
-
-```mdx
-<Accordion title="Advanced Configuration" icon="gear">
-  Optional details that power users might need.
-</Accordion>
-```
-
-**Steps** - Use for sequential procedures:
-
-```mdx
-<Steps>
-  <Step title="Install">First step</Step>
-  <Step title="Configure">Second step</Step>
-  <Step title="Run">Final step</Step>
-</Steps>
-```
-
-**Cards** - Use for navigation and feature highlights:
-
-```mdx
-<Columns cols={2}>
-  <Card title="Quick Start" icon="rocket" href="/quickstart">
-    Get up and running in 5 minutes
-  </Card>
-</Columns>
-```
-
-**Callouts** - Use sparingly for important information:
-
-```mdx
-<Note>Helpful context or tips</Note>
-<Warning>Important caveats or requirements</Warning>
-<Tip>Optional optimization or best practice</Tip>
-```
-
-## Available MDX Components
-
-Components are globally available in all MDX files:
-
-**Layout**: `Card`, `Columns`, `Tabs`, `Tab`, `Accordion`, `AccordionGroup`, `Steps`, `Step`, `Expandable`, `Frame`, `CodeGroup`
-
-**Callouts**: `Note`, `Info`, `Warning`, `Tip`, `Check`, `Danger`
-
-**API**: `RequestExample`, `ResponseExample`
-
-## Content Conventions
-
-- Page paths in `docs.json` navigation omit the `.mdx` extension
-- Use relative paths from root for page references (e.g., `components/card`)
-- Icons use Font Awesome Light variants (e.g., `book-open`, `code`, `rocket`)
-- Images go in `/images/` and are referenced with absolute paths
-- Tables use standard markdown syntax with alignment
-
-## Navigation Updates
-
-When adding new pages:
-
-1. Create the `.mdx` file in the appropriate directory
-2. Add the page path to `docs.json` in the correct group
-3. Consider adding "What's Next?" cards linking to the new page from related pages
-
-## Testing Changes
-
-Before committing:
-
-1. Run the dev server and verify pages render correctly
-2. Check that navigation shows the page in the right location
-3. Test all code examples are syntactically valid
-4. Verify links to other pages work
-
-## Themes
-
-Three themes available: `jam` (default), `nebula`, `pulsar`
+1. Create `.mdx` file in the appropriate directory
+2. Add page path to `docs.json` navigation (under the correct tab/group)
+3. Add "What's Next?" cards from related pages
 
 ## Deployment
 
-Changes deploy automatically when pushed to the connected GitHub branch. The Jamdesk build service compiles MDX to HTML and deploys to CDN.
-
-To trigger a rebuild manually:
-
-1. Go to dashboard project settings
-2. Click "Rebuild"
+Auto-deploys when pushed to connected GitHub branch. Manual rebuild via dashboard.
 
 ---
-*Last reviewed: 2026-02-03*
+*Last reviewed: 2026-02-28*
