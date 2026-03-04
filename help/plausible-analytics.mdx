@@ -1,0 +1,142 @@
+---
+title: Plausible Analytics Integration
+description: Add Plausible Analytics to your documentation site. A privacy-focused, lightweight alternative to Google Analytics.
+---
+
+Add Plausible Analytics to your documentation site for traffic data without cookies or tracking scripts that follow users around the web.
+
+<Info>
+Plausible is open source, weighs under 1 KB, and doesn't require a cookie consent banner in most jurisdictions. It's a solid fit if you want simple, GDPR-compliant analytics.
+</Info>
+
+There are two ways to add Plausible — pick the one that matches your setup:
+
+| Setup | Use when | Field |
+|-------|----------|-------|
+| **Standard** | You're on Plausible's free plan, or paid without proxy needs | `domain` |
+| **Proxy script** | You're on a paid plan and want to bypass ad blockers | `scriptUrl` |
+
+## Standard Setup (domain)
+
+This is the default for most users. Register your site in Plausible and pass the domain.
+
+<Steps>
+
+### Sign up for Plausible
+
+Create an account at [Plausible Analytics](https://plausible.io/) and add your documentation site domain (e.g., `docs.example.com`).
+
+### Add the domain to docs.json
+
+```json
+{
+  "name": "My Docs",
+  "integrations": {
+    "plausible": {
+      "domain": "docs.example.com"
+    }
+  }
+}
+```
+
+Use the exact domain you registered — `docs.example.com`, not `www.docs.example.com`.
+
+</Steps>
+
+### Self-hosted server
+
+If you run the [Community Edition](https://github.com/plausible/community-edition), add the `server` field so the script and event API point to your instance:
+
+```json
+{
+  "name": "My Docs",
+  "integrations": {
+    "plausible": {
+      "domain": "docs.example.com",
+      "server": "https://analytics.example.com"
+    }
+  }
+}
+```
+
+`server` only works with `domain` — proxy scripts handle routing on their own.
+
+## Proxy Script Setup (scriptUrl)
+
+Plausible's paid plans offer proxy scripts with a unique filename (like `pa-XXXXX.js`). These bypass most ad blockers because the script URL doesn't match common filter lists.
+
+<Steps>
+
+### Get your proxy script URL
+
+In your Plausible site settings, find the proxy script section and copy the full URL. It looks like `https://plausible.io/js/pa-XXXXX.js`.
+
+### Add the script URL to docs.json
+
+```json
+{
+  "name": "My Docs",
+  "integrations": {
+    "plausible": {
+      "scriptUrl": "https://plausible.io/js/pa-XXXXX.js"
+    }
+  }
+}
+```
+
+No `domain` or `server` fields needed. Your site identity is embedded in the script ID — Plausible's CDN handles routing internally.
+
+</Steps>
+
+## Verifying the Installation
+
+After adding the integration:
+
+1. Trigger a rebuild of your docs
+2. Visit your live documentation site
+3. Check your Plausible dashboard — your visit should appear within a few seconds
+4. Or open DevTools, go to the Network tab, and look for a request to `plausible.io/js/script.js` (standard) or your `pa-XXXXX.js` script (proxy)
+
+<Note>
+Plausible shows data in real time — no waiting period like Google Analytics.
+</Note>
+
+## Configuration Reference
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `domain` | `string` | One of `domain` or `scriptUrl` | Your site's domain as registered in Plausible. Used as the `data-domain` attribute on the script tag. |
+| `scriptUrl` | `string` | One of `domain` or `scriptUrl` | Full URL to a Plausible paid proxy script (`pa-XXXXX.js`). Site identity is baked into the script — no domain needed. |
+| `server` | `string` | No | URL of a self-hosted Plausible server. Only used with `domain`, not `scriptUrl`. |
+
+## Troubleshooting
+
+<Accordion title="Not seeing any data in Plausible">
+  1. **Check the domain** — It must match exactly what you registered in Plausible (e.g., `docs.example.com`, not `www.docs.example.com`)
+  2. **Rebuild your docs** — Configuration changes require a new build to take effect
+  3. **Check for ad blockers** — Some browser extensions block analytics scripts, including Plausible. Consider the [proxy script setup](#proxy-script-setup-scripturl) to work around this
+  4. **Inspect the page source** — Look for a `<script>` tag with `data-domain` (standard) or your `pa-XXXXX.js` filename (proxy)
+</Accordion>
+
+<Accordion title="Using a custom domain or subdirectory">
+  Register the domain your users actually visit. If your docs are at `docs.example.com`, use that as the `domain` — not your root domain.
+</Accordion>
+
+<Accordion title="Script blocked by ad blockers">
+  Switch to the [proxy script setup](#proxy-script-setup-scripturl) — the unique filename bypasses most ad blocker filter lists. Self-hosting achieves the same result since the script loads from your own domain.
+</Accordion>
+
+<Accordion title="When to use domain vs scriptUrl">
+  Use `domain` if you're on the free plan or don't care about ad blockers. Use `scriptUrl` if you're on a paid plan and want maximum tracking coverage. Don't set both — pick one.
+</Accordion>
+
+## Related Articles
+
+<Columns cols={2}>
+  <Card title="Google Analytics" icon="chart-simple" href="/help/google-analytics">
+    Add GA4 tracking to your docs
+  </Card>
+  <Card title="Project Analytics" icon="chart-line" href="/setup/project-analytics">
+    View built-in Jamdesk analytics
+  </Card>
+</Columns>
