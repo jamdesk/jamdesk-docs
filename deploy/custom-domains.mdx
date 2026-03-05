@@ -5,10 +5,6 @@ description: Serve your docs from your own domain instead of the default *.jamde
 
 Serve your docs from your own domain instead of the default `*.jamdesk.app` subdomain.
 
-<Tip>
-For a step-by-step dashboard walkthrough and DNS troubleshooting, see the [Help Center guide](/help/custom-domains).
-</Tip>
-
 ## Setup Overview
 
 <Steps>
@@ -22,6 +18,34 @@ For a step-by-step dashboard walkthrough and DNS troubleshooting, see the [Help 
     Jamdesk verifies ownership and provisions an SSL certificate automatically.
   </Step>
 </Steps>
+
+## Hosting Options
+
+When adding a domain, choose your hosting mode:
+
+### Standard Domain
+
+Your documentation is served directly from Jamdesk at your custom domain:
+
+```
+docs.example.com → acme.jamdesk.app
+```
+
+DNS points to Jamdesk, and SSL certificates are handled automatically.
+
+### Host at /docs (Proxy-Based)
+
+Your documentation is served at a subpath on your existing website:
+
+```
+example.com/docs → acme.jamdesk.app/docs
+```
+
+You configure a proxy (Cloudflare, Vercel, nginx, etc.) to forward `/docs/*` requests to Jamdesk. See [Subpath Hosting](/deploy/subpath-hosting) for setup guides.
+
+<Note>
+Toggling "Host at /docs" triggers an automatic rebuild since the URL structure changes.
+</Note>
 
 ## DNS Configuration
 
@@ -61,7 +85,10 @@ After adding DNS records, Jamdesk automatically:
 Check verification status in **Settings** → **Domain**. Status shows as:
 - **Pending** - Waiting for DNS propagation
 - **Active** - Domain verified and serving traffic
+- **Needs Attention** - Configuration mismatch or conflict (check email notification)
 - **Error** - Configuration issue (see details in dashboard)
+
+Click **Refresh** in the dashboard to manually check verification status.
 
 ## SSL Certificates
 
@@ -90,6 +117,10 @@ To disconnect a custom domain:
 2. Click **Remove Domain**
 3. Your docs remain accessible at the `*.jamdesk.app` subdomain
 
+<Warning>
+Removing a domain that had "Host at /docs" enabled will trigger a rebuild to update URL paths.
+</Warning>
+
 ## Cloudflare Users
 
 If using Cloudflare as your DNS provider:
@@ -110,12 +141,29 @@ If using Cloudflare as your DNS provider:
 | SSL certificate errors | Ensure no CAA records block Let's Encrypt |
 | Redirect loops | If using Cloudflare, set to gray cloud during verification (see [Cloudflare Users](#cloudflare-users) above) |
 | CNAME not resolving | Verify record at DNS provider, wait for propagation |
+| Domain already in use | Domain is registered in Vercel from a previous setup — verification usually completes automatically |
+
+### Verify DNS with dig
+
+```bash
+# Check CNAME record (subdomains)
+dig CNAME docs.example.com
+
+# Check A record (apex domains)
+dig A example.com
+
+# Check TXT record
+dig TXT _jamdesk.example.com
+```
 
 For detailed diagnostics, see [DNS Troubleshooting](/help/troubleshooting/dns-issues).
 
 ## What's Next?
 
 <Columns cols={2}>
+  <Card title="Subdomains" icon="sitemap" href="/deploy/subdomains">
+    Configure subdomain-specific settings
+  </Card>
   <Card title="Subpath Hosting" icon="route" href="/deploy/subpath-hosting">
     Host docs at example.com/docs
   </Card>
