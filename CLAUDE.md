@@ -28,20 +28,21 @@ jamdesk-docs/
 ├── quickstart.mdx
 ├── setup/                 # Project setup, analytics, GitHub, monorepo, redirects
 ├── ai/                    # AI features (chat, MCP, llms.txt, Claude Code, Cursor, Codex)
+├── builds/                # Build triggering, monitoring, troubleshooting
 ├── components/            # 22 MDX component pages (card, tabs, accordion, steps, etc.)
 ├── content/               # Writing guides (code blocks, frontmatter, MDX, SEO, snippets)
 ├── customization/         # Theming, branding, custom CSS
-├── deploy/                # Deployment (custom domains, Vercel, Cloudflare, AWS, reverse proxy)
+├── deploy/                # Deployment (custom domains, subdomains, Vercel, Cloudflare, AWS, reverse proxy)
 ├── development/           # Local preview, VS Code extension
+├── integrations/          # GitHub, Google Analytics, GTM, Plausible, Slack
 ├── cli/                   # CLI docs (overview, auth, deploy)
 ├── api-reference/         # OpenAPI example pages
 ├── navigation/            # Navigation configuration
 ├── reference/             # Changelog
-├── help/                  # Help Center (dashboard guides, troubleshooting, billing, FAQ)
+├── help/                  # Help Center (account, billing, troubleshooting, FAQ, support)
 │   ├── getting-started/   # Onboarding, first build, dashboard tour
 │   ├── account/           # Settings, password, GitHub linking
 │   ├── projects/          # Creating, settings, team members, ownership transfer
-│   ├── builds/            # Triggering, monitoring, troubleshooting
 │   ├── billing/           # Plans, subscription management
 │   ├── troubleshooting/   # Error reference, DNS, build failures, login issues
 │   └── support/           # Contact, security
@@ -69,4 +70,4 @@ jamdesk-docs/
 Auto-deploys when pushed to connected GitHub branch. Manual rebuild via dashboard.
 
 ---
-*Last reviewed: 2026-02-28*
+*Last reviewed: 2026-03-04*
