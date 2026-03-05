@@ -1,0 +1,118 @@
+---
+title: Custom JavaScript
+description: Add custom JavaScript to your docs site for chat widgets, analytics, third-party integrations, and other client-side functionality.
+---
+
+Jamdesk lets you add custom JavaScript that runs on every page of your docs site. This is useful for chat widgets, analytics tools, feedback forms, and any other client-side scripts.
+
+## Adding Custom JavaScript
+
+Create a JavaScript file in your docs directory and reference it in `docs.json`:
+
+```json docs.json
+{
+  "styling": {
+    "js": "/script.js"
+  }
+}
+```
+
+```javascript script.js
+// Your custom JavaScript runs on every page
+console.log('Hello from custom JS!');
+```
+
+Your script is inlined directly into the page HTML, so it executes as the page loads.
+
+## Auto-Detection
+
+If you don't configure `styling.js`, Jamdesk automatically detects `.js` files in your project root directory. Just drop a `script.js` file next to your `docs.json` and it will be included.
+
+```
+my-docs/
+├── docs.json
+├── script.js      ← auto-detected
+├── introduction.mdx
+└── getting-started.mdx
+```
+
+When `styling.js` is configured in `docs.json`, auto-detection is disabled and only the specified files are used.
+
+## Multiple Files
+
+Include multiple scripts by passing an array:
+
+```json docs.json
+{
+  "styling": {
+    "js": ["/chat.js", "/analytics.js"]
+  }
+}
+```
+
+With auto-detection, all `.js` files in the root are included, sorted alphabetically. If you have `analytics.js` and `chat.js`, they load in that order.
+
+## Examples
+
+### Chat Widget (Crisp)
+
+```javascript script.js
+window.$crisp = [];
+window.CRISP_WEBSITE_ID = "your-website-id";
+(function () {
+  var d = document;
+  var s = d.createElement("script");
+  s.src = "https://client.crisp.chat/l.js";
+  s.async = 1;
+  d.getElementsByTagName("head")[0].appendChild(s);
+})();
+```
+
+### Custom Analytics
+
+```javascript script.js
+// Track outbound link clicks
+document.addEventListener('click', function (e) {
+  var link = e.target.closest('a[href^="http"]');
+  if (link && !link.href.includes(window.location.hostname)) {
+    console.log('Outbound click:', link.href);
+    // Send to your analytics service
+  }
+});
+```
+
+### Feedback Widget
+
+```javascript script.js
+// Load a feedback widget after the page is ready
+window.addEventListener('load', function () {
+  var s = document.createElement('script');
+  s.src = 'https://your-feedback-tool.com/widget.js';
+  s.setAttribute('data-project', 'your-project-id');
+  document.body.appendChild(s);
+});
+```
+
+## How It Works
+
+Your JavaScript files are read during the build process and embedded directly into the HTML of every page. The script tag is placed at the end of `<body>`, so the DOM is available when your code runs.
+
+In local development (`jamdesk dev`), scripts are picked up automatically and hot-reloaded on browser refresh.
+
+## Limitations
+
+- Scripts run on **every page** — there's no way to target specific pages
+- Changes require a **rebuild** (or browser refresh in local dev) to take effect
+- Scripts are **inlined** into the HTML, not served as separate files
+- For analytics, consider using the built-in [integrations](/integrations/google-analytics) instead, which handle consent and performance automatically
+
+## What's Next?
+
+<Columns cols={2}>
+  <Card title="Custom CSS" icon="paintbrush" href="/customization/custom-css">
+    Override theme styles with custom CSS
+  </Card>
+  <Card title="Integrations" icon="plug" href="/integrations/google-analytics">
+    Built-in analytics and third-party integrations
+  </Card>
+</Columns>
