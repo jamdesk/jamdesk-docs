@@ -15,7 +15,7 @@ cd builder/build-service && node scripts/dev-project.cjs jamdesk-docs
 
 Dev server runs at `http://localhost:3000/introduction`. This project does NOT have `hostAtDocs` in docs.json — it's set at infrastructure level (Cloudflare Worker + middleware), so local dev serves at root, not `/docs`.
 
-**Sidebar titles from frontmatter** only update on dev server restart (enhance-navigation runs once at startup).
+**Sidebar titles and API method badges from frontmatter** refresh whenever docs.json changes. Pure MDX frontmatter edits (without docs.json changes) require a dev server restart.
 
 ## Structure
 
