@@ -90,11 +90,12 @@ jamdesk --version
     Your docs will be available at **http://localhost:3000/docs**
   </Step>
   <Step title="Validate Before Deploying">
-    Check for configuration errors and broken links:
+    Check for configuration errors, broken links, and spelling:
 
     ```bash
     jamdesk validate
     jamdesk broken-links
+    jamdesk spellcheck
     ```
   </Step>
 </Steps>
@@ -218,6 +219,63 @@ Run `jamdesk <command> --help` for detailed information about any command.
   ```
 
   Detects links to missing pages and typos. See [Links & Navigation](/content/links#how-internal-links-are-detected) for details.
+</Accordion>
+
+<Accordion title="jamdesk spellcheck" icon="spell-check">
+  Check your documentation for spelling errors.
+
+  ```bash
+  jamdesk spellcheck
+  ```
+
+  **Example output:**
+  ```
+  getting-started.mdx:14 - "recieve"
+    └─ Did you mean: receive
+
+  Found 3 misspellings across 24 pages.
+  Tip: Run "jamdesk spellcheck --fix" to interactively fix or ignore words.
+  ```
+
+  Uses an English dictionary with 150+ built-in tech terms (API, GraphQL, Kubernetes, React, etc.) so common jargon doesn't flag. Skips code blocks, inline code, frontmatter, JSX, URLs, and file paths.
+
+  **Options:**
+
+  | Flag | Description |
+  |------|-------------|
+  | `--fix` | Interactively fix misspellings or add to ignore list |
+  | `--json` | Output as JSON (for CI pipelines) |
+  | `-v, --verbose` | Show each file as it's checked |
+
+  **Interactive fix mode (`--fix`)** steps through each unique misspelled word:
+
+  ```
+  1/10  "recieve" — found in 3 files
+        intro.mdx:14, setup.mdx:7, guide.mdx:22
+
+  ? What do you want to do?
+  ❯ Fix → receive
+    Ignore (add to docs.json)
+    Skip
+  ```
+
+  - **Fix** replaces the word with a suggestion across all files (prose-safe — won't modify code blocks or JSX attributes)
+  - **Ignore** adds the word to `spellcheck.ignore` in your docs.json
+  - **Skip** does nothing
+
+  Changes are previewed and confirmed before applying.
+
+  **Custom ignore list:** Add project-specific terms to your docs.json:
+
+  ```json docs.json
+  {
+    "spellcheck": {
+      "ignore": ["YourProduct", "kubectl", "Terraform"]
+    }
+  }
+  ```
+
+  Your project name from `docs.json` is automatically ignored.
 </Accordion>
 
 <Accordion title="jamdesk openapi-check" icon="file-code">
