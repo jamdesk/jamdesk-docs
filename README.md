@@ -11,7 +11,7 @@
 <p align="center">
   <a href="https://www.jamdesk.com/docs"><img src="https://img.shields.io/badge/docs-jamdesk.com%2Fdocs-635BFF" alt="Documentation"></a>
   <a href="https://www.npmjs.com/package/jamdesk"><img src="https://img.shields.io/npm/v/jamdesk" alt="npm version"></a>
-  <a href="LICENSE"><img src="https://img.shields.io/badge/license-CC%20BY%204.0-green" alt="License: CC BY 4.0"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache%202.0-blue" alt="License: Apache 2.0"></a>
 </p>
 
 # Jamdesk Documentation
@@ -105,4 +105,4 @@ All site configuration lives in [`docs.json`](docs.json) — navigation structur
 
 ## License
 
-Content in this repository is licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). See [LICENSE](LICENSE) for the full text.
+This project is licensed under the [Apache License 2.0](LICENSE).
