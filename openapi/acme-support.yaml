@@ -6,11 +6,37 @@ info:
     The Acme Support API lets you create and track customer support tickets.
     Use it to post new issues from your product and keep users updated on status.
 servers:
-  - url: https://api.acme.com/v1
-security:
-  - bearerAuth: []
+  - url: https://jamdesk-docs.jamdesk.app/api/playground/demo
+security: []
 paths:
   /tickets:
+    get:
+      summary: List support tickets
+      description: Retrieve all open support tickets.
+      operationId: listTickets
+      responses:
+        "200":
+          description: Ticket list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  tickets:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/TicketSummary"
+                  total:
+                    type: integer
+              example:
+                tickets:
+                  - id: "tkt_9S8L2"
+                    customer_id: "cus_2X9W8"
+                    subject: "Export stuck on step 3"
+                    priority: "high"
+                    status: "open"
+                    created_at: "2026-02-04T16:12:00Z"
+                total: 1
     post:
       summary: Create a support ticket
       description: Create a new ticket for a customer issue or request.
@@ -50,12 +76,37 @@ paths:
               example:
                 code: "invalid_request"
                 message: "subject is required"
+  /tickets/{ticket_id}:
+    get:
+      summary: Get a support ticket
+      description: Retrieve a specific support ticket by its ID.
+      operationId: getTicket
+      parameters:
+        - name: ticket_id
+          in: path
+          required: true
+          description: Unique ticket identifier
+          schema:
+            type: string
+          example: "tkt_9S8L2"
+      responses:
+        "200":
+          description: Ticket details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Ticket"
+              example:
+                id: "tkt_9S8L2"
+                customer_id: "cus_2X9W8"
+                subject: "Export stuck on step 3"
+                priority: "high"
+                status: "open"
+                tags: ["export", "bug"]
+                message: "The export job fails with error 504 after 2 minutes."
+                created_at: "2026-02-04T16:12:00Z"
+                updated_at: "2026-02-04T16:12:00Z"
 components:
-  securitySchemes:
-    bearerAuth:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT
   schemas:
     CreateTicketRequest:
       type: object
@@ -80,8 +131,9 @@ components:
         message:
           type: string
           description: Detailed problem description.
-    Ticket:
+    TicketSummary:
       type: object
+      description: Abbreviated ticket for list responses (excludes message and tags).
       properties:
         id:
           type: string
@@ -95,6 +147,33 @@ components:
           type: string
           enum: [open, pending, resolved]
         created_at:
+          type: string
+          format: date-time
+    Ticket:
+      type: object
+      description: Full ticket detail including message and tags.
+      properties:
+        id:
+          type: string
+        customer_id:
+          type: string
+        subject:
+          type: string
+        priority:
+          type: string
+        status:
+          type: string
+          enum: [open, pending, resolved]
+        tags:
+          type: array
+          items:
+            type: string
+        message:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
           type: string
           format: date-time
     Error:
