@@ -1,0 +1,188 @@
+---
+title: API Playground
+description: Let developers test your API endpoints directly from your docs with the interactive playground — fill in parameters, see live code examples, and send real requests.
+---
+
+The API playground adds an interactive "Try it" button to your API endpoint pages. Developers can fill in parameters, watch code examples update in real time, and send actual HTTP requests — all without leaving your docs.
+
+<Frame>
+  <img src="/images/playground/playground-modal.webp" alt="API playground modal showing parameter form on the left and live code examples on the right" />
+</Frame>
+
+## Quick Start
+
+Add the `playground` field to your `docs.json` to enable the playground on all API endpoint pages:
+
+```json docs.json
+{
+  "api": {
+    "playground": {
+      "display": "interactive"
+    }
+  }
+}
+```
+
+That's it — every page with an `openapi:` or `api:` frontmatter field now shows a "Try it" button. Requests are automatically proxied through a server-side relay to avoid CORS issues.
+
+## Display Modes
+
+The `display` field controls what the playground can do:
+
+| Mode | "Try it" Button | Fill Params | Live Code | Send Request |
+|------|:-:|:-:|:-:|:-:|
+| `"interactive"` | ✓ | ✓ | ✓ | ✓ |
+| `"simple"` | ✓ | ✓ | ✓ | ✗ |
+| `"none"` (default) | ✗ | ✗ | ✗ | ✗ |
+
+<Tabs>
+  <Tab title="Interactive">
+    Full playground experience. Developers fill in parameters, see code examples update live, and send real HTTP requests. Responses display inline with status codes, timing, and formatted bodies.
+
+    ```json docs.json
+    {
+      "api": {
+        "playground": {
+          "display": "interactive"
+        }
+      }
+    }
+    ```
+  </Tab>
+  <Tab title="Simple">
+    Read-only mode — no Send button. Developers can fill in parameters and copy generated code examples, but can't execute requests. Useful when your API requires authentication that can't be shared in docs.
+
+    ```json docs.json
+    {
+      "api": {
+        "playground": {
+          "display": "simple"
+        }
+      }
+    }
+    ```
+  </Tab>
+</Tabs>
+
+## Authentication
+
+If your API requires authentication (configured via `api.mdx.auth.method` in `docs.json`), the playground shows an auth input field at the top of the parameter form. Developers enter their API key or token directly in the modal.
+
+Credentials are held in memory only for the current session — they are never saved to `localStorage` or persisted between visits.
+
+## Pre-filling Example Values
+
+When your OpenAPI spec includes `example` values on parameters and request bodies, the playground can pre-fill them:
+
+```json docs.json
+{
+  "api": {
+    "examples": {
+      "prefill": true
+    }
+  }
+}
+```
+
+This saves developers time by showing realistic values they can modify rather than starting from empty fields.
+
+## Per-Page Override
+
+Override the global display mode on individual pages using the `playground` frontmatter field:
+
+```mdx
+---
+title: Create Ticket
+openapi: POST /tickets
+playground: interactive
+---
+```
+
+Useful when you want the playground disabled globally but enabled on specific demo endpoints, or vice versa.
+
+| Frontmatter | Behavior |
+|-------------|----------|
+| `playground: interactive` | Full playground on this page |
+| `playground: simple` | Code-only playground on this page |
+| `playground: none` | No playground on this page |
+
+## How It Works
+
+<Steps>
+  <Step title="Click 'Try it'">
+    The playground opens as a full-screen modal overlay. Your docs page stays intact underneath.
+  </Step>
+  <Step title="Fill in parameters">
+    Path, query, header, and body parameters are shown as form fields. Required fields are marked. The base URL is pulled from your OpenAPI spec's `servers` field.
+  </Step>
+  <Step title="Watch code update">
+    As you type, code examples regenerate in real time across all configured languages. Copy any example with one click.
+  </Step>
+  <Step title="Send the request">
+    In interactive mode, click Send (or press `Ctrl/Cmd+Enter`) to execute the request. The response displays below with status code, duration, and formatted body.
+  </Step>
+</Steps>
+
+<Tip>
+When the playground is open, the URL updates to include `?playground=open`. Share this URL to link someone directly to the playground view of an endpoint.
+</Tip>
+
+## Keyboard Shortcuts
+
+| Shortcut | Action |
+|----------|--------|
+| `Ctrl/Cmd + Enter` | Send request |
+| `Escape` | Close playground |
+
+## Works With Both API Page Types
+
+The playground works on pages using either the `openapi:` or `api:` frontmatter format:
+
+<Tabs>
+  <Tab title="OpenAPI pages">
+    Parameters and schemas are pulled automatically from your OpenAPI spec. No additional setup needed.
+
+    ```mdx
+    ---
+    openapi: POST /tickets
+    ---
+    ```
+  </Tab>
+  <Tab title="MDX api: pages">
+    Parameters are extracted from your `<ParamField>` components. The base URL comes from `api.mdx.server` in your docs.json.
+
+    ```mdx
+    ---
+    api: GET /tickets/{ticket_id}
+    ---
+    ```
+  </Tab>
+</Tabs>
+
+## Local Development
+
+When running `jamdesk dev`, the "Try it" buttons are visible but the playground itself is a production-only feature. Clicking "Try it" in local dev shows a brief notification instead of opening the modal. Deploy your docs to use the full playground.
+
+## Try It Live
+
+This documentation site has the playground enabled. Visit the [OpenAPI Example](/api-reference/openapi-example) page and click "Try it" to see it in action with the demo Acme Support API.
+
+## What's Next?
+
+<Columns cols={2}>
+  <Card title="OpenAPI Example" icon="plug" href="/api-reference/openapi-example">
+    See a live playground on an auto-generated endpoint page
+  </Card>
+  <Card title="docs.json Reference" icon="file-lines" href="/config/docs-json-reference">
+    Full configuration reference including api.playground
+  </Card>
+</Columns>
+
+<Columns cols={2}>
+  <Card title="Request/Response Examples" icon="code" href="/api-reference/request-response-examples">
+    Hand-authored API endpoint pages with MDX components
+  </Card>
+  <Card title="Code Examples" icon="terminal" href="/config/docs-json-reference#apiexampleslanguages">
+    Configure which languages appear in code examples
+  </Card>
+</Columns>
