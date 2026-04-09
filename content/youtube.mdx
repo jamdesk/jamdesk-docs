@@ -1,0 +1,122 @@
+---
+title: YouTube Embeds
+sidebarTitle: YouTube
+description: Embed YouTube videos and Shorts in your documentation. Lazy-loaded player, custom start times, and vertical 9:16 Shorts.
+---
+
+The `<YouTube>` component embeds videos with lazy loading, rounded corners, and no related video clutter. It shows a thumbnail and play button on page load, then swaps in the full YouTube player when someone clicks.
+
+## Embed a YouTube Video
+
+Pass the video ID as the `id` prop:
+
+```mdx
+<YouTube id="dQw4w9WgXcQ" />
+```
+
+<YouTube id="dQw4w9WgXcQ" />
+
+No iframe loads until the viewer clicks play. The page stays fast because the component uses [lite-youtube-embed](https://github.com/nicolegoesdigital/lite-youtube-embed) under the hood — a thumbnail image and a few kilobytes of CSS instead of the 800KB+ YouTube iframe bundle.
+
+## Props
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `id` | `string` | — | **Required.** The YouTube video ID. |
+| `title` | `string` | `"YouTube video"` / `"YouTube Short"` | Accessibility label for the embed. Screen readers use this text. |
+| `start` | `number` | `0` | Start playback at this many seconds into the video. |
+| `short` | `boolean` | `false` | Render as a vertical 9:16 YouTube Short instead of a 16:9 video. |
+
+## Start at a Specific Time
+
+The `start` prop jumps to a timestamp (in seconds) when playback begins:
+
+```mdx
+<YouTube id="dQw4w9WgXcQ" start={60} />
+```
+
+<YouTube id="dQw4w9WgXcQ" start={60} />
+
+Playback starts at the 1-minute mark. Decimal values are floored to whole seconds.
+
+## Finding the Video ID
+
+<Tip>
+The video ID is the string after `v=` in a YouTube URL.
+
+- `youtube.com/watch?v=dQw4w9WgXcQ` → ID is `dQw4w9WgXcQ`
+- `youtu.be/dQw4w9WgXcQ` → ID is `dQw4w9WgXcQ`
+
+Copy the ID, not the full URL.
+</Tip>
+
+## YouTube Shorts
+
+YouTube Shorts are vertical videos with a 9:16 aspect ratio. Embedding a Short with a standard 16:9 player adds thick black bars on both sides — the video is crammed into a letterbox meant for landscape content.
+
+The `short` prop fixes this. It renders the embed at 9:16, centered on the page at 360px wide, with rounded corners. The result matches how Shorts look on mobile.
+
+### How to Embed a Short
+
+```mdx
+<YouTube id="ZoS4HcvotlQ" short />
+```
+
+<YouTube id="ZoS4HcvotlQ" short />
+
+### Finding the Short ID
+
+The Short ID is the path segment after `/shorts/` in the URL:
+
+- `youtube.com/shorts/ZoS4HcvotlQ` → ID is `ZoS4HcvotlQ`
+
+These IDs follow the same 11-character format as regular YouTube videos. You can test any Short ID with the standard `<YouTube>` component too — but without `short`, it renders in 16:9 with black bars.
+
+### Rendering Details
+
+- **Width:** Capped at 360px and centered. This matches YouTube's own mobile Shorts player width.
+- **Aspect ratio:** 9:16 via CSS `aspect-ratio`, so the container scales cleanly on smaller screens.
+- **Corners:** Rounded with `border-radius` to stay consistent with other Jamdesk media embeds.
+- **Related videos:** Disabled (`rel=0`) — same as standard embeds.
+
+### Performance Difference
+
+Standard YouTube embeds use `lite-youtube-embed`, which loads zero YouTube JavaScript upfront. The page displays a thumbnail image; the full player iframe loads only when a viewer clicks play.
+
+Shorts work differently. Because `lite-youtube-embed` doesn't support vertical aspect ratios, Shorts use a direct `<iframe>` with `loading="lazy"`. The browser defers loading until the iframe scrolls near the viewport, but once visible, the full YouTube player initializes — scripts, styles, and all.
+
+<Note>
+On a page with one or two Shorts, the difference is negligible. On a page with many Shorts, the extra iframes add real weight. If you're embedding more than three or four Shorts on one page, consider linking to them instead or placing them behind a tab to keep the initial load lean.
+</Note>
+
+## Using iFrames Directly
+
+For cases where you need full control over embed parameters, you can use a raw iframe:
+
+```html
+<iframe
+  className="w-full aspect-video rounded-xl"
+  src="https://www.youtube.com/embed/VIDEO_ID"
+  title="YouTube video player"
+  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+  allowFullScreen
+/>
+```
+
+<Note>
+The `<YouTube>` component is the better default. It lazy-loads the player, strips related videos, and handles Shorts aspect ratios. Use raw iframes only when you need embed parameters that the component doesn't expose.
+</Note>
+
+## What's Next?
+
+<Columns cols={3}>
+  <Card title="Images" icon="image" href="/content/images">
+    Markdown images, dimensions, and captions
+  </Card>
+  <Card title="Videos" icon="video" href="/content/videos">
+    Local MP4 and WebM files
+  </Card>
+  <Card title="iFrames" icon="code" href="/content/iframes">
+    Vimeo, CodePen, Figma, and more
+  </Card>
+</Columns>
