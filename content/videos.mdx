@@ -1,0 +1,86 @@
+---
+title: Videos
+description: Embed local MP4 and WebM video files in your docs with the Video component or markdown syntax.
+---
+
+Store `.mp4` or `.webm` files in a `/videos` directory inside your project and reference them directly. Jamdesk renders an HTML5 player with controls, rounded corners, and consistent spacing.
+
+## Markdown Syntax
+
+The same `![alt](path)` pattern you use for images works for video files. Jamdesk checks the file extension and renders a video player instead of an `<img>` tag:
+
+```markdown
+![Never Gonna Give You Up](/videos/never-gonna-give-you-up.mp4)
+```
+
+![Never Gonna Give You Up](/videos/never-gonna-give-you-up.mp4)
+
+This is the fastest way to drop a video into a page. You get a standard player with play/pause, volume, progress bar, and fullscreen -- no extra props needed. If you want to control playback behavior (autoplay, looping, muting), use the `<Video>` component instead.
+
+## Video Component
+
+The `<Video>` component exposes HTML5 video attributes as props, giving you control over how the player behaves:
+
+```mdx
+<Video src="/videos/never-gonna-give-you-up.mp4" title="Rick Astley" />
+```
+
+<Video src="/videos/never-gonna-give-you-up.mp4" title="Rick Astley" />
+
+The `title` prop sets the `aria-label` on the video element, which screen readers announce when a user navigates to it. Always include one for accessibility.
+
+## Props
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `src` | `string` | — | **Required.** Path to the video file. |
+| `title` | `string` | — | Accessibility label for screen readers. |
+| `controls` | `boolean` | `true` | Show the browser's built-in player controls. |
+| `autoPlay` | `boolean` | `false` | Begin playing as soon as the video is visible. |
+| `muted` | `boolean` | `false` | Start with audio muted. |
+| `loop` | `boolean` | `false` | Restart from the beginning when the video ends. |
+| `width` | `string` | — | CSS width value (e.g., `"400px"`, `"100%"`). |
+| `height` | `string` | — | CSS height value. |
+
+## GIF Replacement
+
+Animated GIFs balloon in file size fast -- a 5-second UI recording can easily hit 10MB as a GIF but stay under 500KB as an MP4. Replace GIFs with a silent, looping video and hide the player chrome:
+
+```mdx
+<Video src="/videos/ui-demo.mp4" autoPlay muted loop controls={false} />
+```
+
+The result looks and behaves like a GIF (plays inline, loops forever, no controls) but loads far faster and stays sharp at any resolution.
+
+<Note>
+Browsers block unmuted autoplay. If you set `autoPlay` without `muted`, the video won't play -- it will sit on the first frame with no error. Always pair the two together.
+</Note>
+
+## Supported Formats
+
+| Format | Extension | Browser Support |
+|--------|-----------|-----------------|
+| MP4 (H.264) | `.mp4` | All browsers, including Safari and iOS |
+| WebM (VP9) | `.webm` | Chrome, Firefox, Edge -- smaller files at comparable quality |
+
+MP4 is the safe default. Every browser and device handles it. WebM produces smaller files but Safari and iOS don't support it, which means mobile readers on Apple devices see nothing.
+
+Video files can be up to **100MB**. For anything longer than a few minutes, host it on YouTube and use the [`<YouTube>` component](/content/youtube) instead -- streaming from a CDN built for video will always outperform serving large files from your docs.
+
+<Tip>
+Compress videos before committing them. Tools like [FFmpeg](https://ffmpeg.org/) and [Handbrake](https://handbrake.fr/) can cut file sizes dramatically without visible quality loss: `ffmpeg -i input.mp4 -crf 28 -preset slow output.mp4`
+</Tip>
+
+## What's Next?
+
+<Columns cols={3}>
+  <Card title="Images" icon="image" href="/content/images">
+    Markdown images, dimensions, and captions
+  </Card>
+  <Card title="YouTube Embeds" icon="youtube" href="/content/youtube">
+    YouTube videos and Shorts
+  </Card>
+  <Card title="iFrames" icon="code" href="/content/iframes">
+    Vimeo, CodePen, Figma, and more
+  </Card>
+</Columns>
