@@ -1,0 +1,181 @@
+openapi: 3.1.0
+info:
+  title: Jamdesk Knowledge API
+  version: "1.0.0"
+  description: |
+    The Jamdesk Knowledge API lets you search your documentation programmatically.
+    Use it to power support chatbots, Slack bots, custom search experiences, and
+    AI agents that need accurate, up-to-date answers from your docs.
+servers:
+  - url: https://{slug}.jamdesk.app
+    variables:
+      slug:
+        default: your-project
+        description: Your Jamdesk project slug (e.g. acme, my-company-docs)
+security:
+  - BearerAuth: []
+paths:
+  /_knowledge/search:
+    post:
+      summary: Search documentation
+      description: |
+        Perform a semantic search over your documentation content. Returns the
+        top matching passages along with page metadata and relevance scores.
+        Results are ranked by semantic similarity to your query.
+      operationId: searchKnowledge
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SearchRequest"
+            example:
+              query: "How do I set up a custom domain?"
+              limit: 5
+      responses:
+        "200":
+          description: Search results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SearchResponse"
+              example:
+                query: "How do I set up a custom domain?"
+                results:
+                  - score: 0.94
+                    text: "To add a custom domain, go to Project Settings → Custom Domain and enter your domain. You'll need to add a CNAME record pointing to your Jamdesk subdomain."
+                    page:
+                      title: "Custom Domains"
+                      path: "/deploy/custom-domains"
+                      url: "https://acme.jamdesk.app/deploy/custom-domains"
+                  - score: 0.87
+                    text: "DNS propagation typically takes 5–30 minutes. Once your CNAME record is live, Jamdesk will automatically provision an SSL certificate for your domain."
+                    page:
+                      title: "Custom Domains"
+                      path: "/deploy/custom-domains"
+                      url: "https://acme.jamdesk.app/deploy/custom-domains"
+                total: 2
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                code: "invalid_request"
+                message: "query is required"
+        "401":
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                code: "unauthorized"
+                message: "Invalid or missing Bearer token"
+        "403":
+          description: API key does not have access to this project
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                code: "forbidden"
+                message: "This API key does not have access to the requested project"
+        "429":
+          description: Rate limit exceeded
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+              description: Seconds to wait before retrying
+            X-RateLimit-Limit:
+              schema:
+                type: integer
+              description: Requests allowed per minute
+            X-RateLimit-Remaining:
+              schema:
+                type: integer
+              description: Requests remaining in current window
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                code: "rate_limit_exceeded"
+                message: "Too many requests. Retry after 30 seconds."
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      description: |
+        API key with the prefix `jdk_`. Generate keys in the Jamdesk dashboard
+        under **Project Settings → API Keys**. Keys are scoped to a single project.
+  schemas:
+    SearchRequest:
+      type: object
+      required:
+        - query
+      properties:
+        query:
+          type: string
+          description: Natural language search query.
+          minLength: 1
+          maxLength: 1000
+          example: "How do I set up a custom domain?"
+        limit:
+          type: integer
+          description: Maximum number of results to return. Defaults to 5.
+          minimum: 1
+          maximum: 20
+          default: 5
+    SearchResponse:
+      type: object
+      properties:
+        query:
+          type: string
+          description: The original query string.
+        results:
+          type: array
+          items:
+            $ref: "#/components/schemas/SearchResult"
+        total:
+          type: integer
+          description: Total number of results returned.
+    SearchResult:
+      type: object
+      properties:
+        score:
+          type: number
+          format: float
+          description: Relevance score between 0 and 1. Higher is more relevant.
+          minimum: 0
+          maximum: 1
+        text:
+          type: string
+          description: The matching passage from your documentation.
+        page:
+          $ref: "#/components/schemas/PageReference"
+    PageReference:
+      type: object
+      properties:
+        title:
+          type: string
+          description: The page title.
+        path:
+          type: string
+          description: The page path relative to the docs root.
+        url:
+          type: string
+          format: uri
+          description: Absolute URL to the page.
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          description: Machine-readable error code.
+        message:
+          type: string
+          description: Human-readable error description.

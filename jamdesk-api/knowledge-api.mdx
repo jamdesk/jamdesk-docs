@@ -1,0 +1,130 @@
+---
+title: Knowledge API
+description: Search your Jamdesk documentation programmatically with the Knowledge API. Power support chatbots, Slack bots, custom search, and AI agents with accurate, up-to-date answers from your docs.
+---
+
+The Knowledge API gives you programmatic access to your documentation content via semantic search. One endpoint — `POST /_knowledge/search` — takes a natural language query and returns the most relevant passages from your docs, ranked by relevance.
+
+## Use Cases
+
+<Columns cols={2}>
+  <Card title="Support Chatbots" icon="comment-dots">
+    Connect Intercom Fin, Zendesk AI, or a custom chatbot to your docs so it answers questions with accurate, cited content.
+  </Card>
+  <Card title="Slack Bots" icon="slack">
+    Build a `/docs` Slack command that searches your documentation and posts the top results to any channel.
+  </Card>
+  <Card title="Custom Search" icon="magnifying-glass">
+    Add a search interface to your product, dashboard, or internal tools that surfaces relevant docs in context.
+  </Card>
+  <Card title="AI Agents" icon="robot">
+    Give AI agents like Claude or GPT a tool that retrieves up-to-date documentation, not stale training data.
+  </Card>
+</Columns>
+
+## Quick Start
+
+<Steps>
+  <Step title="Generate an API key">
+    Go to **Project Settings → API Keys** in the [Jamdesk dashboard](https://dashboard.jamdesk.com). Click **Generate Key**, give it a name, and copy the key — it starts with `jdk_` and is only shown once.
+  </Step>
+  <Step title="Make your first search request">
+    Send a `POST` request to `/_knowledge/search` on your docs subdomain:
+
+    ```bash
+    curl -X POST https://your-project.jamdesk.app/_knowledge/search \
+      -H "Authorization: Bearer jdk_your_key_here" \
+      -H "Content-Type: application/json" \
+      -d '{"query": "How do I set up a custom domain?", "limit": 5}'
+    ```
+  </Step>
+  <Step title="Use the results">
+    The response returns an array of matching passages with relevance scores and page metadata:
+
+    ```json
+    {
+      "query": "How do I set up a custom domain?",
+      "results": [
+        {
+          "score": 0.94,
+          "text": "To add a custom domain, go to Project Settings → Custom Domain...",
+          "page": {
+            "title": "Custom Domains",
+            "path": "/deploy/custom-domains",
+            "url": "https://your-project.jamdesk.app/deploy/custom-domains"
+          }
+        }
+      ],
+      "total": 1
+    }
+    ```
+  </Step>
+</Steps>
+
+## Authentication
+
+All requests require a Bearer token in the `Authorization` header.
+
+```
+Authorization: Bearer jdk_your_key_here
+```
+
+### Generating API Keys
+
+<Steps>
+  <Step title="Open Project Settings">
+    In the Jamdesk dashboard, navigate to your project and click **Settings**.
+  </Step>
+  <Step title="Go to API Keys">
+    Select the **API Keys** tab.
+  </Step>
+  <Step title="Create a key">
+    Click **Generate Key**, enter a descriptive name (e.g. "Intercom chatbot"), and click **Create**.
+  </Step>
+  <Step title="Copy the key">
+    Copy the key immediately — it starts with `jdk_` and is shown **only once**. Store it in your secrets manager or environment variables.
+  </Step>
+</Steps>
+
+### Key Management
+
+<Info>
+API keys are scoped to a single project. A key for `acme.jamdesk.app` cannot query a different project's documentation.
+</Info>
+
+| Rule | Detail |
+|------|--------|
+| **Prefix** | All keys start with `jdk_` |
+| **Scope** | One key per project — cannot access other projects |
+| **Rotation** | Revoke and regenerate anytime from Project Settings |
+| **Storage** | Store in environment variables or a secrets manager — never commit to source control |
+
+### Revoking Keys
+
+To revoke a key, go to **Project Settings → API Keys**, find the key by name, and click **Revoke**. Revoked keys stop working immediately. Generate a new key to replace it.
+
+## Rate Limits
+
+Requests are rate-limited per API key.
+
+| Plan | Limit |
+|------|-------|
+| **Pro** | 60 requests / minute |
+| **Enterprise** | Custom — contact [support](mailto:support@jamdesk.com) |
+
+When you exceed the limit, the API returns `429 Too Many Requests` with a `Retry-After` header indicating how many seconds to wait.
+
+<Warning>
+If you need higher rate limits for a production integration, [contact us](mailto:support@jamdesk.com) to discuss Enterprise options.
+</Warning>
+
+## Next Steps
+
+<Columns cols={2}>
+  <Card title="Search Endpoint" icon="magnifying-glass" href="/jamdesk-api/search">
+    Full reference with request/response schemas and interactive playground
+  </Card>
+  <Card title="Integration Guides" icon="plug" href="/jamdesk-api/integrations">
+    Step-by-step guides for Intercom, Zendesk, Slack bots, and custom chatbots
+  </Card>
+</Columns>
