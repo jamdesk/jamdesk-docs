@@ -1,0 +1,69 @@
+---
+title: Automatic Image Conversion
+description: Convert PNG and JPG images to WebP during builds for smaller file sizes and faster page loads.
+---
+
+Jamdesk can convert your PNG and JPG images to WebP format during builds. WebP files are typically 60--80% smaller than their originals with no visible quality loss, so your docs pages load faster without any manual image processing.
+
+## Enabling Image Conversion
+
+There are two ways to turn on automatic conversion.
+
+### In docs.json
+
+Add the `images` configuration to your `docs.json`:
+
+```json docs.json
+{
+  "images": {
+    "convertToWebp": true
+  }
+}
+```
+
+### In the Dashboard
+
+Go to your project's **Settings** page and toggle **Image Optimization** on.
+
+<Note>
+The dashboard setting takes priority over `docs.json`. If you enable it in the dashboard, builds will convert images regardless of what `docs.json` says.
+</Note>
+
+## What Gets Converted
+
+The following formats are converted to WebP at quality 85:
+
+| Source Format | Converted? |
+|---------------|------------|
+| PNG | Yes |
+| JPG / JPEG | Yes |
+| SVG | No -- already vector, no benefit |
+| GIF | No -- animation would be lost |
+| ICO | No -- too small to matter |
+| WebP | No -- already optimized |
+
+Converted images keep their original filenames but get a `.webp` extension. All references in your MDX files are updated automatically -- you don't need to change any image paths.
+
+## Build Caching
+
+Jamdesk tracks a hash of each image across builds. If an image hasn't changed since the last build, it skips conversion and reuses the cached version. This keeps rebuild times fast even with large image directories.
+
+## Failure Handling
+
+If conversion fails for any individual image, Jamdesk preserves the original file and continues with the rest of the build. Your docs will never break because of an image conversion error.
+
+## Build Logs
+
+When image conversion runs, you'll see a line in your build logs:
+
+```
+Optimizing images... done (4 converted, 2 cached, 1 skipped, 0 failed, saved 1.2 MB)
+```
+
+| Field | Meaning |
+|-------|---------|
+| converted | Images that were converted from PNG/JPG to WebP |
+| cached | Images that were unchanged and reused from the previous build |
+| skipped | Images in formats that don't need conversion (SVG, GIF, ICO, WebP) |
+| failed | Images where conversion failed (originals preserved) |
+| saved | Total file size reduction from conversion |
