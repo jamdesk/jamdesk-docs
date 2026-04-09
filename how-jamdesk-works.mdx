@@ -1,13 +1,15 @@
 ---
 title: How Jamdesk Works
-description: How Jamdesk builds and deploys your documentation. Understand the pipeline from git push to live site.
+description: Git push to live docs in under 60 seconds. Learn how Jamdesk builds, deploys, and optimizes your documentation site with zero infrastructure to manage.
 ---
 
-Unlike static site generators that require build pipelines and CI/CD configuration, or hosted platforms that store content in proprietary formats, Jamdesk works directly from your MDX files in GitHub. Push your changes, and Jamdesk handles building, optimizing, and deploying to a global CDN — typically in under 60 seconds.
+Jamdesk builds documentation sites from MDX files in your GitHub repo. You write Markdown with React components, push to GitHub, and your site is live on a global CDN in under 60 seconds. Your content stays in your repo as plain files. Nothing proprietary, nothing to migrate away from.
 
 ## Architecture Overview
 
-<Frame caption="Jamdesk build and deploy pipeline">
+Your repo is the source of truth. Jamdesk connects to it, builds your site, and deploys to a global edge network. You don't manage any infrastructure.
+
+<Frame caption="How content flows from your repo to your users">
   <Mermaid minWidth="700px">
 {`%%{init: {'theme': 'neutral', 'themeVariables': {'background': 'transparent'}, 'flowchart': {'nodeSpacing': 25, 'rankSpacing': 40, 'curve': 'basis', 'useMaxWidth': false}}}%%
 flowchart LR
@@ -16,78 +18,95 @@ flowchart LR
         B[("docs.json")]
     end
 
-    subgraph Jamdesk["Jamdesk Platform"]
-        C["Build Service"]
-        D["Validation"]
-        E["Compilation"]
+    subgraph Build["Build Phase"]
+        C["Validate"]
+        D["Process"]
     end
 
-    subgraph Delivery["Global Delivery"]
-        F[("Cloudflare R2")]
+    E[("CDN Storage")]
+
+    subgraph Serve["Serve Phase"]
+        F["Render on Request"]
         G["Edge Cache"]
     end
 
     Source -->|"git push"| C
-    C --> D --> E
-    E -->|"Deploy"| F
+    C --> D
+    D -->|"Upload"| E
+    E --> F
     F --> G
-    G -->|"< 100ms"| H["Your Users"]`}
+    G -->|"< 50ms"| H["Your Users"]`}
   </Mermaid>
 </Frame>
 
 ## The Build Pipeline
 
+Typically 30–60 seconds, start to finish. Builds are fast because Jamdesk doesn't pre-render pages. Your raw content goes to the edge, and pages render on-demand when visitors request them.
+
 <Steps>
-  <Step title="Source Detection">
-    Jamdesk monitors your connected GitHub branch. When you push changes, a webhook triggers the build pipeline automatically. You can also trigger builds manually from the dashboard.
-  </Step>
-  <Step title="Content Retrieval">
-    The build service clones your repository and locates your documentation—either at the root or in a subdirectory for monorepo setups.
+  <Step title="Source Retrieval">
+    You push to your connected GitHub branch (or hit Rebuild in the dashboard). Jamdesk clones your repo and finds your docs directory.
   </Step>
   <Step title="Validation">
-    Before building, Jamdesk validates your configuration:
-    - `docs.json` syntax and schema
-    - All pages referenced in navigation exist
-    - MDX syntax is valid
-    - OpenAPI specs parse correctly (if configured)
+    Your `docs.json` config is validated against the schema, and internal links are checked for broken pages and bad anchors.
   </Step>
-  <Step title="Compilation">
-    MDX files are compiled to optimized HTML with:
-    - React components rendered to static HTML
-    - Syntax highlighting applied via Shiki
-    - Search index generated
-    - AI chat embeddings indexed
-    - Meta tags and Open Graph images created
+  <Step title="Content Processing">
+    Jamdesk generates your search index, [AI chat](/ai/chat) embeddings, sitemap, [`llms.txt`](/ai/llms-txt), and redirect rules from your content.
   </Step>
-  <Step title="Deployment">
-    The built site uploads to Cloudflare R2, then propagates to edge locations globally.
+  <Step title="Deploy to Edge">
+    Content uploads to the CDN and propagates to 300+ edge locations. Only changed files transfer, so redeploys are fast.
   </Step>
 </Steps>
 
+## Built Into Every Site
+
+All of this comes free with every site. Nothing to configure.
+
+<Columns cols={2}>
+  <Card title="AI Search" icon="magnifying-glass" href="/ai/chat">
+    Natural language search that understands intent, not just keywords. Powered by vector embeddings generated from your content at build time.
+  </Card>
+  <Card title="llms.txt" icon="robot" href="/ai/llms-txt">
+    AI-readable index following the llmstxt.org spec. Coding assistants and AI agents can consume your docs directly.
+  </Card>
+  <Card title="SEO Essentials" icon="chart-line">
+    Sitemap, robots.txt, Open Graph images, and meta tags. Your docs are indexable from the first deploy.
+  </Card>
+  <Card title="Built-in Analytics" icon="chart-bar" href="/setup/analytics-overview">
+    Privacy-focused analytics dashboard with no cookies required. Or bring your own — supports Google Analytics, Plausible, PostHog, and more.
+  </Card>
+</Columns>
+
 ## What Triggers a Build
 
-Builds are triggered by git push or the dashboard Rebuild button. Consecutive pushes are debounced into a single build.
+A git push to your connected branch, the Rebuild button in the dashboard, or [`jamdesk deploy`](/cli/deploy) from the CLI. If you push multiple commits in quick succession, Jamdesk debounces them into one build so you're not burning resources.
 
-For operational details—status monitoring, rollbacks, environment variables, and branch deployments—see [Build & Deploy Lifecycle](/deploy/lifecycle).
+For operational details (status monitoring, rollbacks, environment variables, branch deployments), see [Build & Deploy Lifecycle](/deploy/lifecycle).
 
 ## Security & Infrastructure
 
+You don't need to think about this stuff, but if your security team asks: builds run in isolated containers and your GitHub App connection is read-only.
+
 <Columns cols={2}>
-  <Card title="Source Protection" icon="shield-check">
-    GitHub App uses minimal permissions—read-only access to your selected repositories.
+  <Card title="Minimal Permissions" icon="shield-check">
+    The GitHub App only requests read access to repositories you select. No write access, no org-wide scopes.
   </Card>
-  <Card title="Build Isolation" icon="box">
-    Each build runs in an isolated container. Your code never touches other customers' builds.
+  <Card title="Isolated Builds" icon="box">
+    Every build gets its own container that's destroyed after deployment. Nothing persists between builds or customers.
   </Card>
-  <Card title="Encrypted Delivery" icon="lock">
-    All traffic served over HTTPS with automatic SSL certificates.
+  <Card title="HTTPS Everywhere" icon="lock">
+    Automatic SSL certificates for custom domains and subdomains. No manual cert management.
   </Card>
-  <Card title="Edge Network" icon="globe">
-    Built sites deploy to Cloudflare's network with 300+ edge locations.
+  <Card title="Global CDN" icon="globe">
+    Served from Cloudflare's network with 300+ edge locations and 99.9% uptime.
   </Card>
 </Columns>
 
 ## Performance
+
+Whether your docs get found depends partly on how fast they load. Google uses [Core Web Vitals](https://www.jamdesk.com/blog/why-google-pagespeed-matters) as a ranking signal, and AI crawlers like GPTBot and ClaudeBot give themselves 1–5 seconds per page. If your docs don't load in that window, they don't get cited.
+
+Every Jamdesk site ships from the edge with sub-50ms time to first byte. Fast enough for Google, fast enough for AI crawlers to cite.
 
 | Metric | Typical Value |
 |--------|---------------|
@@ -98,11 +117,14 @@ For operational details—status monitoring, rollbacks, environment variables, a
 
 ## Next Steps
 
-<Columns cols={2}>
+<Columns cols={3}>
   <Card title="Create a Project" icon="plus" href="/setup/creating-projects">
     Set up a new documentation site in the dashboard
   </Card>
   <Card title="Connect GitHub" icon="github" href="/setup/connecting-github">
     Link your repository to enable automatic builds
+  </Card>
+  <Card title="Preview Locally" icon="terminal" href="/cli/overview">
+    Use the Jamdesk CLI to preview and validate your docs before you push
   </Card>
 </Columns>
