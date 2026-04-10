@@ -3,15 +3,13 @@ title: Automatic Image Conversion
 description: Convert PNG and JPG images to WebP during builds for smaller file sizes and faster page loads.
 ---
 
-Jamdesk can convert your PNG and JPG images to WebP format during builds. WebP files are typically 60--80% smaller than their originals with no visible quality loss, so your docs pages load faster without any manual image processing.
+Jamdesk can convert PNG and JPG images to WebP format during builds. WebP files are usually 60-80% smaller than the originals with no visible quality loss, so your pages load faster without any manual image processing.
 
-## Enabling Image Conversion
+The feature is **off by default**. Turn it on in your `docs.json`.
 
-There are two ways to turn on automatic conversion.
+## Enable it
 
-### In docs.json
-
-Add the `images` configuration to your `docs.json`:
+Add the `images.convertToWebp` field to your `docs.json`:
 
 ```json docs.json
 {
@@ -21,40 +19,50 @@ Add the `images` configuration to your `docs.json`:
 }
 ```
 
-### In the Dashboard
+That's the only switch. The Settings page in the dashboard shows the current status under **Config Highlights**, but it doesn't have its own toggle. `docs.json` is the source of truth.
 
-Go to your project's **Settings** page and toggle **Image Optimization** on.
+## What gets converted
 
-<Note>
-The dashboard setting takes priority over `docs.json`. If you enable it in the dashboard, builds will convert images regardless of what `docs.json` says.
-</Note>
-
-## What Gets Converted
-
-The following formats are converted to WebP at quality 85:
-
-| Source Format | Converted? |
-|---------------|------------|
+| Source | Converted? |
+|--------|------------|
 | PNG | Yes |
 | JPG / JPEG | Yes |
-| SVG | No -- already vector, no benefit |
-| GIF | No -- animation would be lost |
-| ICO | No -- too small to matter |
-| WebP | No -- already optimized |
+| SVG | No (already vector) |
+| GIF | No (animation would be lost) |
+| ICO | No (too small to matter) |
+| WebP | No (already optimized) |
 
-Converted images keep their original filenames but get a `.webp` extension. All references in your MDX files are updated automatically -- you don't need to change any image paths.
+Converted images keep their basename and get a `.webp` extension. Every reference in your MDX, custom CSS, custom JS, and `docs.json` is rewritten automatically. You don't change any paths.
 
-## Build Caching
+## What stays as originals
 
-Jamdesk tracks a hash of each image across builds. If an image hasn't changed since the last build, it skips conversion and reuses the cached version. This keeps rebuild times fast even with large image directories.
+Some images are left untouched even when conversion is on.
 
-## Failure Handling
+**Favicons.** Not every browser or email client renders WebP favicons reliably.
 
-If conversion fails for any individual image, Jamdesk preserves the original file and continues with the rest of the build. Your docs will never break because of an image conversion error.
+Social media images (`og:image` and `twitter:image` in your `seo.metatags`) also stay in their original format. Social crawlers like Facebook, LinkedIn, WhatsApp, and older Twitter/X don't all render WebP, and a broken preview card is worse than a slightly larger JPG.
 
-## Build Logs
+Unused images get a pass too. If a file sits in your `/images` directory but nothing in your MDX or config references it, the original uploads as-is. No wasted CPU on files nobody loads.
 
-When image conversion runs, you'll see a line in your build logs:
+One thing that *is* converted: `background.image`. It's a fullscreen background rendered by the browser, so it benefits from WebP like any other image.
+
+## Build progress indicator
+
+When the feature is on, your build shows an **Optimizing images** step in the dashboard progress list, between "Building documentation" and "Uploading to CDN".
+
+When it's off, the same row appears marked **Skipped**. That's deliberate. It's a reminder that the feature exists and what it would do if you turned it on.
+
+## Build caching
+
+Jamdesk stores a hash of each source image in the build manifest. If a file hasn't changed since the last build, it skips the conversion and reuses the cached WebP. Rebuild times stay fast even with hundreds of images.
+
+## Failure handling
+
+If conversion fails for any single image (corrupt file, out-of-memory, unexpected format), the original is kept and the rest of the build continues. Your docs won't break because of an image conversion error.
+
+## Build logs
+
+Alongside the dashboard indicator, your build logs include a line like this:
 
 ```
 Optimizing images... done (4 converted, 2 cached, 1 skipped, 0 failed, saved 1.2 MB)
@@ -62,8 +70,8 @@ Optimizing images... done (4 converted, 2 cached, 1 skipped, 0 failed, saved 1.2
 
 | Field | Meaning |
 |-------|---------|
-| converted | Images that were converted from PNG/JPG to WebP |
-| cached | Images that were unchanged and reused from the previous build |
-| skipped | Images in formats that don't need conversion (SVG, GIF, ICO, WebP) |
-| failed | Images where conversion failed (originals preserved) |
-| saved | Total file size reduction from conversion |
+| converted | Images converted from PNG/JPG to WebP this build |
+| cached | Unchanged images carried forward from the previous build |
+| skipped | Images left as originals (protected fields, unused files, or formats that don't need conversion) |
+| failed | Conversions that failed (originals kept) |
+| saved | Total bytes shaved across all converted images |
