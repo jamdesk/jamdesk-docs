@@ -2,23 +2,88 @@ openapi: 3.1.0
 info:
   title: Jamdesk Knowledge API
   version: "1.0.0"
+  summary: Semantic vector search across your documentation for chatbots, RAG pipelines, and custom integrations.
   description: |
-    Search your documentation programmatically from chatbots, support tools,
-    and custom integrations. Uses the same semantic vector search that powers
-    your docs site AI chat.
+    The Jamdesk Knowledge API lets you query your documentation programmatically
+    using natural language. It's powered by the same semantic vector search
+    engine that drives Jamdesk's built-in AI chat — any query that works in the
+    chat widget works here and returns the same results.
 
-    **Authentication:** All requests require a Bearer token (API key generated
-    in your [dashboard settings](https://dashboard.jamdesk.com)).
+    ## Use cases
 
-    **Base URL:** `https://YOUR-PROJECT.jamdesk.app` (or your custom domain)
+    - **Chatbot knowledge base** — feed a support bot or Slack bot with up-to-date
+      docs so it can answer user questions accurately.
+    - **RAG pipeline integration** — retrieve relevant documentation snippets to
+      inject into LLM prompts for grounded generation (works with OpenAI
+      Assistants, Claude agents, LangChain, and LlamaIndex).
+    - **Custom integrations** — wire documentation search into internal tools,
+      IDE extensions, CRM dashboards, and onboarding flows.
+    - **AI assistant retrieval** — power any AI assistant with real-time
+      documentation lookup without pre-building embeddings yourself.
+
+    ## How it works
+
+    Each query is embedded into a vector using the same embeddings model that
+    indexed your docs. The API returns the top matches ranked by cosine
+    similarity, with snippets you can pass directly to an LLM as context.
+
+    Natural-language queries work better than keyword queries — ask
+    "how do I authenticate with OAuth" rather than "OAuth authentication setup".
+    The engine understands intent, synonyms, and context.
+
+    ## Authentication and limits
+
+    - **Authentication:** Bearer token. Generate an API key in your
+      [Jamdesk dashboard](https://dashboard.jamdesk.com) under
+      Settings → Knowledge API Keys. Keys are prefixed `jdk_`.
+    - **Plan requirement:** Jamdesk Pro or higher.
+    - **Rate limit:** 60 requests per minute per API key. Exceeded requests
+      return HTTP 429 with a `Retry-After` header.
+    - **CORS:** Enabled. Browser-based clients can call the API directly
+      without a backend proxy.
+    - **Response format:** JSON. Every response includes `query`, `results`,
+      `total`, and `durationMs` fields.
+
+    ## Base URL
+
+    `https://YOUR-PROJECT.jamdesk.app` or your custom domain. Your project slug
+    is visible in the Jamdesk dashboard URL.
+  contact:
+    name: Jamdesk Support
+    url: https://jamdesk.com/support
+    email: support@jamdesk.com
+  termsOfService: https://jamdesk.com/terms
+
+externalDocs:
+  description: Jamdesk Knowledge API full reference and integration guides
+  url: https://jamdesk.com/docs/jamdesk-api
 
 servers:
   - url: https://{project}.jamdesk.app
-    description: Production (subdomain)
+    description: Production (Jamdesk subdomain)
     variables:
       project:
         default: your-project
-        description: Your Jamdesk project slug
+        description: |
+          Your Jamdesk project slug. Found in your dashboard URL
+          (e.g. `acme` for `acme.jamdesk.app`).
+  - url: https://{customDomain}
+    description: Production (custom domain)
+    variables:
+      customDomain:
+        default: docs.example.com
+        description: |
+          Your Jamdesk custom domain, configured in Project Settings → Domain.
+
+tags:
+  - name: Search
+    description: |
+      Semantic vector search operations across your project documentation.
+      Returns ranked results with relevance scores, suitable for feeding into
+      LLM prompts or displaying directly to users.
+    externalDocs:
+      description: How semantic search works in Jamdesk
+      url: https://jamdesk.com/docs/jamdesk-api
 
 security:
   - BearerAuth: []
@@ -26,14 +91,70 @@ security:
 paths:
   /_knowledge/search:
     post:
+      tags:
+        - Search
       operationId: searchDocs
-      summary: Search documentation
+      summary: Search documentation with natural-language queries
       description: |
-        Performs semantic vector search across your documentation.
-        Returns matching pages ranked by relevance score.
+        Performs semantic vector search across your project documentation and
+        returns matching pages ranked by relevance score.
 
-        The search understands natural language — queries like "how do I authenticate
-        with OAuth" work better than keyword-style "OAuth authentication setup".
+        Queries are embedded into the same vector space used to index your docs,
+        so the search understands intent — not just keywords. Ask a full
+        natural-language question for best results.
+
+        **Response shape:** an array of results (title, section, slug, content
+        snippet, URL, score), along with the original query, total count, and
+        search duration. The snippet field is capped at 500 characters and is
+        directly usable as LLM context.
+
+        **Typical latency:** 50-200ms for queries against projects under 10k
+        pages. Latency scales sub-linearly with index size.
+      x-codeSamples:
+        - lang: JavaScript
+          label: fetch
+          source: |
+            const response = await fetch(
+              'https://your-project.jamdesk.app/_knowledge/search',
+              {
+                method: 'POST',
+                headers: {
+                  'Authorization': 'Bearer jdk_your_api_key_here',
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  query: 'How do I authenticate with OAuth?',
+                  limit: 5,
+                }),
+              }
+            );
+            const { results } = await response.json();
+            console.log(results);
+        - lang: Python
+          label: requests
+          source: |
+            import requests
+
+            response = requests.post(
+                "https://your-project.jamdesk.app/_knowledge/search",
+                headers={
+                    "Authorization": "Bearer jdk_your_api_key_here",
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "query": "How do I authenticate with OAuth?",
+                    "limit": 5,
+                },
+            )
+            results = response.json()["results"]
+            print(results)
+        - lang: curl
+          label: curl
+          source: |
+            curl -X POST https://your-project.jamdesk.app/_knowledge/search \
+              -H "Authorization: Bearer jdk_your_api_key_here" \
+              -H "Content-Type: application/json" \
+              -d '{"query": "How do I authenticate with OAuth?", "limit": 5}'
       requestBody:
         required: true
         content:
@@ -55,6 +176,22 @@ paths:
                   maximum: 20
                   default: 5
                   example: 5
+            examples:
+              naturalQuestion:
+                summary: Natural language question (recommended)
+                value:
+                  query: "How do I configure a custom domain for my docs site?"
+                  limit: 5
+              shortKeyword:
+                summary: Short keyword query (works, but less accurate)
+                value:
+                  query: "webhooks"
+                  limit: 10
+              ragContext:
+                summary: Maximum results for RAG pipeline context
+                value:
+                  query: "authentication options and API key rotation"
+                  limit: 20
       responses:
         "200":
           description: Search results
@@ -106,17 +243,46 @@ paths:
                     type: integer
                     description: Search execution time in milliseconds.
                     example: 150
-              example:
-                query: "How do I set up a custom domain?"
-                results:
-                  - title: "Custom Domains"
-                    section: "Step 4: Deploy"
-                    slug: "deploy/custom-domains"
-                    content: "To add a custom domain, go to Project Settings and enter your domain. You'll need to add a CNAME record pointing to your Jamdesk subdomain."
-                    url: "https://acme.jamdesk.app/deploy/custom-domains"
-                    score: 0.94
-                total: 1
-                durationMs: 85
+              examples:
+                multiResult:
+                  summary: Multi-result natural-language query
+                  value:
+                    query: "How do I set up a custom domain?"
+                    results:
+                      - title: "Custom Domains"
+                        section: "Step 4: Deploy"
+                        slug: "deploy/custom-domains"
+                        content: "To add a custom domain, go to Project Settings and enter your domain. You'll need to add a CNAME record pointing to your Jamdesk subdomain."
+                        url: "https://acme.jamdesk.app/deploy/custom-domains"
+                        score: 0.94
+                      - title: "DNS configuration"
+                        section: "Custom domains"
+                        slug: "deploy/dns"
+                        content: "Custom domains require an A record or CNAME pointing to your Jamdesk subdomain..."
+                        url: "https://acme.jamdesk.app/deploy/dns"
+                        score: 0.87
+                    total: 2
+                    durationMs: 85
+                shortKeyword:
+                  summary: Single-result keyword query
+                  value:
+                    query: "webhooks"
+                    results:
+                      - title: "Webhooks"
+                        section: "Configuration"
+                        slug: "integrations/webhooks"
+                        content: "Configure webhooks to receive real-time notifications when builds complete, deploys finish, or errors occur..."
+                        url: "https://acme.jamdesk.app/integrations/webhooks"
+                        score: 0.91
+                    total: 1
+                    durationMs: 62
+                zeroResults:
+                  summary: Query with no matches
+                  value:
+                    query: "quantum entanglement deployment strategy"
+                    results: []
+                    total: 0
+                    durationMs: 48
         "400":
           description: Invalid request
           content:
@@ -178,7 +344,7 @@ components:
       scheme: bearer
       description: |
         API key generated from your Jamdesk dashboard (Settings → Knowledge API Keys).
-        Format: `jdk_<token>`
+        Format: `jdk_<token>`. Keep keys secret; rotate from the dashboard in one click.
   schemas:
     Error:
       type: object
