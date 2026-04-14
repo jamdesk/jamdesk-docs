@@ -1,13 +1,13 @@
 ---
 title: Integrations
-description: Connect the Jamdesk Knowledge API to Intercom, Zendesk, Slack, and custom chatbots. Step-by-step guides for each integration.
+description: Connect the Jamdesk Docs Search API to Intercom, Zendesk, Slack, and custom chatbots. Step-by-step guides for each integration.
 ---
 
-The Knowledge API is designed to plug into the tools your team and customers already use. This guide covers the most common integrations.
+The Docs Search API is designed to plug into the tools your team and customers already use. This guide covers the most common integrations.
 
 ## Intercom (Fin AI Agent)
 
-Intercom's Fin AI Agent supports **Data Connectors** — external search sources that Fin queries alongside your Intercom articles. Connect the Knowledge API so Fin can answer questions directly from your Jamdesk docs.
+Intercom's Fin AI Agent supports **Data Connectors** — external search sources that Fin queries alongside your Intercom articles. Connect the Docs Search API so Fin can answer questions directly from your Jamdesk docs.
 
 <Steps>
   <Step title="Generate an API key">
@@ -21,7 +21,7 @@ Intercom's Fin AI Agent supports **Data Connectors** — external search sources
 
     | Field | Value |
     |-------|-------|
-    | **Endpoint URL** | `https://your-project.jamdesk.app/_knowledge/search` |
+    | **Endpoint URL** | `https://your-project.jamdesk.app/_api/search` |
     | **Method** | `POST` |
     | **Auth header** | `Authorization: Bearer jdk_your_key_here` |
     | **Query field** | `query` |
@@ -61,7 +61,7 @@ Zendesk's AI features support MCP servers as knowledge sources. Use Jamdesk's bu
 </Steps>
 
 <Info>
-The MCP server exposes the same search index as the Knowledge API. Use the Knowledge API (with a `jdk_` key) when you need authenticated access or want to control rate limits per integration.
+The MCP server exposes the same search index as the Docs Search API. Use the Docs Search API (with a `jdk_` key) when you need authenticated access or want to control rate limits per integration.
 </Info>
 
 ---
@@ -73,7 +73,7 @@ Add documentation search to any chatbot or web app with a standard `fetch` call.
 ```javascript
 async function searchDocs(query) {
   const response = await fetch(
-    "https://your-project.jamdesk.app/_knowledge/search",
+    "https://your-project.jamdesk.app/_api/search",
     {
       method: "POST",
       headers: {
@@ -167,7 +167,7 @@ app.command("/docs", async ({ command, ack, respond }) => {
 
   try {
     const response = await fetch(
-      "https://your-project.jamdesk.app/_knowledge/search",
+      "https://your-project.jamdesk.app/_api/search",
       {
         method: "POST",
         headers: {
@@ -224,20 +224,20 @@ Set `JAMDESK_API_KEY` in your Slack app's environment variables — never hardco
 
 ## hostAtDocs (Cloudflare Worker)
 
-If you're using [hostAtDocs](/deploy/subpath-hosting) to serve your docs at a subpath (e.g. `yoursite.com/docs`), the `/_knowledge` route needs to be proxied through your Cloudflare Worker.
+If you're using [hostAtDocs](/deploy/subpath-hosting) to serve your docs at a subpath (e.g. `yoursite.com/docs`), the `/_api` route needs to be proxied through your Cloudflare Worker.
 
-Add `/_knowledge` to the `PROXY_PATHS` array in your worker:
+Add `/_api` to the `PROXY_PATHS` array in your worker:
 
 ```javascript
 const PROXY_PATHS = [
   "/docs",
   "/_jd",
-  "/_knowledge",  // Add this line
+  "/_api",  // Add this line
 ];
 ```
 
-This ensures search requests to `yoursite.com/_knowledge/search` are forwarded to your Jamdesk docs site.
+This ensures search requests to `yoursite.com/_api/search` are forwarded to your Jamdesk docs site.
 
 <Warning>
-The `/_knowledge` route requires authentication via your `jdk_` API key regardless of how the request is routed. Proxying through Cloudflare does not bypass authentication.
+The `/_api` route requires authentication via your `jdk_` API key regardless of how the request is routed. Proxying through Cloudflare does not bypass authentication.
 </Warning>
