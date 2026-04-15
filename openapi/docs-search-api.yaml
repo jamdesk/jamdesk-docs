@@ -35,7 +35,8 @@ info:
 
     - **Authentication:** Bearer token. Generate an API key in your
       [Jamdesk dashboard](https://dashboard.jamdesk.com) under
-      Settings → API Keys. Keys are prefixed `jdk_`.
+      Settings → API Keys. Keys are prefixed `jd_` followed by 32 hex
+      characters (35 chars total) and never expire. Revoke from the dashboard.
     - **Plan requirement:** Jamdesk Pro or higher.
     - **Rate limit:** 60 requests per minute per API key. Exceeded requests
       return HTTP 429 with a `Retry-After` header.
@@ -138,7 +139,7 @@ paths:
               {
                 method: 'POST',
                 headers: {
-                  'Authorization': 'Bearer jdk_your_api_key_here',
+                  'Authorization': 'Bearer jd_125907ffd7ba391b022799b60732b61a',
                   'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
@@ -157,7 +158,7 @@ paths:
             response = requests.post(
                 "https://your-project.jamdesk.app/_api/search",
                 headers={
-                    "Authorization": "Bearer jdk_your_api_key_here",
+                    "Authorization": "Bearer jd_125907ffd7ba391b022799b60732b61a",
                     "Content-Type": "application/json",
                 },
                 json={
@@ -171,7 +172,7 @@ paths:
           label: curl
           source: |
             curl -X POST https://your-project.jamdesk.app/_api/search \
-              -H "Authorization: Bearer jdk_your_api_key_here" \
+              -H "Authorization: Bearer jd_125907ffd7ba391b022799b60732b61a" \
               -H "Content-Type: application/json" \
               -d '{"query": "How do I authenticate with OAuth?", "limit": 5}'
       requestBody:
@@ -209,7 +210,7 @@ paths:
               ragContext:
                 summary: Maximum results for RAG pipeline context
                 value:
-                  query: "authentication options and API key rotation"
+                  query: "authentication options and API key management"
                   limit: 20
       responses:
         "200":
@@ -318,21 +319,34 @@ paths:
                   value:
                     error: "Query exceeds 500 characters"
         "401":
-          description: Invalid or missing API key
+          description: |
+            Invalid or missing API key. The response body contains a
+            machine-readable `error` code: `invalid_key_format` (missing
+            or malformed — e.g. not `jd_<32 hex>`) or `invalid_key` (key
+            is not recognised or has been revoked).
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
-              example:
-                error: "Invalid or missing API key"
+              examples:
+                invalidKeyFormat:
+                  summary: Missing Authorization header or malformed key
+                  value:
+                    error: "invalid_key_format"
+                invalidKey:
+                  summary: Key not recognised or revoked
+                  value:
+                    error: "invalid_key"
         "403":
-          description: API key does not match project
+          description: |
+            API key does not match this project. The key is valid but was
+            generated for a different project slug than the one in the URL.
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
               example:
-                error: "API key does not match this project"
+                error: "wrong_project"
         "429":
           description: Rate limit exceeded
           headers:
@@ -355,6 +369,26 @@ paths:
                 $ref: "#/components/schemas/Error"
               example:
                 error: "Search temporarily unavailable"
+        "503":
+          description: |
+            Temporary backend outage during key verification. Returned when
+            the Redis lookup fails or the auth store is unreachable — retry
+            after a short backoff. The response body contains a
+            machine-readable `error` code: `lookup_failed` or
+            `redis_unavailable`.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                lookupFailed:
+                  summary: Auth store lookup failed
+                  value:
+                    error: "lookup_failed"
+                redisUnavailable:
+                  summary: Auth store unreachable
+                  value:
+                    error: "redis_unavailable"
 
 components:
   securitySchemes:
@@ -363,11 +397,18 @@ components:
       scheme: bearer
       description: |
         API key generated from your Jamdesk dashboard (Settings → API Keys).
-        Format: `jdk_<token>`. Keep keys secret; rotate from the dashboard in one click.
+        Format: `jd_<32 hex chars>` (35 chars). Keep keys secret. Revoke and
+        regenerate from the dashboard — there is no in-place rotation.
   schemas:
     Error:
       type: object
       properties:
         error:
           type: string
-          description: Human-readable error message.
+          description: |
+            Error detail. Authentication (401), authorization (403), and
+            backend-outage (503) responses return a stable machine-readable
+            code (e.g. `invalid_key`, `wrong_project`, `lookup_failed`) so
+            clients can branch on the value. Request-validation (400),
+            rate-limit (429), and search-unavailable (502) responses
+            currently return a human-readable sentence.
