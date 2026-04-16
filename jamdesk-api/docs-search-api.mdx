@@ -26,14 +26,14 @@ The Docs Search API gives you programmatic access to your documentation content 
 
 <Steps>
   <Step title="Generate an API key">
-    Go to **Project Settings → API Keys** in the [Jamdesk dashboard](https://dashboard.jamdesk.com). Click **Generate Key**, give it a name, and copy the key — it starts with `jd_` followed by 32 hex characters (35 chars total) and is only shown once.
+    Go to **Project Settings → API Keys** in the [Jamdesk dashboard](https://dashboard.jamdesk.com). Click **Generate Key**, give it a name, and copy the key — it starts with `jd_live_` followed by 32 hex characters (40 chars total) and is only shown once.
   </Step>
   <Step title="Make your first search request">
     Send a `POST` request to `/_api/search` on your docs subdomain:
 
     ```bash
     curl -X POST https://your-project.jamdesk.app/_api/search \
-      -H "Authorization: Bearer jd_125907ffd7ba391b022799b60732b61a" \
+      -H "Authorization: Bearer jd_live_c83003a54ae0a83123454c3f7ec82f0a" \
       -H "Content-Type: application/json" \
       -d '{"query": "How do I set up a custom domain?", "limit": 5}'
     ```
@@ -66,7 +66,7 @@ The Docs Search API gives you programmatic access to your documentation content 
 All requests require a Bearer token in the `Authorization` header.
 
 ```
-Authorization: Bearer jd_125907ffd7ba391b022799b60732b61a
+Authorization: Bearer jd_live_c83003a54ae0a83123454c3f7ec82f0a
 ```
 
 ### Generating API Keys
@@ -82,7 +82,7 @@ Authorization: Bearer jd_125907ffd7ba391b022799b60732b61a
     Click **Generate Key**, enter a descriptive name (e.g. "Intercom chatbot"), and click **Create**.
   </Step>
   <Step title="Copy the key">
-    Copy the key immediately — it starts with `jd_` followed by 32 hex characters and is shown **only once**. Store it in your secrets manager or environment variables.
+    Copy the key immediately — it starts with `jd_live_` followed by 32 hex characters and is shown **only once**. Store it in your secrets manager or environment variables.
   </Step>
 </Steps>
 
@@ -94,7 +94,7 @@ API keys are scoped to a single project. A key for `acme.jamdesk.app` cannot que
 
 | Rule | Detail |
 |------|--------|
-| **Format** | `jd_<32 hex chars>` (35 chars total, never expires) |
+| **Format** | `jd_live_<32 hex chars>` (40 chars total, never expires) |
 | **Scope** | One key per project — cannot access other projects |
 | **Rotation** | Revoke and regenerate anytime from Project Settings |
 | **Storage** | Store in environment variables or a secrets manager — never commit to source control |
@@ -112,11 +112,51 @@ Requests are rate-limited per API key.
 | **Pro** | 60 requests / minute |
 | **Enterprise** | Custom — contact [support](mailto:support@jamdesk.com) |
 
-When you exceed the limit, the API returns `429 Too Many Requests` with a `Retry-After` header indicating how many seconds to wait.
+When you exceed the limit, the API returns `429 Too Many Requests` with a `Retry-After: 60` header and `{"error": "Rate limit exceeded"}` in the body.
 
 <Warning>
 If you need higher rate limits for a production integration, [contact us](mailto:support@jamdesk.com) to discuss Enterprise options.
 </Warning>
+
+## Query Limits
+
+Each request accepts a `limit` parameter controlling how many results to return. The maximum is **20**, the default is **5**, and the minimum is **1**. There is no pagination — all matching results come back in a single response. If you need more context, try a more specific query rather than increasing the limit.
+
+A query with no matches returns HTTP 200 with an empty results array:
+
+```json
+{"query": "quantum entanglement", "results": [], "total": 0, "durationMs": 48}
+```
+
+## Error Handling
+
+All error responses include a machine-readable `error` field you can branch on programmatically.
+
+| Status | `error` value | Meaning | Action |
+|--------|---------------|---------|--------|
+| **400** | `Missing or empty "query" field` | Request body is missing or has no `query` | Add a non-empty `query` string |
+| **401** | `invalid_key_format` | `Authorization` header is missing or the key doesn't match `jd_live_<32 hex>` | Check the header format — must be `Bearer jd_live_...` |
+| **401** | `invalid_key` | Key is not recognised or has been revoked | Generate a new key in the dashboard |
+| **403** | `wrong_project` | Key is valid but was generated for a different project | Use a key that matches the project slug in the URL |
+| **429** | `Rate limit exceeded` | Exceeded 60 requests per minute | Wait the number of seconds in the `Retry-After` header |
+| **502** | `Search temporarily unavailable` | Vector search backend is down | Retry after a short backoff |
+| **503** | `lookup_failed` or `redis_unavailable` | Key verification backend is unreachable | Retry after a short backoff |
+
+<Info>
+401 and 403 are permanent failures — retrying with the same key won't help. 429, 502, and 503 are transient — retry with exponential backoff.
+</Info>
+
+## CORS
+
+CORS is enabled on all endpoints. Browser-based clients (single-page apps, browser extensions, static sites) can call `/_api/search` directly without a backend proxy. All origins are allowed.
+
+## SDKs
+
+There are no official language SDKs at this time. Use the REST API directly via `fetch`, `requests`, `curl`, or any HTTP client. The [Postman collection](#postman-collection) below provides ready-to-fork examples.
+
+## Versioning
+
+The API is currently at **v1.0.0**. Breaking changes (field renames, removed endpoints, changed auth) will be announced via the [Jamdesk blog](https://www.jamdesk.com/blog) and a deprecation notice in the `X-Deprecation` response header at least 90 days before removal.
 
 ## Postman Collection
 

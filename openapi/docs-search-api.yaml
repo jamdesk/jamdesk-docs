@@ -35,8 +35,9 @@ info:
 
     - **Authentication:** Bearer token. Generate an API key in your
       [Jamdesk dashboard](https://dashboard.jamdesk.com) under
-      Settings → API Keys. Keys are prefixed `jd_` followed by 32 hex
-      characters (35 chars total) and never expire. Revoke from the dashboard.
+      Settings → API Keys. Keys are prefixed `jd_live_` followed by 32
+      hex characters (40 chars total) and never expire. Revoke from
+      the dashboard.
     - **Plan requirement:** Jamdesk Pro or higher.
     - **Rate limit:** 60 requests per minute per API key. Exceeded requests
       return HTTP 429 with a `Retry-After` header.
@@ -139,7 +140,7 @@ paths:
               {
                 method: 'POST',
                 headers: {
-                  'Authorization': 'Bearer jd_125907ffd7ba391b022799b60732b61a',
+                  'Authorization': 'Bearer jd_live_c83003a54ae0a83123454c3f7ec82f0a',
                   'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
@@ -158,7 +159,7 @@ paths:
             response = requests.post(
                 "https://your-project.jamdesk.app/_api/search",
                 headers={
-                    "Authorization": "Bearer jd_125907ffd7ba391b022799b60732b61a",
+                    "Authorization": "Bearer jd_live_c83003a54ae0a83123454c3f7ec82f0a",
                     "Content-Type": "application/json",
                 },
                 json={
@@ -172,7 +173,7 @@ paths:
           label: curl
           source: |
             curl -X POST https://your-project.jamdesk.app/_api/search \
-              -H "Authorization: Bearer jd_125907ffd7ba391b022799b60732b61a" \
+              -H "Authorization: Bearer jd_live_c83003a54ae0a83123454c3f7ec82f0a" \
               -H "Content-Type: application/json" \
               -d '{"query": "How do I authenticate with OAuth?", "limit": 5}'
       requestBody:
@@ -249,7 +250,9 @@ paths:
                         score:
                           type: number
                           format: float
-                          description: Relevance score. Higher is better.
+                          description: Relevance score (cosine similarity, 0.0–1.0). Higher is better.
+                          minimum: 0
+                          maximum: 1
                           example: 0.92
                   query:
                     type: string
@@ -261,7 +264,7 @@ paths:
                     example: 3
                   durationMs:
                     type: integer
-                    description: Search execution time in milliseconds.
+                    description: Server-side search execution time in milliseconds (excludes network round-trip).
                     example: 150
               examples:
                 multiResult:
@@ -322,8 +325,8 @@ paths:
           description: |
             Invalid or missing API key. The response body contains a
             machine-readable `error` code: `invalid_key_format` (missing
-            or malformed — e.g. not `jd_<32 hex>`) or `invalid_key` (key
-            is not recognised or has been revoked).
+            or malformed — e.g. not `jd_live_<32 hex>`, 40 chars) or
+            `invalid_key` (key is not recognised or has been revoked).
           content:
             application/json:
               schema:
@@ -397,8 +400,8 @@ components:
       scheme: bearer
       description: |
         API key generated from your Jamdesk dashboard (Settings → API Keys).
-        Format: `jd_<32 hex chars>` (35 chars). Keep keys secret. Revoke and
-        regenerate from the dashboard — there is no in-place rotation.
+        Format: `jd_live_<32 hex chars>` (40 chars). Keep keys secret. Revoke
+        and regenerate from the dashboard — there is no in-place rotation.
   schemas:
     Error:
       type: object
