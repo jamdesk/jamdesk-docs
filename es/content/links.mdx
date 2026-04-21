@@ -1,0 +1,178 @@
+---
+title: Enlaces y navegación
+description: Enlaza entre páginas, crea anclas a encabezados específicos y referencia URLs externas. Incluye navegación con Card y verificación de enlaces rotos.
+sidebarTitle: Enlaces y navegación
+---
+
+MDX admite enlaces estándar de Markdown más patrones específicos de Jamdesk para enlazar entre páginas, anclar a encabezados y referenciar URLs externas.
+
+## Enlaces internos
+
+Enlaza a otras páginas de tu documentación usando rutas relativas:
+
+```markdown
+Read the [getting started guide](/quickstart) first.
+
+See the [Card component](/components/card) for more options.
+```
+
+<Tip>
+Usa rutas relativas a la raíz de tu documentación, sin la extensión `.mdx`.
+</Tip>
+
+### Enlazar a encabezados
+
+Enlaza directamente a una sección usando anclas:
+
+```markdown
+See [configuration options](/config/docs-json-reference#colors)
+```
+
+Los encabezados generan anclas automáticamente a partir de su texto:
+- `## Getting Started` → `#getting-started`
+- `## API Reference` → `#api-reference`
+
+## Enlaces externos
+
+Enlaza a sitios externos:
+
+```markdown
+Check the [GitHub repository](https://github.com/example/repo).
+```
+
+Los enlaces externos se abren automáticamente en una pestaña nueva con ajustes seguros.
+
+## Enlazar con Cards
+
+Para una navegación más destacada, usa Cards en lugar de enlaces en línea:
+
+```mdx
+<Card title="Quickstart" icon="rocket" href="/quickstart">
+  Get up and running in 5 minutes
+</Card>
+```
+
+<Card title="Inicio rápido" icon="rocket" href="/es/quickstart">
+  Ponte en marcha en 5 minutos
+</Card>
+
+### Grupos de Cards
+
+Agrupa enlaces relacionados:
+
+```mdx
+<Columns cols={2}>
+  <Card title="Installation" icon="download" href="/cli/overview">
+    Install the CLI
+  </Card>
+  <Card title="Configuration" icon="gear" href="/config/docs-json-reference">
+    Configure your project
+  </Card>
+</Columns>
+```
+
+<Columns cols={2}>
+  <Card title="Instalación" icon="download" href="/es/cli/overview">
+    Instala la CLI
+  </Card>
+  <Card title="Configuración" icon="gear" href="/es/config/docs-json-reference">
+    Configura tu proyecto
+  </Card>
+</Columns>
+
+## Buenas prácticas
+
+<AccordionGroup>
+  <Accordion title="Usa texto de enlace descriptivo" icon="font" defaultOpen>
+    Indica al lector a dónde lleva el enlace:
+
+    ```markdown
+    {/* Good */}
+    Learn more in our [authentication guide](/quickstart).
+
+    {/* Avoid */}
+    For more info, [click here](/quickstart).
+    ```
+  </Accordion>
+
+  <Accordion title="Enlaza al nivel correcto" icon="sitemap">
+    Enlaza a la sección específica más relevante:
+
+    ```markdown
+    {/* Good - links to specific section */}
+    Configure [OAuth settings](/quickstart#what-s-next).
+
+    {/* Less helpful - links to entire page */}
+    See the [auth docs](/quickstart) for OAuth settings.
+    ```
+  </Accordion>
+
+  <Accordion title="Mantén los enlaces al día" icon="rotate">
+    Los enlaces rotos frustran a los lectores. Ejecuta comprobaciones de enlaces con regularidad:
+
+    ```bash
+    jamdesk broken-links
+    ```
+
+    Esto analiza tu documentación y reporta cualquier enlace interno roto.
+  </Accordion>
+</AccordionGroup>
+
+## Comprobar enlaces rotos
+
+La CLI de Jamdesk puede analizar enlaces rotos:
+
+```bash
+jamdesk broken-links
+```
+
+Ejemplo de salida:
+
+```
+docs/getting-started.mdx:15 - /docs/quikstart
+  Did you mean: /docs/quickstart
+
+Found 1 broken link in 45 files.
+```
+
+Ejecútalo antes de desplegar para detectar erratas y referencias desactualizadas.
+
+### Cómo se detectan los enlaces internos
+
+Los enlaces sin `https://` se tratan como internos y se validan contra las páginas de tu documentación. El validador comprueba que la página destino exista en la navegación de tu `docs.json`.
+
+Para sitios que usan `hostAtDocs` (documentación alojada en una subruta como `/docs`), los enlaces internos reciben **un prefijo automáticamente** en tiempo de ejecución. Escribe las rutas relativas a la raíz de tu documentación — el prefijo `/docs` se añade por ti:
+
+```markdown
+{/* Just write the docs path — auto-prefixed to /docs/config/docs-json-reference */}
+See the [Reference](/config/docs-json-reference).
+```
+
+<Note>
+  Los enlaces que no son de documentación (como páginas de marketing) deben usar URLs completas: `https://example.com/pricing`.
+  Cualquier enlace `/path` dentro del contenido de tu documentación se trata como un enlace interno de documentación.
+</Note>
+
+## Renombrar páginas
+
+Cuando renombras una página, los enlaces se rompen. Usa la CLI para actualizar todas las referencias:
+
+```bash
+jamdesk rename api/old-name.mdx api/new-name.mdx
+```
+
+Esto automáticamente:
+- Renombra el archivo
+- Actualiza la navegación en `docs.json`
+- Corrige los enlaces en todas las demás páginas
+
+## ¿Qué sigue?
+
+<Columns cols={2}>
+  <Card title="Optimización SEO" icon="magnifying-glass-chart" href="/es/content/seo">
+    Mejora la discoverabilidad y los metadatos
+  </Card>
+  <Card title="Frontmatter" icon="file-lines" href="/es/content/frontmatter">
+    Define títulos, descripciones y campos SEO
+  </Card>
+</Columns>
