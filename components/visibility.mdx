@@ -1,11 +1,11 @@
 ---
 title: Visibility
-description: Show different content to human readers and AI agents on the same page — agent-only context, instructions, or definitions that stay out of the rendered docs.
+description: Show different content to human readers and AI agents on the same page. Agent-only context, instructions, and definitions that stay out of the rendered docs.
 ---
 
 Use the `<Visibility>` component to carve out content for a specific audience. Blocks marked `for="humans"` appear in the rendered HTML docs; blocks marked `for="agents"` appear in the raw Markdown export and `llms-full.txt` that AI agents consume.
 
-The same MDX file serves both audiences — no duplication, no fork.
+The same MDX file serves both audiences. No duplication, no fork.
 
 ## When to use it
 
@@ -69,7 +69,7 @@ Include your API key in the `Authorization: Bearer <key>` header.
 Push to your connected branch to trigger a build.
 ```
 
-The tip is reassuring to a human reading the docs but useless to an agent generating code — keep it out.
+Reassuring to a human reading the docs, useless to an agent generating code. Keep it out of the `.md` export.
 
 ### Glossary expansion for agents
 
@@ -93,19 +93,21 @@ Use a self-closing tag when you want to *remove* a block from the other audience
 
 ## How audiences are detected
 
-Jamdesk decides which audience is viewing based on **URL shape and Accept header**, not user-agent sniffing:
+Jamdesk picks an audience from the **URL shape and `Accept` header**, never from user-agent sniffing:
 
-- **HTML render** (any canonical URL, e.g. `/guides/auth`) → audience: `humans`
-- **`.md` URL** (e.g. `/guides/auth.md`) → audience: `agents`
-- **`Accept: text/markdown` on a canonical URL** → audience: `agents`
-- **`llms-full.txt`** (built into every site) → audience: `agents`
+| Request                                         | Audience |
+|-------------------------------------------------|----------|
+| Canonical URL (e.g. `/guides/auth`)             | `humans` |
+| `.md` URL (e.g. `/guides/auth.md`)              | `agents` |
+| Canonical URL with `Accept: text/markdown`      | `agents` |
+| `llms-full.txt` (built into every site)         | `agents` |
 
-Any agent that sets the `Accept: text/markdown` header gets the agent content automatically — no URL surgery required.
+Any agent that sets `Accept: text/markdown` gets the agent content automatically. No URL surgery required.
 
 ## Rules & gotchas
 
 <Warning>
-  **Code blocks are safe.** The filter detects fenced (triple-backtick or triple-tilde) and inline (single-backtick) code blocks and leaves `<Visibility>` tags inside them untouched. That's why the examples above — which contain `<Visibility>` tags as *content* — render correctly.
+  **Code blocks are safe.** The filter detects fenced (triple-backtick or triple-tilde) and inline (single-backtick) code blocks and leaves `<Visibility>` tags inside them untouched. That's why the examples above render correctly: they contain `<Visibility>` tags as *content*, not as components.
 </Warning>
 
 <Warning>
@@ -123,7 +125,7 @@ Any agent that sets the `Accept: text/markdown` header gets the agent content au
 ## When NOT to use it
 
 - **To hide sensitive information.** `<Visibility for="humans">` only hides content from the *rendered HTML*. The raw MDX is still available via `.md` URL and in `llms-full.txt`. If you don't want it visible to anyone, don't put it in your docs repo.
-- **To A/B test content for different users.** There are only two audiences — humans and agents — and Jamdesk does not detect which specific human is viewing. Use feature flags or route redirects for user-segmented content.
+- **To A/B test content for different users.** There are only two audiences: humans and agents. Jamdesk doesn't detect which specific human is viewing. Use feature flags or route redirects for user-segmented content.
 - **To paper over missing documentation.** Agent-only content should be *supplementary*, not a substitute for clear human-facing docs. If you find yourself writing the real explanation for agents and a stub for humans, flip it.
 
 ## What's Next?
