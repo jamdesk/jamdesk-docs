@@ -1,0 +1,177 @@
+---
+title: 链接与导航
+description: 在页面之间建立链接、锚定到特定标题,以及引用外部 URL。包含 Card 导航和失效链接检查。
+---
+
+MDX 支持标准的 Markdown 链接,以及 Jamdesk 特有的模式,用于在页面之间建立链接、锚定到标题,以及引用外部 URL。
+
+## 内部链接
+
+使用相对路径链接到文档中的其他页面:
+
+```markdown
+Read the [getting started guide](/quickstart) first.
+
+See the [Card component](/components/card) for more options.
+```
+
+<Tip>
+使用相对于文档根目录的路径,并省略 `.mdx` 扩展名。
+</Tip>
+
+### 链接到标题
+
+使用锚点链接直接指向某个章节:
+
+```markdown
+See [configuration options](/config/docs-json-reference#colors)
+```
+
+标题会根据其文本自动生成锚点:
+- `## Getting Started` → `#getting-started`
+- `## API Reference` → `#api-reference`
+
+## 外部链接
+
+链接到外部站点:
+
+```markdown
+Check the [GitHub repository](https://github.com/example/repo).
+```
+
+外部链接会自动在新标签页中打开,并采用安全设置。
+
+## 使用 Card 的链接
+
+对于更突出的导航,请使用 Card 代替行内链接:
+
+```mdx
+<Card title="Quickstart" icon="rocket" href="/quickstart">
+  Get up and running in 5 minutes
+</Card>
+```
+
+<Card title="快速开始" icon="rocket" href="/zh/quickstart">
+  5 分钟内启动并运行
+</Card>
+
+### Card 分组
+
+将相关链接分组在一起:
+
+```mdx
+<Columns cols={2}>
+  <Card title="Installation" icon="download" href="/cli/overview">
+    Install the CLI
+  </Card>
+  <Card title="Configuration" icon="gear" href="/config/docs-json-reference">
+    Configure your project
+  </Card>
+</Columns>
+```
+
+<Columns cols={2}>
+  <Card title="安装" icon="download" href="/zh/cli/overview">
+    安装 CLI
+  </Card>
+  <Card title="配置" icon="gear" href="/zh/config/docs-json-reference">
+    配置你的项目
+  </Card>
+</Columns>
+
+## 最佳实践
+
+<AccordionGroup>
+  <Accordion title="使用描述性的链接文本" icon="font" defaultOpen>
+    告诉读者链接指向何处:
+
+    ```markdown
+    {/* Good */}
+    Learn more in our [authentication guide](/quickstart).
+
+    {/* Avoid */}
+    For more info, [click here](/quickstart).
+    ```
+  </Accordion>
+
+  <Accordion title="链接到合适的层级" icon="sitemap">
+    链接到最具体、最相关的章节:
+
+    ```markdown
+    {/* Good - links to specific section */}
+    Configure [OAuth settings](/quickstart#what-s-next).
+
+    {/* Less helpful - links to entire page */}
+    See the [auth docs](/quickstart) for OAuth settings.
+    ```
+  </Accordion>
+
+  <Accordion title="保持链接及时更新" icon="rotate">
+    失效链接会让读者受挫。定期运行链接检查:
+
+    ```bash
+    jamdesk broken-links
+    ```
+
+    该命令会扫描你的文档,并报告所有失效的内部链接。
+  </Accordion>
+</AccordionGroup>
+
+## 检查失效链接
+
+Jamdesk CLI 可以扫描失效链接:
+
+```bash
+jamdesk broken-links
+```
+
+示例输出:
+
+```
+docs/getting-started.mdx:15 - /docs/quikstart
+  Did you mean: /docs/quickstart
+
+Found 1 broken link in 45 files.
+```
+
+在部署前运行此命令,可以捕获拼写错误和过期引用。
+
+### 如何识别内部链接
+
+不带 `https://` 的链接会被视为内部链接,并对照你的文档页面进行校验。校验器会检查目标页面是否存在于 `docs.json` 的导航配置中。
+
+对于使用 `hostAtDocs` 的站点(文档托管在例如 `/docs` 这样的子路径下),内部链接会在运行时**自动添加前缀**。只需编写相对于文档根目录的路径 —— `/docs` 前缀会自动为你补上:
+
+```markdown
+{/* Just write the docs path — auto-prefixed to /docs/config/docs-json-reference */}
+See the [Reference](/config/docs-json-reference).
+```
+
+<Note>
+  非文档链接(例如营销页面)应使用完整 URL:`https://example.com/pricing`。
+  文档内容中任何形如 `/path` 的链接都会被视为内部文档链接。
+</Note>
+
+## 重命名页面
+
+当你重命名页面时,链接会失效。使用 CLI 更新所有引用:
+
+```bash
+jamdesk rename api/old-name.mdx api/new-name.mdx
+```
+
+该命令会自动:
+- 重命名文件
+- 更新 `docs.json` 中的导航
+- 修复其他所有页面中的链接
+
+## 下一步
+
+<Columns cols={2}>
+  <Card title="SEO 优化" icon="magnifying-glass-chart" href="/zh/content/seo">
+    改善可发现性与元数据
+  </Card>
+  <Card title="Frontmatter" icon="file-lines" href="/zh/content/frontmatter">
+    定义标题、描述和 SEO 字段
+  </Card>
+</Columns>

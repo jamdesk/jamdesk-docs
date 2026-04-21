@@ -1,0 +1,156 @@
+---
+title: PDF Export
+description: Export your entire docs site as a single PDF. Downloadable from the dashboard and delivered by email. Paid plans only.
+---
+
+Export your documentation site as a single PDF from the dashboard. Jamdesk renders every published page into one file, emails you a download link when it's ready, and keeps the PDF available for redownload until your next docs build.
+
+<Card title="Download a sample PDF" icon="file-pdf" href="https://github.com/jamdesk/jamdesk-docs/releases/download/sample-pdf-v1/jamdesk-docs.pdf">
+  See what a real export looks like. The full Jamdesk documentation site, rendered through this same pipeline. 131 pages, 36 MB.
+</Card>
+
+PDF export is useful for:
+
+- Sharing documentation with reviewers who don't have dashboard access
+- Offline reading on planes, in secure facilities, or at customer sites
+- Compliance and audit snapshots at a specific commit
+- Customer handoff packages
+
+## Who can use it
+
+PDF export is on every **paid plan**. No add-on, no extra charge. Free trial projects see the button but can't run an export until they upgrade.
+
+## Generate a PDF
+
+<Steps>
+  <Step title="Open Settings → PDF Exports">
+    In the dashboard, select the project from the sidebar, click **Settings**, and scroll to the **PDF Exports** section beneath project metadata.
+  </Step>
+  <Step title="Click Generate PDF">
+    The button changes to **Generating…** while Jamdesk renders the site in a headless browser and writes the PDF to storage. Time to finish scales with the number of pages and how much imagery they contain. Most sites complete in a few minutes.
+  </Step>
+  <Step title="Watch for the email">
+    When the PDF is ready, we email the signed-in user with a link back to the Settings page. You can also just leave the page open; the status updates live.
+  </Step>
+  <Step title="Download">
+    Click **Download PDF**. See [Download link lifetime](#download-link-lifetime) if the link ever expires.
+  </Step>
+</Steps>
+
+## Multi-language projects
+
+If your `docs.json` has more than one language configured, a locale dropdown appears next to the **Generate PDF** button.
+
+```json docs.json
+{
+  "navigation": {
+    "languages": [
+      { "language": "en", "default": true },
+      { "language": "es" },
+      { "language": "fr" }
+    ]
+  }
+}
+```
+
+Each export covers a single language. To ship all three to a reviewer, pick `en`, export, then `es`, export, then `fr`.
+
+<Tip>
+  The default language exports at your site's root URLs (e.g. `<slug>.jamdesk.app/getting-started`, or your custom domain). Other locales export at their prefixed URLs (e.g. `/es/getting-started`).
+</Tip>
+
+## Caching and Regenerate
+
+The Settings page remembers only the **most recent** completed export per project. When you click **Regenerate**, Jamdesk checks whether the last export matches both the current commit *and* the locale you're asking for:
+
+- **Same commit and locale** → the cached PDF is handed back immediately. You'll see a notice explaining that nothing has changed since your last export.
+- **Different commit or locale** → a fresh render kicks off.
+
+Because the cache is a single slot, exporting a second locale or a new commit replaces whatever was there before. The earlier PDF isn't deleted, but it's no longer the one surfaced on the Settings page.
+
+To get a fresh PDF after updating your docs:
+
+<Steps>
+  <Step title="Ship new content">
+    Push your changes to GitHub, or use `jamdesk deploy` from the CLI.
+  </Step>
+  <Step title="Wait for the build to finish">
+    The Builds list in the dashboard shows **Completed** on the new commit.
+  </Step>
+  <Step title="Regenerate">
+    Back on the Settings page, click **Regenerate**. The new commit's SHA differs from the cached one, so Jamdesk kicks off a fresh render.
+  </Step>
+</Steps>
+
+Regenerate is safe to click liberally. If the commit hasn't moved, it won't re-render or re-email.
+
+## Rate limiting
+
+You can produce one completed export per project every **five minutes**. Requests inside that window return `Try again in a few minutes`. The cache-hit path bypasses the rate limit, so repeat downloads of an unchanged PDF never hit the wall.
+
+A PDF that has been generating for more than twenty minutes is treated as stale. You can click **Generate PDF** again to re-enqueue.
+
+## What gets exported
+
+The PDF includes every page listed in your `docs.json` navigation for the chosen language, in declaration order. External links in the nav are skipped. Orphan pages (files in your repo that aren't wired into navigation) are not included.
+
+Each page is rendered via the same URL a reader would hit (`https://<slug>.jamdesk.app/<path>`), so anything that shows up in the browser shows up in the PDF. Up to 10% of pages are allowed to fail rendering; beyond that threshold the export aborts and you can retry.
+
+## Password-protected sites
+
+If your site is [password protected](/setup/password-protection), the PDF exporter can't unlock it. The headless browser doing the rendering doesn't carry a session. Protected pages won't appear in the PDF and count against the 10% failure budget described above. If most of your site is gated, disable password protection before running the export, or rely on unprotected pages only.
+
+## Email delivery
+
+When the PDF is ready, the person who clicked **Generate PDF** gets an email with a link back to the Settings → PDF Exports section, plus the page count, timestamp, and locale (for multi-language projects). The dashboard itself also flips to the ready state live; you don't need the email to download.
+
+Only the requester is emailed. Other collaborators see the new PDF the next time they open the Settings page.
+
+<Warning>
+  If the email doesn't arrive within a few minutes of completion, check your spam folder. The PDF is still available from the dashboard regardless of whether the email lands.
+</Warning>
+
+## Download link lifetime
+
+The download URL in the dashboard and in the email is a short-lived signed URL. If it 403s, reload the Settings page. Jamdesk mints a fresh URL every time the page queries export status.
+
+## Troubleshooting
+
+<Accordion title="Button shows 'PDF export is rolling out soon'">
+  The feature is temporarily disabled platform-wide. Contact support.
+</Accordion>
+
+<Accordion title="'No completed build found — trigger a build first'">
+  PDF export renders a built site, not your source MDX. You need at least one successful build on your default branch. Push a commit or click **Rebuild** on the Builds page, wait for it to finish, then try again.
+</Accordion>
+
+<Accordion title="'PDF export requires a paid plan'">
+  Your project is on the free trial. Upgrade from **Settings → Billing**.
+</Accordion>
+
+<Accordion title="'Try again in a few minutes'">
+  You hit the five-minute rate limit. Wait and retry.
+</Accordion>
+
+<Accordion title="Regenerate didn't produce a new file">
+  The cached PDF was reused because your last completed build's commit hasn't changed. You need a new build to force a fresh render. See [Caching and Regenerate](#caching-and-regenerate).
+</Accordion>
+
+<Accordion title="The PDF is missing pages that exist on my site">
+  The exporter only pulls pages that are in your `docs.json` navigation, in the language you selected. Orphan pages (authored but not navigated), external links, and pages behind password protection won't appear. Individual page render failures are logged in the export. If the whole export fails with *Too many pages failed to render*, check that the affected pages load cleanly in a browser at `<slug>.jamdesk.app`.
+</Accordion>
+
+<Accordion title="The PDF is enormous">
+  Large diagrams, videos, and unoptimized images inflate PDF size fast. Turn on [Automatic Image Conversion](/builds/image-optimization) to cut image bytes by 60-80%. Videos render as a poster frame with a play icon, so they don't bloat the file.
+</Accordion>
+
+## What's Next?
+
+<Columns cols={2}>
+  <Card title="Triggering Builds" icon="hammer" href="/builds/triggering">
+    PDF export runs against the most recent completed build. Kick one off manually or on push.
+  </Card>
+  <Card title="Image Optimization" icon="image" href="/builds/image-optimization">
+    Convert PNG/JPG to WebP at build time to keep PDFs small.
+  </Card>
+</Columns>
