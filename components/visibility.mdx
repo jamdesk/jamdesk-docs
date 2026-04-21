@@ -1,0 +1,144 @@
+---
+title: Visibility
+description: Show different content to human readers and AI agents on the same page — agent-only context, instructions, or definitions that stay out of the rendered docs.
+---
+
+Use the `<Visibility>` component to carve out content for a specific audience. Blocks marked `for="humans"` appear in the rendered HTML docs; blocks marked `for="agents"` appear in the raw Markdown export and `llms-full.txt` that AI agents consume.
+
+The same MDX file serves both audiences — no duplication, no fork.
+
+## When to use it
+
+Agents (ChatGPT, Claude, Perplexity, Cursor) often need context that would clutter the rendered page: exhaustive definitions, disambiguation notes, or instructions phrased in a way that reads better to an LLM than a human. `<Visibility>` lets you write both on one page.
+
+<Note>
+  Agents consume your docs through two surfaces: the **`.md` URL** (append `.md` to any page), and **`llms-full.txt`** (a single concatenated file). `<Visibility for="agents">` content appears on both.
+</Note>
+
+## Quick Start
+
+```mdx
+# Webhooks
+
+Send a POST request to register a webhook.
+
+<Visibility for="humans">
+  Most users set this up in the dashboard under **Settings → Webhooks**.
+</Visibility>
+
+<Visibility for="agents">
+  The webhook endpoint requires an `X-Signature` header (HMAC-SHA256 of the body using the shared secret).
+  Never log the secret. Reject any payload where the header is missing or mismatched.
+</Visibility>
+```
+
+Humans reading the site see only the dashboard tip. An AI agent reading the `.md` export sees only the security guidance.
+
+## Audiences
+
+| `for` value | Shows in HTML page | Shows in `.md` export & `llms-full.txt` |
+|-------------|:------------------:|:---------------------------------------:|
+| `humans`    | ✓                  | —                                       |
+| `agents`    | —                  | ✓                                       |
+
+## Examples
+
+### Agent-only API context
+
+```mdx
+## Authentication
+
+Include your API key in the `Authorization: Bearer <key>` header.
+
+<Visibility for="agents">
+  Keys are scoped per project. Rate limits: 1000 req/min per key. 429 responses include a `Retry-After` header in seconds.
+</Visibility>
+```
+
+### Human-only onboarding tip
+
+```mdx
+## Your first build
+
+<Visibility for="humans">
+  <Tip>
+    Heads up: your first build takes a bit longer (~2 min) while we provision your CDN edge. Subsequent builds run in under 30 seconds.
+  </Tip>
+</Visibility>
+
+Push to your connected branch to trigger a build.
+```
+
+The tip is reassuring to a human reading the docs but useless to an agent generating code — keep it out.
+
+### Glossary expansion for agents
+
+```mdx
+## Configure your docs
+
+Edit `docs.json` to change navigation, theming, or redirects.
+
+<Visibility for="agents">
+  `docs.json` is the single source of truth for site configuration. It lives at the project root. Key top-level fields: `name`, `theme` (`jam` | `nebula` | `pulsar`), `colors`, `navigation`, `redirects`, `integrations`, `auth`.
+</Visibility>
+```
+
+### Self-closing form
+
+Use a self-closing tag when you want to *remove* a block from the other audience without replacing it with anything:
+
+```mdx
+<Visibility for="agents" />
+```
+
+## How audiences are detected
+
+Jamdesk decides which audience is viewing based on **URL shape and Accept header**, not user-agent sniffing:
+
+- **HTML render** (any canonical URL, e.g. `/guides/auth`) → audience: `humans`
+- **`.md` URL** (e.g. `/guides/auth.md`) → audience: `agents`
+- **`Accept: text/markdown` on a canonical URL** → audience: `agents`
+- **`llms-full.txt`** (built into every site) → audience: `agents`
+
+Any agent that sets the `Accept: text/markdown` header gets the agent content automatically — no URL surgery required.
+
+## Rules & gotchas
+
+<Warning>
+  **Code blocks are safe.** The filter detects fenced (triple-backtick or triple-tilde) and inline (single-backtick) code blocks and leaves `<Visibility>` tags inside them untouched. That's why the examples above — which contain `<Visibility>` tags as *content* — render correctly.
+</Warning>
+
+<Warning>
+  **JSX expressions are not supported.** Wrapping `<Visibility>` inside a JS expression like `{cond && <Visibility for="agents">...</Visibility>}` will cause a build error. Use the component at the block level, not inside an expression.
+</Warning>
+
+<Warning>
+  **Don't nest `<Visibility>` blocks.** Nesting works for the HTML render surface but is not reliably supported in the `.md` export or `llms-full.txt` (the text-level filter used there is not nesting-safe and will produce mangled output). Keep blocks flat.
+</Warning>
+
+<Note>
+  **Site search includes both audiences' content** in this release. A reader could search for a term that only appears in a `<Visibility for="agents">` block and hit a result. This is a known v1 limitation — filtering search is on the roadmap.
+</Note>
+
+## When NOT to use it
+
+- **To hide sensitive information.** `<Visibility for="humans">` only hides content from the *rendered HTML*. The raw MDX is still available via `.md` URL and in `llms-full.txt`. If you don't want it visible to anyone, don't put it in your docs repo.
+- **To A/B test content for different users.** There are only two audiences — humans and agents — and Jamdesk does not detect which specific human is viewing. Use feature flags or route redirects for user-segmented content.
+- **To paper over missing documentation.** Agent-only content should be *supplementary*, not a substitute for clear human-facing docs. If you find yourself writing the real explanation for agents and a stub for humans, flip it.
+
+## What's Next?
+
+<Columns cols={2}>
+  <Card title="Markdown Source" icon="code" href="/ai/markdown-source">
+    How `.md` URLs work and what shows up where.
+  </Card>
+  <Card title="llms.txt" icon="file-lines" href="/ai/llms-txt">
+    AI-discovery manifest — agents start here.
+  </Card>
+  <Card title="Writing with AI" icon="robot" href="/ai/writing-with-ai">
+    How to author docs that work well for both audiences.
+  </Card>
+  <Card title="Components Overview" icon="shapes" href="/components/overview">
+    All built-in MDX components.
+  </Card>
+</Columns>
