@@ -173,6 +173,81 @@ For pages that shouldn't be translated (like API reference), you can reference t
 }
 ```
 
+## Translating OpenAPI Specs
+
+OpenAPI-driven endpoint pages (those with an `openapi:` frontmatter directive) render content from a YAML or JSON spec file. To translate the endpoint summary, descriptions, parameter hints, and schema field descriptions, provide a language-specific spec file alongside your English one.
+
+### File naming
+
+Place the translated spec next to the source, inserting the language code before the extension:
+
+```
+openapi/
+├── api.yaml           # English (default)
+├── api.fr.yaml        # French
+├── api.es.yaml        # Spanish
+└── api.zh.yaml        # Simplified Chinese
+```
+
+No configuration or `docs.json` change is required — Jamdesk resolves the matching spec at render time based on the URL's language prefix. A page at `/fr/api-reference/create-ticket` looks for `api.fr.yaml` first, falling back to `api.yaml` if no translation exists.
+
+### What to translate in the spec
+
+Translate human-readable prose. Keep every structural value identical across languages.
+
+| Translate | Keep identical |
+|-----------|----------------|
+| `info.title`, `info.description` | `openapi` / `swagger` version, `servers[*].url` |
+| Per-operation `summary`, `description` | URL paths, HTTP methods, `operationId`, `tags` |
+| Per-parameter `description` | Parameter names (`name`), field names, schema property keys |
+| Per-response `description` | Status code keys (`"200"`, `"400"`, etc.) |
+| `requestBody.description` | `enum` values (`low`, `normal`, `high`), `type`, `format` |
+| Schema `description`, property `description` | `$ref` pointers, `example` / `examples` payload contents |
+
+### Fallback behavior
+
+If a page is requested under a localized URL but no translated spec exists, Jamdesk renders the English spec inside the translated page shell. Users see a mixed-language endpoint block rather than a 404. This matches the broader partial-translations behavior for MDX pages.
+
+<Note>
+  The `jamdesk` CLI's local preview (`jamdesk dev`) resolves OpenAPI specs by filename only — it does not yet apply the language suffix lookup. When iterating on translations locally, use the production Jamdesk preview URL (`<project>.jamdesk.app/<lang>/...`) or swap the source file temporarily. This only affects local development; hosted and ISR renders pick the translated spec correctly.
+</Note>
+
+### Removing a language-specific spec
+
+Deleting `api.<lang>.yaml` causes the page to fall back to the English spec on the next render (no rebuild required). To retranslate from scratch, delete the file and regenerate. No `docs.json` change is needed — spec resolution is purely filename-based.
+
+### Example
+
+Source `openapi/tickets.yaml`:
+
+```yaml
+info:
+  title: Tickets API
+  description: Manage support tickets.
+paths:
+  /tickets:
+    post:
+      summary: Create a ticket
+      description: Create a new support ticket.
+      operationId: createTicket
+```
+
+French translation `openapi/tickets.fr.yaml`:
+
+```yaml
+info:
+  title: API Tickets
+  description: Gérez les tickets de support.
+paths:
+  /tickets:
+    post:
+      summary: Créer un ticket
+      description: Créer un nouveau ticket de support.
+      operationId: createTicket
+```
+
+Notice that `/tickets`, `post`, and `createTicket` stay identical. Only the prose changes.
+
 ## Translation Workflow
 
 <Steps>
