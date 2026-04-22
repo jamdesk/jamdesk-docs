@@ -18,7 +18,7 @@ PDF export is useful for:
 
 ## Who can use it
 
-PDF export is on every **paid plan**. No add-on, no extra charge. Free trial projects see the button but can't run an export until they upgrade.
+PDF export is on every **paid plan**. No add-on, no extra charge. Each project can generate up to **3 PDFs per day**, with the counter resetting at midnight UTC.
 
 ## Generate a PDF
 
@@ -55,10 +55,6 @@ If your `docs.json` has more than one language configured, a locale dropdown app
 
 Each export covers a single language. To ship all three to a reviewer, pick `en`, export, then `es`, export, then `fr`.
 
-<Tip>
-  The default language exports at your site's root URLs (e.g. `<slug>.jamdesk.app/getting-started`, or your custom domain). Other locales export at their prefixed URLs (e.g. `/es/getting-started`).
-</Tip>
-
 ## Caching and Regenerate
 
 The Settings page remembers only the **most recent** completed export per project. When you click **Regenerate**, Jamdesk checks whether the last export matches both the current build *and* the locale you're asking for:
@@ -86,7 +82,12 @@ Regenerate is safe to click liberally. If no new build has completed, it won't r
 
 ## Rate limiting
 
-You can produce one completed export per project every **five minutes**. Requests inside that window return `Try again in a few minutes`. The cache-hit path bypasses the rate limit, so repeat downloads of an unchanged PDF never hit the wall.
+Each project has two limits:
+
+- **3 completed exports per day.** The counter resets at midnight UTC. The dashboard shows how many you've used.
+- **5 minutes between exports.** Requests inside that window return `Try again in a few minutes`.
+
+Cache hits (same build and locale as the previous export) bypass both limits, so repeat downloads of an unchanged PDF never hit the wall.
 
 A PDF that has been generating for more than twenty minutes is treated as stale. You can click **Generate PDF** again to re-enqueue.
 
@@ -94,11 +95,11 @@ A PDF that has been generating for more than twenty minutes is treated as stale.
 
 The PDF includes every page listed in your `docs.json` navigation for the chosen language, in declaration order. External links in the nav are skipped. Orphan pages (files in your repo that aren't wired into navigation) are not included.
 
-Each page is rendered via the same URL a reader would hit (`https://<slug>.jamdesk.app/<path>`), so anything that shows up in the browser shows up in the PDF. Up to 10% of pages are allowed to fail rendering; beyond that threshold the export aborts and you can retry.
+Each page is rendered via the same URL a reader would hit (`https://<slug>.jamdesk.app/<path>`), so anything that shows up in the browser shows up in the PDF.
 
 ## Password-protected sites
 
-If your site is [password protected](/setup/password-protection), the PDF exporter can't unlock it. The headless browser doing the rendering doesn't carry a session. Protected pages won't appear in the PDF and count against the 10% failure budget described above. If most of your site is gated, disable password protection before running the export, or rely on unprotected pages only.
+If your site is [password protected](/setup/password-protection), a PDF will not be generated. Disable password protection to run the export, then re-enable it afterward.
 
 ## Email delivery
 
@@ -112,13 +113,9 @@ Only the requester is emailed. Other collaborators see the new PDF the next time
 
 ## Download link lifetime
 
-The download URL in the dashboard and in the email is a short-lived signed URL. If it 403s, reload the Settings page. Jamdesk mints a fresh URL every time the page queries export status.
+Email download links are valid for **72 hours** from the time the PDF finishes. The dashboard mints a fresh URL every time you open the Settings page, so downloads from the dashboard don't expire. If an email link ever 403s, head to the dashboard and click **Download PDF** there.
 
 ## Troubleshooting
-
-<Accordion title="Button shows 'PDF export is rolling out soon'">
-  The feature is temporarily disabled platform-wide. Contact support.
-</Accordion>
 
 <Accordion title="'No completed build found — trigger a build first'">
   PDF export renders a built site, not your source MDX. You need at least one successful build on your default branch. Push a commit or click **Rebuild** on the Builds page, wait for it to finish, then try again.
@@ -128,8 +125,12 @@ The download URL in the dashboard and in the email is a short-lived signed URL. 
   Your project is on the free trial. Upgrade from **Settings → Billing**.
 </Accordion>
 
+<Accordion title="'Daily PDF export limit reached (3/day). Try again tomorrow.'">
+  Each project is capped at 3 completed exports per UTC day. The counter resets at midnight UTC.
+</Accordion>
+
 <Accordion title="'Try again in a few minutes'">
-  You hit the five-minute rate limit. Wait and retry.
+  You hit the five-minute gap between exports. Wait and retry.
 </Accordion>
 
 <Accordion title="Regenerate didn't produce a new file">
@@ -137,7 +138,7 @@ The download URL in the dashboard and in the email is a short-lived signed URL. 
 </Accordion>
 
 <Accordion title="The PDF is missing pages that exist on my site">
-  The exporter only pulls pages that are in your `docs.json` navigation, in the language you selected. Orphan pages (authored but not navigated), external links, and pages behind password protection won't appear. Individual page render failures are logged in the export. If the whole export fails with *Too many pages failed to render*, check that the affected pages load cleanly in a browser at `<slug>.jamdesk.app`.
+  The exporter only pulls pages that are in your `docs.json` navigation, in the language you selected. Orphan pages (authored but not navigated) and external links won't appear. Check that the missing pages load cleanly in a browser at `<slug>.jamdesk.app`.
 </Accordion>
 
 <Accordion title="The PDF is enormous">
