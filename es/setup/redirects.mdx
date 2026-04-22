@@ -1,0 +1,189 @@
+---
+title: Redirecciones
+description: Configura redirecciones de URL para páginas movidas, rutas renombradas y URL heredadas. Admite coincidencias exactas y redirecciones basadas en patrones.
+---
+
+Las redirecciones envían a los usuarios desde URL antiguas a nuevas. Úsalas cuando reorganices la documentación, renombres páginas o mantengas enlaces de versiones anteriores de la documentación.
+
+## Configuración
+
+Agrega redirecciones a tu `docs.json`:
+
+```json docs.json
+{
+  "redirects": [
+    {
+      "source": "/old-page",
+      "destination": "/new-page"
+    },
+    {
+      "source": "/guides/setup",
+      "destination": "/getting-started"
+    }
+  ]
+}
+```
+
+## Tipos de redirección
+
+### Coincidencia exacta
+
+Redirige una URL específica:
+
+```json
+{
+  "source": "/api/v1/users",
+  "destination": "/api/v2/users"
+}
+```
+
+`/api/v1/users` → `/api/v2/users`
+
+### Coincidencia con comodín
+
+Usa `*` para coincidir con segmentos de ruta:
+
+```json
+{
+  "source": "/blog/*",
+  "destination": "/articles/*"
+}
+```
+
+`/blog/hello-world` → `/articles/hello-world`
+
+### Coincidencia por prefijo
+
+Redirige todas las rutas bajo un prefijo:
+
+```json
+{
+  "source": "/v1/*",
+  "destination": "/v2/*"
+}
+```
+
+`/v1/api/users` → `/v2/api/users`
+
+## Códigos de estado HTTP
+
+Por defecto, las redirecciones devuelven un `308` (redirección permanente). Especifica un estado diferente:
+
+```json
+{
+  "source": "/old-page",
+  "destination": "/new-page",
+  "statusCode": 307
+}
+```
+
+| Estado | Tipo | Caso de uso |
+|--------|------|-------------|
+| `301` | Permanente (GET) | Movido permanentemente, convierte POST a GET |
+| `302` | Temporal (GET) | Movimiento temporal, convierte POST a GET |
+| `307` | Temporal | Movimiento temporal, preserva el método HTTP |
+| `308` | Permanente | Movido permanentemente, preserva el método HTTP |
+
+Usa `308` para la mayoría de las redirecciones de documentación. Usa `307` para movimientos temporales durante migraciones.
+
+## Patrones comunes
+
+### Reorganizar la documentación
+
+Al reestructurar la navegación:
+
+```json
+{
+  "redirects": [
+    { "source": "/setup", "destination": "/getting-started" },
+    { "source": "/setup/install", "destination": "/getting-started/installation" },
+    { "source": "/setup/config", "destination": "/getting-started/configuration" }
+  ]
+}
+```
+
+### Migración de versión de API
+
+Al deprecar una versión de API:
+
+```json
+{
+  "redirects": [
+    { "source": "/api/v1/*", "destination": "/api/v2/*" }
+  ]
+}
+```
+
+### Redirecciones externas
+
+Redirige a URL externas:
+
+```json
+{
+  "source": "/community",
+  "destination": "https://discord.gg/your-server"
+}
+```
+
+### Preservar el SEO
+
+Cuando las páginas tienen posicionamiento en buscadores existente:
+
+```json
+{
+  "redirects": [
+    {
+      "source": "/tutorials/getting-started-with-api",
+      "destination": "/quickstart",
+      "statusCode": 301
+    }
+  ]
+}
+```
+
+## Orden de las redirecciones
+
+Las redirecciones se evalúan en orden. Las reglas más específicas deben ir antes que los comodines:
+
+```json
+{
+  "redirects": [
+    { "source": "/api/v1/special-endpoint", "destination": "/api/special" },
+    { "source": "/api/v1/*", "destination": "/api/v2/*" }
+  ]
+}
+```
+
+Gana la primera regla que coincida.
+
+## Limitaciones
+
+- Las redirecciones solo se aplican a rutas de documentación
+- Los parámetros de consulta se preservan automáticamente
+- Los fragmentos hash se preservan automáticamente
+- Máximo 1000 redirecciones por proyecto
+
+## Probar las redirecciones
+
+Después de agregar redirecciones:
+
+1. Despliega los cambios
+2. Visita la URL antigua directamente
+3. Verifica que llegues al nuevo destino
+4. Comprueba el código de estado HTTP en las herramientas de desarrollo del navegador
+
+```bash
+# Check redirect with curl
+curl -I https://docs.example.com/old-page
+```
+
+## ¿Qué sigue?
+
+<Columns cols={2}>
+  <Card title="Dominios personalizados" icon="globe" href="/es/deploy/custom-domains">
+    Configura tu propio dominio
+  </Card>
+  <Card title="Navegación" icon="sitemap" href="/es/navigation/overview">
+    Organiza la estructura de tu documentación
+  </Card>
+</Columns>

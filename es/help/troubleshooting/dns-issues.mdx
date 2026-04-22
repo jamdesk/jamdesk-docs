@@ -1,0 +1,185 @@
+---
+title: Solución de problemas de DNS
+description: "Soluciona retrasos en la propagación de DNS, conflictos de CNAME y fallos en la verificación TXT al configurar dominios personalizados. Incluye comandos dig y soluciones para proveedores comunes."
+---
+
+Los problemas de DNS son la causa más común de los problemas con dominios personalizados.
+
+## Verificar la propagación de DNS
+
+Los cambios de DNS pueden tardar hasta 48 horas en propagarse globalmente, aunque la mayoría se completan en pocas horas.
+
+Comprueba el estado de la propagación:
+
+```bash
+# Check if your CNAME is resolving
+dig CNAME docs.yourdomain.com
+
+# Or use nslookup
+nslookup -type=CNAME docs.yourdomain.com
+```
+
+La salida esperada muestra tu CNAME apuntando a `cname.jamdesk.com`:
+
+```
+docs.yourdomain.com. 300 IN CNAME cname.jamdesk.com.
+```
+
+Herramientas en línea como [whatsmydns.net](https://www.whatsmydns.net/) muestran la propagación en múltiples regiones.
+
+## Problemas comunes
+
+### CNAME no resuelve
+
+**Síntoma**: `dig` no muestra ningún registro CNAME o muestra un destino incorrecto.
+
+**Causas**:
+- Registro no guardado en el proveedor de DNS
+- Error tipográfico en el nombre o valor del registro
+- Propagación de DNS todavía en curso
+
+**Solución**:
+1. Inicia sesión en tu proveedor de DNS
+2. Verifica que el registro CNAME existe con los valores correctos
+3. Espera 15-30 minutos y vuelve a comprobarlo
+
+### CNAME en el dominio raíz
+
+**Síntoma**: El proveedor de DNS rechaza un registro CNAME para `yourdomain.com` (sin subdominio).
+
+**Causa**: Los estándares de DNS (RFC 1034) prohíben los registros CNAME en el vértice de zona (dominio raíz).
+
+**Solución**: El dashboard de Jamdesk muestra automáticamente un registro A (`76.76.21.21`) en lugar de CNAME para los dominios raíz. Si tu dashboard sigue mostrando un CNAME para un dominio raíz, haz clic en **Actualizar** para obtener los registros actualizados.
+
+### Conflictos con el proxy de Cloudflare
+
+**Síntoma**: Errores SSL o bucles de redirección al usar Cloudflare.
+
+**Causa**: El proxy de Cloudflare (nube naranja) puede interferir con el SSL de Vercel.
+
+**Solución**:
+1. En la configuración de DNS de Cloudflare, haz clic en el icono de nube naranja
+2. Cambia a "Solo DNS" (nube gris) para tu subdominio de documentación
+3. Deja que Vercel gestione el SSL
+
+### Registros en conflicto
+
+**Síntoma**: La verificación del CNAME falla aunque el registro parezca correcto.
+
+**Causa**: Un registro A existente entra en conflicto con el CNAME.
+
+**Solución**:
+1. Comprueba si hay registros A en el mismo subdominio
+2. Elimina los registros A en conflicto
+3. Asegúrate de que solo queda el CNAME
+
+```bash
+# Check for A records
+dig A docs.yourdomain.com
+```
+
+### Fallo en la verificación TXT
+
+**Síntoma**: El registro TXT para el alojamiento en subruta no se verifica.
+
+**Causas**:
+- Registro añadido en el dominio incorrecto
+- Error tipográfico en el valor del registro
+- Registros TXT existentes que causan problemas
+
+**Solución**:
+1. Verifica que el registro TXT está en `_jamdesk.yourdomain.com`
+2. Copia el valor de verificación exacto desde el dashboard
+3. Comprueba si hay registros TXT en conflicto
+
+```bash
+# Check TXT records
+dig TXT _jamdesk.yourdomain.com
+```
+
+### Certificado SSL no emitido
+
+**Síntoma**: El dominio aparece como "pendiente" indefinidamente.
+
+**Causas**:
+- Registros CAA que bloquean la emisión del certificado
+- DNS no completamente propagado
+- Dominio inaccesible
+
+**Solución**:
+
+Comprueba si hay registros CAA:
+```bash
+dig CAA yourdomain.com
+```
+
+Si existen registros CAA, añade uno que permita Let's Encrypt:
+```
+yourdomain.com. CAA 0 issue "letsencrypt.org"
+```
+
+## Comandos de diagnóstico
+
+```bash
+# Full DNS lookup
+dig +trace docs.yourdomain.com
+
+# Check all record types
+dig ANY docs.yourdomain.com
+
+# Check specific nameservers
+dig @8.8.8.8 docs.yourdomain.com
+
+# Check TTL (time to live)
+dig +noall +answer docs.yourdomain.com
+```
+
+## Notas específicas por proveedor de DNS
+
+### Cloudflare
+- Establece el estado del proxy en "Solo DNS" (nube gris) durante la verificación del dominio
+- Una vez completada la verificación, vuelve a activar el proxy (nube naranja)
+- **¿Usas un Worker?** El registro DNS debe estar en modo proxy (nube naranja) para que el Worker funcione. Solo usa la nube gris durante la verificación, luego vuelve a naranja.
+- Desactiva "Usar siempre HTTPS" para el subdominio de documentación para evitar conflictos de SSL con Vercel
+
+### GoDaddy
+- El destino del CNAME NO debe terminar con un punto
+- Los cambios pueden tardar más en propagarse
+
+### Namecheap
+- Usa el tipo "CNAME Record"
+- El campo Host es solo el subdominio (`docs`, no `docs.yourdomain.com`)
+
+### Route 53
+- El destino del CNAME DEBE terminar con un punto (`cname.jamdesk.com.`)
+- Evaluate target health: No
+
+## Cuándo contactar con soporte
+
+Contacta con soporte si:
+- Los registros DNS están verificados como correctos pero el dominio sigue pendiente después de 48 horas
+- Los errores de certificado SSL persisten después de seguir todos los pasos
+- Ves errores específicos de la infraestructura de Jamdesk
+
+Incluye en tu solicitud de soporte:
+- Tu nombre de dominio
+- Nombre del proveedor de DNS
+- Salida de los comandos `dig`
+- Captura de pantalla de la configuración DNS
+
+## ¿Qué sigue?
+
+<Columns cols={2}>
+  <Card title="Problemas de dominio" icon="circle-exclamation" href="/es/help/troubleshooting/domain-issues">
+    Errores SSL, fallos de verificación y carga del sitio incorrecto
+  </Card>
+  <Card title="Configuración de dominios personalizados" icon="globe" href="/es/deploy/custom-domains">
+    Guía completa de configuración de dominios personalizados
+  </Card>
+  <Card title="Alojamiento en subruta" icon="route" href="/es/deploy/subpath-hosting">
+    Aloja en yourdomain.com/docs
+  </Card>
+  <Card title="Contactar con soporte" icon="headset" href="/es/help/support/contact">
+    Incluye la salida de dig y capturas de pantalla de DNS
+  </Card>
+</Columns>

@@ -1,0 +1,264 @@
+---
+title: Proxy inverso
+description: "Sirve tu documentación en /docs usando nginx, Apache, Caddy, Traefik o HAProxy. Incluye fragmentos de configuración probados para cada proxy inverso."
+---
+
+Si ya ejecutas nginx, Apache, Caddy, Traefik o HAProxy, agrega un bloque de ubicación/ruta que reenvíe el tráfico de `/docs` a tu subdominio de Jamdesk.
+
+## Requisitos previos
+
+- Acceso a la configuración de tu servidor web
+- Tu subdominio de Jamdesk (que se encuentra en la configuración del dashboard)
+
+## nginx
+
+Agrega un bloque de ubicación para hacer proxy de las solicitudes de `/docs` a Jamdesk:
+
+```nginx nginx.conf
+server {
+    listen 443 ssl;
+    server_name yoursite.com;
+
+    # Your existing configuration...
+
+    # Proxy /docs to Jamdesk
+    location /docs {
+        proxy_pass https://YOUR_SLUG.jamdesk.app;
+        proxy_ssl_server_name on;
+
+        proxy_set_header Host YOUR_SLUG.jamdesk.app;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        # Required for domain verification
+        proxy_set_header X-Jamdesk-Forwarded-Host $host;
+    }
+
+    # Next.js static assets (JS, CSS)
+    location /_next/ {
+        proxy_pass https://YOUR_SLUG.jamdesk.app;
+        proxy_ssl_server_name on;
+        proxy_set_header Host YOUR_SLUG.jamdesk.app;
+    }
+
+    # Jamdesk assets (fonts, images, branding)
+    location /_jd/ {
+        proxy_pass https://YOUR_SLUG.jamdesk.app;
+        proxy_ssl_server_name on;
+        proxy_set_header Host YOUR_SLUG.jamdesk.app;
+    }
+
+}
+```
+
+<Note>
+Reemplaza `YOUR_SLUG` con tu subdominio real de Jamdesk.
+</Note>
+
+<Warning>
+**El manejo de rutas es importante.** La URL de `proxy_pass` no tiene ruta final, por lo que nginx preserva la ruta de la solicitud original. Una solicitud a `/docs/page` hace proxy a `jamdesk.app/docs/page`. Si agregas una barra diagonal al final (`proxy_pass https://...jamdesk.app/`), el prefijo `/docs` se elimina. Mantenlo exactamente como se muestra arriba.
+</Warning>
+
+Después de actualizar tu configuración, recarga nginx:
+
+```bash
+sudo nginx -t && sudo systemctl reload nginx
+```
+
+## Apache
+
+Usa `mod_proxy` para reenviar las solicitudes de `/docs` a Jamdesk:
+
+```apache httpd.conf or .htaccess
+<VirtualHost *:443>
+    ServerName yoursite.com
+
+    # Your existing configuration...
+
+    # Enable proxy modules
+    ProxyRequests Off
+    SSLProxyEngine On
+
+    # Proxy /docs to Jamdesk
+    ProxyPass /docs https://YOUR_SLUG.jamdesk.app/docs
+    ProxyPassReverse /docs https://YOUR_SLUG.jamdesk.app/docs
+
+    # Next.js static assets (JS, CSS)
+    ProxyPass /_next https://YOUR_SLUG.jamdesk.app/_next
+    ProxyPassReverse /_next https://YOUR_SLUG.jamdesk.app/_next
+
+    # Jamdesk assets (fonts, images, branding)
+    ProxyPass /_jd https://YOUR_SLUG.jamdesk.app/_jd
+    ProxyPassReverse /_jd https://YOUR_SLUG.jamdesk.app/_jd
+
+    <Location /docs>
+        RequestHeader set X-Forwarded-Host "yoursite.com"
+        RequestHeader set X-Forwarded-Proto "https"
+        # Required for domain verification
+        RequestHeader set X-Jamdesk-Forwarded-Host "yoursite.com"
+    </Location>
+</VirtualHost>
+```
+
+Asegúrate de que los módulos requeridos estén habilitados:
+
+```bash
+sudo a2enmod proxy proxy_http ssl headers
+sudo systemctl reload apache2
+```
+
+## Caddy
+
+[Caddy](https://caddyserver.com/) proporciona una configuración de proxy inverso simple con HTTPS automático:
+
+```caddy Caddyfile
+yoursite.com {
+    # Your existing configuration...
+
+    handle /docs* {
+        reverse_proxy https://YOUR_SLUG.jamdesk.app {
+            header_up Host {upstream_hostport}
+            header_up X-Forwarded-Host {host}
+            # Required for domain verification
+            header_up X-Jamdesk-Forwarded-Host {host}
+        }
+    }
+
+    # Next.js static assets and Jamdesk assets
+    handle /_next/* {
+        reverse_proxy https://YOUR_SLUG.jamdesk.app {
+            header_up Host {upstream_hostport}
+        }
+    }
+
+    handle /_jd/* {
+        reverse_proxy https://YOUR_SLUG.jamdesk.app {
+            header_up Host {upstream_hostport}
+        }
+    }
+
+    # Handle other routes
+    handle {
+        # Your main site configuration
+    }
+}
+```
+
+Recarga Caddy después de los cambios:
+
+```bash
+sudo systemctl reload caddy
+```
+
+## Traefik
+
+Para los usuarios de [Traefik](https://traefik.io/), configura un enrutador y un servicio:
+
+```yaml traefik.yml
+http:
+  routers:
+    docs-router:
+      rule: "Host(`yoursite.com`) && (PathPrefix(`/docs`) || PathPrefix(`/_next`) || PathPrefix(`/_jd`))"
+      service: jamdesk-docs
+      tls: {}
+
+  services:
+    jamdesk-docs:
+      loadBalancer:
+        servers:
+          - url: "https://YOUR_SLUG.jamdesk.app"
+        passHostHeader: false
+```
+
+## HAProxy
+
+Para [HAProxy](https://www.haproxy.org/), agrega reglas de backend y ACL:
+
+```haproxy haproxy.cfg
+frontend https
+    bind *:443 ssl crt /etc/ssl/certs/yoursite.pem
+
+    # Route /docs and assets to Jamdesk backend
+    acl is_docs path_beg /docs
+    acl is_next path_beg /_next
+    acl is_jd path_beg /_jd
+    use_backend jamdesk_docs if is_docs or is_next or is_jd
+
+    # Default backend for other requests
+    default_backend main_site
+
+backend jamdesk_docs
+    server jamdesk YOUR_SLUG.jamdesk.app:443 ssl verify none
+    http-request set-header Host YOUR_SLUG.jamdesk.app
+    http-request set-header X-Forwarded-Host %[req.hdr(host)]
+    # Required for domain verification
+    http-request set-header X-Jamdesk-Forwarded-Host %[req.hdr(host)]
+```
+
+## Cabeceras requeridas
+
+Independientemente del proxy que uses, asegúrate de que estas cabeceras estén configuradas:
+
+| Cabecera | Valor | Propósito |
+|--------|-------|---------|
+| `Host` | `YOUR_SLUG.jamdesk.app` | Identifica la solicitud a Jamdesk |
+| `X-Forwarded-Host` | Tu dominio | Le indica a Jamdesk qué dominio usar en las URL |
+| `X-Forwarded-Proto` | `https` | Garantiza la generación de URL seguras |
+| `X-Jamdesk-Forwarded-Host` | Tu dominio | Requerido para la verificación del dominio |
+
+<Warning>
+La cabecera `X-Jamdesk-Forwarded-Host` es **obligatoria**. Habilita:
+- Verificación del dominio (tu dominio debe estar registrado en el dashboard)
+- Generación correcta de URL para enlaces y recursos
+- Configuración adecuada desde la configuración de tu dashboard
+
+Sin esta cabecera, las solicitudes serán rechazadas con un error 403.
+</Warning>
+
+<Tip>
+La configuración del proxy es una **configuración única**. Si luego cambias tu dominio personalizado o la configuración en el dashboard de Jamdesk, el proxy no necesita actualizarse — todas las decisiones de enrutamiento se toman del lado del servidor en función de la configuración de tu dashboard.
+</Tip>
+
+## Solución de problemas
+
+<Accordion title="502 Bad Gateway">
+Verifica que el proxy pueda llegar a `YOUR_SLUG.jamdesk.app` por HTTPS. Comprueba las reglas del firewall y la resolución DNS.
+</Accordion>
+
+<Accordion title="Errores de certificado SSL">
+Habilita SSL/TLS para la conexión upstream. Para nginx, agrega `proxy_ssl_server_name on;`. Para Apache, habilita `SSLProxyEngine On`.
+</Accordion>
+
+<Accordion title="Los recursos se cargan desde el dominio incorrecto">
+Asegúrate de que la cabecera `X-Forwarded-Host` esté configurada correctamente. Esto le indica a Jamdesk qué dominio usar para las URL de recursos y los enlaces internos.
+</Accordion>
+
+<Accordion title="Bucles de redirección">
+Verifica que tu proxy no esté siguiendo redirecciones. El proxy debe reenviar la respuesta tal cual, sin gestión adicional de redirecciones.
+</Accordion>
+
+<Accordion title="Error 403: Dominio no autorizado">
+Si ves "Domain is not authorized to serve this content":
+
+1. Verifica que tu dominio esté registrado en el dashboard de Jamdesk
+2. Completa la verificación DNS (registro TXT) para tu dominio
+3. Asegúrate de que la cabecera `X-Jamdesk-Forwarded-Host` esté configurada en tu proxy
+4. Comprueba que tu dominio esté asociado al proyecto correcto
+
+El dominio debe estar verificado antes de que el proxy pueda servir la documentación.
+</Accordion>
+
+## ¿Qué sigue?
+
+<Columns cols={3}>
+  <Card title="Resumen de despliegue" icon="cloud-arrow-up" href="/es/deploy/overview">
+    Comparar opciones de alojamiento
+  </Card>
+  <Card title="Alojamiento en subruta" icon="folder-tree" href="/es/deploy/subpath-hosting">
+    Sirve la documentación en /docs
+  </Card>
+  <Card title="Dominios personalizados" icon="globe" href="/es/deploy/custom-domains">
+    Verifica DNS y soluciona problemas
+  </Card>
+</Columns>

@@ -1,0 +1,173 @@
+---
+title: Dominios Personalizados
+description: Sirve tu documentación desde tu propio dominio en lugar del subdominio predeterminado *.jamdesk.app. Configuración DNS para subdominios y dominios apex, SSL y verificación.
+---
+
+Sirve tu documentación desde tu propio dominio en lugar del subdominio predeterminado `*.jamdesk.app`.
+
+## Descripción General de la Configuración
+
+<Steps>
+  <Step title="Añadir dominio en el dashboard">
+    Ve a **Configuración** → **Dominio** de tu proyecto e introduce tu dominio (p. ej., `docs.example.com` o `example.com`).
+  </Step>
+  <Step title="Configurar DNS">
+    Añade los registros DNS que se muestran en el dashboard a tu proveedor DNS. Los registros dependen del tipo de dominio (ver más abajo).
+  </Step>
+  <Step title="Verificar y esperar">
+    Jamdesk verifica la propiedad y aprovisiona un certificado SSL automáticamente.
+  </Step>
+</Steps>
+
+## Opciones de Alojamiento
+
+Al añadir un dominio, elige tu modo de alojamiento:
+
+### Dominio Estándar
+
+Tu documentación se sirve directamente desde Jamdesk en tu dominio personalizado:
+
+```text
+docs.example.com → acme.jamdesk.app
+```
+
+El DNS apunta a Jamdesk y los certificados SSL se gestionan automáticamente.
+
+### Alojar en /docs (Basado en Proxy)
+
+Tu documentación se sirve en una subruta de tu sitio web existente:
+
+```text
+example.com/docs → acme.jamdesk.app/docs
+```
+
+Configuras un proxy (Cloudflare, Vercel, nginx, etc.) para reenviar las solicitudes de `/docs/*` a Jamdesk. Consulta [Alojamiento en Subruta](/es/deploy/subpath-hosting) para las guías de configuración.
+
+<Note>
+Activar o desactivar "Alojar en /docs" desencadena un rebuild automático, ya que la estructura de URL cambia.
+</Note>
+
+## Configuración DNS
+
+Los registros que necesitas dependen de si usas un subdominio o un dominio apex (raíz).
+
+### Subdominios (p. ej., docs.example.com)
+
+| Tipo | Nombre | Valor |
+|------|--------|-------|
+| CNAME | `docs` | `cname.jamdesk.com` |
+| TXT | `_jamdesk.docs` | *(mostrado en el dashboard)* |
+
+El campo "Nombre" es solo la parte del subdominio. Para `docs.example.com`, introduce `docs`.
+
+### Dominios Apex (p. ej., example.com)
+
+| Tipo | Nombre | Valor |
+|------|--------|-------|
+| A | `@` | `76.76.21.21` |
+| TXT | `_jamdesk` | *(mostrado en el dashboard)* |
+
+Los dominios apex usan un registro A en lugar de CNAME porque los estándares DNS (RFC 1034) prohíben los registros CNAME en el apex de zona.
+
+<Note>
+Los cambios DNS pueden tardar hasta 48 horas en propagarse, aunque la mayoría se completan en minutos. Comprueba el estado en [whatsmydns.net](https://www.whatsmydns.net/).
+</Note>
+
+## Verificación
+
+Después de añadir los registros DNS, Jamdesk automáticamente:
+
+1. Detecta tus registros DNS (CNAME o registro A, más TXT)
+2. Verifica la propiedad del dominio mediante el registro TXT
+3. Aprovisiona un certificado SSL a través de Let's Encrypt
+4. Enruta el tráfico hacia tu documentación
+
+Comprueba el estado de verificación en **Configuración** → **Dominio**. El estado se muestra como:
+- **Pendiente** - Esperando la propagación DNS
+- **Activo** - Dominio verificado y sirviendo tráfico
+- **Requiere Atención** - Discrepancia o conflicto en la configuración (consulta la notificación por correo electrónico)
+- **Error** - Problema de configuración (consulta los detalles en el dashboard)
+
+Haz clic en **Actualizar** en el dashboard para comprobar manualmente el estado de verificación.
+
+## Certificados SSL
+
+Los certificados SSL se aprovisionan automáticamente y se renuevan antes de su vencimiento. HTTPS es obligatorio, por lo que las solicitudes HTTP redirigen a HTTPS.
+
+No se necesita configuración manual de certificados.
+
+## Dominios Raíz
+
+Los dominios raíz (apex) como `example.com` son totalmente compatibles. El dashboard muestra automáticamente los registros correctos: un registro A apuntando a `76.76.21.21` en lugar de un CNAME, ya que los estándares DNS prohíben los registros CNAME en el apex de zona.
+
+Si prefieres un subdominio como `docs.example.com`, también funciona.
+
+## Múltiples Dominios
+
+Cada proyecto admite un dominio personalizado. Para varios dominios que apunten a la misma documentación:
+
+1. Configura tu dominio principal en Jamdesk
+2. Configura los dominios adicionales para que redirijan al principal a nivel DNS/CDN
+
+## Eliminar un Dominio
+
+Para desconectar un dominio personalizado:
+
+1. Ve a **Configuración** → **Dominio**
+2. Haz clic en **Eliminar Dominio**
+3. Tu documentación permanece accesible en el subdominio `*.jamdesk.app`
+
+<Warning>
+Eliminar un dominio que tenía habilitado "Alojar en /docs" desencadenará un rebuild para actualizar las rutas de URL.
+</Warning>
+
+## Usuarios de Cloudflare
+
+Si usas Cloudflare como proveedor DNS:
+
+1. Establece el estado del proxy en **Solo DNS** (icono de nube gris) durante la verificación del dominio
+2. Deja que Vercel gestione SSL: desactiva "Usar siempre HTTPS" de Cloudflare para el subdominio de la documentación
+3. Tras completar la verificación, puedes volver a activar el proxy (nube naranja)
+
+<Note>
+**¿Usas un Cloudflare Worker?** El registro DNS debe estar en modo proxy (nube naranja) para que el Worker funcione. Usa la nube gris solo durante la verificación y luego vuelve a cambiar. Consulta [Configuración de Cloudflare Workers](/es/deploy/cloudflare) para más detalles.
+</Note>
+
+## Solución de Problemas
+
+| Problema | Solución |
+|----------|----------|
+| Dominio atascado en "Pendiente" | Comprueba los registros DNS con `dig` (CNAME para subdominios, A para apex) |
+| Errores de certificado SSL | Asegúrate de que ningún registro CAA bloquea Let's Encrypt |
+| Bucles de redirección | Si usas Cloudflare, establécelo en nube gris durante la verificación (consulta [Usuarios de Cloudflare](#cloudflare-users) más arriba) |
+| CNAME no resuelve | Verifica el registro en el proveedor DNS y espera la propagación |
+| Dominio ya en uso | El dominio está registrado en Vercel desde una configuración anterior; la verificación suele completarse automáticamente |
+
+### Verificar DNS con dig
+
+```bash
+# Check CNAME record (subdomains)
+dig CNAME docs.example.com
+
+# Check A record (apex domains)
+dig A example.com
+
+# Check TXT record
+dig TXT _jamdesk.example.com
+```
+
+Para diagnósticos detallados, consulta [Solución de Problemas DNS](/es/help/troubleshooting/dns-issues).
+
+## ¿Qué sigue?
+
+<Columns cols={2}>
+  <Card title="Subdominios" icon="sitemap" href="/es/deploy/subdomains">
+    Configura ajustes específicos de subdominio
+  </Card>
+  <Card title="Alojamiento en Subruta" icon="route" href="/es/deploy/subpath-hosting">
+    Aloja la documentación en example.com/docs
+  </Card>
+  <Card title="Solución de Problemas DNS" icon="server" href="/es/help/troubleshooting/dns-issues">
+    Diagnostica problemas de configuración DNS
+  </Card>
+</Columns>

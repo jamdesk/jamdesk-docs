@@ -1,0 +1,124 @@
+---
+title: Incrustaciones de YouTube
+sidebarTitle: YouTube
+description: Incrusta videos de YouTube y Shorts en tu documentación. Reproductor con carga diferida, tiempos de inicio personalizados y Shorts verticales 9:16.
+---
+
+El componente `<YouTube>` incrusta videos con carga diferida, esquinas redondeadas y sin sugerencias de videos relacionados. Muestra una miniatura y un botón de reproducción al cargar la página, y luego cambia al reproductor completo de YouTube cuando alguien hace clic.
+
+## Incrustar un video de YouTube
+
+Pasa el ID del video como prop `id`:
+
+```mdx
+<YouTube id="dQw4w9WgXcQ" />
+```
+
+<YouTube id="dQw4w9WgXcQ" />
+
+Ningún iframe se carga hasta que el espectador haga clic en reproducir. La página se mantiene rápida porque el componente utiliza [lite-youtube-embed](https://github.com/nicolegoesdigital/lite-youtube-embed) internamente: una imagen en miniatura y unos pocos kilobytes de CSS en lugar del paquete iframe de YouTube de más de 800KB.
+
+## Props
+
+| Prop | Tipo | Valor por defecto | Descripción |
+|------|------|---------|-------------|
+| `id` | `string` | ninguno | **Obligatorio.** El ID del video de YouTube. |
+| `title` | `string` | `"Play"` / `"YouTube Short"` | Etiqueta de accesibilidad para la incrustación. Los lectores de pantalla usan este texto. |
+| `start` | `number` | `0` | Inicia la reproducción en este número de segundos dentro del video. |
+| `short` | `boolean` | `false` | Renderiza como un YouTube Short vertical 9:16 en lugar de un video 16:9. |
+
+## Iniciar en un momento específico
+
+El prop `start` salta a una marca de tiempo (en segundos) cuando comienza la reproducción:
+
+```mdx
+<YouTube id="dQw4w9WgXcQ" start={60} />
+```
+
+<YouTube id="dQw4w9WgXcQ" start={60} />
+
+La reproducción comienza en el minuto 1. Los valores decimales se redondean hacia abajo a segundos enteros.
+
+## Encontrar el ID del video
+
+<Tip>
+El ID del video es la cadena después de `v=` en una URL de YouTube.
+
+- `youtube.com/watch?v=dQw4w9WgXcQ` → el ID es `dQw4w9WgXcQ`
+- `youtu.be/dQw4w9WgXcQ` → el ID es `dQw4w9WgXcQ`
+
+Copia el ID, no la URL completa.
+</Tip>
+
+## YouTube Shorts
+
+Los YouTube Shorts son videos verticales con una relación de aspecto 9:16. Incrustar un Short en un reproductor estándar 16:9 añade barras negras gruesas a ambos lados: el video queda comprimido en un formato horizontal diseñado para contenido apaisado.
+
+El prop `short` soluciona esto. Renderiza la incrustación en 9:16, centrada en la página con un ancho de 360px y esquinas redondeadas. El resultado coincide con cómo se ven los Shorts en móvil.
+
+### Cómo incrustar un Short
+
+```mdx
+<YouTube id="_6HzLIJPH2A" short />
+```
+
+<YouTube id="_6HzLIJPH2A" short />
+
+### Encontrar el ID del Short
+
+El ID del Short es el segmento de ruta después de `/shorts/` en la URL:
+
+- `youtube.com/shorts/_6HzLIJPH2A` → el ID es `_6HzLIJPH2A`
+
+Estos IDs siguen el mismo formato de 11 caracteres que los videos regulares de YouTube. También puedes probar cualquier ID de Short con el componente `<YouTube>` estándar, pero sin `short` se renderiza en 16:9 con barras negras.
+
+### Detalles de renderizado
+
+| Detalle | Cómo se renderiza |
+|--------|---------------|
+| Ancho | Limitado a 360px y centrado (coincide con el ancho del reproductor de Shorts móvil de YouTube) |
+| Relación de aspecto | 9:16 mediante `aspect-ratio` de CSS, por lo que el contenedor escala limpiamente en pantallas más pequeñas |
+| Esquinas | Redondeadas con `border-radius` para mantener coherencia con otras incrustaciones de medios de Jamdesk |
+| Videos relacionados | Desactivados mediante `rel=0`, igual que las incrustaciones estándar |
+
+### Diferencia de rendimiento
+
+Las incrustaciones estándar de YouTube utilizan `lite-youtube-embed`, que no carga JavaScript de YouTube por adelantado. La página muestra una imagen en miniatura; el iframe del reproductor completo solo se carga cuando un espectador hace clic en reproducir.
+
+Los Shorts funcionan de manera diferente. Dado que `lite-youtube-embed` no admite relaciones de aspecto verticales, los Shorts utilizan un `<iframe>` directo con `loading="lazy"`. El navegador difiere la carga hasta que el iframe se acerque al viewport. Una vez visible, el reproductor completo de YouTube se inicializa (scripts, estilos y todo).
+
+<Note>
+En una página con uno o dos Shorts, la diferencia es insignificante. En una página con muchos Shorts, los iframes adicionales añaden peso real. Si estás incrustando más de tres o cuatro Shorts en una página, considera enlazarlos en su lugar o colocarlos detrás de una pestaña para mantener la carga inicial ligera.
+</Note>
+
+## Uso directo de iFrames
+
+Para casos en los que necesitas control total sobre los parámetros de incrustación, puedes usar un iframe sin procesar:
+
+```html
+<iframe
+  className="w-full aspect-video rounded-xl"
+  src="https://www.youtube.com/embed/VIDEO_ID"
+  title="YouTube video player"
+  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+  allowFullScreen
+/>
+```
+
+<Note>
+El componente `<YouTube>` es la mejor opción por defecto. Carga el reproductor de forma diferida, elimina los videos relacionados y gestiona las relaciones de aspecto de los Shorts. Usa iframes sin procesar solo cuando necesites parámetros de incrustación que el componente no expone.
+</Note>
+
+## ¿Qué sigue?
+
+<Columns cols={3}>
+  <Card title="Imágenes" icon="image" href="/es/content/images">
+    Imágenes Markdown, dimensiones y pies de foto
+  </Card>
+  <Card title="Videos" icon="video" href="/es/content/videos">
+    Archivos MP4 y WebM locales
+  </Card>
+  <Card title="iFrames" icon="code" href="/es/content/iframes">
+    Vimeo, CodePen, Figma y más
+  </Card>
+</Columns>

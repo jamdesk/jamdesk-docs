@@ -1,0 +1,142 @@
+---
+title: Autenticación
+description: "Inicia sesión, gestiona sesiones y comprende cómo se autentica el CLI de Jamdesk. Cubre el almacenamiento de tokens, la actualización de sesiones, las cuentas de equipo y los entornos CI/CD."
+---
+
+El CLI utiliza autenticación basada en navegador para conectarse a tu cuenta de Jamdesk. Debes iniciar sesión antes de desplegar.
+
+## Inicio de sesión
+
+```bash
+jamdesk login
+```
+
+Esto abre el dashboard de Jamdesk en tu navegador para la autenticación. Internamente:
+
+1. El CLI inicia un servidor HTTP local en `127.0.0.1:9876` (recurre a un puerto asignado por el sistema operativo si el 9876 está ocupado)
+2. Tu navegador se abre en `dashboard.jamdesk.com/cli-auth`
+3. Te autenticas usando cualquier método de inicio de sesión del dashboard (correo/contraseña, Google, GitHub)
+4. El dashboard envía tus credenciales de vuelta al servidor local del CLI
+5. Las credenciales se almacenan en `~/.jamdeskrc`
+
+Se verifica un parámetro de estado en el callback para prevenir la falsificación de solicitudes entre sitios. El flujo de inicio de sesión expira después de 2 minutos.
+
+```bash Expected output
+$ jamdesk login
+ℹ Open this URL in your browser to log in:
+
+  https://dashboard.jamdesk.com/cli-auth?port=9876&state=abc123...
+
+ℹ Waiting for authentication...
+✔ Logged in as you@example.com
+```
+
+**Entornos headless y SSH**: La URL siempre se imprime en la terminal, incluso cuando el navegador no puede abrirse. Cópiala y pégala en cualquier navegador.
+
+## Cerrar sesión
+
+```bash
+jamdesk logout
+```
+
+Borra las credenciales almacenadas en `~/.jamdeskrc`. No hace nada si no has iniciado sesión.
+
+```bash Expected output
+$ jamdesk logout
+✔ Logged out (you@example.com)
+```
+
+## Whoami
+
+```bash
+jamdesk whoami
+```
+
+Muestra tu correo electrónico autenticado y valida la sesión actualizando el token. Es una verificación en tiempo real, no una lectura de caché local.
+
+Tres estados posibles:
+
+<CodeGroup>
+```bash Logged in
+$ jamdesk whoami
+✔ Logged in as you@example.com
+```
+
+```bash Session expired
+$ jamdesk whoami
+⚠ Logged in as you@example.com (session expired)
+  Run `jamdesk login` to re-authenticate.
+```
+
+```bash Not logged in
+$ jamdesk whoami
+ℹ Not logged in. Run `jamdesk login` to authenticate.
+```
+</CodeGroup>
+
+## Cómo funcionan las sesiones
+
+Las credenciales se almacenan en `~/.jamdeskrc` como JSON con permisos `0600` (lectura/escritura solo para el propietario):
+
+```json ~/.jamdeskrc
+{
+  "auth": {
+    "refreshToken": "AGK...",
+    "email": "you@example.com",
+    "uid": "abc123",
+    "expiresAt": 1700000000000
+  }
+}
+```
+
+El CLI utiliza una arquitectura de **token de actualización + token de ID**:
+
+- Los **tokens de ID** expiran en ~1 hora y se usan para las llamadas a la API
+- El CLI **actualiza automáticamente** los tokens de ID usando el token de actualización almacenado, con un margen de 5 minutos antes de la expiración
+- Los tokens de actualización tienen larga duración pero pueden ser revocados (cambio de contraseña, eliminación de cuenta)
+- Si el token de actualización es permanentemente inválido (`TOKEN_EXPIRED`, `USER_NOT_FOUND`, `INVALID_REFRESH_TOKEN`), la autenticación almacenada se borra automáticamente
+
+No necesitas gestionar los tokens manualmente. El CLI gestiona las actualizaciones de forma transparente en cada comando autenticado.
+
+## Solución de problemas
+
+<AccordionGroup>
+  <Accordion title="El inicio de sesión expira después de 2 minutos">
+    El servidor de callback local del CLI puede estar bloqueado por un firewall. Copia la URL impresa y ábrela manualmente en tu navegador.
+
+    Si el puerto 9876 está en uso por otro proceso, el CLI seleccionará un puerto diferente automáticamente. Comprueba la URL en la salida de la terminal.
+  </Accordion>
+
+  <Accordion title='"Sesión expirada" en cada comando'>
+    Tu token de actualización ya no es válido. Esto ocurre después de cambios de contraseña o períodos prolongados de inactividad.
+
+    Ejecuta `jamdesk login` para obtener una sesión nueva.
+  </Accordion>
+
+  <Accordion title="El navegador no se abre">
+    Esto es esperado en entornos headless (SSH, Docker, CI). Copia la URL de la terminal y ábrela en cualquier navegador que pueda acceder al puerto de callback de tu máquina.
+  </Accordion>
+
+  <Accordion title='"No has iniciado sesión" justo después de iniciar sesión'>
+    Comprueba que `~/.jamdeskrc` existe y contiene una clave `auth`:
+
+    ```bash
+    cat ~/.jamdeskrc
+    ```
+
+    Los permisos del archivo deben ser `0600`. Si el archivo no existe, tu directorio de inicio puede tener problemas de permisos; compruébalo con `ls -la ~`.
+  </Accordion>
+</AccordionGroup>
+
+Para más información sobre la solución de problemas del CLI, consulta la [guía CLI del Centro de ayuda](/es/help/troubleshooting/cli-issues).
+
+## ¿Qué sigue?
+
+<Columns cols={2}>
+  <Card title="CLI Deploy" icon="cloud-arrow-up" href="/es/cli/deploy">
+    Despliega tu documentación desde la terminal
+  </Card>
+  <Card title="Descripción general del CLI" icon="terminal" href="/es/cli/overview">
+    Todos los comandos del CLI de un vistazo
+  </Card>
+</Columns>

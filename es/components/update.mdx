@@ -1,0 +1,203 @@
+---
+title: Update
+description: Entradas de changelog estilo línea de tiempo con fechas, descripciones y etiquetas de categoría. Se integra con tu Tabla de contenidos para la navegación.
+---
+
+El componente Update crea entradas de changelog estilo línea de tiempo que se integran automáticamente con tu Tabla de contenidos. Cada entrada puede tener una etiqueta de fecha, descripción y etiquetas de categoría, lo que lo hace ideal para páginas de "Novedades", changelogs de API y notas de versión.
+
+Usa Update cuando:
+- **Documentes versiones** con números de versión o fechas
+- **Construyas changelogs** que los lectores puedan navegar mediante la TdC
+- **Anuncies funcionalidades** con etiquetas categorizadas (new, fix, breaking)
+
+## Uso básico
+
+<Update label="January 10, 2025">
+Added support for dark mode across all themes.
+</Update>
+
+```mdx
+<Update label="January 10, 2025">
+Added support for dark mode across all themes.
+</Update>
+```
+
+## Con descripción
+
+Agrega contexto debajo de la fecha:
+
+<Update label="January 5, 2025" description="Breaking change">
+The `getData()` function now requires an options object.
+</Update>
+
+```mdx
+<Update label="January 5, 2025" description="Breaking change">
+The `getData()` function now requires an options object.
+</Update>
+```
+
+## Con etiquetas
+
+Categoriza las entradas con etiquetas:
+
+<Update label="December 20, 2024" tags={["breaking", "api"]}>
+- Removed deprecated `legacyMode` option
+- Updated authentication flow
+</Update>
+
+```mdx
+<Update label="December 20, 2024" tags={["breaking", "api"]}>
+- Removed deprecated `legacyMode` option
+- Updated authentication flow
+</Update>
+```
+
+## Múltiples entradas
+
+Apila componentes Update para un changelog completo:
+
+<Update label="December 15, 2024" tags={["feature"]}>
+New export functionality for PDF and CSV formats.
+</Update>
+
+<Update label="December 10, 2024" tags={["fix"]}>
+Fixed timezone handling in scheduled posts.
+</Update>
+
+<Update label="December 1, 2024" tags={["deprecation"]}>
+The `v1` API endpoints are now deprecated. Migrate to `v2` by March 2025.
+</Update>
+
+## Enlaces de anclaje y TdC
+
+Cada Update genera un ID de anclaje a partir de su etiqueta (`label="January 10, 2025"` crea `#january-10-2025`). Las etiquetas también aparecen en la Tabla de contenidos para una navegación rápida.
+
+## Props
+
+<ParamField name="label" type="string">
+  Etiqueta de fecha o versión (crea el ID de anclaje).
+</ParamField>
+
+<ParamField name="description" type="string">
+  Texto secundario debajo de la etiqueta.
+</ParamField>
+
+<ParamField name="tags" type="string[]">
+  Etiquetas de categoría mostradas como insignias.
+</ParamField>
+
+<ParamField name="date" type="string">
+  Cadena de fecha ISO (p. ej., `"2025-03-15"`) utilizada para el `pubDate` del feed RSS. No se muestra visualmente; la `label` sigue siendo tu texto de visualización.
+</ParamField>
+
+## Feed RSS
+
+Permite que tus lectores se suscriban a las actualizaciones del changelog. Agrega `rss: true` a cualquier página con componentes Update, y Jamdesk genera automáticamente un `feed.xml` durante los builds.
+
+```yaml
+---
+title: Changelog
+rss: true
+---
+```
+
+Cuando está habilitado:
+- Aparece un ícono RSS junto al título de la página, con un enlace al feed
+- Se agrega una etiqueta `<link rel="alternate">` al `<head>` para autodescubrimiento, de modo que los lectores de RSS y los navegadores puedan encontrar el feed automáticamente
+- Cada `<Update>` se convierte en un elemento RSS con su etiqueta como título y un enlace de anclaje de vuelta a la entrada
+
+### Configurar fechas de publicación
+
+Usa el prop `date` para establecer el `<pubDate>` de cada entrada en el feed. Sin `date`, la entrada aparece en el feed pero sin marca de tiempo.
+
+```mdx
+<Update label="March 2025" date="2025-03-15" tags={["feature"]}>
+Added dark mode support across all themes.
+</Update>
+```
+
+### Contenido del feed
+
+Los feeds RSS contienen solo texto plano. El formato Markdown, los componentes MDX, los bloques de código y el HTML se eliminan de la descripción del feed, por lo que escribe tu primera oración como un resumen claro que funcione sin formato.
+
+### URL del feed
+
+El feed está disponible en `/feed.xml` (o `/docs/feed.xml` si tu sitio usa [hostAtDocs](/es/deploy/custom-domains)).
+
+El feed generado tiene este aspecto:
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Acme Docs Changelog</title>
+    <link>https://docs.acme.com</link>
+    <description>Updates and changelog for Acme Docs</description>
+    <item>
+      <title>March 2025 — New dashboard</title>
+      <link>https://docs.acme.com/changelog#march-2025</link>
+      <pubDate>Sat, 15 Mar 2025 00:00:00 GMT</pubDate>
+      <description>Added dark mode support across all themes.</description>
+    </item>
+  </channel>
+</rss>
+```
+
+### Integración con otras herramientas
+
+Los suscriptores pueden usar la URL del feed con cualquier servicio compatible con RSS:
+
+- Slack: agrega la [aplicación RSS](https://slack.com/apps/A0F81R7U7-rss) `/feed` a un canal.
+- Discord: usa [MonitoRSS](https://monitorss.xyz/) o un bot similar para publicar actualizaciones automáticamente.
+- Email: conecta el feed a [Zapier](https://zapier.com/) o [IFTTT](https://ifttt.com/) para enviar correos a los suscriptores con nuevas entradas.
+- Navegadores: Safari, Vivaldi y Firefox (mediante extensiones) admiten RSS de forma nativa.
+
+<Tip>
+  Puedes agregar `rss: true` a múltiples páginas. Todas las entradas Update de las páginas habilitadas para RSS se combinan en un único `feed.xml` para todo el sitio.
+</Tip>
+
+## Buenas prácticas
+
+<AccordionGroup>
+  <Accordion title="Usa etiquetas únicas" icon="fingerprint" defaultOpen>
+    Cada etiqueta crea un ID de anclaje, así que usa etiquetas únicas para garantizar un enlazado profundo correcto:
+    - Usa fechas específicas: `January 10, 2025` (no solo `January 2025`)
+    - Incluye números de versión: `v2.1.0` vs `v2.0.0`
+    - Las etiquetas duplicadas crearán IDs duplicados, rompiendo la navegación por anclaje
+  </Accordion>
+
+  <Accordion title="Usa formatos de fecha consistentes" icon="calendar">
+    Elige un formato y mantenlo:
+    - `January 10, 2025` (recomendado)
+    - `2025-01-10` (formato ISO)
+    - `v2.0.0` (para changelogs basados en versiones)
+  </Accordion>
+
+  <Accordion title="Usa etiquetas significativas" icon="tags">
+    Etiquetas comunes con codificación de color automática:
+
+    | Etiqueta | Color | Usar para |
+    |-----|-------|---------|
+    | `breaking` | Rojo | Cambios que rompen compatibilidad |
+    | `feature` / `new` | Verde | Nueva funcionalidad |
+    | `deprecation` / `deprecated` | Ámbar | Funcionalidades obsoletas |
+    | Otras etiquetas | Gris | Categorías generales como `api`, `fix` |
+  </Accordion>
+
+  <Accordion title="Mantén las entradas escaneables" icon="eye">
+    - Empieza con el cambio más importante
+    - Usa listas con viñetas para múltiples elementos
+    - Enlaza a documentación detallada para cambios complejos
+  </Accordion>
+</AccordionGroup>
+
+## ¿Qué sigue?
+
+<Columns cols={2}>
+  <Card title="Descripción general de componentes" icon="puzzle-piece" href="/es/components/overview">
+    Explora todos los componentes disponibles
+  </Card>
+  <Card title="Conceptos básicos de MDX" icon="file-code" href="/es/content/mdx-basics">
+    Aprende a usar componentes en MDX
+  </Card>
+</Columns>

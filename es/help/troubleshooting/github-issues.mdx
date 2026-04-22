@@ -1,0 +1,138 @@
+---
+title: Problemas de GitHub
+description: Soluciona organizaciones faltantes durante la configuración, repositorios faltantes, webhooks fallidos, errores de permisos y discrepancias de ramas con la integración de GitHub de Jamdesk.
+---
+
+La mayoría de los problemas con la integración de GitHub se deben a permisos, fallos en webhooks o discrepancias de ramas.
+
+## Organización no aparece durante la configuración
+
+Durante el flujo de documentación inicial, Jamdesk muestra tus organizaciones de GitHub para que puedas elegir dónde crear el repositorio. Si tu organización no aparece en la lista, generalmente se debe a una de estas dos razones:
+
+- Restricciones de apps OAuth: tu organización restringe el acceso de aplicaciones de terceros (el valor predeterminado de GitHub para nuevas organizaciones).
+- SAML SSO: tu organización requiere autenticación SAML antes de que la API la devuelva.
+
+<Accordion title="Pide al administrador de tu organización que apruebe Jamdesk">
+  Los administradores de la organización pueden otorgar acceso a Jamdesk:
+
+  1. Ve a **Configuración** de tu organización de GitHub
+  2. Selecciona **Third-party access** (en Seguridad)
+  3. Busca **Jamdesk** en las solicitudes pendientes, o haz clic en **Grant** para aprobarlo
+  4. Regresa al flujo de configuración de Jamdesk; tu organización debería aparecer ahora
+
+  Si no ves una solicitud pendiente, inicia primero el flujo de configuración de Jamdesk. GitHub envía automáticamente una solicitud de acceso a los administradores de tu organización cuando autorizas la app. Consulta la guía de GitHub sobre [aprobar apps OAuth para tu organización](https://docs.github.com/en/organizations/managing-oauth-access-to-your-organizations-data/approving-oauth-apps-for-your-organization) para los pasos detallados.
+</Accordion>
+
+<Accordion title="Crea en tu cuenta personal y transfiere después">
+  ¿No quieres esperar la aprobación del administrador? Elige tu cuenta personal durante la configuración y transfiere el repositorio a tu organización después:
+
+  1. Completa la configuración de Jamdesk usando tu cuenta personal
+  2. Ve al repositorio creado en GitHub
+  3. Navega a **Settings** → **General** → **Danger Zone**
+  4. Haz clic en **Transfer** y selecciona tu organización como destino
+  5. En Jamdesk, desconecta y vuelve a conectar el repositorio desde la página de **Settings** de tu proyecto
+
+  <Warning>
+    Desconectar y volver a conectar genera una nueva URL de documentación (por ejemplo, `your-project.jamdesk.app` puede cambiar). Si ya compartiste tu URL o configuraste un dominio personalizado, contacta a [soporte](/es/help/support/contact) antes de desconectar para que podamos preservar tu configuración.
+  </Warning>
+</Accordion>
+
+## Repositorio no aparece
+
+Si tu repositorio no aparece en la lista:
+
+<Accordion title="Verificar permisos del repositorio">
+  1. Ve a GitHub → Settings → Applications → Jamdesk
+  2. Verifica que el repositorio tiene acceso otorgado
+  3. Haz clic en **Configure** para agregar más repositorios
+</Accordion>
+
+<Accordion title="Repositorios de organizaciones">
+  Para repositorios de organizaciones:
+  1. Un administrador de la organización debe aprobar Jamdesk
+  2. Ve a la configuración de la organización → Third-party access
+  3. Aprueba la solicitud de acceso de Jamdesk
+</Accordion>
+
+<Accordion title="Repositorios privados">
+  Los repositorios privados requieren autorización de GitHub. Vuelve a autorizar Jamdesk si es necesario.
+</Accordion>
+
+## Builds no se activan
+
+Si los push no activan builds:
+
+<Steps>
+  <Step title="Verificar el webhook">
+    1. Ve a tu repositorio en GitHub
+    2. Navega a Settings → Webhooks
+    3. Busca el webhook de Jamdesk
+    4. Revisa "Recent Deliveries" en busca de errores
+  </Step>
+  <Step title="Verificar la rama">
+    Los builds solo se activan en tu rama configurada. Verifica en **Settings** de Jamdesk.
+  </Step>
+  <Step title="Resincronizar la conexión">
+    1. Ve a **Settings** del proyecto en Jamdesk
+    2. Haz clic en **Re-sync GitHub**
+  </Step>
+</Steps>
+
+## Errores de Webhook
+
+### 404 Not Found
+
+No se pudo alcanzar el endpoint del webhook.
+
+**Solución:** Resincroniza la conexión de GitHub en la configuración del proyecto.
+
+### 401 Unauthorized
+
+Falló la autenticación.
+
+**Solución:**
+1. Ve a la configuración de tu cuenta de GitHub
+2. Navega a Applications → Authorized OAuth Apps
+3. Revoca Jamdesk
+4. Vuelve a autorizar en la configuración de Jamdesk
+
+### 500 Server Error
+
+Problema temporal de Jamdesk.
+
+**Solución:** Espera unos minutos y vuelve a hacer push, o activa un rebuild manual.
+
+## Errores de permisos
+
+**"Repository not found"** durante el build:
+
+- Es posible que el repositorio haya sido eliminado o renombrado
+- Jamdesk puede haber perdido acceso
+- Vuelve a autorizar tu conexión de GitHub
+
+## Problemas de ramas
+
+### Rama incorrecta en el build
+
+Verifica tu rama configurada en **Settings** → **Repository**.
+
+### Rama renombrada o eliminada
+
+Actualiza la configuración de tu rama para que coincida con el nuevo nombre de rama.
+
+## ¿Sigues teniendo problemas?
+
+<Card title="Contactar soporte" icon="headset" href="/es/help/support/contact">
+  Incluye la URL de tu repositorio y los mensajes de error
+</Card>
+
+## Artículos relacionados
+
+<Columns cols={2}>
+  <Card title="Referencia de errores" icon="book" href="/es/help/troubleshooting/error-reference">
+    Lista completa de códigos de error
+  </Card>
+  <Card title="Contactar soporte" icon="headset" href="/es/help/support/contact">
+    Escalar problemas no resueltos
+  </Card>
+</Columns>

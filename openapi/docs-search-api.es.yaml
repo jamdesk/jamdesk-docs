@@ -1,0 +1,417 @@
+openapi: 3.1.0
+info:
+  title: Jamdesk Docs Search API
+  version: "1.0.0"
+  summary: Búsqueda semántica vectorial en tu documentación para chatbots, pipelines RAG e integraciones personalizadas.
+  description: |
+    La Jamdesk Docs Search API te permite consultar tu documentación de forma programática
+    usando lenguaje natural. Está impulsada por el mismo motor de búsqueda semántica vectorial
+    que utiliza el chat de IA integrado de Jamdesk — cualquier consulta que funcione en el
+    widget de chat funciona aquí y devuelve los mismos resultados.
+
+    ## Casos de uso
+
+    - **Base de conocimiento para chatbot** — alimenta un bot de soporte o un bot de Slack con
+      documentación actualizada para que pueda responder preguntas de usuarios con precisión.
+    - **Integración en pipeline RAG** — recupera fragmentos de documentación relevantes para
+      inyectarlos en prompts de LLM y generar respuestas fundamentadas (compatible con OpenAI
+      Assistants, agentes de Claude, LangChain y LlamaIndex).
+    - **Integraciones personalizadas** — conecta la búsqueda de documentación a herramientas
+      internas, extensiones de IDE, dashboards de CRM y flujos de incorporación.
+    - **Recuperación para asistentes de IA** — proporciona a cualquier asistente de IA consultas
+      en tiempo real a la documentación sin necesidad de construir embeddings previamente.
+
+    ## Cómo funciona
+
+    Cada consulta se transforma en un vector usando el mismo modelo de embeddings que
+    indexó tu documentación. La API devuelve las mejores coincidencias ordenadas por similitud
+    de coseno, con fragmentos que puedes pasar directamente a un LLM como contexto.
+
+    Las consultas en lenguaje natural funcionan mejor que las consultas por palabras clave —
+    pregunta "how do I authenticate with OAuth" en lugar de "OAuth authentication setup".
+    El motor entiende la intención, los sinónimos y el contexto.
+
+    ## Autenticación y límites
+
+    - **Autenticación:** token Bearer. Genera una API key en tu
+      [Jamdesk dashboard](https://dashboard.jamdesk.com) en
+      Settings → API Keys. Las claves tienen el prefijo `jd_live_` seguido de 32
+      caracteres hexadecimales (40 chars en total) y no caducan. Revócalas desde
+      el dashboard.
+    - **Requisito de plan:** Jamdesk Pro o superior.
+    - **Límite de tasa:** 60 solicitudes por minuto por API key. Las solicitudes que superen
+      el límite devuelven HTTP 429 con una cabecera `Retry-After`.
+    - **CORS:** Habilitado. Los clientes basados en navegador pueden llamar a la API directamente
+      sin un proxy de backend.
+    - **Formato de respuesta:** JSON. Cada respuesta incluye los campos `query`, `results`,
+      `total` y `durationMs`.
+
+    ## URL base
+
+    `https://YOUR-PROJECT.jamdesk.app` o tu dominio personalizado. El slug de tu proyecto
+    es visible en la URL del Jamdesk dashboard.
+  contact:
+    name: Jamdesk Support
+    url: https://jamdesk.com/support
+    email: support@jamdesk.com
+  termsOfService: https://jamdesk.com/terms
+
+externalDocs:
+  description: Referencia completa de la Jamdesk Docs Search API y guías de integración
+  url: https://jamdesk.com/docs/jamdesk-api
+
+servers:
+  - url: https://{project}.jamdesk.app
+    description: Subdominio de Jamdesk (predeterminado)
+    variables:
+      project:
+        default: your-project
+        description: |
+          El slug de tu proyecto Jamdesk. Se encuentra en la URL de tu dashboard
+          (p. ej. `acme` para `acme.jamdesk.app`).
+  - url: https://{customDomain}
+    description: Dominio personalizado (documentación servida en la raíz)
+    variables:
+      customDomain:
+        default: docs.example.com
+        description: |
+          Tu dominio personalizado de Jamdesk, configurado en Project Settings → Domain.
+  - url: https://{host}{basePath}
+    description: |
+      Host personalizado con subruta hostAtDocs. Úsalo cuando tu sitio de documentación
+      se sirve bajo una ruta (p. ej. `jamdesk.com/docs`) en lugar de en la raíz
+      de un dominio. La Docs Search API es accesible tanto en
+      `{basePath}/_api/search` como (si se accede directamente) en
+      `/_api/search` del origen — ambas se reescriben en el servidor al mismo
+      endpoint con ámbito de proyecto.
+    variables:
+      host:
+        default: jamdesk.com
+        description: |
+          El host de tu sitio de documentación. Para la demo pública de documentación de Jamdesk,
+          es `jamdesk.com`.
+      basePath:
+        default: /docs
+        description: |
+          Prefijo de ruta si tu documentación está bajo una subruta. Cadena vacía
+          (u omite el servidor) si se sirve en la raíz del dominio.
+
+tags:
+  - name: Search
+    description: |
+      Operaciones de búsqueda semántica vectorial en la documentación de tu proyecto.
+      Devuelve resultados ordenados con puntuaciones de relevancia, adecuados para
+      alimentar prompts de LLM o mostrar directamente a los usuarios.
+    externalDocs:
+      description: Cómo funciona la búsqueda semántica en Jamdesk
+      url: https://jamdesk.com/docs/jamdesk-api
+
+security:
+  - BearerAuth: []
+
+paths:
+  /_api/search:
+    post:
+      tags:
+        - Search
+      operationId: searchDocs
+      summary: Busca en la documentación con consultas en lenguaje natural
+      description: |
+        Realiza una búsqueda semántica vectorial en la documentación de tu proyecto y
+        devuelve las páginas coincidentes ordenadas por puntuación de relevancia.
+
+        Las consultas se transforman en el mismo espacio vectorial utilizado para indexar
+        tu documentación, de modo que la búsqueda entiende la intención — no solo las
+        palabras clave. Formula una pregunta completa en lenguaje natural para obtener
+        los mejores resultados.
+
+        **Estructura de la respuesta:** un array de resultados (título, sección, slug, fragmento
+        de contenido, URL, puntuación), junto con la consulta original, el recuento total y
+        la duración de la búsqueda. El campo de fragmento está limitado a 500 caracteres y es
+        directamente utilizable como contexto para un LLM.
+
+        **Latencia típica:** 50-200 ms para consultas en proyectos con menos de 10 000
+        páginas. La latencia escala de forma sublineal con el tamaño del índice.
+      x-codeSamples:
+        - lang: JavaScript
+          label: fetch
+          source: |
+            const response = await fetch(
+              'https://your-project.jamdesk.app/_api/search',
+              {
+                method: 'POST',
+                headers: {
+                  'Authorization': 'Bearer jd_live_c83003a54ae0a83123454c3f7ec82f0a',
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  query: 'How do I authenticate with OAuth?',
+                  limit: 5,
+                }),
+              }
+            );
+            const { results } = await response.json();
+            console.log(results);
+        - lang: Python
+          label: requests
+          source: |
+            import requests
+
+            response = requests.post(
+                "https://your-project.jamdesk.app/_api/search",
+                headers={
+                    "Authorization": "Bearer jd_live_c83003a54ae0a83123454c3f7ec82f0a",
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "query": "How do I authenticate with OAuth?",
+                    "limit": 5,
+                },
+            )
+            results = response.json()["results"]
+            print(results)
+        - lang: curl
+          label: curl
+          source: |
+            curl -X POST https://your-project.jamdesk.app/_api/search \
+              -H "Authorization: Bearer jd_live_c83003a54ae0a83123454c3f7ec82f0a" \
+              -H "Content-Type: application/json" \
+              -d '{"query": "How do I authenticate with OAuth?", "limit": 5}'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - query
+              properties:
+                query:
+                  type: string
+                  description: Consulta de búsqueda en lenguaje natural.
+                  maxLength: 500
+                  example: "How do I set up webhooks?"
+                limit:
+                  type: integer
+                  description: Número máximo de resultados a devolver.
+                  minimum: 1
+                  maximum: 20
+                  default: 5
+                  example: 5
+            examples:
+              naturalQuestion:
+                summary: Pregunta en lenguaje natural (recomendado)
+                value:
+                  query: "How do I configure a custom domain for my docs site?"
+                  limit: 5
+              shortKeyword:
+                summary: Consulta corta por palabras clave (funciona, pero menos precisa)
+                value:
+                  query: "webhooks"
+                  limit: 10
+              ragContext:
+                summary: Máximo de resultados para contexto de pipeline RAG
+                value:
+                  query: "authentication options and API key management"
+                  limit: 20
+      responses:
+        "200":
+          description: Resultados de búsqueda
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  results:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        title:
+                          type: string
+                          description: Título de la página.
+                          example: "Webhooks"
+                        section:
+                          type: string
+                          description: Encabezado de sección dentro de la página (si aplica).
+                          example: "Configuration"
+                        slug:
+                          type: string
+                          description: Ruta URL de la página.
+                          example: "integrations/webhooks"
+                        content:
+                          type: string
+                          description: Fragmento de contenido (máx. 500 chars).
+                          example: "Configure webhooks to receive real-time notifications when builds complete..."
+                        url:
+                          type: string
+                          format: uri
+                          description: URL completa de la página.
+                          example: "https://docs.example.com/integrations/webhooks"
+                        score:
+                          type: number
+                          format: float
+                          description: Puntuación de relevancia (similitud de coseno, 0.0–1.0). Mayor es mejor.
+                          minimum: 0
+                          maximum: 1
+                          example: 0.92
+                  query:
+                    type: string
+                    description: La consulta que se buscó.
+                    example: "How do I set up webhooks?"
+                  total:
+                    type: integer
+                    description: Número de resultados devueltos.
+                    example: 3
+                  durationMs:
+                    type: integer
+                    description: Tiempo de ejecución de la búsqueda en el servidor en milisegundos (excluye el tiempo de red).
+                    example: 150
+              examples:
+                multiResult:
+                  summary: Consulta en lenguaje natural con múltiples resultados
+                  value:
+                    query: "How do I set up a custom domain?"
+                    results:
+                      - title: "Custom Domains"
+                        section: "Step 4: Deploy"
+                        slug: "deploy/custom-domains"
+                        content: "To add a custom domain, go to Project Settings and enter your domain. You'll need to add a CNAME record pointing to your Jamdesk subdomain."
+                        url: "https://acme.jamdesk.app/deploy/custom-domains"
+                        score: 0.94
+                      - title: "DNS configuration"
+                        section: "Custom domains"
+                        slug: "deploy/dns"
+                        content: "Custom domains require an A record or CNAME pointing to your Jamdesk subdomain..."
+                        url: "https://acme.jamdesk.app/deploy/dns"
+                        score: 0.87
+                    total: 2
+                    durationMs: 85
+                shortKeyword:
+                  summary: Consulta por palabras clave con un único resultado
+                  value:
+                    query: "webhooks"
+                    results:
+                      - title: "Webhooks"
+                        section: "Configuration"
+                        slug: "integrations/webhooks"
+                        content: "Configure webhooks to receive real-time notifications when builds complete, deploys finish, or errors occur..."
+                        url: "https://acme.jamdesk.app/integrations/webhooks"
+                        score: 0.91
+                    total: 1
+                    durationMs: 62
+                zeroResults:
+                  summary: Consulta sin coincidencias
+                  value:
+                    query: "quantum entanglement deployment strategy"
+                    results: []
+                    total: 0
+                    durationMs: 48
+        "400":
+          description: Solicitud inválida
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                missingQuery:
+                  summary: Campo query ausente
+                  value:
+                    error: 'Missing or empty "query" field'
+                queryTooLong:
+                  summary: Consulta demasiado larga
+                  value:
+                    error: "Query exceeds 500 characters"
+        "401":
+          description: |
+            API key inválida o ausente. El cuerpo de la respuesta contiene un
+            código `error` legible por máquina: `invalid_key_format` (ausente
+            o malformada — p. ej. no cumple el formato `jd_live_<32 hex>`, 40 chars) o
+            `invalid_key` (la clave no se reconoce o ha sido revocada).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                invalidKeyFormat:
+                  summary: Cabecera Authorization ausente o clave malformada
+                  value:
+                    error: "invalid_key_format"
+                invalidKey:
+                  summary: Clave no reconocida o revocada
+                  value:
+                    error: "invalid_key"
+        "403":
+          description: |
+            La API key no corresponde a este proyecto. La clave es válida pero fue
+            generada para un slug de proyecto diferente al que aparece en la URL.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error: "wrong_project"
+        "429":
+          description: Límite de tasa superado
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+              description: Segundos que hay que esperar antes de reintentar.
+              example: 60
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error: "Rate limit exceeded"
+        "502":
+          description: Búsqueda temporalmente no disponible
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error: "Search temporarily unavailable"
+        "503":
+          description: |
+            Interrupción temporal del backend durante la verificación de la clave. Se devuelve cuando
+            la consulta a Redis falla o el almacén de autenticación no está disponible — reintenta
+            tras una espera breve. El cuerpo de la respuesta contiene un código `error`
+            legible por máquina: `lookup_failed` o `redis_unavailable`.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                lookupFailed:
+                  summary: Fallo en la consulta al almacén de autenticación
+                  value:
+                    error: "lookup_failed"
+                redisUnavailable:
+                  summary: Almacén de autenticación inaccesible
+                  value:
+                    error: "redis_unavailable"
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      description: |
+        API key generada desde tu Jamdesk dashboard (Settings → API Keys).
+        Formato: `jd_live_<32 hex chars>` (40 chars). Mantén las claves en secreto. Revócalas
+        y genera nuevas desde el dashboard — no existe rotación en el lugar.
+  schemas:
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          description: |
+            Detalle del error. Las respuestas de autenticación (401), autorización (403) y
+            interrupción del backend (503) devuelven un código estable legible por máquina
+            (p. ej. `invalid_key`, `wrong_project`, `lookup_failed`) para que los
+            clientes puedan ramificar según el valor. Las respuestas de validación de solicitud (400),
+            límite de tasa (429) y búsqueda no disponible (502) devuelven actualmente
+            una frase legible por humanos.

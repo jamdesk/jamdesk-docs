@@ -1,0 +1,154 @@
+---
+title: iFrames y embeds
+sidebarTitle: iFrames
+description: Incrusta contenido externo como Vimeo, CodePen, Figma y Loom en tu documentación con estilos automáticos y tamaño responsive.
+---
+
+Cada `<iframe>` en tu documentación recibe un tratamiento visual predeterminado: esquinas redondeadas, un borde enmarcado y un espaciado que coincide con el resto de tu página. No necesitas agregar divs contenedores ni clases utilitarias para que esto funcione.
+
+## Estilos automáticos
+
+Jamdesk aplica un marco consistente a todos los iframes en el momento del renderizado. Esto es lo que recibe cada iframe:
+
+| Propiedad | Valor | Descripción |
+|----------|-------|-------------|
+| Radio de borde | `0.5rem` | Esquinas redondeadas en el contenido |
+| Ancho del marco | `8px` | Relleno visual alrededor del contenido |
+| Borde | `1px` | Borde sutil en el color del tema |
+| Espaciado | `1rem + 9px` | Margen superior e inferior |
+
+El color del marco proviene de `--color-bg-secondary` y la línea de borde usa `--color-border`. Ambas son propiedades CSS personalizadas vinculadas a tu tema, por lo que el modo claro y el modo oscuro obtienen los colores correctos sin ningún trabajo adicional de tu parte.
+
+## Incrustar contenido externo
+
+Un embed básico usa una etiqueta HTML iframe estándar:
+
+```html
+<iframe
+  src="https://example.com/embed"
+  width="100%"
+  height="400"
+  title="Description of embedded content"
+/>
+```
+
+Incluye siempre un atributo `title`. Los lectores de pantalla lo anuncian, y ayuda a cualquier persona que revise el código fuente de tu página a entender qué contiene cada embed.
+
+## Tamaño responsive
+
+La mayoría de los proveedores de embeds devuelven contenido con una relación de aspecto fija. La utilidad `aspect-video` de Tailwind mantiene el iframe en 16:9 independientemente del ancho del viewport, y `w-full` lo estira para llenar el contenedor padre:
+
+```html
+<iframe
+  className="w-full aspect-video"
+  src="https://example.com/embed"
+  title="16:9 responsive embed"
+/>
+```
+
+`w-full` establece `width: 100%` mediante Tailwind. Sin él, el iframe usa el ancho predeterminado del navegador (generalmente 300px), lo cual se ve mal en pantallas anchas.
+
+Para contenido que no es 16:9 —como un prototipo de Figma o un dashboard— usa la sintaxis de relación de aspecto arbitraria de Tailwind:
+
+```html
+<iframe
+  className="w-full aspect-[4/3]"
+  src="https://example.com/embed"
+  title="4:3 responsive embed"
+/>
+```
+
+Reemplaza `4/3` con la relación que se adapte al contenido. `aspect-[1/1]` para embeds cuadrados, `aspect-[21/9]` para ultrawide, etc.
+
+## Vimeo
+
+Los videos de Vimeo se incrustan mediante un iframe estándar que apunta a su URL del reproductor:
+
+```html
+<iframe
+  className="w-full aspect-video rounded-xl"
+  src="https://player.vimeo.com/video/VIDEO_ID"
+  title="Vimeo video player"
+  allow="autoplay; fullscreen; picture-in-picture"
+  allowFullScreen
+/>
+```
+
+Reemplaza `VIDEO_ID` por el ID numérico de cualquier URL de Vimeo (el número después de `vimeo.com/`). El atributo `allow` otorga permisos de pantalla completa y picture-in-picture al reproductor incrustado.
+
+<Tip>
+Para videos de YouTube, usa el componente dedicado [`<YouTube>`](/es/content/youtube) en lugar de un iframe sin procesar. Carga el reproductor de forma diferida y elimina las sugerencias de videos relacionados.
+</Tip>
+
+## Embeds comunes
+
+<AccordionGroup>
+  <Accordion title="CodePen" icon="codepen">
+    Obtén la URL de embed desde el botón "Embed" de CodePen. El parámetro `default-tab` controla qué panel se muestra primero (`result`, `html`, `css` o `js`).
+
+    ```html
+    <iframe
+      height="400"
+      style={{width: '100%'}}
+      src="https://codepen.io/USERNAME/embed/PEN_ID?default-tab=result"
+      title="CodePen Embed"
+      allowFullScreen
+    />
+    ```
+  </Accordion>
+
+  <Accordion title="CodeSandbox" icon="cube">
+    Los embeds de CodeSandbox admiten parámetros de consulta para el tamaño de fuente, el tema y qué archivo mostrar. El atributo `sandbox` controla lo que el iframe puede hacer — CodeSandbox necesita varios permisos para ejecutar código en el navegador.
+
+    ```html
+    <iframe
+      src="https://codesandbox.io/embed/SANDBOX_ID?fontsize=14&theme=dark"
+      style={{width: '100%', height: '500px', border: 0, borderRadius: '4px', overflow: 'hidden'}}
+      title="CodeSandbox"
+      allow="accelerometer; ambient-light-sensor; camera; encrypted-media; geolocation; gyroscope; hid; microphone; midi; payment; usb; vr; xr-spatial-tracking"
+      sandbox="allow-forms allow-modals allow-popups allow-presentation allow-same-origin allow-scripts"
+    />
+    ```
+  </Accordion>
+
+  <Accordion title="Figma" icon="figma">
+    Abre un archivo de Figma, haz clic en **Share** y luego en **Get embed code**. La URL va en el atributo `src`. Los embeds de Figma funcionan mejor con una altura de `450px` o más — alturas menores recortan la barra de herramientas.
+
+    ```html
+    <iframe
+      style={{border: '1px solid rgba(0, 0, 0, 0.1)'}}
+      width="100%"
+      height="450"
+      src="https://www.figma.com/embed?embed_host=share&url=FIGMA_URL"
+      allowFullScreen
+    />
+    ```
+  </Accordion>
+
+  <Accordion title="Loom" icon="video">
+    Copia el ID del video desde cualquier enlace compartido de Loom (la cadena después de `loom.com/share/`). Los embeds de Loom se reproducen automáticamente al pasar el cursor de forma predeterminada.
+
+    ```html
+    <iframe
+      src="https://www.loom.com/embed/VIDEO_ID"
+      width="100%"
+      height="400"
+      allowFullScreen
+    />
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## ¿Qué sigue?
+
+<Columns cols={3}>
+  <Card title="Imágenes" icon="image" href="/es/content/images">
+    Imágenes en Markdown, dimensiones y pies de foto
+  </Card>
+  <Card title="Embeds de YouTube" icon="youtube" href="/es/content/youtube">
+    Videos y Shorts de YouTube
+  </Card>
+  <Card title="Videos" icon="video" href="/es/content/videos">
+    Archivos MP4 y WebM locales
+  </Card>
+</Columns>

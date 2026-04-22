@@ -1,0 +1,699 @@
+---
+title: Referencia de docs.json
+description: "Referencia completa de todos los campos de docs.json: temas, colores, navegación, pestañas, integración con OpenAPI, branding, SEO, analítica y configuración del chat con IA."
+---
+
+El archivo `docs.json` es la configuración central de tu sitio de documentación Jamdesk.
+
+<Tip>
+  Los ajustes clave de tu docs.json se muestran en el dashboard bajo
+  **Configuración del proyecto → Aspectos destacados de configuración**. Esta vista es de solo lectura
+  y se actualiza automáticamente tras cada build exitoso.
+</Tip>
+
+## Campos requeridos
+
+### name
+
+**Tipo:** `string` (requerido)
+
+El nombre de tu sitio de documentación. Se muestra en el encabezado y en la pestaña del navegador.
+
+```json
+{ "name": "Acme API Docs" }
+```
+
+### theme
+
+**Tipo:** `"jam" | "nebula" | "pulsar"` (requerido)
+
+<Tabs>
+  <Tab title="jam">
+    Diseño limpio y moderno con la fuente Inter. Navegación basada en encabezado.
+
+    **Ideal para:** La mayoría de sitios de documentación, referencias de API
+  </Tab>
+  <Tab title="nebula">
+    Apariencia aireada y relajada con JetBrains Mono.
+
+    **Ideal para:** Documentación narrativa, guías
+  </Tab>
+  <Tab title="pulsar">
+    Nítido, alto contraste con navegación en barra lateral.
+
+    **Ideal para:** Referencias técnicas densas
+  </Tab>
+</Tabs>
+
+### colors
+
+**Tipo:** `object` (requerido)
+
+| Campo | Tipo | Requerido | Descripción |
+|-------|------|-----------|-------------|
+| `primary` | string (hex) | Sí | Color principal de marca |
+| `light` | string (hex) | No | Acento para tema claro |
+| `dark` | string (hex) | No | Acento para tema oscuro |
+
+```json
+{
+  "colors": {
+    "primary": "#635BFF",
+    "light": "#7C75FF",
+    "dark": "#4F46E5"
+  }
+}
+```
+
+## Branding
+
+### favicon
+
+**Tipo:** `string`
+
+Ruta al archivo de favicon (se recomienda SVG).
+
+```json
+{ "favicon": "/images/favicon.svg" }
+```
+
+### logo
+
+**Tipo:** `object`
+
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| `light` | string | Logo para modo claro |
+| `dark` | string | Logo para modo oscuro |
+| `href` | string | URL al hacer clic en el logo |
+
+```json
+{
+  "logo": {
+    "light": "/images/logo-light.webp",
+    "dark": "/images/logo-dark.webp",
+    "href": "https://yoursite.com"
+  }
+}
+```
+
+## OpenAPI
+
+### api.openapi
+
+**Tipo:** `string | string[]`
+
+Lista los archivos de especificación OpenAPI 3.x que deseas que Jamdesk valide y use para las páginas de endpoint. Usa rutas relativas a tu `docs.json`.
+
+```json
+{
+  "api": {
+    "openapi": ["/openapi/api.yaml"]
+  }
+}
+```
+
+Una vez configurado, puedes generar páginas de endpoint añadiendo un campo `openapi` en el frontmatter de una página:
+
+```mdx
+---
+title: Create Ticket
+openapi: /openapi/api.yaml POST /tickets
+---
+```
+
+Si solo tienes una especificación listada, también puedes usar el formato abreviado:
+
+```mdx
+---
+title: Create Ticket
+openapi: POST /tickets
+---
+```
+
+Consulta [Ejemplo de OpenAPI](/es/api-reference/openapi-example) para ver una página de endpoint en vivo y [Estructura de directorios](/es/setup/directory-structure) para la ubicación de archivos.
+
+Si tu sitio es multilingüe, coloca un archivo `<spec>.<lang>.<ext>` junto a cada especificación fuente (p. ej., `openapi/api.fr.yaml`) y Jamdesk lo sirve en las URL de ese idioma. Consulta [Traducción de especificaciones OpenAPI](/es/setup/languages#translating-openapi-specs).
+
+### api.examples.languages
+
+**Tipo:** `string[]`
+**Predeterminado:** `["curl", "python", "javascript"]`
+
+Elige qué lenguajes de programación aparecen en los ejemplos de código de API generados automáticamente en las páginas `openapi:`. El orden del array determina el orden de visualización de las pestañas, y el primer lenguaje se selecciona por defecto.
+
+**Valores admitidos:** `curl`, `bash`, `python`, `javascript`, `go`, `ruby`, `csharp`, `java`, `rust`, `php`
+
+<Note>`bash` es un alias de `curl`; ambos producen el mismo resultado. Usa la etiqueta que prefieras.</Note>
+
+```json All supported languages
+{
+  "api": {
+    "examples": {
+      "languages": ["curl", "python", "javascript", "go", "ruby", "csharp", "java", "rust", "php"]
+    }
+  }
+}
+```
+
+```json Custom subset
+{
+  "api": {
+    "examples": {
+      "languages": ["python", "javascript", "go"]
+    }
+  }
+}
+```
+
+### api.examples.defaults
+
+**Tipo:** `"required" | "all"`
+**Predeterminado:** `"all"`
+
+Controla qué parámetros aparecen en los ejemplos de código generados automáticamente.
+
+| Valor | Comportamiento |
+|-------|---------------|
+| `"all"` | Los ejemplos incluyen todos los parámetros con valores de marcador |
+| `"required"` | Los ejemplos solo incluyen los parámetros marcados como `required` en la especificación |
+
+```json
+{
+  "api": {
+    "examples": {
+      "defaults": "required"
+    }
+  }
+}
+```
+
+### api.examples.prefill
+
+**Tipo:** `boolean`
+**Predeterminado:** `false`
+
+Cuando es `true`, el [API playground](/es/api-reference/playground) rellena previamente los campos de parámetros con valores `example` de tu especificación OpenAPI.
+
+```json
+{
+  "api": {
+    "examples": {
+      "prefill": true
+    }
+  }
+}
+```
+
+### api.playground.display
+
+**Tipo:** `"interactive" | "simple" | "none"`
+**Predeterminado:** `"interactive"`
+
+Controla el [API playground](/es/api-reference/playground) en las páginas de endpoint. Aparece un botón "Pruébalo" en cada página `openapi:` y `api:` por defecto.
+
+| Valor | Comportamiento |
+|-------|---------------|
+| `"interactive"` | playground completo: rellenar parámetros, generar código, enviar solicitudes (predeterminado) |
+| `"simple"` | Rellenar parámetros y copiar código, pero sin botón de envío |
+| `"none"` | playground desactivado |
+
+```json
+{
+  "api": {
+    "playground": {
+      "display": "interactive"
+    }
+  }
+}
+```
+
+Consulta [API playground](/es/api-reference/playground) para detalles de uso y anulaciones por página.
+
+### api.mdx.auth.method
+
+**Tipo:** `"bearer" | "basic" | "key" | "cobo"`
+
+Método de autenticación utilizado en los ejemplos de código generados automáticamente. Cuando se define, los ejemplos incluyen el encabezado de autenticación correspondiente.
+
+| Valor | Formato del encabezado |
+|-------|----------------------|
+| `"bearer"` | `Authorization: Bearer <token>` |
+| `"basic"` | `Authorization: Basic <base64>` |
+| `"key"` | Encabezado personalizado (ver `api.mdx.auth.name`) |
+| `"cobo"` | Autenticación específica de Cobo |
+
+```json
+{
+  "api": {
+    "mdx": {
+      "auth": {
+        "method": "bearer"
+      }
+    }
+  }
+}
+```
+
+### api.mdx.auth.name
+
+**Tipo:** `string`
+
+Nombre de encabezado personalizado para autenticación basada en clave. Solo se usa cuando `api.mdx.auth.method` es `"key"`.
+
+```json
+{
+  "api": {
+    "mdx": {
+      "auth": {
+        "method": "key",
+        "name": "X-API-Key"
+      }
+    }
+  }
+}
+```
+
+## Navegación
+
+### tabsPosition
+
+**Tipo:** `"top" | "left"`
+
+Controla dónde se muestran las pestañas de navegación.
+
+| Valor | Descripción |
+|-------|-------------|
+| `"top"` | Las pestañas aparecen en la barra de pestañas del encabezado |
+| `"left"` | Las pestañas aparecen en la parte superior de la barra lateral |
+
+El valor predeterminado depende del tema:
+
+| Tema | Predeterminado |
+|------|---------------|
+| jam | `"left"` |
+| nebula | `"left"` |
+| pulsar | `"top"` |
+
+```json
+{ "tabsPosition": "left" }
+```
+
+### anchors
+
+**Tipo:** `array`
+
+Enlaces externos que aparecen en la parte superior de la barra lateral en todas las páginas.
+
+| Campo | Tipo | Requerido | Descripción |
+|-------|------|-----------|-------------|
+| `name` | string | Sí | Texto de visualización |
+| `href` | string | Sí | URL (enlace externo) |
+| `icon` | string | No | Nombre del ícono de Font Awesome |
+
+```json
+{
+  "anchors": [
+    { "name": "Blog", "href": "https://blog.example.com", "icon": "newspaper" }
+  ]
+}
+```
+
+### navigation (estructura)
+
+**Tipo:** `object`
+
+La estructura de navegación de tu documentación. Consulta [Navegación](/es/navigation/overview) para documentación detallada.
+
+Las páginas pueden ser cadenas (título generado automáticamente desde el nombre del archivo) u objetos con un título personalizado:
+
+```json
+"pages": [
+  "introduction",
+  { "page": "content/mdx-basics", "title": "MDX Basics" }
+]
+```
+
+<Accordion title="Ejemplo básico de navegación">
+```json
+{
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Docs",
+        "icon": "book-open",
+        "groups": [
+          {
+            "group": "Getting Started",
+            "pages": ["introduction", "quickstart"]
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+</Accordion>
+
+## Barra de navegación y pie de página
+
+### navbar
+
+**Tipo:** `object`
+
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| `links` | array | Enlaces de navegación |
+| `primary` | object | Botón CTA principal |
+
+```json
+{
+  "navbar": {
+    "links": [
+      { "label": "Blog", "href": "/blog" }
+    ],
+    "primary": {
+      "type": "button",
+      "label": "Dashboard",
+      "href": "https://app.example.com"
+    }
+  }
+}
+```
+
+### footer
+
+**Tipo:** `object`
+
+Configura el pie de página con enlaces a redes sociales y columnas de enlaces personalizados.
+
+```json
+{
+  "footer": {
+    "socials": {
+      "github": "https://github.com/yourorg",
+      "x": "https://x.com/yourhandle",
+      "discord": "https://discord.gg/yourserver"
+    },
+    "links": [
+      {
+        "header": "Resources",
+        "items": [
+          { "label": "Blog", "href": "https://example.com/blog" },
+          { "label": "Changelog", "href": "/changelog" }
+        ]
+      }
+    ]
+  }
+}
+```
+
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| `socials` | object | URLs de plataformas de redes sociales |
+| `links` | array | Configuraciones de columnas de enlaces |
+| `links[].header` | string | Encabezado de columna |
+| `links[].items` | array | Array de objetos `{ label, href }` |
+
+**Plataformas sociales admitidas:** `github`, `x`, `twitter`, `linkedin`, `discord`, `slack`, `youtube`, `instagram`, `facebook`, `reddit`, `telegram`, `bluesky`, `threads`, `medium`, `hacker-news`, `website`
+
+## Estilos
+
+### styling.latex
+
+**Tipo:** `boolean`
+
+Habilita el renderizado de matemáticas LaTeX con KaTeX. Cuando está habilitado, puedes usar `$...$` para matemáticas en línea y `$...$` para ecuaciones en bloque.
+
+```json
+{
+  "styling": {
+    "latex": true
+  }
+}
+```
+
+Consulta [Matemáticas y LaTeX](/es/content/math) para detalles de uso.
+
+### styling.js
+
+**Tipo:** `string | string[]`
+
+Archivo(s) JavaScript personalizados para incluir en cada página. Las rutas son relativas a tu directorio de documentación y deben comenzar con `/`.
+
+```json
+{
+  "styling": {
+    "js": "/script.js"
+  }
+}
+```
+
+Pasa un array para múltiples archivos:
+
+```json
+{
+  "styling": {
+    "js": ["/chat.js", "/analytics.js"]
+  }
+}
+```
+
+Sin este campo, Jamdesk detecta automáticamente los archivos `.js` en la raíz de tu proyecto. Consulta [JavaScript personalizado](/es/customization/custom-javascript) para más detalles.
+
+## Chat
+
+### chat
+
+**Tipo:** `object` (opcional)
+
+Configura el asistente de chat IA integrado. El chat está habilitado por defecto en todos los sitios; solo necesitas este campo para personalizar las preguntas iniciales o desactivarlo.
+
+| Campo | Tipo | Predeterminado | Descripción |
+|-------|------|---------------|-------------|
+| `enabled` | boolean | `true` | Establece `false` para eliminar el panel de chat de tu sitio |
+| `starterQuestions` | string[] | generado automáticamente | Hasta 4 preguntas que se muestran al abrir el chat (5-200 caracteres cada una). Se generan automáticamente durante los builds si se omiten. Establece `[]` para ninguna |
+
+```json
+{
+  "chat": {
+    "starterQuestions": [
+      "How do I get started?",
+      "What API endpoints are available?"
+    ]
+  }
+}
+```
+
+Consulta [Chat IA](/es/ai/chat) para detalles sobre cómo funciona el chat y lo que ven los visitantes.
+
+## Menú de acciones IA
+
+### contextual
+
+**Tipo:** `object` (opcional)
+
+Configura el menú desplegable de acciones IA que aparece en cada página. Habilitado por defecto con todas las opciones; solo necesitas este campo para personalizar qué opciones aparecen o desactivarlo.
+
+| Campo | Tipo | Predeterminado | Descripción |
+|-------|------|---------------|-------------|
+| `enabled` | boolean | `true` | Establece `false` para eliminar el menú de acciones IA de tu sitio |
+| `options` | array | todas las integradas | Lista de claves de opción y/o objetos de opción personalizados |
+
+**Claves de opciones integradas:** `copy`, `view`, `chatgpt`, `claude`, `perplexity`, `gemini`, `mcp`, `cursor`, `vscode`
+
+```json
+{
+  "contextual": {
+    "options": ["copy", "claude", "mcp", "cursor"]
+  }
+}
+```
+
+Añade opciones personalizadas junto a las integradas:
+
+```json
+{
+  "contextual": {
+    "options": [
+      "copy",
+      "claude",
+      {
+        "title": "Ask on Discord",
+        "description": "Get help from the community",
+        "icon": "discord",
+        "href": "https://discord.gg/your-server"
+      }
+    ]
+  }
+}
+```
+
+Consulta [Menú de acciones IA](/es/ai/ai-actions) para la lista completa de opciones y el formato de opciones personalizadas.
+
+## Corrector ortográfico
+
+### spellcheck
+
+**Tipo:** `object` (opcional)
+
+Configura el comando CLI `jamdesk spellcheck`. Solo necesitas este campo para añadir palabras específicas del proyecto a la lista de ignorados.
+
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| `ignore` | string[] | Palabras a omitir durante la revisión ortográfica (nombres de productos, términos técnicos, etc.) |
+
+```json
+{
+  "spellcheck": {
+    "ignore": ["Acme", "kubectl", "Terraform"]
+  }
+}
+```
+
+El CLI incluye más de 180 términos técnicos integrados (API, GraphQL, Kubernetes, React, etc.) e ignora automáticamente el nombre de tu proyecto del campo `name`. Solo añade palabras específicas de tu proyecto.
+
+Consulta [Resumen del CLI: Corrector ortográfico](/es/cli/overview) para detalles de uso y el modo de corrección interactiva.
+
+## Imágenes
+
+### images.convertToWebp
+
+**Tipo:** `boolean` (opcional, predeterminado `false`)
+
+Habilita la conversión automática a WebP de activos PNG y JPG durante los builds. Los archivos convertidos suelen ser un 60-80% más pequeños que los originales sin pérdida de calidad visible. Las referencias en tu MDX, CSS personalizado, JS personalizado y `docs.json` se reescriben automáticamente, por lo que no necesitas cambiar ninguna ruta.
+
+Los favicons, `og:image` y `twitter:image` permanecen en su formato original. No todos los rastreadores sociales o clientes de correo electrónico renderizan WebP de forma fiable, y una tarjeta de preview rota es peor que un JPG ligeramente más grande.
+
+```json
+{
+  "images": {
+    "convertToWebp": true
+  }
+}
+```
+
+Consulta [Conversión automática de imágenes](/es/builds/image-optimization) para saber qué se convierte, cómo funciona el almacenamiento en caché y el indicador de progreso del build.
+
+## Control de acceso
+
+### auth.password
+
+**Tipo:** `object` (opcional)
+
+Activa la protección con contraseña compartida para tu sitio. Solo configuración declarativa. La frase de contraseña real se establece en el [dashboard](/es/setup/password-protection#rotating-and-revoking-sessions) después de que se ejecute el próximo build.
+
+Establece `auth.password.enabled: true` para bloquear todo el sitio, o lista rutas bajo `auth.password.private[]` para proteger solo esas páginas. Ambas opciones activan el mismo mensaje de contraseña en el dashboard en el próximo build.
+
+```json
+{
+  "auth": {
+    "password": {
+      "enabled": true,
+      "hint": "Ask your account manager",
+      "public": ["/marketing/**", "/changelog"]
+    }
+  }
+}
+```
+
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| `enabled` | `boolean` | Modo de sitio completo. Cuando es `true`, cada página requiere la contraseña (excepto las marcadas como públicas). |
+| `hint` | `string` (máx. 200 caracteres) | Pista en texto plano que se muestra en la pantalla de desbloqueo. Sin HTML. |
+| `public` | `string[]` | Globs de ruta que omiten la contraseña. Admite `*` (un segmento) y `**` (recursivo). Se rechaza una `/` sola. |
+| `private` | `string[]` | Rutas exactas que requieren la contraseña. Configurar esto sin `enabled` activa el modo de páginas específicas. |
+
+Consulta [Protección con contraseña](/es/setup/password-protection) para el recorrido completo, incluido el flujo en el dashboard y cómo interactúan los frontmatter `public: true` / `private: true` con estos arrays.
+
+## Ejemplo completo
+
+<Accordion title="Ejemplo completo de docs.json" defaultOpen>
+```json
+{
+  "$schema": "https://jamdesk.com/docs.json",
+  "name": "Acme Documentation",
+  "description": "Learn how to use Acme",
+  "theme": "jam",
+  "colors": {
+    "primary": "#635BFF"
+  },
+  "favicon": "/images/favicon.svg",
+  "logo": {
+    "light": "/images/logo-light.webp",
+    "dark": "/images/logo-dark.webp"
+  },
+  "api": {
+    "openapi": ["/openapi/api.yaml"],
+    "playground": {
+      "display": "interactive"
+    },
+    "examples": {
+      "languages": ["curl", "python", "javascript"],
+      "prefill": true
+    }
+  },
+  "styling": {
+    "latex": true,
+    "js": "/script.js"
+  },
+  "chat": {
+    "starterQuestions": ["How do I get started?", "What endpoints are available?"]
+  },
+  "contextual": {
+    "options": ["copy", "claude", "chatgpt", "mcp", "cursor"]
+  },
+  "spellcheck": {
+    "ignore": ["Acme"]
+  },
+  "anchors": [
+    { "name": "Blog", "href": "https://blog.acme.com", "icon": "newspaper" }
+  ],
+  "navbar": {
+    "links": [
+      { "label": "Support", "href": "/support" }
+    ],
+    "primary": {
+      "type": "button",
+      "label": "Dashboard",
+      "href": "https://app.acme.com"
+    }
+  },
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Docs",
+        "icon": "book-open",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": ["introduction", "quickstart"]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "icon": "code",
+        "groups": [
+          {
+            "group": "Endpoints",
+            "pages": ["api/users", "api/posts"]
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+</Accordion>
+
+## ¿Qué sigue?
+
+<Columns cols={2}>
+  <Card title="Resumen de navegación" icon="sitemap" href="/es/navigation/overview">
+    Estructura la navegación de tu documentación
+  </Card>
+  <Card title="Menú de acciones IA" icon="wand-magic-sparkles" href="/es/ai/ai-actions">
+    Personaliza el menú desplegable de IA en cada página
+  </Card>
+</Columns>

@@ -1,0 +1,206 @@
+---
+title: Optimización SEO
+description: Controla títulos, descripciones y metaetiquetas para motores de búsqueda y previsualizaciones sociales. Jamdesk genera automáticamente sitemaps e imágenes Open Graph.
+---
+
+Optimiza tu documentación para motores de búsqueda y previsualizaciones sociales configurando títulos, descripciones y metadatos en el frontmatter.
+
+## Qué Hace Jamdesk Automáticamente
+
+<Columns cols={3}>
+  <Card title="Metaetiquetas" icon="tags">
+    El título y la descripción del frontmatter se convierten en metaetiquetas.
+  </Card>
+  <Card title="Open Graph" icon="share">
+    Imágenes para compartir en redes sociales generadas para cada página.
+  </Card>
+  <Card title="Sitemap y Robots" icon="sitemap">
+    Sitemap XML y robots.txt generados en cada build.
+  </Card>
+  <Card title="JSON-LD" icon="code">
+    Datos estructurados de Schema.org en cada página para resultados de búsqueda enriquecidos.
+  </Card>
+  <Card title="IndexNow" icon="bolt">
+    URLs modificadas enviadas a motores de búsqueda después de cada build.
+  </Card>
+  <Card title="Endpoints de IA" icon="robot" href="/es/ai/overview">
+    `llms.txt` y servidor MCP para que las herramientas de IA lean tu documentación.
+  </Card>
+</Columns>
+
+## Optimizando Tu Contenido
+
+### Escribe un Frontmatter Efectivo
+
+```yaml
+---
+title: User Authentication    # Under 60 characters
+description: Set up OAuth, JWT, and session-based authentication  # 120-160 characters
+---
+```
+
+<Tip>
+**Coloca las palabras clave al inicio.** "Configuración de autenticación" es mejor que "Cómo configurar la autenticación."
+</Tip>
+
+### Títulos de Página
+
+- Mantén menos de 60 caracteres para evitar truncamientos en los resultados de búsqueda
+- Incluye tu palabra clave principal cerca del inicio
+- Haz que cada título sea único en toda tu documentación
+
+### Descripciones
+
+- Apunta a 120-160 caracteres
+- Resume lo que el lector aprenderá
+- Incluye palabras clave relevantes de forma natural
+
+<Note>
+**Fallback autogenerado.** Cuando `description` no está en el frontmatter, Jamdesk extrae automáticamente el primer párrafo de prosa del contenido de tu página (hasta 155 caracteres). Los encabezados, bloques de código, imágenes y componentes MDX se omiten. Esto se utiliza para `<meta name="description">`, Open Graph y tarjetas de Twitter. Aun así, se recomienda escribir una descripción explícita para mejores resultados.
+</Note>
+
+## Controlando la Indexación
+
+### Configuración para Todo el Sitio
+
+En tu `docs.json`, configura el comportamiento predeterminado de robots:
+
+```json
+{
+  "seo": {
+    "metatags": {
+      "robots": "index, follow"
+    }
+  }
+}
+```
+
+### Control por Página
+
+Anula la indexación de páginas específicas en el frontmatter:
+
+```yaml
+---
+title: Internal Notes
+noindex: true
+---
+```
+
+Usa `noindex` para:
+- Páginas en borrador o en progreso
+- Documentación interna
+- Contenido obsoleto que conservas como referencia
+
+## URLs Canónicas
+
+Si tu documentación es accesible desde múltiples URLs, establece una canónica:
+
+```yaml
+---
+title: Getting Started
+canonical: https://docs.example.com/getting-started
+---
+```
+
+## Personalización de Open Graph
+
+Anula la imagen social autogenerada:
+
+```yaml
+---
+title: API Reference
+og:image: /images/api-social-card.png
+---
+```
+
+## Sitemap y Robots.txt
+
+Cada sitio de Jamdesk genera `sitemap.xml` y `robots.txt` automáticamente en cada build.
+
+| Archivo | Propósito |
+|------|---------|
+| `sitemap.xml` | Lista todas las páginas con fechas de última modificación para los motores de búsqueda |
+| `robots.txt` | Permite todos los rastreadores y los dirige al sitemap |
+
+### Dónde encontrarlos
+
+Las URLs dependen de si tu documentación está en un dominio raíz o bajo una subruta `/docs`:
+
+<Tabs>
+  <Tab title="Dominio raíz">
+    Si tu documentación está en la raíz de tu dominio (p. ej., `docs.acme.com` o `acme.jamdesk.app`):
+
+    ```bash
+    https://docs.acme.com/sitemap.xml
+    https://docs.acme.com/robots.txt
+    ```
+  </Tab>
+  <Tab title="Subruta /docs">
+    Si tu documentación está bajo `/docs` en tu sitio principal (como este sitio en `jamdesk.com/docs`):
+
+    ```bash
+    https://jamdesk.com/docs/sitemap.xml
+    https://jamdesk.com/docs/robots.txt
+    ```
+  </Tab>
+</Tabs>
+
+### Qué se incluye en el sitemap
+
+- Todas las páginas publicadas (excluyendo las que tienen frontmatter `noindex` o `hidden`)
+- Fechas de última modificación del frontmatter cuando están disponibles
+- Frecuencia de cambio semanal
+
+### Excluir páginas del sitemap
+
+Agrega `noindex` al frontmatter para excluir una página del sitemap y de los motores de búsqueda:
+
+```yaml
+---
+title: Internal Notes
+noindex: true
+---
+```
+
+Las páginas con `hidden: true` también se excluyen automáticamente.
+
+## Datos Estructurados JSON-LD
+
+Cada página incluye automáticamente datos estructurados de [schema.org](https://schema.org) como una etiqueta `<script type="application/ld+json">` con dos esquemas:
+
+- `WebSite`: nombre, URL y descripción de tu sitio (de `docs.json`).
+- `BreadcrumbList`: ruta de navegación desde Inicio hasta la página actual, derivada de tu configuración de `navigation`.
+
+No se requiere configuración. Los motores de búsqueda utilizan esto para resultados enriquecidos como rutas de navegación en los listados de búsqueda.
+
+<Tip>
+**Verifica tu marcado.** Pega cualquier URL de página en la [Prueba de resultados enriquecidos de Google](https://search.google.com/test/rich-results) para confirmar que los datos estructurados son detectados.
+</Tip>
+
+## IndexNow
+
+Después de cada build, Jamdesk envía automáticamente las URLs de páginas modificadas a [IndexNow](https://www.indexnow.org) para una indexación más rápida por parte de los motores de búsqueda. Esto notifica a Bing, Yandex y otros motores de búsqueda participantes sobre los cambios en tu contenido sin esperar su próximo ciclo de rastreo.
+
+- Se activa después de cada build exitoso
+- Solo envía páginas que realmente cambiaron
+- No bloquea el proceso, por lo que nunca retrasa tu build
+- No se requiere configuración
+
+## Mejores Prácticas
+
+<Check>Cada página tiene un título único y descriptivo</Check>
+<Check>Las descripciones resumen el contenido con precisión</Check>
+<Check>Los encabezados usan una jerarquía lógica (H1 → H2 → H3)</Check>
+<Check>Los enlaces internos usan texto de anclaje descriptivo</Check>
+<Check>Las imágenes tienen texto alternativo para accesibilidad</Check>
+
+## Artículos Relacionados
+
+<Columns cols={2}>
+  <Card title="Referencia de Frontmatter" icon="file-lines" href="/es/content/frontmatter">
+    Todas las opciones de frontmatter disponibles
+  </Card>
+  <Card title="Referencia de docs.json" icon="gear" href="/es/config/docs-json-reference">
+    Opciones de configuración para todo el sitio
+  </Card>
+</Columns>
