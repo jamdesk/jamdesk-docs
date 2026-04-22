@@ -1,0 +1,173 @@
+---
+title: Insertion d'images
+description: Ajoutez des images à votre documentation avec la syntaxe markdown, les contrôles de dimensions, les légendes et le support des modes clair/sombre.
+---
+
+Jamdesk affiche les images avec des coins arrondis et un espacement cohérent. Déposez les fichiers dans votre répertoire `/images` et référencez-les avec le markdown standard.
+
+Les captures d'écran montrent l'interface en anglais.
+
+## Markdown standard
+
+Utilisez la syntaxe familière `![alt](chemin)` :
+
+```markdown
+![API response showing user data in JSON format](/images/tabs-preview.webp)
+```
+
+![API response showing user data in JSON format](/images/tabs-preview.webp)
+
+Les chemins partent de la racine de votre projet. Une image à `your-docs/images/screenshot.webp` est référencée comme `/images/screenshot.webp`.
+
+## Dimensions des images
+
+Ajoutez `=LARGEURxHAUTEUR` après l'URL de l'image (séparé par un espace) pour contrôler la taille :
+
+```markdown
+![Dashboard overview](/images/tabs-preview.webp =400x300)
+```
+
+Définissez une seule dimension et l'autre s'adapte proportionnellement :
+
+```markdown
+![Wide banner](/images/tabs-preview.webp =800x)
+![Tall graphic](/images/tabs-preview.webp =x200)
+```
+
+C'est utile quand vous souhaitez une colonne cohérente de captures d'écran à la même largeur, ou que vous devez réduire une image haute résolution à une taille d'affichage raisonnable.
+
+## Légendes
+
+Encapsulez une image dans le composant `<Frame>` pour ajouter une bordure et une légende en dessous :
+
+```mdx
+<Frame caption="Dashboard overview showing project statistics">
+  ![Dashboard](/images/tabs-preview.webp)
+</Frame>
+```
+
+<Frame caption="Exemple d'une image encadrée avec légende">
+  ![Jamdesk](/images/jd-blueprint-transparent.webp)
+
+</Frame>
+
+`Frame` dessine une bordure subtile autour de l'image et place le texte de légende en dessous. Il fonctionne avec n'importe quel contenu à l'intérieur, pas seulement les images.
+
+## Mode clair/sombre
+
+Les sites de documentation ont souvent besoin de variantes d'images différentes pour chaque schéma de couleurs -- un logo sur fond blanc n'est pas adapté en mode sombre.
+
+### L'attribut `srcDark`
+
+L'approche la plus simple. Jamdesk permute la source de l'image selon le thème actif :
+
+```mdx
+<img
+  src="/images/logo-light.webp"
+  srcDark="/images/logo-dark.webp"
+  alt="Company logo"
+/>
+```
+
+Le navigateur charge uniquement l'image qui correspond au schéma de couleurs actuel.
+
+### L'élément HTML `<picture>`
+
+Si vous avez besoin de HTML standard qui fonctionne aussi en dehors de Jamdesk, utilisez `<picture>` avec une media query :
+
+```mdx
+<picture>
+  <source srcset="/images/logo-dark.webp" media="(prefers-color-scheme: dark)" />
+  <img src="/images/logo-light.webp" alt="Company logo" />
+</picture>
+```
+
+L'approche `<picture>` respecte le paramètre de schéma de couleurs du système d'exploitation. L'attribut `srcDark` répond au basculement de thème de Jamdesk à la place, ce qui est généralement ce que vous souhaitez pour la documentation.
+
+## Formats supportés
+
+| Format | Idéal pour | Notes |
+|--------|------------|-------|
+| PNG | Captures d'écran, captures d'interface | Qualité sans perte, supporte la transparence. Fichiers plus volumineux. |
+| JPEG | Photographies | Bonne compression, pas de support de transparence. |
+| SVG | Icônes, diagrammes, logos | Format vectoriel -- s'adapte à toute taille sans perte de qualité. Fichier très léger. |
+| GIF | Animations simples | Peut devenir volumineux rapidement. Préférez des boucles `.mp4` courtes pour tout ce qui dépasse quelques images. |
+| WebP | Usage général | Plus léger que PNG et JPEG à qualité comparable. Fonctionne dans tous les navigateurs modernes. |
+
+<Tip>
+WebP offre le meilleur rapport taille/qualité pour la plupart des images de documentation. Si vous avez besoin de transparence, WebP le gère aussi -- pas besoin de PNG.
+</Tip>
+
+## Bonnes pratiques
+
+<AccordionGroup>
+  <Accordion title="Rédigez un texte alternatif pertinent" icon="universal-access">
+    Le texte alternatif sert deux objectifs : les lecteurs d'écran l'utilisent pour l'accessibilité, et il s'affiche comme espace réservé quand l'image ne se charge pas. Décrivez ce que l'image montre réellement.
+
+    ```markdown
+    {/* Good -- says what's in the image */}
+    ![API response showing user data in JSON format](/images/tabs-preview.webp)
+
+    {/* Bad -- tells you nothing */}
+    ![Screenshot](/images/tabs-preview.webp)
+    ```
+
+    Pour les images décoratives qui n'apportent pas d'information (motifs de fond, séparateurs), utilisez un texte alternatif vide : `![](/images/decoration.webp)`.
+  </Accordion>
+
+  <Accordion title="Gardez les tailles de fichiers réduites" icon="gauge-high">
+    Les images lourdes ralentissent le chargement des pages, surtout sur les connexions mobiles. Cibles de taille :
+
+    - **Captures d'écran/Interface :** PNG ou WebP, moins de 500 Ko
+    - **Photos :** JPEG ou WebP, moins de 200 Ko
+    - **Icônes et diagrammes :** SVG dans la mesure du possible
+
+    [Squoosh](https://squoosh.app) et [TinyPNG](https://tinypng.com) compressent les images sans perte de qualité visible. Faites passer vos captures d'écran par l'un d'eux avant de les committer.
+
+    Ou laissez Jamdesk s'en charger lors du build. Activez la [conversion WebP automatique](/fr/builds/image-optimization) dans votre `docs.json` et tout PNG ou JPG que vous committez sera optimisé à chaque build.
+  </Accordion>
+
+  <Accordion title="Utilisez des dimensions cohérentes" icon="ruler-combined">
+    Les captures d'écran qui alternent entre différentes largeurs paraissent désordonnées. Choisissez une largeur de capture standard (1200px fonctionne bien) et utilisez-la dans toute votre documentation. Jamdesk adapte automatiquement les images à la zone de contenu, donc des dimensions source cohérentes produisent des résultats affichés cohérents.
+  </Accordion>
+</AccordionGroup>
+
+## Organisation des fichiers
+
+Regroupez les images dans des sous-répertoires qui reflètent votre structure de contenu. Cela facilite la recherche au fur et à mesure que votre documentation grandit :
+
+```
+your-docs/
+├── images/
+│   ├── getting-started/
+│   │   ├── step-1.png
+│   │   └── step-2.png
+│   ├── api/
+│   │   └── response.png
+│   └── logo.svg
+└── docs.json
+```
+
+Référencez-les avec le chemin complet depuis la racine de votre projet :
+
+```markdown
+![GitHub repository access](/images/getting-started/step-1.png)
+```
+
+<Warning>
+Évitez les espaces dans les noms de fichiers d'images. Utilisez des tirets à la place : `api-response.webp`, pas `api response.webp`.
+</Warning>
+
+## Et ensuite ?
+
+<Columns cols={3}>
+  <Card title="Intégrations YouTube" icon="youtube" href="/fr/content/youtube">
+    Intégrez des vidéos YouTube et des Shorts
+  </Card>
+  <Card title="Vidéos" icon="video" href="/fr/content/videos">
+    Fichiers MP4 et WebM locaux
+  </Card>
+  <Card title="iFrames" icon="code" href="/fr/content/iframes">
+    Vimeo, CodePen, Figma et plus encore
+  </Card>
+</Columns>

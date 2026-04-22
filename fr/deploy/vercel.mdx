@@ -1,0 +1,240 @@
+---
+title: Vercel
+description: Utilisez les rewrites Vercel pour proxier les requêtes de documentation vers Jamdesk. Les rewrites se produisent en périphérie et ne modifient pas l'URL dans le navigateur.
+---
+
+Si votre site est déjà déployé sur Vercel, deux règles de rewrite dans `vercel.json` (ou `next.config.js`) suffisent pour servir la documentation Jamdesk à `/docs` -- aucun proxy séparé ni modification DNS n'est nécessaire. Pour la vérification de domaine personnalisé, une approche par Edge Middleware est également décrite ci-dessous.
+
+## Prérequis
+
+- Un projet déployé sur Vercel
+- Votre sous-domaine Jamdesk (trouvé dans les paramètres du dashboard)
+
+## Étape 1 : Mettre à jour vercel.json
+
+Ajoutez une configuration `rewrites` à votre fichier `vercel.json`. Si le fichier n'existe pas, créez-le à la racine de votre projet :
+
+```json vercel.json
+{
+  "rewrites": [
+    {
+      "source": "/docs",
+      "destination": "https://YOUR_SLUG.jamdesk.app/docs"
+    },
+    {
+      "source": "/docs/:path*",
+      "destination": "https://YOUR_SLUG.jamdesk.app/docs/:path*"
+    },
+    {
+      "source": "/_next/:path*",
+      "destination": "https://YOUR_SLUG.jamdesk.app/_next/:path*"
+    },
+    {
+      "source": "/_jd/:path*",
+      "destination": "https://YOUR_SLUG.jamdesk.app/_jd/:path*"
+    }
+  ]
+}
+```
+
+<Note>
+Remplacez `YOUR_SLUG` par votre sous-domaine Jamdesk réel (par exemple, `acme` si votre documentation est à `acme.jamdesk.app`).
+</Note>
+
+Les rewrites `/_next/` et `/_jd/` sont nécessaires pour que les ressources Next.js (JS, CSS) et les ressources Jamdesk (polices, images, branding) se chargent correctement.
+
+## Étape 2 : Déployer
+
+Pour déployer vos modifications sur Vercel :
+
+```bash
+vercel --prod
+```
+
+Ou poussez vers votre dépôt Git connecté pour déclencher un déploiement automatique.
+
+## Étape 3 : Vérifier
+
+Visitez `https://yoursite.com/docs` pour confirmer que votre documentation est correctement servie.
+
+## Comprendre la configuration
+
+| Propriété | Description |
+|----------|-------------|
+| `source` | Le modèle de chemin sur votre domaine qui déclenche le rewrite |
+| `destination` | L'URL vers laquelle proxifier la requête |
+| `:path*` | Un caractère générique qui capture tous les segments de chemin après `/docs/` |
+
+Les règles de rewrite gèrent :
+1. Le chemin de base `/docs` (par exemple, `yoursite.com/docs`)
+2. Tous les chemins imbriqués (par exemple, `yoursite.com/docs/getting-started`)
+3. Les ressources statiques Next.js (`/_next/`) et les ressources Jamdesk (`/_jd/`)
+
+## Ajouter à des rewrites existants
+
+Si vous avez déjà des rewrites configurés, ajoutez les règles Jamdesk à votre tableau existant :
+
+```json vercel.json
+{
+  "rewrites": [
+    { "source": "/api/:path*", "destination": "/api/:path*" },
+    { "source": "/docs", "destination": "https://YOUR_SLUG.jamdesk.app/docs" },
+    { "source": "/docs/:path*", "destination": "https://YOUR_SLUG.jamdesk.app/docs/:path*" },
+    { "source": "/_next/:path*", "destination": "https://YOUR_SLUG.jamdesk.app/_next/:path*" },
+    { "source": "/_jd/:path*", "destination": "https://YOUR_SLUG.jamdesk.app/_jd/:path*" }
+  ]
+}
+```
+
+<Warning>
+L'ordre des rewrites est important. Placez les règles plus spécifiques avant les règles générales.
+</Warning>
+
+## Utiliser next.config.js (projets Next.js)
+
+Pour les projets Next.js, vous pouvez également configurer les rewrites dans `next.config.js` :
+
+```javascript next.config.js
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  async rewrites() {
+    return [
+      {
+        source: "/docs",
+        destination: "https://YOUR_SLUG.jamdesk.app/docs",
+      },
+      {
+        source: "/docs/:path*",
+        destination: "https://YOUR_SLUG.jamdesk.app/docs/:path*",
+      },
+      {
+        source: "/_next/:path*",
+        destination: "https://YOUR_SLUG.jamdesk.app/_next/:path*",
+      },
+      {
+        source: "/_jd/:path*",
+        destination: "https://YOUR_SLUG.jamdesk.app/_jd/:path*",
+      },
+    ];
+  },
+};
+
+export default nextConfig;
+```
+
+## Dépannage
+
+<Accordion title="Les rewrites ne fonctionnent pas">
+Assurez-vous que `vercel.json` se trouve à la racine de votre projet et qu'il est correctement formaté. Vérifiez les journaux de déploiement Vercel pour les erreurs de configuration.
+</Accordion>
+
+<Accordion title="404 sur les pages imbriquées">
+Vérifiez que vous avez bien les deux règles de rewrite — une pour `/docs` et une pour `/docs/:path*`. L'absence de la règle avec caractère générique cause l'échec des pages imbriquées.
+</Accordion>
+
+<Accordion title="Boucles de redirection infinies">
+Vérifiez que votre URL de destination utilise `https://` et pointe vers `jamdesk.app`, et non vers votre propre domaine.
+</Accordion>
+
+<Accordion title="Les ressources ne se chargent pas (styles cassés, polices manquantes)">
+Vérifiez que vous avez des règles de rewrite pour `/_next/:path*` et `/_jd/:path*`. Celles-ci servent les ressources Next.js (JS, CSS) et les ressources Jamdesk (polices, images). L'absence de l'une ou l'autre casse la mise en page.
+</Accordion>
+
+<Accordion title="Erreur 403 : domaine non autorisé">
+Lors de l'utilisation de l'Edge Middleware avec un domaine personnalisé :
+
+1. Vérifiez que votre domaine est enregistré dans le dashboard Jamdesk
+2. Complétez la vérification DNS (enregistrement TXT)
+3. Confirmez que l'en-tête `X-Jamdesk-Forwarded-Host` est défini dans votre middleware
+4. Vérifiez que le domaine correspond au bon projet
+
+Les rewrites simples (sans domaine personnalisé) n'ont pas besoin de cet en-tête.
+</Accordion>
+
+## Vérification de domaine personnalisé
+
+Les rewrites Vercel fonctionnent en proxifiant les requêtes vers votre sous-domaine Jamdesk (`YOUR_SLUG.jamdesk.app`). Cette configuration de base ne nécessite pas de vérification de domaine.
+
+Si vous avez configuré un domaine personnalisé dans le dashboard Jamdesk avec l'option "Host at /docs", vous devrez utiliser l'Edge Middleware plutôt que de simples rewrites pour définir l'en-tête de vérification requis.
+
+### Fonctionnement
+
+Le middleware transfère les requêtes vers votre sous-domaine Jamdesk tout en transmettant le domaine d'origine dans l'en-tête `X-Jamdesk-Forwarded-Host`. Jamdesk utilise cet en-tête pour :
+
+1. **Vérifier votre domaine** - S'assure que seuls les domaines autorisés peuvent servir votre documentation
+2. **Appliquer la configuration correcte** - Utilise les paramètres de votre domaine depuis le dashboard
+
+Cela signifie que le middleware est une **configuration unique**. Si vous modifiez ultérieurement votre domaine personnalisé ou votre configuration dans le dashboard Jamdesk, le middleware n'a pas besoin d'être mis à jour — toutes les décisions de routage sont prises côté serveur.
+
+### Utiliser l'Edge Middleware
+
+Créez un fichier `middleware.ts` à la racine de votre projet :
+
+```typescript middleware.ts
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+
+const JAMDESK_HOST = 'YOUR_SLUG.jamdesk.app';
+
+export function middleware(request: NextRequest) {
+  const url = request.nextUrl;
+
+  // Only proxy /docs and asset paths
+  if (!url.pathname.startsWith('/docs') &&
+      !url.pathname.startsWith('/_next') &&
+      !url.pathname.startsWith('/_jd')) {
+    return NextResponse.next();
+  }
+
+  // Rewrite to Jamdesk with forwarded host header
+  const destination = new URL(url.pathname + url.search, `https://${JAMDESK_HOST}`);
+
+  // Clone headers and add the forwarded host
+  const headers = new Headers(request.headers);
+  headers.set('X-Jamdesk-Forwarded-Host', url.hostname);
+
+  return NextResponse.rewrite(destination, {
+    request: { headers },
+  });
+}
+
+export const config = {
+  matcher: ['/docs', '/docs/:path*', '/_next/:path*', '/_jd/:path*'],
+};
+```
+
+<Note>
+Remplacez `YOUR_SLUG` par votre sous-domaine Jamdesk réel.
+</Note>
+
+<Warning>
+L'en-tête `X-Jamdesk-Forwarded-Host` est **obligatoire**. Il permet :
+- La vérification du domaine (votre domaine doit être enregistré dans le dashboard)
+- La génération correcte des URL pour les liens et les ressources
+- La configuration appropriée depuis les paramètres de votre dashboard
+
+Sans cet en-tête, les requêtes seront rejetées avec une erreur 403.
+</Warning>
+
+### Quand utiliser le Middleware plutôt que les Rewrites
+
+| Approche | À utiliser quand |
+|----------|----------|
+| **Rewrites** | Configuration de base sans vérification de domaine personnalisé |
+| **Edge Middleware** | Domaine personnalisé avec l'option "Host at /docs" activée |
+
+Si vous n'avez pas besoin de la vérification de domaine personnalisé, l'approche plus simple avec les rewrites est suffisante.
+
+## Et ensuite ?
+
+<Columns cols={3}>
+  <Card title="Aperçu du déploiement" icon="cloud-arrow-up" href="/fr/deploy/overview">
+    Comparer les options d'hébergement
+  </Card>
+  <Card title="Hébergement sur sous-chemin" icon="folder-tree" href="/fr/deploy/subpath-hosting">
+    Servir la documentation à /docs
+  </Card>
+  <Card title="Domaines personnalisés" icon="globe" href="/fr/deploy/custom-domains">
+    Vérifier le DNS et résoudre les problèmes
+  </Card>
+</Columns>

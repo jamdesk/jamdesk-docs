@@ -1,0 +1,124 @@
+---
+title: Intégrations YouTube
+sidebarTitle: YouTube
+description: Intégrez des vidéos YouTube et des Shorts dans votre documentation. Lecteur en chargement différé, temps de départ personnalisé, et Shorts verticaux 9:16.
+---
+
+Le composant `<YouTube>` intègre des vidéos avec chargement différé, coins arrondis, et sans suggestions de vidéos associées. Il affiche une miniature et un bouton de lecture au chargement de la page, puis remplace par le lecteur YouTube complet lorsqu'un visiteur clique.
+
+## Intégrer une vidéo YouTube
+
+Passez l'identifiant de la vidéo via la prop `id` :
+
+```mdx
+<YouTube id="dQw4w9WgXcQ" />
+```
+
+<YouTube id="dQw4w9WgXcQ" />
+
+Aucun iframe ne se charge tant que le visiteur ne clique pas sur lecture. La page reste rapide car le composant utilise [lite-youtube-embed](https://github.com/nicolegoesdigital/lite-youtube-embed) en arrière-plan : une image miniature et quelques kilo-octets de CSS au lieu du bundle iframe YouTube de plus de 800 Ko.
+
+## Props
+
+| Prop | Type | Défaut | Description |
+|------|------|--------|-------------|
+| `id` | `string` | aucun | **Requis.** L'identifiant de la vidéo YouTube. |
+| `title` | `string` | `"Play"` / `"YouTube Short"` | Label d'accessibilité pour l'intégration. Les lecteurs d'écran utilisent ce texte. |
+| `start` | `number` | `0` | Démarrer la lecture à ce nombre de secondes dans la vidéo. |
+| `short` | `boolean` | `false` | Afficher comme un YouTube Short vertical 9:16 au lieu d'une vidéo 16:9. |
+
+## Démarrer à un moment précis
+
+La prop `start` saute à un horodatage (en secondes) au début de la lecture :
+
+```mdx
+<YouTube id="dQw4w9WgXcQ" start={60} />
+```
+
+<YouTube id="dQw4w9WgXcQ" start={60} />
+
+La lecture démarre à la marque de 1 minute. Les valeurs décimales sont arrondies à l'entier inférieur.
+
+## Trouver l'identifiant de la vidéo
+
+<Tip>
+L'identifiant de la vidéo est la chaîne après `v=` dans une URL YouTube.
+
+- `youtube.com/watch?v=dQw4w9WgXcQ` → L'identifiant est `dQw4w9WgXcQ`
+- `youtu.be/dQw4w9WgXcQ` → L'identifiant est `dQw4w9WgXcQ`
+
+Copiez l'identifiant, pas l'URL complète.
+</Tip>
+
+## YouTube Shorts
+
+Les YouTube Shorts sont des vidéos verticales avec un rapport d'aspect 9:16. Intégrer un Short dans un lecteur 16:9 standard ajoute d'épaisses barres noires des deux côtés : la vidéo se retrouve compressée dans un cadre prévu pour le contenu paysage.
+
+La prop `short` corrige cela. Elle affiche l'intégration en 9:16, centrée sur la page à 360px de large, avec des coins arrondis. Le résultat correspond à l'apparence des Shorts sur mobile.
+
+### Comment intégrer un Short
+
+```mdx
+<YouTube id="_6HzLIJPH2A" short />
+```
+
+<YouTube id="_6HzLIJPH2A" short />
+
+### Trouver l'identifiant du Short
+
+L'identifiant du Short est le segment de chemin après `/shorts/` dans l'URL :
+
+- `youtube.com/shorts/_6HzLIJPH2A` → L'identifiant est `_6HzLIJPH2A`
+
+Ces identifiants suivent le même format de 11 caractères que les vidéos YouTube classiques. Vous pouvez également tester n'importe quel identifiant de Short avec le composant `<YouTube>` standard, mais sans `short`, il s'affiche en 16:9 avec des barres noires.
+
+### Détails de rendu
+
+| Détail | Mode de rendu |
+|--------|--------------|
+| Largeur | Limitée à 360px et centrée (correspond à la largeur du lecteur Shorts mobile de YouTube) |
+| Rapport d'aspect | 9:16 via CSS `aspect-ratio`, le conteneur s'adapte proprement aux écrans plus petits |
+| Coins | Arrondis avec `border-radius` pour rester cohérent avec les autres intégrations média Jamdesk |
+| Vidéos associées | Désactivées via `rel=0`, comme pour les intégrations standard |
+
+### Différence de performance
+
+Les intégrations YouTube standard utilisent `lite-youtube-embed`, qui ne charge aucun JavaScript YouTube au départ. La page affiche une image miniature ; l'iframe du lecteur complet ne se charge que lorsqu'un visiteur clique sur lecture.
+
+Les Shorts fonctionnent différemment. Parce que `lite-youtube-embed` ne prend pas en charge les rapports d'aspect verticaux, les Shorts utilisent un `<iframe>` direct avec `loading="lazy"`. Le navigateur reporte le chargement jusqu'à ce que l'iframe se rapproche du viewport. Une fois visible, le lecteur YouTube complet s'initialise (scripts, styles, et tout).
+
+<Note>
+Sur une page avec un ou deux Shorts, la différence est négligeable. Sur une page avec de nombreux Shorts, les iframes supplémentaires ajoutent un poids réel. Si vous intégrez plus de trois ou quatre Shorts sur une seule page, envisagez de les lier à la place ou de les placer derrière un onglet pour maintenir le chargement initial léger.
+</Note>
+
+## Utiliser des iFrames directement
+
+Pour les cas où vous avez besoin d'un contrôle total sur les paramètres d'intégration, vous pouvez utiliser un iframe brut :
+
+```html
+<iframe
+  className="w-full aspect-video rounded-xl"
+  src="https://www.youtube.com/embed/VIDEO_ID"
+  title="YouTube video player"
+  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+  allowFullScreen
+/>
+```
+
+<Note>
+Le composant `<YouTube>` est le meilleur choix par défaut. Il charge le lecteur en différé, supprime les vidéos associées, et gère les rapports d'aspect des Shorts. N'utilisez des iframes bruts que lorsque vous avez besoin de paramètres d'intégration que le composant n'expose pas.
+</Note>
+
+## Et ensuite ?
+
+<Columns cols={3}>
+  <Card title="Images" icon="image" href="/fr/content/images">
+    Images Markdown, dimensions et légendes
+  </Card>
+  <Card title="Vidéos" icon="video" href="/fr/content/videos">
+    Fichiers MP4 et WebM locaux
+  </Card>
+  <Card title="iFrames" icon="code" href="/fr/content/iframes">
+    Vimeo, CodePen, Figma, et plus encore
+  </Card>
+</Columns>

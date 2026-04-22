@@ -1,0 +1,117 @@
+---
+title: Problèmes de domaine
+description: Résolvez les problèmes de domaine personnalisé -- bloqué sur "En attente", erreurs de certificat SSL, erreurs de configuration CNAME, et domaines affichant le mauvais site.
+---
+
+Les domaines personnalisés nécessitent un enregistrement CNAME correctement configuré et un certificat SSL valide.
+
+## Domaine non vérifié
+
+Si votre domaine s'affiche comme "En attente" ou "Non vérifié" :
+
+<Steps>
+  <Step title="Vérifier les enregistrements DNS">
+    Vérifiez que votre enregistrement CNAME pointe vers votre URL Jamdesk :
+    ```text
+    docs.example.com  CNAME  your-project.jamdesk.app
+    ```
+  </Step>
+  <Step title="Attendre la propagation">
+    Les modifications DNS peuvent prendre jusqu'à 48 heures pour se propager dans le monde entier.
+  </Step>
+  <Step title="Tester le DNS">
+    Utilisez un outil comme `dig` ou [dnschecker.org](https://dnschecker.org) pour vérifier vos enregistrements.
+  </Step>
+</Steps>
+
+## Erreurs de certificat SSL
+
+### Certificat non provisionné
+
+Jamdesk utilise Let's Encrypt pour le SSL automatique. Si le provisionnement échoue :
+
+1. Vérifiez que le DNS est correctement configuré
+2. Attendez 15 minutes pour le provisionnement
+3. Vérifiez que votre domaine n'est pas bloqué par des règles de pare-feu
+
+### Certificat expiré
+
+Les certificats se renouvellent automatiquement. Si le vôtre a expiré :
+
+1. Allez dans **Paramètres** → **Domaines**
+2. Cliquez sur **Actualiser le certificat**
+3. En cas d'échec, contactez le support
+
+### Avertissements de contenu mixte
+
+Votre domaine fonctionne mais affiche des avertissements de sécurité :
+
+- Vérifiez la présence de liens `http://` dans votre contenu
+- Mettez à jour toutes les URL d'assets pour utiliser `https://`
+
+## Domaine inaccessible
+
+### "Le site est inaccessible"
+
+1. Vérifiez que les enregistrements DNS sont corrects
+2. Vérifiez que le domaine n'a pas été supprimé dans Jamdesk
+3. Videz le cache DNS de votre navigateur
+
+### Mauvais site affiché
+
+Votre DNS pointe peut-être vers un ancien serveur :
+
+1. Mettez à jour le CNAME vers votre URL Jamdesk
+2. Supprimez tout enregistrement A conflictuel
+3. Attendez la propagation DNS
+
+## Erreurs DNS courantes
+
+<Accordion title="Utiliser un enregistrement A au lieu d'un CNAME">
+  Jamdesk nécessite un enregistrement CNAME, pas un enregistrement A. Le CNAME nous permet de router correctement le trafic.
+</Accordion>
+
+<Accordion title="Inclure le protocole">
+  N'incluez pas `https://` dans la valeur de votre CNAME. Utilisez uniquement le domaine :
+
+  ✓ `your-project.jamdesk.app`
+  ✗ `https://your-project.jamdesk.app`
+</Accordion>
+
+<Accordion title="Enregistrements en conflit">
+  Si vous avez à la fois des enregistrements A et CNAME pour le même sous-domaine, supprimez l'enregistrement A.
+</Accordion>
+
+## Domaines en sous-chemin
+
+Pour les domaines sur un sous-chemin (ex. : `example.com/docs`) :
+
+1. Configurez un reverse proxy (Cloudflare, nginx, etc.)
+2. Consultez [Hébergement en sous-chemin](/fr/deploy/subpath-hosting) pour les instructions de configuration
+
+<Warning>
+La configuration en sous-chemin nécessite une configuration supplémentaire en dehors de Jamdesk.
+</Warning>
+
+## Problème persistant ?
+
+<Card title="Contacter le support" icon="headset" href="/fr/help/support/contact">
+  Incluez le nom de votre domaine et la configuration DNS actuelle
+</Card>
+
+## Articles connexes
+
+<Columns cols={2}>
+  <Card title="Dépannage DNS" icon="server" href="/fr/help/troubleshooting/dns-issues">
+    Vérifications de propagation, conflits CNAME, et correctifs spécifiques aux fournisseurs
+  </Card>
+  <Card title="Configuration des domaines personnalisés" icon="globe" href="/fr/deploy/custom-domains">
+    Guide de configuration complet depuis le dashboard
+  </Card>
+  <Card title="Référence des erreurs" icon="book" href="/fr/help/troubleshooting/error-reference">
+    Liste complète des codes d'erreur
+  </Card>
+  <Card title="Contacter le support" icon="headset" href="/fr/help/support/contact">
+    Escalader les problèmes non résolus
+  </Card>
+</Columns>

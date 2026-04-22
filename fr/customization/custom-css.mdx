@@ -1,0 +1,235 @@
+---
+title: CSS personnalisé
+description: Ajoutez du CSS personnalisé pour remplacer les styles du thème, ajuster la typographie ou ajouter un style spécifique à votre marque. Jamdesk expose des variables CSS pour les personnalisations courantes.
+---
+
+Les thèmes Jamdesk fournissent des valeurs par défaut sensées, mais vous pouvez ajouter du CSS personnalisé pour correspondre à votre marque ou ajuster des styles spécifiques.
+
+## Ajouter du CSS personnalisé
+
+Créez un fichier CSS dans votre répertoire docs et référencez-le dans `docs.json` :
+
+```json docs.json
+{
+  "styling": {
+    "css": "/custom.css"
+  }
+}
+```
+
+```css custom.css
+/* Your custom styles */
+.content h1 {
+  font-size: 2.5rem;
+}
+```
+
+## Variables CSS
+
+Jamdesk expose des variables CSS pour les personnalisations courantes. Remplacez-les dans votre CSS personnalisé :
+
+```css custom.css
+:root {
+  /* Typography */
+  --font-family-sans: 'Inter', system-ui, sans-serif;
+  --font-family-mono: 'JetBrains Mono', monospace;
+  
+  /* Spacing */
+  --content-max-width: 900px;
+  --sidebar-width: 280px;
+  
+  /* Border radius */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+}
+```
+
+### Variables de couleur
+
+Les couleurs primaires sont définies dans `docs.json`. Pour un contrôle précis, remplacez ces variables :
+
+```css custom.css
+:root {
+  /* Light mode */
+  --color-background: #ffffff;
+  --color-text: #1a1a1a;
+  --color-text-muted: #666666;
+  --color-border: #e5e5e5;
+  --color-code-bg: #f5f5f5;
+}
+
+[data-theme="dark"] {
+  /* Dark mode */
+  --color-background: #0a0a0a;
+  --color-text: #fafafa;
+  --color-text-muted: #a3a3a3;
+  --color-border: #262626;
+  --color-code-bg: #171717;
+}
+```
+
+## Personnalisations courantes
+
+### Ajuster la largeur du contenu
+
+```css
+:root {
+  --content-max-width: 1000px;  /* Default: 900px */
+}
+```
+
+### Changer la police des blocs de code
+
+```css
+:root {
+  --font-family-mono: 'Fira Code', monospace;
+}
+
+/* Ensure ligatures work if your font supports them */
+pre code {
+  font-variant-ligatures: common-ligatures;
+}
+```
+
+### Personnaliser les styles de lien
+
+```css
+.content a:not([class]) {
+  color: var(--color-primary);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.content a:not([class]):hover {
+  text-decoration-thickness: 2px;
+}
+```
+
+### Ajuster l'espacement des titres
+
+```css
+.content h2 {
+  margin-top: 3rem;
+  margin-bottom: 1rem;
+}
+
+.content h3 {
+  margin-top: 2rem;
+  margin-bottom: 0.75rem;
+}
+```
+
+### Styliser les encadrés
+
+```css
+/* Make Note callouts more prominent */
+[data-callout="note"] {
+  border-left-width: 4px;
+  background: var(--color-primary-subtle);
+}
+```
+
+## Mode sombre
+
+Utilisez le sélecteur `[data-theme="dark"]` pour les styles en mode sombre :
+
+```css
+/* Light mode */
+.custom-banner {
+  background: #f0f4ff;
+  color: #1e3a5f;
+}
+
+/* Dark mode */
+[data-theme="dark"] .custom-banner {
+  background: #1e293b;
+  color: #e2e8f0;
+}
+```
+
+## Cibler des composants
+
+Remplacez les styles pour des composants spécifiques :
+
+```css
+/* Card component */
+[data-component="card"] {
+  border-radius: 16px;
+}
+
+/* Code blocks */
+[data-component="code-block"] {
+  border-radius: 8px;
+}
+
+/* Tabs */
+[data-component="tabs"] [data-state="active"] {
+  border-bottom-width: 3px;
+}
+```
+
+## Polices externes
+
+Chargez des polices personnalisées avec `@import` ou `@font-face` :
+
+```css
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+  --font-family-sans: 'Inter', system-ui, sans-serif;
+}
+```
+
+Ou hébergez les polices vous-même :
+
+```css
+@font-face {
+  font-family: 'CustomFont';
+  src: url('/fonts/custom-font.woff2') format('woff2');
+  font-weight: 400;
+  font-display: swap;
+}
+```
+
+## Styles responsives
+
+Utilisez des media queries pour les ajustements responsives :
+
+```css
+/* Mobile adjustments */
+@media (max-width: 768px) {
+  .content h1 {
+    font-size: 1.75rem;
+  }
+  
+  :root {
+    --content-max-width: 100%;
+  }
+}
+```
+
+## Débogage
+
+Utilisez les outils de développement du navigateur pour inspecter les éléments et trouver les sélecteurs corrects. Jamdesk utilise des attributs de données pour cibler les composants :
+
+- `data-component="..."` - Type de composant
+- `data-theme="light|dark"` - Thème actuel
+- `data-state="..."` - État du composant (actif, désactivé, etc.)
+
+## Limitations
+
+- Le CSS est appliqué globalement ; utilisez des sélecteurs spécifiques pour éviter les conflits
+- Certains styles de mise en page internes utilisent `!important` et peuvent nécessiter la même chose pour être remplacés
+- Les modifications nécessitent un rebuild pour prendre effet
+
+## Et ensuite ?
+
+<Columns cols={2}>
+  <Card title="Thèmes" icon="palette" href="/fr/customization/theming">
+    Choisir et configurer les thèmes
+  </Card>
+  <Card title="Identité visuelle" icon="image" href="/fr/customization/branding">
+    Logos, couleurs et identité de marque
+  </Card>
+</Columns>

@@ -1,0 +1,198 @@
+---
+title: Navigation dans Jamdesk
+description: La navigation dans Jamdesk utilise des onglets, des groupes et des pages pour organiser votre documentation. Des liens externes peuvent être ajoutés via des ancres.
+---
+
+Votre barre latérale et votre barre supérieure sont entièrement définies dans `docs.json`. La hiérarchie de navigation comporte trois niveaux -- des onglets pour les sections de niveau supérieur, des groupes pour les dossiers réductibles, et des pages pour les entrées individuelles -- ainsi que des ancres pour les liens externes qui apparaissent sur chaque page.
+
+## Aperçu de la structure
+
+```json docs.json
+{
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "icon": "book-open",
+        "groups": [
+          {
+            "group": "Getting Started",
+            "pages": ["introduction", "quickstart"]
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+## Concepts
+
+### Onglets
+
+Sections de navigation de niveau supérieur. Contrôlez leur position avec le paramètre `tabsPosition` :
+
+| Valeur   | Position                         |
+| -------- | -------------------------------- |
+| `"top"`  | Dans la barre d'onglets d'en-tête |
+| `"left"` | En haut de la barre latérale     |
+
+La position par défaut dépend de votre thème :
+
+| Thème  | Défaut   |
+| ------ | -------- |
+| jam    | `"left"` |
+| nebula | `"left"` |
+| pulsar | `"top"`  |
+
+```json
+{
+  "tabsPosition": "left",
+  "navigation": {
+    "tabs": [
+      { "tab": "Guides", "icon": "book", "groups": [...] },
+      { "tab": "API", "icon": "code", "groups": [...] }
+    ]
+  }
+}
+```
+
+<Note>
+  Les icônes utilisent la variante Font Awesome Light pour maintenir une
+  apparence propre et cohérente.
+</Note>
+
+### Liens externes (Ancres)
+
+Ajoutez des liens externes qui apparaissent en haut de la barre latérale sur toutes les pages :
+
+```json
+{
+  "anchors": [
+    { "name": "Blog", "href": "https://blog.example.com", "icon": "newspaper" },
+    { "name": "Status", "href": "https://status.example.com", "icon": "signal" }
+  ]
+}
+```
+
+| Champ  | Type   | Requis | Description                      |
+| ------ | ------ | ------ | -------------------------------- |
+| `name` | string | Oui    | Texte d'affichage du lien        |
+| `href` | string | Oui    | URL (s'ouvre dans un nouvel onglet) |
+| `icon` | string | Non    | Nom d'icône Font Awesome          |
+
+### Groupes
+
+Sections réductibles au sein d'un onglet :
+
+```json
+{
+  "group": "Authentication",
+  "pages": ["auth/overview", "auth/tokens"]
+}
+```
+
+### Pages
+
+Pages de documentation individuelles, référencées par leur chemin de fichier (sans `.mdx`) :
+
+```json
+"pages": ["introduction", "guides/quickstart", "api/endpoints"]
+```
+
+Par défaut, le titre de la barre latérale est généré à partir du nom du fichier -- les tirets deviennent des espaces et chaque mot est mis en majuscule. Par exemple, `"api/getting-started"` s'affiche sous la forme "Getting Started".
+
+Pour définir un titre de barre latérale personnalisé, utilisez un objet à la place d'une chaîne de caractères :
+
+```json
+"pages": [
+  "guides/quickstart",
+  { "page": "deploy/aws", "title": "AWS Route 53 & CloudFront" },
+  { "page": "content/seo", "title": "SEO" },
+  { "page": "api/users", "title": "List Users", "method": "GET" }
+]
+```
+
+Cela est utile pour les acronymes, les noms propres et les badges d'endpoint API.
+
+| Champ   | Type   | Requis | Description                                                         |
+| ------- | ------ | ------ | ------------------------------------------------------------------- |
+| `page`  | string | Oui    | Chemin du fichier sans `.mdx`                                       |
+| `title` | string | Non    | Titre personnalisé de la barre latérale                             |
+| `icon`  | string | Non    | Nom d'icône Font Awesome                                            |
+| `tag`   | string | Non    | Petit badge à côté du titre (ex. : "New", "Beta")                   |
+| `method`| string | Non    | Badge de méthode HTTP : GET, POST, PUT, PATCH ou DELETE             |
+
+## Onglets multiples
+
+Créez des sections distinctes pour différents publics :
+
+```json
+{
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Guides",
+        "icon": "book",
+        "groups": [
+          { "group": "Getting Started", "pages": ["intro", "quickstart"] }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "icon": "code",
+        "groups": [{ "group": "Endpoints", "pages": ["api/auth", "api/users"] }]
+      }
+    ]
+  }
+}
+```
+
+## Liens d'onglets externes
+
+Liez directement à une documentation externe ou à des ressources depuis les onglets :
+
+```json
+{
+  "navigation": {
+    "tabs": [
+      { "tab": "Docs", "icon": "book", "groups": [...] },
+      { "tab": "GitHub", "icon": "github", "href": "https://github.com/example/repo" }
+    ]
+  }
+}
+```
+
+Les onglets externes s'ouvrent dans un nouvel onglet de navigateur.
+
+## Groupes imbriqués
+
+Organisez une documentation complexe avec des structures imbriquées :
+
+```json
+{
+  "group": "SDKs",
+  "pages": [
+    "sdks/overview",
+    {
+      "group": "JavaScript",
+      "pages": ["sdks/js/install", "sdks/js/usage"]
+    },
+    {
+      "group": "Python",
+      "pages": ["sdks/python/install", "sdks/python/usage"]
+    }
+  ]
+}
+```
+
+## Et ensuite ?
+
+<Columns cols={2}>
+  <Card title="Connecter GitHub" icon="github" href="/fr/setup/connecting-github">
+    Liez votre dépôt pour des builds automatiques
+  </Card>
+  <Card title="Structure des répertoires" icon="folder-tree" href="/fr/setup/directory-structure">
+    Organisez votre documentation pour la mise à l'échelle
+  </Card>
+</Columns>

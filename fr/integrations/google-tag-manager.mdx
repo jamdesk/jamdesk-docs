@@ -1,0 +1,126 @@
+---
+title: Intégration Google Tag Manager
+description: Ajoutez votre ID de conteneur GTM à docs.json pour charger Google Tag Manager sur chaque page. Gérez les balises d'analytics et de suivi depuis GTM.
+---
+
+Ajoutez votre ID de conteneur GTM à `docs.json` pour charger Google Tag Manager sur chaque page de votre site de documentation. Votre équipe marketing peut ainsi configurer les analytics, les pixels de conversion et le suivi des événements entièrement dans GTM.
+
+<Info>
+Les ID de conteneur GTM commencent par `GTM-`. Si vous avez uniquement besoin de Google Analytics, consultez [l'intégration Google Analytics](/fr/integrations/google-analytics) pour une configuration plus simple.
+</Info>
+
+## Quand utiliser GTM
+
+Utilisez Google Tag Manager lorsque vous avez besoin de :
+
+- **Plusieurs outils de suivi** - GA4, Facebook Pixel, LinkedIn, etc.
+- **Contrôle par l'équipe marketing** - Permettre aux marketeurs d'ajouter des balises sans l'aide d'un développeur
+- **Déclencheurs avancés** - Suivre les clics sur les boutons, les soumissions de formulaires, les vues de vidéos
+- **Intégration de tests A/B** - Connecter des outils comme Google Optimize
+
+Pour des analytics basiques uniquement, l'ajout direct de GA4 est plus simple.
+
+## Obtenir votre ID de conteneur
+
+1. Rendez-vous sur [Google Tag Manager](https://tagmanager.google.com/)
+2. Sélectionnez votre compte et votre conteneur (ou créez-en de nouveaux)
+3. Copiez l'**ID de conteneur** en haut de la page (commence par `GTM-`)
+
+## Ajouter GTM à votre documentation
+
+Ajoutez l'ID de conteneur à votre `docs.json` :
+
+```json
+{
+  "name": "My Docs",
+  "integrations": {
+    "gtm": {
+      "tagId": "GTM-XXXXXXX"
+    }
+  }
+}
+```
+
+Remplacez `GTM-XXXXXXX` par votre ID de conteneur réel.
+
+## Configurer GA4 via GTM
+
+Si vous souhaitez utiliser GA4 via GTM plutôt que de l'ajouter directement :
+
+1. Dans GTM, accédez à **Balises** → **Nouvelle**
+2. Choisissez **Google Analytics : configuration GA4**
+3. Saisissez votre ID de mesure GA4 (commence par `G-`)
+4. Définissez le déclencheur sur **Toutes les pages**
+5. **Publiez** votre conteneur
+
+<Warning>
+Si vous configurez GA4 via GTM, ne l'ajoutez pas également directement dans `docs.json`. Cela entraîne un double suivi.
+</Warning>
+
+## Vérifier l'installation
+
+### Utiliser le mode aperçu de GTM
+
+1. Dans GTM, cliquez sur **Aperçu** en haut à droite
+2. Saisissez l'URL de votre site de documentation
+3. Une fenêtre de débogage affiche les balises qui se déclenchent sur chaque page
+
+### Utiliser les outils de développement du navigateur
+
+1. Ouvrez votre site avec les outils de développement (F12)
+2. Accédez à l'onglet **Réseau**
+3. Filtrez par `gtm.js` ou `googletagmanager`
+4. Vous devriez voir des requêtes en cours
+
+## Balises GTM courantes pour la documentation
+
+### Suivre les liens sortants
+
+Créez une balise pour suivre lorsque les utilisateurs cliquent sur des liens externes :
+
+1. **Balise** : Google Analytics : événement GA4
+2. **Nom de l'événement** : `click`
+3. **Déclencheur** : Clic - Liens uniquement, où l'URL du clic ne contient pas votre domaine
+
+### Suivre l'utilisation de la recherche
+
+Suivez lorsque les utilisateurs interagissent avec la fonctionnalité de recherche :
+
+1. **Balise** : Google Analytics : événement GA4
+2. **Nom de l'événement** : `search`
+3. **Déclencheur** : Événement personnalisé correspondant à votre interaction de recherche
+
+### Suivre le temps passé sur la page
+
+Comprenez combien de temps les utilisateurs passent à lire :
+
+1. **Balise** : Google Analytics : événement GA4
+2. **Nom de l'événement** : `timing`
+3. **Déclencheur** : Déclencheur de minuterie (par exemple, toutes les 30 secondes)
+
+## Dépannage
+
+<Accordion title="Les balises ne se déclenchent pas">
+  1. **Vérifiez l'ID de conteneur** - Doit commencer par `GTM-`
+  2. **Publiez votre conteneur** - Les modifications non publiées n'apparaîtront pas sur votre site
+  3. **Utilisez le mode aperçu** - L'aperçu de GTM indique quelles balises se déclenchent sur chaque page
+</Accordion>
+
+<Accordion title="Données dupliquées dans Google Analytics">
+  Si GA4 est configuré à la fois :
+  - Directement dans `docs.json` (`integrations.ga4`)
+  - Via GTM en tant que balise GA4
+
+  Vous obtiendrez des pages vues en double. Supprimez l'une d'elles.
+</Accordion>
+
+## Articles connexes
+
+<Columns cols={2}>
+  <Card title="Google Analytics" icon="chart-simple" href="/fr/integrations/google-analytics">
+    Ajouter GA4 directement sans GTM
+  </Card>
+  <Card title="Analytique du projet" icon="chart-line" href="/fr/setup/project-analytics">
+    Consulter les analytics intégrées de Jamdesk
+  </Card>
+</Columns>

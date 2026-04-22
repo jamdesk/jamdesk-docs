@@ -1,0 +1,138 @@
+---
+title: Problèmes GitHub
+description: Résolvez les organisations manquantes lors de la configuration, les dépôts manquants, les webhooks en échec, les erreurs de permissions et les désaccords de branches avec l'intégration GitHub de Jamdesk.
+---
+
+La plupart des problèmes d'intégration GitHub sont liés aux permissions, aux échecs de Webhook ou aux désaccords de branches.
+
+## Organisation non affichée lors de la configuration
+
+Lors du flux de configuration des docs de démarrage, Jamdesk affiche vos organisations GitHub afin que vous puissiez choisir où créer le dépôt. Si votre organisation n'apparaît pas dans la liste, c'est généralement pour l'une des deux raisons suivantes :
+
+- Restrictions de l'application OAuth : votre organisation restreint l'accès aux applications tierces (comportement par défaut de GitHub pour les nouvelles organisations).
+- SAML SSO : votre organisation exige une authentification SAML avant que l'API la renvoie.
+
+<Accordion title="Demandez à l'administrateur de votre organisation d'approuver Jamdesk">
+  Les administrateurs d'organisation peuvent accorder l'accès à Jamdesk :
+
+  1. Accédez aux **Paramètres** de votre organisation GitHub
+  2. Sélectionnez **Accès tiers** (sous Sécurité)
+  3. Trouvez **Jamdesk** dans les requêtes en attente, ou cliquez sur **Accorder** pour l'approuver
+  4. Revenez au flux de configuration Jamdesk ; votre organisation devrait maintenant apparaître
+
+  Si vous ne voyez pas de requête en attente, lancez d'abord le flux de configuration Jamdesk. GitHub envoie automatiquement une requête d'accès à vos administrateurs d'organisation lorsque vous autorisez l'application. Consultez le guide GitHub sur [l'approbation des applications OAuth pour votre organisation](https://docs.github.com/en/organizations/managing-oauth-access-to-your-organizations-data/approving-oauth-apps-for-your-organization) pour des étapes détaillées.
+</Accordion>
+
+<Accordion title="Créer dans votre compte personnel et transférer ultérieurement">
+  Vous ne souhaitez pas attendre l'approbation d'un administrateur ? Sélectionnez votre compte personnel lors de la configuration et transférez le dépôt vers votre organisation ensuite :
+
+  1. Terminez la configuration Jamdesk en utilisant votre compte personnel
+  2. Accédez au dépôt créé sur GitHub
+  3. Naviguez vers **Paramètres** → **Général** → **Zone dangereuse**
+  4. Cliquez sur **Transférer** et sélectionnez votre organisation comme destination
+  5. Dans Jamdesk, déconnectez puis reconnectez le dépôt depuis la page **Paramètres** de votre projet
+
+  <Warning>
+    La déconnexion et la reconnexion génèrent une nouvelle URL de documentation (par exemple, `your-project.jamdesk.app` peut changer). Si vous avez déjà partagé votre URL ou configuré un domaine personnalisé, contactez le [support](/fr/help/support/contact) avant de déconnecter afin que nous puissions préserver votre configuration.
+  </Warning>
+</Accordion>
+
+## Dépôt non visible
+
+Si votre dépôt n'apparaît pas dans la liste :
+
+<Accordion title="Vérifier les permissions du dépôt">
+  1. Accédez à GitHub → Paramètres → Applications → Jamdesk
+  2. Vérifiez que l'accès au dépôt est accordé
+  3. Cliquez sur **Configurer** pour ajouter d'autres dépôts
+</Accordion>
+
+<Accordion title="Dépôts d'organisation">
+  Pour les dépôts d'organisation :
+  1. Un administrateur de l'organisation doit approuver Jamdesk
+  2. Accédez aux paramètres de l'organisation → Accès tiers
+  3. Approuvez la requête d'accès de Jamdesk
+</Accordion>
+
+<Accordion title="Dépôts privés">
+  Les dépôts privés nécessitent une autorisation GitHub. Réautorisez Jamdesk si nécessaire.
+</Accordion>
+
+## Builds non déclenchés
+
+Si les pushs ne déclenchent pas de builds :
+
+<Steps>
+  <Step title="Vérifier le webhook">
+    1. Accédez à votre dépôt sur GitHub
+    2. Naviguez vers Paramètres → Webhooks
+    3. Trouvez le webhook Jamdesk
+    4. Vérifiez les « Livraisons récentes » pour détecter des erreurs
+  </Step>
+  <Step title="Vérifier la branche">
+    Les builds se déclenchent uniquement sur votre branche configurée. Vérifiez les **Paramètres** dans Jamdesk.
+  </Step>
+  <Step title="Resynchroniser la connexion">
+    1. Accédez aux **Paramètres** du projet dans Jamdesk
+    2. Cliquez sur **Resynchroniser GitHub**
+  </Step>
+</Steps>
+
+## Erreurs de Webhook
+
+### 404 Not Found
+
+L'endpoint du Webhook est inaccessible.
+
+**Correction :** Resynchronisez la connexion GitHub dans les paramètres du projet.
+
+### 401 Unauthorized
+
+L'authentification a échoué.
+
+**Correction :**
+1. Accédez aux paramètres de votre compte GitHub
+2. Naviguez vers Applications → Applications OAuth autorisées
+3. Révoquez Jamdesk
+4. Réautorisez dans les paramètres Jamdesk
+
+### 500 Server Error
+
+Problème temporaire côté Jamdesk.
+
+**Correction :** Attendez quelques minutes et poussez à nouveau, ou déclenchez un rebuild manuel.
+
+## Erreurs de permissions
+
+**« Repository not found »** lors du build :
+
+- Le dépôt a peut-être été supprimé ou renommé
+- Jamdesk a peut-être perdu l'accès
+- Réautorisez votre connexion GitHub
+
+## Problèmes de branches
+
+### Mauvaise branche en cours de build
+
+Vérifiez votre branche configurée dans **Paramètres** → **Dépôt**.
+
+### Branche renommée ou supprimée
+
+Mettez à jour votre paramètre de branche pour correspondre au nouveau nom de branche.
+
+## Le problème persiste ?
+
+<Card title="Contacter le support" icon="headset" href="/fr/help/support/contact">
+  Incluez l'URL de votre dépôt et les messages d'erreur
+</Card>
+
+## Articles connexes
+
+<Columns cols={2}>
+  <Card title="Référence des erreurs" icon="book" href="/fr/help/troubleshooting/error-reference">
+    Liste complète des codes d'erreur
+  </Card>
+  <Card title="Contacter le support" icon="headset" href="/fr/help/support/contact">
+    Escalader les problèmes non résolus
+  </Card>
+</Columns>

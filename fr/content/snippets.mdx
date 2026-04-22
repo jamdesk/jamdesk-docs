@@ -1,0 +1,183 @@
+---
+title: Extraits de contenu
+description: Blocs de contenu réutilisables que vous pouvez importer sur plusieurs pages. Stockez du texte commun, des composants ou du code dans le répertoire snippets.
+---
+
+Les snippets sont des blocs de contenu réutilisables stockés dans un répertoire `/snippets`. Importez-les dans n'importe quelle page MDX pour éviter de dupliquer le contenu.
+
+## Créer des snippets
+
+Créez un répertoire `/snippets` à la racine de votre documentation :
+
+```
+my-docs/
+├── docs.json
+├── introduction.mdx
+└── snippets/
+    ├── prerequisites.mdx
+    ├── installation.mdx
+    └── support-cta.mdx
+```
+
+Rédigez le contenu des snippets comme n'importe quel fichier MDX, mais sans frontmatter :
+
+```mdx snippets/prerequisites.mdx
+Before you begin, make sure you have:
+
+- Node.js 20 or higher
+- A GitHub account
+- A text editor (VS Code recommended)
+```
+
+## Utiliser des snippets
+
+Importez et utilisez des snippets dans vos pages :
+
+```mdx getting-started.mdx
+---
+title: Getting Started
+---
+
+## Prerequisites
+
+import Prerequisites from '/snippets/prerequisites.mdx';
+
+<Prerequisites />
+
+## Installation
+
+Continue with your page content...
+```
+
+## Composants de snippet
+
+Les snippets peuvent contenir des composants Jamdesk :
+
+```mdx snippets/support-cta.mdx
+<Columns cols={2}>
+  <Card title="Documentation" icon="book" href="/docs">
+    Browse our guides
+  </Card>
+  <Card title="Contact Support" icon="headset" href="/support">
+    Get help from our team
+  </Card>
+</Columns>
+```
+
+Utilisez-les sur plusieurs pages :
+
+```mdx
+import SupportCTA from '/snippets/support-cta.mdx';
+
+## Need Help?
+
+<SupportCTA />
+```
+
+## Snippets interactifs
+
+Pour les snippets nécessitant des hooks React (`useState`, `useEffect`, etc.), utilisez des fichiers `.tsx` avec la directive `'use client'` :
+
+```tsx snippets/counter.tsx
+'use client';
+
+import { useState } from 'react';
+
+export function Counter() {
+  const [count, setCount] = useState(0);
+  return (
+    <button onClick={() => setCount(c => c + 1)}>
+      Count: {count}
+    </button>
+  );
+}
+```
+
+Importez dans MDX :
+
+```mdx
+import { Counter } from '/snippets/counter';
+
+<Counter />
+```
+
+<Note>
+La directive `'use client'` est requise pour tout composant utilisant des hooks React. Sans elle, vous obtiendrez des erreurs "useState is not defined".
+</Note>
+
+## Snippets paramétrés
+
+Passez des props pour rendre les snippets dynamiques :
+
+```mdx snippets/api-key-warning.mdx
+export const ApiKeyWarning = ({ service }) => (
+  <Warning>
+    Never commit your {service} API key to version control. Use environment variables instead.
+  </Warning>
+);
+```
+
+Utilisez avec des props :
+
+```mdx
+import { ApiKeyWarning } from '/snippets/api-key-warning.mdx';
+
+<ApiKeyWarning service="Stripe" />
+```
+
+## Organiser les snippets
+
+Pour les projets plus importants, organisez les snippets en sous-répertoires :
+
+```
+snippets/
+├── components/
+│   ├── cta-cards.mdx
+│   └── feature-table.mdx
+├── warnings/
+│   ├── api-key.mdx
+│   └── deprecation.mdx
+└── shared/
+    ├── prerequisites.mdx
+    └── support-links.mdx
+```
+
+Importez avec le chemin complet :
+
+```mdx
+import CtaCards from '/snippets/components/cta-cards.mdx';
+import ApiKeyWarning from '/snippets/warnings/api-key.mdx';
+```
+
+## Cas d'usage courants
+
+| Cas d'usage | Exemple |
+|-------------|---------|
+| Prérequis | Configuration système, création de compte |
+| Étapes d'installation | Commandes CLI d'installation sur plusieurs plateformes |
+| Authentification API | Configuration d'authentification répétée sur plusieurs endpoints |
+| CTAs de support | Liens de contact en fin de pages de dépannage |
+| Notices de dépréciation | Avertissements pour les fonctionnalités obsolètes |
+| Exemples de code | Modèles de code réutilisables |
+
+## Snippet vs composant inline
+
+| Fonctionnalité | Snippet | Composant inline |
+|----------------|---------|------------------|
+| Réutilisable sur plusieurs pages | Oui | Non (spécifique à la page) |
+| Peut utiliser des hooks React | Oui (avec `'use client'`) | Non |
+| Peut importer des packages externes | Oui (fichiers `.tsx`) | Non |
+| Syntaxe | Instruction d'import | `export const` dans MDX |
+
+Utilisez les **snippets** pour le contenu apparaissant sur plusieurs pages. Utilisez les **composants inline** pour des composants de présentation ponctuels au sein d'une seule page.
+
+## Prochaines étapes
+
+<Columns cols={2}>
+  <Card title="Composants React personnalisés" icon="code" href="/fr/content/react-components">
+    Définir des composants inline dans MDX
+  </Card>
+  <Card title="Bases MDX" icon="file-code" href="/fr/content/mdx-basics">
+    Apprendre les fondamentaux MDX
+  </Card>
+</Columns>

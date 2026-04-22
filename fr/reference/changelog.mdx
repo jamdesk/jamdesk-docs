@@ -1,0 +1,97 @@
+---
+title: Journal des modifications
+description: Les nouveautés de Jamdesk, la plateforme docs-as-code pour MDX, GitHub et la documentation API. Sorties de fonctionnalités, mises à jour CLI et changements de plateforme.
+rss: true
+---
+
+Nouvelles fonctionnalités, changements de plateforme et mises à jour CLI pour Jamdesk.
+
+Les captures d'écran montrent l'interface en anglais.
+
+
+<Update label="April 2026" date="2026-04-01">
+**Export PDF.** Rendez l'ensemble de votre site de documentation en un seul PDF depuis **Paramètres → Exports PDF** dans le dashboard. Plans payants uniquement. Les projets multilingues choisissent une locale par export, les résultats sont mis en cache par commit, et vous recevez un e-mail avec un lien de téléchargement à la fin du rendu. Voir [Export PDF](/fr/builds/pdf-export).
+
+**Specs OpenAPI multilingues.** Les pages d'endpoint affichent désormais des specs OpenAPI traduites aux côtés du MDX traduit. Déposez un fichier `<spec>.<lang>.<ext>` (par ex., `openapi/api.fr.yaml`) à côté de votre spec source et Jamdesk le prend en compte sur les URL de cette langue, avec repli vers la spec anglaise si une variante linguistique est manquante. Les résumés d'opérations, les descriptions de paramètres, les descriptions de réponses et les descriptions de schémas sont tous localisés. Voir [Traduire les specs OpenAPI](/fr/setup/languages#translating-openapi-specs).
+
+**Composant Visibility.** Le nouveau composant `<Visibility for="humans|agents">` vous permet de délimiter du contenu pour les lecteurs humains ou les agents IA sur la même page. Les blocs réservés aux humains s'affichent dans le navigateur mais sont supprimés des exports `.md` et de `llms-full.txt` ; les blocs réservés aux agents font l'inverse. Les agents effectuant une requête `Accept: text/markdown` sur les URL canoniques reçoivent automatiquement la vue agent. Voir [Visibility](/fr/components/visibility).
+
+**Protection par mot de passe, reconstruite.** Vous pouvez désormais verrouiller l'ensemble de votre site avec un mot de passe partagé, ou protéger uniquement quelques pages pendant que le reste reste public. Définissez `auth.password.enabled: true` pour le mode site entier, ou marquez des pages individuelles avec `private: true` dans le frontmatter (ou listez-les sous `auth.password.private`) pour le mode pages spécifiques. La page Paramètres dans le dashboard vous guide pour définir, faire tourner et révoquer le mot de passe. Les visiteurs arrivent sur un écran de déverrouillage personnalisé avec le logo de votre site, la couleur principale et un indice optionnel que vous définissez dans `docs.json`. Voir [Protection par mot de passe](/fr/setup/password-protection).
+
+**Conversion automatique d'images en WebP.** Jamdesk peut convertir vos images PNG et JPG en WebP au moment du build. Les fichiers convertis sont généralement 60 à 80 % plus petits que les originaux sans perte de qualité visible, ce qui accélère le chargement de vos pages sans traitement manuel des images. Activez cette option via `images.convertToWebp: true` dans `docs.json`. Les favicons, `og:image` et `twitter:image` restent dans leur format d'origine pour la compatibilité avec les robots des réseaux sociaux. Une nouvelle étape **Optimisation des images** affiche la progression en temps réel dans le dashboard et le CLI lors de chaque build. Voir [Conversion automatique d'images](/fr/builds/image-optimization).
+
+**API playground.** Les pages d'endpoint disposent désormais d'un bouton interactif « Essayer ». Renseignez les paramètres, regardez les exemples de code se mettre à jour en temps réel et envoyez des requêtes en direct sans quitter votre documentation. Activé par défaut sur toutes les pages API. Fonctionne avec les endpoints OpenAPI et MDX. Voir [API playground](/fr/api-reference/playground).
+
+**Plugin Claude Code.** Installez le [plugin Jamdesk pour Claude Code](/fr/claude-code-plugin) pour donner à Claude une connaissance approfondie des composants MDX, de la configuration `docs.json`, des modèles de navigation et des commandes CLI. Installation en deux étapes depuis la marketplace de plugins. Fonctionne avec [CLAUDE.md](/fr/ai/claude-code) et le [serveur MCP](/fr/ai/mcp-server) pour une rédaction de documentation entièrement assistée par IA.
+
+**Avertissements de build pour les éléments de marque manquants.** Les builds avertissent désormais lorsque les chemins `favicon` ou `logo` dans `docs.json` référencent des fichiers qui n'existent pas dans votre projet. Les avertissements apparaissent dans les détails du build dans le dashboard et dans le CLI via `jamdesk dev` et `jamdesk validate`. Pas d'e-mail ; l'avertissement est uniquement informatif.
+
+**YouTube Shorts.** Le composant `<YouTube>` prend désormais en charge les Shorts verticaux via la prop `short`, affichant un lecteur 9:16 centré sans barres noires. Utilisez `<YouTube id="VIDEO_ID" short />`. Voir [Intégrations YouTube](/fr/content/youtube#youtube-shorts).
+</Update>
+
+<iframe width="100%" height="180" frameborder="no" scrolling="no" seamless="" src="https://share.transistor.fm/e/the-jamdesk-podcast/latest"></iframe>
+
+<Update label="March 2026" date="2026-03-01">
+**Menu Actions IA.** Un menu déroulant sur chaque page permet aux lecteurs de copier le Markdown, d'ouvrir la page dans ChatGPT/Claude/Perplexity, de récupérer la configuration du serveur MCP, ou de l'installer en un clic dans Cursor ou VS Code. Activé par défaut ; choisissez les options affichées via `contextual` dans `docs.json`. Voir [Menu Actions IA](/fr/ai/ai-actions).
+
+**Analytique.** Suivi des analyses de pages sans cookies mesurant les vues, les sources de trafic et les tendances des visiteurs avec des [détails par page](/fr/setup/project-analytics). Aucune bannière de consentement nécessaire. Voir [Présentation de l'analytique](/fr/setup/analytics-overview).
+
+**Intégrations.** [Google Analytics 4](/fr/integrations/google-analytics), [Google Tag Manager](/fr/integrations/google-tag-manager), [Plausible Analytics](/fr/integrations/plausible-analytics), et [notifications de build Slack](/fr/integrations/slack) (Pro).
+
+**Flux RSS pour les journaux des modifications.** Les pages avec `rss: true` dans le frontmatter génèrent désormais automatiquement un flux RSS auquel il est possible de s'abonner. Une icône RSS apparaît à côté du titre de la page, et un `feed.xml` est construit à partir de vos composants [Update](/fr/components/update) lors de chaque build. Utilisez la nouvelle prop `date` sur Update pour des dates de flux correctes. Voir [Composant Update](/fr/components/update#rss-feed).
+
+**Connexion & déployer en CLI.** `jamdesk login` s'authentifie via le navigateur, `jamdesk deploy` package votre projet et déclenche un build depuis le terminal. Aucune connexion GitHub requise. Le CLI respecte `.gitignore`, avertit des fichiers secrets et diffuse la progression du build en ligne. Voir [Authentification](/fr/cli/authentication) et [Déploiement CLI](/fr/cli/deploy).
+
+**Vérification orthographique CLI.** `jamdesk spellcheck` vérifie l'orthographe de votre documentation avec plus de 180 termes techniques intégrés (anglais uniquement). `jamdesk spellcheck --fix` lance un mode interactif pour corriger les fautes de frappe ou ajouter des mots à votre liste d'exclusions. Voir [Présentation CLI](/fr/cli/overview).
+
+**Intégrations vidéo.** Intégrez des fichiers `.mp4` et `.webm` directement dans votre documentation. Déposez-les dans un répertoire `/videos` et utilisez la syntaxe Markdown (`![Démo](/videos/demo.mp4)`) ou le composant `<Video>` pour la lecture automatique, la boucle et d'autres contrôles. Voir [Vidéos](/fr/content/videos).
+
+**JavaScript personnalisé.** Ajoutez des scripts côté client pour des widgets de chat, des outils d'analytique ou des intégrations tierces via `styling.js` dans `docs.json`. Voir [JavaScript personnalisé](/fr/customization/custom-javascript).
+</Update>
+
+<Update label="February 2026" date="2026-02-01">
+**Chat IA.** Assistant de chat intégré sur chaque site de documentation. Les visiteurs posent des questions et obtiennent des réponses avec des liens de citation vers les pages sources. Propulsé par Claude, activé sur tous les plans. Voir [Chat IA](/fr/ai/chat).
+
+**Intégration IA.** Chaque site génère [`llms.txt`](/fr/ai/llms-txt) pour les fenêtres de contexte LLM, expose le Markdown brut aux [URL `.md`](/fr/ai/markdown-source), et inclut un [serveur MCP](/fr/ai/mcp-server) à `/_mcp` avec les outils `searchDocs` et `getPage`. Guides de configuration pour [Claude Code](/fr/ai/claude-code), [Cursor](/fr/ai/cursor), et [Codex](/fr/ai/codex). Voir aussi [Rédiger avec l'IA](/fr/ai/writing-with-ai) et [Mises à jour automatisées](/fr/ai/automated-updates).
+
+**CLI.** `jamdesk dev` pour la preview locale avec rechargement à chaud, `jamdesk validate` pour les liens brisés, `jamdesk migrate` pour convertir depuis Mintlify/GitBook/Docusaurus, `jamdesk doctor` pour les problèmes de configuration. Installation via npm, curl ou Homebrew. Voir [Présentation CLI](/fr/cli/overview).
+
+**Extension VS Code.** Démarrez, arrêtez et redémarrez le serveur de développement depuis la barre d'état VS Code, sans terminal requis. Voir [Extension VS Code](/fr/development/vscode-extension).
+
+**Vérification TXT de domaine personnalisé.** Tous les domaines personnalisés nécessitent désormais un enregistrement TXT (`_jamdesk.votredomaine.com`) avant l'activation du routage. Cela évite la prise de contrôle de domaine sur les sous-domaines non revendiqués. Les domaines nouvellement ajoutés verront l'enregistrement TXT dans le flux de configuration du dashboard. Voir le [guide des domaines personnalisés](/fr/deploy/custom-domains).
+
+**Support multilingue.** Définissez des arbres de navigation et des répertoires de contenu séparés par locale. Les lecteurs changent de langue depuis un menu déroulant dans la barre supérieure. Voir [Support multilingue](/fr/setup/languages).
+
+**Analytique de recherche.** Voyez ce que les lecteurs recherchent, quelles requêtes ne renvoient aucun résultat et ce sur quoi ils cliquent. Utile pour identifier les lacunes de contenu. Voir [Analytique de recherche](/fr/setup/search-analytics).
+</Update>
+
+<Update label="January 2026" date="2026-01-15">
+Jamdesk est lancé. Rédigez de la documentation en MDX, poussez vers GitHub, et obtenez un site sur un CDN mondial. Les builds se terminent en moins de 60 secondes.
+
+**MDX et composants.** Plus de 20 composants intégrés : onglets, accordéons, étapes, groupes de code, diagrammes Mermaid, formules mathématiques KaTeX et icônes. Coloration syntaxique avec numéros de ligne dans les [blocs de code](/fr/content/code-blocks). Créez des [composants React personnalisés](/fr/content/react-components) avec Tailwind et des hooks, et réutilisez du contenu avec des [snippets](/fr/content/snippets). Voir [Présentation des composants](/fr/components/overview).
+
+**Documentation OpenAPI.** Générez des pages de référence API depuis votre spec OpenAPI via `api.openapi` dans `docs.json`. Voir [Exemple OpenAPI](/fr/api-reference/openapi-example).
+
+**Déploiement.** [Déployer automatiquement depuis GitHub](/fr/how-jamdesk-works) au push avec un délai de 10 secondes. [Domaines personnalisés](/fr/deploy/custom-domains) avec SSL automatique, [hébergement en sous-chemin](/fr/deploy/subpath-hosting) à `/docs` (Vercel, CloudFront, Cloudflare, nginx), et [support monorepo](/fr/setup/monorepo-support).
+
+**Personnalisation.** Trois [thèmes](/fr/customization/theming) (`jam`, `nebula`, `pulsar`) avec couleurs personnalisées, logos et pied de page. [CSS personnalisé](/fr/customization/custom-css) pour les remplacements de style. [Navigation](/fr/navigation/overview) flexible avec onglets, groupes et icônes. [Redirections](/fr/setup/redirects) avec correspondance exacte et caractères génériques.
+
+**Recherche et SEO.** Recherche plein texte Cmd+K, zéro configuration. [Sitemaps, images OG et méta par page](/fr/content/seo) prêts à l'emploi.
+
+**[Référence docs.json](/fr/config/docs-json-reference).** Référence de configuration complète pour tous les paramètres et options.
+
+**[Centre d'aide](/fr/help/overview).** Guides de gestion de compte, facturation et dépannage.
+</Update>
+
+---
+
+## Rester informé
+
+<Columns cols={2}>
+  <Card title="Blog Jamdesk" icon="newspaper" href="https://www.jamdesk.com/blog">
+    Annonces détaillées et tutoriels
+  </Card>
+  <Card title="GitHub Releases" icon="code-branch" href="https://github.com/jamdesk/jamdesk/releases">
+    Notes de version CLI
+  </Card>
+</Columns>

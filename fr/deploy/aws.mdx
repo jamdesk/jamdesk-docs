@@ -1,0 +1,152 @@
+---
+title: AWS Route 53 et CloudFront
+description: "Proxy le trafic /docs via AWS CloudFront et Route 53 vers votre site Jamdesk. Inclut la configuration de la distribution, la configuration de l'origine et les règles de comportement du cache."
+---
+
+Configurez une distribution CloudFront pour transférer `/docs/*` vers votre site Jamdesk, avec Route 53 pour le DNS. Comptez environ 15 minutes.
+
+## Prérequis
+
+- Un compte AWS avec accès à CloudFront et Route 53
+- Votre domaine géré dans Route 53 (ou la possibilité de mettre à jour le DNS ailleurs)
+- Votre sous-domaine Jamdesk (trouvé dans les paramètres du dashboard)
+
+## Étape 1 : Créer une distribution CloudFront
+
+1. Ouvrez la [console CloudFront](https://console.aws.amazon.com/cloudfront/)
+2. Cliquez sur **Create Distribution**
+3. Configurez l'origine :
+
+| Paramètre | Valeur |
+|---------|-------|
+| Origin domain | `YOUR_SLUG.jamdesk.app` |
+| Protocol | HTTPS only |
+| Name | `jamdesk-docs-origin` |
+
+<Note>
+Remplacez `YOUR_SLUG` par votre sous-domaine Jamdesk réel.
+</Note>
+
+## Étape 2 : Configurer les paramètres d'origine
+
+Dans les paramètres d'origine, ajoutez des en-têtes personnalisés pour identifier votre domaine :
+
+| Nom de l'en-tête | Valeur |
+|-------------|-------|
+| `X-Forwarded-Host` | `yoursite.com` |
+| `X-Jamdesk-Forwarded-Host` | `yoursite.com` |
+
+Ces en-têtes indiquent à Jamdesk quel domaine effectue la requête. L'en-tête `X-Jamdesk-Forwarded-Host` est requis pour la vérification du domaine.
+
+<Warning>
+Votre domaine doit être vérifié dans le dashboard Jamdesk avant que CloudFront puisse servir du contenu. Complétez le processus de vérification DNS après avoir ajouté votre domaine.
+</Warning>
+
+## Étape 3 : Créer des comportements de cache
+
+Ajoutez des comportements pour router `/docs/*` et les requêtes d'assets vers votre origine Jamdesk :
+
+1. Accédez à l'onglet **Behaviors**
+2. Cliquez sur **Create Behavior**
+3. Créez trois comportements avec ces paramètres :
+
+| Path pattern | Origine | Cache policy | Origin request policy |
+|-------------|--------|-------------|----------------------|
+| `/docs/*` | `jamdesk-docs-origin` | CachingOptimized | AllViewerExceptHostHeader |
+| `/_next/*` | `jamdesk-docs-origin` | CachingOptimized | AllViewerExceptHostHeader |
+| `/_jd/*` | `jamdesk-docs-origin` | CachingOptimized | AllViewerExceptHostHeader |
+
+Définissez la **Viewer protocol policy** sur **Redirect HTTP to HTTPS** pour les trois.
+
+<Note>
+Les comportements `/_next/*` et `/_jd/*` sont requis pour que les assets statiques Next.js (JS, CSS) et les ressources Jamdesk (polices, images, branding) se chargent correctement.
+</Note>
+
+<Warning>
+La politique `AllViewerExceptHostHeader` est obligatoire. Elle transfère tous les en-têtes sauf `Host`, permettant à Jamdesk de recevoir les informations de requête nécessaires.
+</Warning>
+
+## Étape 4 : Ajouter un nom de domaine alternatif
+
+1. Dans l'onglet **General**, cliquez sur **Edit**
+2. Sous **Alternate domain name (CNAME)**, ajoutez `yoursite.com`
+3. Sélectionnez ou demandez un certificat SSL pour votre domaine
+
+## Étape 5 : Configurer Route 53
+
+Créez un enregistrement alias pointant vers votre distribution CloudFront :
+
+1. Ouvrez la [console Route 53](https://console.aws.amazon.com/route53/)
+2. Sélectionnez votre zone hébergée
+3. Cliquez sur **Create Record**
+4. Configurez :
+
+| Paramètre | Valeur |
+|---------|-------|
+| Record name | `yoursite.com` (ou laissez vide pour l'apex) |
+| Record type | A |
+| Alias | Yes |
+| Route traffic to | CloudFront distribution |
+| Distribution | Sélectionnez votre distribution |
+
+## Étape 6 : Vérifier
+
+Après la propagation DNS (généralement 5 à 15 minutes), visitez `https://yoursite.com/docs` pour confirmer que votre documentation se charge correctement.
+
+## Résumé complet de la configuration CloudFront
+
+```
+Distribution Settings:
+├── Origin: YOUR_SLUG.jamdesk.app
+│   ├── Custom Header: X-Forwarded-Host = yoursite.com
+│   └── Custom Header: X-Jamdesk-Forwarded-Host = yoursite.com
+├── Behavior: /docs/*
+│   ├── Cache Policy: CachingOptimized
+│   └── Origin Request Policy: AllViewerExceptHostHeader
+├── Behavior: /_next/*
+│   ├── Cache Policy: CachingOptimized
+│   └── Origin Request Policy: AllViewerExceptHostHeader
+├── Behavior: /_jd/*
+│   ├── Cache Policy: CachingOptimized
+│   └── Origin Request Policy: AllViewerExceptHostHeader
+└── Alternate Domain: yoursite.com (with SSL certificate)
+```
+
+## Dépannage
+
+<Accordion title="Erreurs 403 Forbidden">
+Assurez-vous que le domaine d'origine est exactement `YOUR_SLUG.jamdesk.app` sans le préfixe `https://`.
+</Accordion>
+
+<Accordion title="Avertissements de contenu mixte">
+Vérifiez que la Viewer protocol policy est définie sur « Redirect HTTP to HTTPS » et que votre certificat SSL est valide.
+</Accordion>
+
+<Accordion title="Contenu obsolète après les mises à jour">
+Créez une invalidation CloudFront pour `/docs/*` afin de vider le contenu mis en cache après la publication des modifications.
+</Accordion>
+
+<Accordion title="Erreur 403 Domain not authorized">
+Si vous voyez « Domain is not authorized to serve this content » :
+
+1. Vérifiez que votre domaine est enregistré dans le dashboard Jamdesk
+2. Complétez la vérification DNS (enregistrement TXT) pour votre domaine
+3. Assurez-vous que les en-têtes personnalisés `X-Forwarded-Host` et `X-Jamdesk-Forwarded-Host` sont définis dans votre configuration d'origine
+4. Vérifiez que votre domaine est associé au bon projet
+
+Le domaine doit être vérifié avant que CloudFront puisse servir la documentation.
+</Accordion>
+
+## Et ensuite ?
+
+<Columns cols={3}>
+  <Card title="Vue d'ensemble du déploiement" icon="cloud-arrow-up" href="/fr/deploy/overview">
+    Comparer les options d'hébergement
+  </Card>
+  <Card title="Hébergement en sous-chemin" icon="folder-tree" href="/fr/deploy/subpath-hosting">
+    Servir la documentation sur /docs
+  </Card>
+  <Card title="Domaines personnalisés" icon="globe" href="/fr/deploy/custom-domains">
+    Vérifier le DNS et résoudre les problèmes
+  </Card>
+</Columns>

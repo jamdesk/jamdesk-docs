@@ -1,0 +1,243 @@
+---
+title: Comprendre l'intégration GitHub
+description: Jamdesk utilise deux connexions GitHub -- une GitHub App pour l'accès aux dépôts et un lien de compte personnel pour l'attribution des builds.
+---
+
+Jamdesk utilise **deux connexions GitHub complémentaires** qui servent des objectifs différents. Comprendre la différence vous aide à configurer votre équipe correctement et à résoudre les problèmes.
+
+<Info>
+**En bref :** La GitHub App donne à Jamdesk accès à votre dépôt. Lier votre compte personnel garantit que vos commits vous sont attribués.
+</Info>
+
+## Vue d'ensemble
+
+| Connexion | Objectif | Portée | Requis ? |
+|------------|---------|-------|-----------|
+| **GitHub App** | Accès aux dépôts et Webhooks | Par projet | Oui |
+| **Compte personnel** | Identité utilisateur et attribution | Par utilisateur | Recommandé |
+
+## GitHub App (niveau projet)
+
+La **Jamdesk GitHub App** est installée sur votre compte GitHub ou votre organisation. Elle accorde à Jamdesk la permission d'accéder à des dépôts spécifiques.
+
+### Ce qu'elle fait
+
+- **Lit le contenu du dépôt** - Clone votre documentation pour la builder
+- **Reçoit les Webhooks** - Reçoit des notifications lorsque vous poussez des modifications
+- **Rapporte le statut des builds** - Affiche le statut de déploiement sur les commits
+
+### Pourquoi vous en avez besoin
+
+Sans la GitHub App installée, Jamdesk ne peut pas :
+- Accéder à votre dépôt pour builder la documentation
+- Déployer automatiquement lorsque vous poussez des modifications
+- Afficher le statut des builds sur les commits GitHub
+
+### Comment ça fonctionne
+
+<Steps>
+  <Step title="Installer la GitHub App">
+    Lorsque vous créez un projet, vous installerez la Jamdesk GitHub App sur votre compte GitHub.
+  </Step>
+  <Step title="Accorder l'accès au dépôt">
+    Choisissez quels dépôts Jamdesk peut accéder - soit tous les dépôts, soit des dépôts spécifiques.
+  </Step>
+  <Step title="Connecter à un projet">
+    Dans Jamdesk, sélectionnez quel dépôt et quelle branche utiliser pour chaque projet.
+  </Step>
+  <Step title="Le push déclenche les builds">
+    Chaque push vers votre branche configurée déclenche automatiquement un déploiement.
+  </Step>
+</Steps>
+
+### Une app, plusieurs projets
+
+Une seule installation de GitHub App peut alimenter plusieurs projets Jamdesk :
+- Installez l'app une fois sur votre compte ou organisation
+- Connectez différents dépôts à différents projets Jamdesk
+- Chaque projet a sa propre configuration de branche et de chemin
+
+<Tip>
+Pour les organisations, un administrateur n'a besoin d'installer la GitHub App qu'une seule fois. Ensuite, n'importe quel membre de l'équipe peut créer des projets Jamdesk en utilisant les dépôts auxquels l'app a accès.
+</Tip>
+
+## Compte GitHub personnel (niveau utilisateur)
+
+Lier votre **compte GitHub personnel** associe votre identité GitHub à votre profil Jamdesk. C'est distinct de la GitHub App.
+
+### Ce qu'il fait
+
+- **Vous identifie** - Associe votre nom d'utilisateur GitHub à votre compte Jamdesk
+- **Attribue les builds** - Indique qui a déclenché chaque déploiement
+- **Visibilité de l'équipe** - Les autres membres de l'équipe peuvent voir qui a effectué des modifications
+
+### Pourquoi vous en avez besoin
+
+Lorsque vous poussez vers GitHub, Jamdesk doit déterminer quel utilisateur a déclenché le build. Sans votre compte lié :
+
+- Jamdesk se rabat sur la correspondance par adresse e-mail
+- Si l'e-mail de votre commit Git diffère de votre e-mail Jamdesk, l'attribution échoue
+- L'historique des builds peut afficher "Utilisateur inconnu" pour vos commits
+
+<Warning>
+**Problème courant :** Votre Git est configuré avec un e-mail personnel, mais vous vous êtes inscrit à Jamdesk avec un e-mail professionnel. Liez votre compte GitHub pour garantir une attribution correcte.
+</Warning>
+
+### Vérifier votre e-mail Git
+
+```bash
+git config user.email
+git config --global user.email "you@company.com"
+```
+
+Utilisez le même e-mail qui apparaît sur votre compte Jamdesk pour éviter l'attribution "Utilisateur inconnu" dans l'historique des builds.
+
+### Comment lier votre compte
+
+<Steps>
+  <Step title="Accéder aux paramètres utilisateur">
+    Cliquez sur votre avatar en haut à droite, puis sélectionnez **Paramètres utilisateur**.
+  </Step>
+  <Step title="Trouver la section Compte GitHub">
+    Faites défiler jusqu'à la carte **Compte GitHub**.
+  </Step>
+  <Step title="Cliquer sur Lier le compte GitHub">
+    Une fenêtre contextuelle s'ouvre vers GitHub. Autorisez Jamdesk à lire votre profil.
+  </Step>
+  <Step title="Confirmer la connexion">
+    Votre nom d'utilisateur GitHub apparaît dans votre profil Jamdesk.
+  </Step>
+</Steps>
+
+## Comment ils fonctionnent ensemble
+
+Pensez-y comme deux clés distinctes :
+
+| Clé | Ouvre | Appartient à |
+|-----|-------|----------|
+| GitHub App | Accès aux dépôts | Projet/Organisation |
+| Lien personnel | Votre identité | Utilisateur individuel |
+
+### Exemple en équipe
+
+Considérez une équipe de 3 développeurs travaillant sur la documentation d'une entreprise :
+
+1. **L'administrateur installe la GitHub App** sur l'organisation
+2. **L'administrateur crée un projet Jamdesk** connecté au dépôt de documentation
+3. **Chaque développeur lie son compte personnel**
+
+Maintenant, lorsqu'un développeur pousse :
+- La **GitHub App** permet à Jamdesk de lire le dépôt et de builder
+- Le **lien personnel** identifie qui a déclenché le build
+
+### Exemple développeur solo
+
+Même en tant que développeur solo, les deux connexions servent des objectifs différents :
+- **GitHub App** - Connecte votre dépôt à Jamdesk
+- **Lien personnel** - Garantit que vos commits affichent votre nom dans l'historique des builds
+
+## Déconnexion et dissociation
+
+Comprendre ce que chaque action affecte vous aide à résoudre les problèmes et gérer les accès.
+
+### Déconnecter GitHub (Paramètres du projet)
+
+**Ce que ça fait :** Supprime la connexion au dépôt d'un seul projet Jamdesk.
+
+**Effets :**
+- Les déploiements automatiques s'arrêtent pour ce projet
+- La GitHub App reste installée sur GitHub
+- Les autres projets Jamdesk ne sont pas affectés
+- Votre lien de compte personnel n'est pas affecté
+
+**Quand l'utiliser :** Vous souhaitez connecter un autre dépôt ou arrêter temporairement les déploiements.
+
+**Comment se reconnecter :** Allez dans Paramètres du projet → Dépôt Git et sélectionnez un dépôt.
+
+### Dissocier GitHub (Paramètres utilisateur)
+
+**Ce que ça fait :** Supprime votre identité GitHub de votre profil Jamdesk.
+
+**Effets :**
+- Votre nom d'utilisateur GitHub n'apparaît plus dans votre profil
+- L'attribution des builds se rabat sur la correspondance par e-mail
+- Toutes les connexions aux dépôts restent intactes
+- La GitHub App reste installée
+
+**Quand l'utiliser :** Vous souhaitez lier un autre compte GitHub ou supprimer la connexion.
+
+**Comment se reconnecter :** Allez dans Paramètres utilisateur → Compte GitHub → Lier le compte GitHub.
+
+### Désinstaller la GitHub App (Sur GitHub)
+
+**Ce que ça fait :** Supprime complètement l'accès de Jamdesk à votre compte GitHub.
+
+**Effets :**
+- **Tous** les projets Jamdesk utilisant cette installation perdent l'accès
+- Les déploiements automatiques s'arrêtent pour tous les projets affectés
+- Les Webhooks sont supprimés
+- Les liens de comptes personnels ne sont pas affectés
+
+<Warning>
+Ne désinstallez la GitHub App que si vous souhaitez supprimer l'accès Jamdesk de TOUS vos dépôts. Cela affecte chaque projet Jamdesk connecté à votre compte GitHub.
+</Warning>
+
+**Comment désinstaller :**
+1. Allez dans [Paramètres GitHub → Applications → GitHub Apps installées](https://github.com/settings/installations)
+2. Trouvez "Jamdesk" et cliquez sur **Configurer**
+3. Faites défiler vers le bas et cliquez sur **Désinstaller**
+
+## Référence rapide
+
+| Action | Emplacement | Portée | Réversible ? |
+|--------|----------|-------|-------------|
+| **Déconnecter GitHub** | Paramètres du projet → Dépôt Git | Projet unique | Oui - reconnectez à tout moment |
+| **Dissocier GitHub** | Paramètres utilisateur → Compte GitHub | Votre compte | Oui - reliez à tout moment |
+| **Désinstaller la GitHub App** | Paramètres GitHub | Tous les projets | Oui - réinstallez |
+
+## Dépannage
+
+### "Jamdesk est déjà installé ?"
+
+Si vous avez précédemment installé la Jamdesk GitHub App, cliquer sur "Installer la GitHub App" vous amène à la page de paramètres de GitHub au lieu de la page d'installation. C'est normal ! Voici comment terminer la configuration :
+
+<Steps>
+  <Step title="Trouver l'accès aux dépôts">
+    Faites défiler jusqu'à la section **Accès aux dépôts** sur la page de paramètres de GitHub.
+  </Step>
+  <Step title="Activer le bouton Enregistrer">
+    Si le bouton Enregistrer est désactivé (grisé), passez de "Tous les dépôts" à "Uniquement les dépôts sélectionnés", puis repassez.
+  </Step>
+  <Step title="Cliquer sur Enregistrer">
+    Cliquez sur le bouton vert **Enregistrer**. Jamdesk détecte le changement et continue la configuration.
+  </Step>
+</Steps>
+
+### Fenêtre contextuelle bloquée
+
+Si la fenêtre contextuelle GitHub ne s'ouvre pas, votre navigateur a peut-être bloqué. Recherchez une icône de bloqueur de fenêtres contextuelles dans votre barre d'adresse et autorisez les fenêtres contextuelles depuis Jamdesk. Vous pouvez également utiliser l'option "Entrer l'ID manuellement".
+
+### "Mes builds affichent 'Utilisateur inconnu'"
+Votre compte GitHub personnel n'est pas lié. Allez dans **Paramètres utilisateur → Lier le compte GitHub**.
+
+### "Le dépôt n'apparaît pas"
+La GitHub App n'a pas accès à ce dépôt. Allez dans [Paramètres GitHub](https://github.com/settings/installations), trouvez Jamdesk et ajoutez le dépôt.
+
+### "Les builds ne se déclenchent pas"
+1. Vérifiez que le dépôt est connecté dans **Paramètres du projet → Dépôt Git**
+2. Vérifiez que vous poussez vers la branche configurée
+3. Vérifiez la livraison des Webhooks dans les paramètres du dépôt GitHub
+
+### "Je ne peux pas accéder aux dépôts de l'organisation"
+Un administrateur de l'organisation doit approuver l'installation de la GitHub App. Demandez à votre administrateur d'installer ou d'approuver Jamdesk dans les paramètres de l'organisation.
+
+## Articles connexes
+
+<Columns cols={2}>
+  <Card title="Créer un projet" icon="plus" href="/fr/help/projects/creating">
+    Configurer votre premier projet de documentation
+  </Card>
+  <Card title="Dépannage des builds" icon="wrench" href="/fr/help/troubleshooting/build-failures">
+    Problèmes courants de build et solutions
+  </Card>
+</Columns>

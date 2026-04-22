@@ -1,0 +1,81 @@
+---
+title: Aperçu du déploiement
+description: "Options d'hébergement pour votre documentation — sous-domaine Jamdesk, domaine personnalisé avec SSL, ou sous-chemin /docs derrière votre site existant via un reverse proxy."
+---
+
+Jamdesk déploie automatiquement votre documentation sur un sous-domaine `*.jamdesk.app`. Lorsque vous êtes prêt à déployer sur votre propre domaine, vous pouvez choisir un sous-domaine personnalisé (comme `docs.example.com`) ou héberger sur un sous-chemin `/docs` de votre site principal.
+
+## Options de déploiement
+
+| Option | Idéal pour | Complexité de configuration |
+|--------|------------|----------------------------|
+| **Sous-domaine Jamdesk** (`your-project.jamdesk.app`) | Lancement rapide, aucun travail DNS | Faible |
+| **Sous-domaine personnalisé** (`docs.example.com`) | Documentation de production avec votre marque | Moyenne |
+| **Hébergement sur sous-chemin** (`example.com/docs`) | Garder la documentation sur le domaine principal | Élevée |
+
+## Hébergement par défaut (sans configuration)
+
+Chaque projet est mis en ligne sur un sous-domaine Jamdesk dès que vous connectez un dépôt. C'est l'option la plus simple pour la documentation interne, les previews ou les lancements anticipés.
+
+## Domaine personnalisé (sous-domaine)
+
+Utilisez votre propre sous-domaine (par exemple, `docs.example.com`) pour une URL publique à votre image de marque. Vous devrez ajouter des enregistrements DNS et vérifier la propriété dans le dashboard Jamdesk.
+
+<Note>
+La vérification DNS et SSL sont gérées automatiquement une fois les enregistrements en place. Voir [Domaines personnalisés](/fr/deploy/custom-domains) pour la configuration.
+</Note>
+
+## Hébergement sur sous-chemin (/docs)
+
+Hébergez la documentation sur `example.com/docs` en proxyfiant le trafic vers Jamdesk. C'est idéal lorsque vous souhaitez que la documentation soit accessible depuis votre domaine marketing principal.
+
+<Info>
+L'hébergement sur sous-chemin nécessite un proxy ou une couche CDN pour transférer les requêtes et définir l'en-tête `X-Jamdesk-Forwarded-Host`. Voir [Hébergement sur sous-chemin](/fr/deploy/subpath-hosting).
+</Info>
+
+### Exemple de configuration proxy (nginx)
+
+```nginx nginx.conf
+location /docs {
+    proxy_pass https://YOUR_SLUG.jamdesk.app;
+    proxy_set_header X-Jamdesk-Forwarded-Host $host;
+}
+```
+
+Pour une configuration complète avec SSL, en-têtes et instructions spécifiques au fournisseur, consultez le guide [Hébergement sur sous-chemin](/fr/deploy/subpath-hosting).
+
+## Guides par fournisseur
+
+Choisissez votre infrastructure pour mettre en place l'hébergement sur sous-chemin :
+
+<Columns cols={2}>
+  <Card title="Cloudflare" icon="cloud" href="/fr/deploy/cloudflare">
+    Utiliser Cloudflare Workers pour proxyfier le trafic /docs
+  </Card>
+  <Card title="AWS" icon="aws" href="/fr/deploy/aws">
+    Configurer CloudFront avec Route 53
+  </Card>
+  <Card title="Vercel" icon="triangle" href="/fr/deploy/vercel">
+    Ajouter des rewrites ou un middleware edge
+  </Card>
+  <Card title="Reverse Proxy" icon="server" href="/fr/deploy/reverse-proxy">
+    nginx, Apache ou d'autres serveurs proxy
+  </Card>
+</Columns>
+
+## Et ensuite ?
+
+<Columns cols={2}>
+  <Card title="Cycle de build et déploiement" icon="rotate" href="/fr/deploy/lifecycle">
+    Comment les builds sont déclenchés et déployés
+  </Card>
+  <Card title="Hébergement sur sous-chemin" icon="folder-tree" href="/fr/deploy/subpath-hosting">
+    Héberger la documentation sur /docs de votre domaine principal
+  </Card>
+  <Card title="Domaines personnalisés" icon="globe" href="/fr/deploy/custom-domains">
+    Configurer docs.votredomaine.com
+  </Card>
+  <Card title="Dépannage DNS" icon="server" href="/fr/help/troubleshooting/dns-issues">
+    Résoudre les problèmes de propagation et de vérification DNS
+  </Card>
+</Columns>

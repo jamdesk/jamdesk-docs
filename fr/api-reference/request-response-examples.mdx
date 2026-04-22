@@ -1,0 +1,210 @@
+---
+title: Exemples de requêtes et de réponses
+description: Apprenez à documenter les API avec les composants RequestExample et ResponseExample en utilisant un workflow pratique de tickets de support Acme.
+api: GET /tickets/{ticket_id}
+---
+
+Utilisez `RequestExample` et `ResponseExample` pour afficher une utilisation réelle de l'API aux côtés de la documentation de vos endpoints. Les composants prennent en charge plusieurs langages, des statuts de réponse et des explications en ligne.
+
+## Exemple : Récupérer un ticket de support
+
+Cet exemple documente un endpoint simple `GET /tickets/{ticket_id}` pour l'API de support Acme.
+
+### Requête
+
+Utilisez des champs de paramètre pour décrire ce que l'endpoint attend. L'exemple de code se trouve dans la barre latérale droite.
+
+<ParamField path="ticket_id" type="string" required>
+  Identifiant unique du ticket renvoyé lors de la création du ticket.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X GET https://api.acme.com/v1/tickets/tkt_9S8L2 \
+  -H "Authorization: Bearer $ACME_TOKEN"
+```
+
+```python Python
+import requests
+
+response = requests.get(
+    "https://api.acme.com/v1/tickets/tkt_9S8L2",
+    headers={"Authorization": f"Bearer {ACME_TOKEN}"}
+)
+
+ticket = response.json()
+print(ticket["id"])
+```
+
+```javascript JavaScript
+const response = await fetch("https://api.acme.com/v1/tickets/tkt_9S8L2", {
+  method: "GET",
+  headers: {
+    Authorization: `Bearer ${process.env.ACME_TOKEN}`,
+  }
+});
+
+const ticket = await response.json();
+console.log(ticket.id);
+```
+
+```go Go
+package main
+
+import (
+  "fmt"
+  "io"
+  "net/http"
+)
+
+func main() {
+  req, _ := http.NewRequest("GET", "https://api.acme.com/v1/tickets/tkt_9S8L2", nil)
+  req.Header.Set("Authorization", "Bearer ACME_TOKEN")
+
+  resp, _ := (&http.Client{}).Do(req)
+  defer resp.Body.Close()
+
+  body, _ := io.ReadAll(resp.Body)
+  fmt.Println(string(body))
+}
+```
+
+```ruby Ruby
+require 'net/http'
+require 'uri'
+require 'json'
+
+uri = URI("https://api.acme.com/v1/tickets/tkt_9S8L2")
+http = Net::HTTP.new(uri.host, uri.port)
+http.use_ssl = true
+
+request = Net::HTTP::Get.new(uri)
+request["Authorization"] = "Bearer ACME_TOKEN"
+
+response = http.request(request)
+puts JSON.parse(response.body)
+```
+
+```csharp C#
+using System.Net.Http;
+
+var client = new HttpClient();
+client.DefaultRequestHeaders.Add("Authorization", "Bearer ACME_TOKEN");
+
+var response = await client.GetAsync("https://api.acme.com/v1/tickets/tkt_9S8L2");
+var body = await response.Content.ReadAsStringAsync();
+Console.WriteLine(body);
+```
+
+```java Java
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+
+HttpClient client = HttpClient.newHttpClient();
+
+HttpRequest request = HttpRequest.newBuilder()
+    .uri(URI.create("https://api.acme.com/v1/tickets/tkt_9S8L2"))
+    .header("Authorization", "Bearer ACME_TOKEN")
+    .GET()
+    .build();
+
+HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+System.out.println(response.body());
+```
+
+```rust Rust
+#[tokio::main]
+async fn main() -> Result<(), reqwest::Error> {
+    let client = reqwest::Client::new();
+
+    let response = client
+        .get("https://api.acme.com/v1/tickets/tkt_9S8L2")
+        .header("Authorization", "Bearer ACME_TOKEN")
+        .send()
+        .await?;
+
+    let body = response.text().await?;
+    println!("{}", body);
+
+    Ok(())
+}
+```
+
+```php PHP
+<?php
+
+$ch = curl_init();
+
+curl_setopt($ch, CURLOPT_URL, 'https://api.acme.com/v1/tickets/tkt_9S8L2');
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, ['Authorization: Bearer ACME_TOKEN']);
+
+$response = curl_exec($ch); curl_close($ch);
+
+echo $response;
+```
+</RequestExample>
+
+### Réponse
+
+Utilisez des champs de réponse pour documenter les attributs les plus importants renvoyés par l'API.
+
+<ResponseField name="id" type="string" required>
+  Identifiant unique du ticket.
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  Statut actuel du ticket (`open`, `pending` ou `resolved`).
+</ResponseField>
+
+<ResponseField name="created_at" type="string">
+  Horodatage ISO 8601 indiquant la date de création du ticket.
+</ResponseField>
+
+<ResponseExample>
+```json 200: OK
+{
+  "id": "tkt_9S8L2",
+  "customer_id": "cus_2X9W8",
+  "subject": "Export stuck on step 3",
+  "priority": "high",
+  "status": "open",
+  "created_at": "2026-02-04T16:12:00Z"
+}
+```
+
+```json 404: Not found
+{
+  "code": "not_found",
+  "message": "ticket_id does not exist"
+}
+```
+</ResponseExample>
+
+## Conseils
+
+- Incluez au moins une réponse de succès et une réponse d'erreur.
+- Utilisez des identifiants et des horodatages réalistes pour que les exemples paraissent authentiques.
+- Gardez les charges utiles minimales afin que les lecteurs puissent les parcourir rapidement.
+
+## Pages associées
+
+<Columns cols={2}>
+  <Card title="API Playground" icon="flask-vial" href="/fr/api-reference/playground">
+    Activez les tests API interactifs sur vos pages d'endpoints
+  </Card>
+  <Card title="Exemple OpenAPI" icon="plug" href="/fr/api-reference/openapi-example">
+    Voir une page d'endpoint générée automatiquement
+  </Card>
+</Columns>
+
+<Columns cols={2}>
+  <Card title="Composant Examples" icon="code" href="/fr/components/examples">
+    Découvrez les propriétés et les règles de formatage du composant
+  </Card>
+  <Card title="Composant Fields" icon="list-check" href="/fr/components/fields">
+    Documentez les schémas de requêtes et de réponses
+  </Card>
+</Columns>
