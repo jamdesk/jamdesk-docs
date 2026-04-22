@@ -16,13 +16,13 @@ Pass the video ID as the `id` prop:
 
 <YouTube id="dQw4w9WgXcQ" />
 
-No iframe loads until the viewer clicks play. The page stays fast because the component uses [lite-youtube-embed](https://github.com/nicolegoesdigital/lite-youtube-embed) under the hood — a thumbnail image and a few kilobytes of CSS instead of the 800KB+ YouTube iframe bundle.
+No iframe loads until the viewer clicks play. The page stays fast because the component uses [lite-youtube-embed](https://github.com/nicolegoesdigital/lite-youtube-embed) under the hood: a thumbnail image and a few kilobytes of CSS instead of the 800KB+ YouTube iframe bundle.
 
 ## Props
 
 | Prop | Type | Default | Description |
 |------|------|---------|-------------|
-| `id` | `string` | — | **Required.** The YouTube video ID. |
+| `id` | `string` | none | **Required.** The YouTube video ID. |
 | `title` | `string` | `"Play"` / `"YouTube Short"` | Accessibility label for the embed. Screen readers use this text. |
 | `start` | `number` | `0` | Start playback at this many seconds into the video. |
 | `short` | `boolean` | `false` | Render as a vertical 9:16 YouTube Short instead of a 16:9 video. |
@@ -52,7 +52,7 @@ Copy the ID, not the full URL.
 
 ## YouTube Shorts
 
-YouTube Shorts are vertical videos with a 9:16 aspect ratio. Embedding a Short with a standard 16:9 player adds thick black bars on both sides — the video is crammed into a letterbox meant for landscape content.
+YouTube Shorts are vertical videos with a 9:16 aspect ratio. Embedding a Short in a standard 16:9 player adds thick black bars on both sides: the video gets crammed into a letterbox meant for landscape content.
 
 The `short` prop fixes this. It renders the embed at 9:16, centered on the page at 360px wide, with rounded corners. The result matches how Shorts look on mobile.
 
@@ -70,20 +70,22 @@ The Short ID is the path segment after `/shorts/` in the URL:
 
 - `youtube.com/shorts/_6HzLIJPH2A` → ID is `_6HzLIJPH2A`
 
-These IDs follow the same 11-character format as regular YouTube videos. You can test any Short ID with the standard `<YouTube>` component too — but without `short`, it renders in 16:9 with black bars.
+These IDs follow the same 11-character format as regular YouTube videos. You can test any Short ID with the standard `<YouTube>` component too, but without `short` it renders in 16:9 with black bars.
 
 ### Rendering Details
 
-- **Width:** Capped at 360px and centered. This matches YouTube's own mobile Shorts player width.
-- **Aspect ratio:** 9:16 via CSS `aspect-ratio`, so the container scales cleanly on smaller screens.
-- **Corners:** Rounded with `border-radius` to stay consistent with other Jamdesk media embeds.
-- **Related videos:** Disabled (`rel=0`) — same as standard embeds.
+| Detail | How it renders |
+|--------|---------------|
+| Width | Capped at 360px and centered (matches YouTube's own mobile Shorts player width) |
+| Aspect ratio | 9:16 via CSS `aspect-ratio`, so the container scales cleanly on smaller screens |
+| Corners | Rounded with `border-radius` to stay consistent with other Jamdesk media embeds |
+| Related videos | Disabled via `rel=0`, same as standard embeds |
 
 ### Performance Difference
 
 Standard YouTube embeds use `lite-youtube-embed`, which loads zero YouTube JavaScript upfront. The page displays a thumbnail image; the full player iframe loads only when a viewer clicks play.
 
-Shorts work differently. Because `lite-youtube-embed` doesn't support vertical aspect ratios, Shorts use a direct `<iframe>` with `loading="lazy"`. The browser defers loading until the iframe scrolls near the viewport, but once visible, the full YouTube player initializes — scripts, styles, and all.
+Shorts work differently. Because `lite-youtube-embed` doesn't support vertical aspect ratios, Shorts use a direct `<iframe>` with `loading="lazy"`. The browser defers loading until the iframe scrolls near the viewport. Once visible, the full YouTube player initializes (scripts, styles, and all).
 
 <Note>
 On a page with one or two Shorts, the difference is negligible. On a page with many Shorts, the extra iframes add real weight. If you're embedding more than three or four Shorts on one page, consider linking to them instead or placing them behind a tab to keep the initial load lean.

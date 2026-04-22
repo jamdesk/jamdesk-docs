@@ -16,7 +16,7 @@
 
 # Jamdesk Documentation
 
-Source files for the [Jamdesk documentation](https://www.jamdesk.com/docs) site. This repo contains the MDX content, not the Jamdesk platform source code. It also serves as a working example of a Jamdesk project — the same `docs.json` + `.mdx` files structure that any Jamdesk user would create.
+Source files for the [Jamdesk documentation](https://www.jamdesk.com/docs) site. This repo contains the MDX content, not the Jamdesk platform source code. It also serves as a working example of a Jamdesk project: the same `docs.json` + `.mdx` files structure that any Jamdesk user would create.
 
 [Jamdesk](https://www.jamdesk.com) is a documentation platform that builds docs sites from MDX files in a GitHub repo. Push and your site deploys to a global CDN. It supports OpenAPI specs, AI chat (RAG + Claude), MCP server integration, automatic `llms.txt` generation, built-in analytics, and custom domains.
 
@@ -62,7 +62,7 @@ The dev server starts at `http://localhost:3000` with hot reload.
 
 ## Contributing
 
-Contributions are welcome — typo fixes, clarifications, new examples, or missing docs.
+Contributions are welcome: typo fixes, clarifications, new examples, or missing docs.
 
 **Quick edits:** Click the pencil icon on any file in GitHub to edit directly. Changes auto-deploy when merged.
 
@@ -78,7 +78,7 @@ Contributions are welcome — typo fixes, clarifications, new examples, or missi
 
 ### Writing Guidelines
 
-- Start with **why**, then show **how** — include working examples
+- Start with **why**, then show **how**; include working examples
 - Use MDX components: `<Steps>`, `<Tabs>`, `<Card>`, `<Callout>`, `<Accordion>`, `<Code>`
 - Link related pages at the bottom with "What's Next?" cards
 - Page paths in `docs.json` navigation omit the `.mdx` extension
@@ -91,7 +91,7 @@ Contributions are welcome — typo fixes, clarifications, new examples, or missi
 
 ## Configuration
 
-All site configuration lives in [`docs.json`](docs.json) — navigation structure, theme, colors, API settings, redirects, and integrations. The schema is published at [`jamdesk.com/docs.json`](https://www.jamdesk.com/docs.json) and can be referenced with `"$schema": "https://www.jamdesk.com/docs.json"` for editor autocompletion. See the [docs.json reference](https://www.jamdesk.com/docs/reference/docs-json-reference) for full documentation.
+All site configuration lives in [`docs.json`](docs.json): navigation structure, theme, colors, API settings, redirects, and integrations. The schema is published at [`jamdesk.com/docs.json`](https://www.jamdesk.com/docs.json) and can be referenced with `"$schema": "https://www.jamdesk.com/docs.json"` for editor autocompletion. See the [docs.json reference](https://www.jamdesk.com/docs/reference/docs-json-reference) for full documentation.
 
 ## Links
 
