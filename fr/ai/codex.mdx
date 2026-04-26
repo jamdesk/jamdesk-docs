@@ -1,0 +1,159 @@
+---
+title: Codex
+description: Configurez OpenAI Codex pour rédiger la documentation Jamdesk avec les instructions AGENTS.md et l'accès au serveur MCP.
+---
+
+[Codex](https://openai.com/index/introducing-codex/) est l'agent de codage cloud d'OpenAI. Il fonctionne directement avec les dépôts GitHub, ce qui vous permet de le pointer vers votre documentation et de lui demander de rédiger ou mettre à jour des pages sans configuration locale.
+
+## Configuration rapide
+
+<Steps>
+  <Step title="Ouvrez votre dépôt">
+    Naviguez vers votre dépôt de documentation Jamdesk dans Codex. Codex fonctionne directement avec les dépôts GitHub.
+  </Step>
+  <Step title="Ajoutez les instructions de l'agent">
+    Créez un fichier `AGENTS.md` à la racine de votre projet avec les standards de documentation afin que Codex suive vos conventions.
+  </Step>
+  <Step title="Connectez le serveur MCP">
+    Ajoutez l'endpoint MCP de votre documentation à `.codex/config.toml` pour que Codex puisse rechercher dans votre documentation publiée.
+  </Step>
+</Steps>
+
+## Modèle AGENTS.md
+
+Créez `AGENTS.md` à la racine de votre projet :
+
+```markdown AGENTS.md
+# Jamdesk Documentation Project
+
+Jamdesk docs project. Pages are MDX (Markdown + React components). Config is in `docs.json`.
+
+## How This Project Works
+
+- `docs.json` — Navigation structure, theme, colors, branding. Pages must be listed here to appear in the sidebar.
+- `*.mdx` files — Documentation pages. Every page needs `title` and `description` frontmatter.
+- `images/` — Static assets. Always use `.webp` format.
+- `snippets/` — Reusable MDX fragments. Import with `<Snippet file="name.mdx" />`.
+
+## Page Template
+
+Every page follows this structure:
+
+    ---
+    title: Clear, Specific Title
+    description: One sentence. Used in search results and social previews.
+    ---
+
+    Opening paragraph — what this page covers and who it's for. No heading needed.
+
+    ## First Section
+
+    Content. Use components where they help, not for decoration.
+
+    ## What's Next?
+
+    <Columns cols={2}>
+      <Card title="Related Page" icon="arrow-right" href="/path">
+        Why the reader would go here next
+      </Card>
+    </Columns>
+
+Key points:
+- The opening paragraph comes right after frontmatter with no heading
+- "What's Next?" is always the last section
+- Card descriptions explain why, not what
+
+## Writing Style
+
+- **Start with why** — What problem does this solve? Then how to use it.
+- **Progressive disclosure** — Simple example first. Advanced options in Accordions or later sections.
+- **Active voice** — "Run this command" not "This command should be run"
+- **One idea per paragraph** — If you need "also" or "additionally", start a new paragraph.
+- **Code examples must work** — Every code block should be complete and copy-pasteable.
+- **Write like a person** — No filler ("It's important to note that", "This allows you to"). No hedging ("you might want to consider"). If it sounds like a chatbot wrote it, rewrite it shorter.
+
+## Components
+
+Only use these — do not invent others:
+
+Layout: Card, Columns, Tabs, Tab, Accordion, AccordionGroup, Steps, Step, Expandable, Frame, CodeGroup
+Callouts: Note, Info, Warning, Tip, Check, Danger
+
+| Use | For | Don't use for |
+|-----|-----|---------------|
+| Tabs | Mutually exclusive choices (npm/yarn, OS) | Sequential content |
+| Steps | Ordered procedures | Unordered lists |
+| Accordion | Optional/advanced detail | Core content |
+| Card + Columns | Navigation links, feature grids | Inline content |
+| Note/Tip/Warning | Important context | Every other paragraph |
+
+Cards always go inside Columns:
+
+    <Columns cols={2}>
+      <Card title="Page Title" icon="icon-name" href="/path">
+        Brief description
+      </Card>
+    </Columns>
+
+Icons are Font Awesome Light names: "rocket", "code", "terminal", "book-open", "gear"
+
+## Adding Pages
+
+1. Create the `.mdx` file
+2. Add the page path (no `.mdx` extension) to `docs.json` in the right navigation group
+3. Link to it from related pages via "What's Next?" cards
+
+If you skip step 2, the page won't show up in the sidebar. Read `docs.json` before creating pages so you understand the navigation structure.
+
+## Common Mistakes
+
+- Inventing components like `<CodeBlock>`, `<Alert>`, `<Section>` — these don't exist
+- Using `<Card>` without a `<Columns>` wrapper
+- Skipping `description` in frontmatter — breaks search results and link previews
+- Using raw HTML tags instead of MDX components
+- Writing "click here" links instead of descriptive link text
+```
+
+<Tip>
+  Ajoutez la terminologie de votre produit, les conventions de nommage de l'API et toute règle de style spécifique à votre documentation.
+</Tip>
+
+## Configuration MCP
+
+Ajoutez l'endpoint de votre documentation à `.codex/config.toml` :
+
+```toml .codex/config.toml
+[mcp_servers.my-docs]
+url = "https://your-project.jamdesk.app/_mcp"
+```
+
+Remplacez `your-project` par votre sous-domaine Jamdesk. Consultez [Serveur MCP](/fr/ai/mcp-server) pour les détails de l'endpoint et la configuration du domaine personnalisé.
+
+## Exemples de prompts
+
+Codex exécute les tâches de manière asynchrone, ce qui le rend adapté aux travaux de documentation par lots :
+
+- **« Rédige la documentation pour l'API d'authentification en te basant sur le code source dans /src/auth »** — Codex lit votre code source et génère les pages correspondantes
+- **« Crée une page de dépannage couvrant les 5 erreurs les plus fréquentes dans nos issues GitHub »** — s'appuie sur le contexte de votre dépôt
+- **« Découpe ce README de 500 lignes en pages de documentation séparées avec une navigation appropriée »** — gère la restructuration multi-fichiers en une seule tâche
+
+## La compétence /update-jamdesk
+
+Pour les mises à jour automatiques de la documentation lors de changements de code, installez la compétence `/update-jamdesk` :
+
+```bash
+npx skills add jamdesk/skills --skill update-jamdesk -a codex
+```
+
+Consultez [Mises à jour automatisées](/fr/ai/automated-updates) pour le guide complet.
+
+## Et ensuite ?
+
+<Columns cols={2}>
+  <Card title="Rédiger avec l'IA" icon="wand-magic-sparkles" href="/fr/ai/writing-with-ai">
+    Stratégies de prompting qui fonctionnent avec tous les outils
+  </Card>
+  <Card title="Claude Code" icon="terminal" href="/fr/ai/claude-code">
+    Modèle CLAUDE.md et workflows avec contexte de projet complet
+  </Card>
+</Columns>

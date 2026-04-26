@@ -1,0 +1,190 @@
+---
+title: Rédiger avec l'IA
+description: Stratégies pratiques pour rédiger la documentation Jamdesk avec des outils d'IA. Couvre les prompts efficaces, les listes de vérification et les erreurs courantes.
+---
+
+Ces stratégies fonctionnent quel que soit l'outil d'IA utilisé : Claude Code, Cursor, Codex, Copilot, ou tout autre. Pour la configuration spécifique à chaque outil, voir [Claude Code](/fr/ai/claude-code), [Cursor](/fr/ai/cursor), ou [Codex](/fr/ai/codex).
+
+## Pourquoi MDX fonctionne bien avec l'IA
+
+MDX est l'un des formats les plus faciles à utiliser pour les outils d'IA :
+
+- Syntaxe familière : les modèles d'IA sont entraînés sur des millions de fichiers Markdown, ils produisent donc du MDX valide avec un minimum de prompting.
+- Composants structurés : `<Card>`, `<Steps>` et `<Tabs>` ont des patterns prévisibles que les modèles apprennent rapidement.
+- Texte brut : pas de formats binaires, pas de schémas propriétaires, pas d'artefacts de build à interpréter.
+
+## Écrire de meilleurs prompts
+
+La différence entre une documentation IA médiocre et une bonne documentation réside généralement dans le prompt. Soyez précis sur ce que vous voulez.
+
+<Tabs>
+  <Tab title="Prompts faibles">
+    ```text
+    Write docs for the webhook feature.
+    ```
+
+    ```text
+    Document authentication.
+    ```
+
+    ```text
+    Create a getting started guide.
+    ```
+
+    Ces prompts produisent un résultat générique et superflu car l'IA n'a pas de contraintes.
+  </Tab>
+  <Tab title="Prompts forts">
+    ```text
+    Write a page documenting our webhook feature. The reader is a developer
+    integrating webhooks for the first time. Start with a 3-step quickstart,
+    then cover payload format and retry behavior. Reference /src/webhooks
+    for the implementation.
+    ```
+
+    ```text
+    Add a troubleshooting section to the authentication page. Cover these
+    three errors: expired tokens, missing scopes, and rate limits. Use
+    Accordions for each error. Keep each answer under 4 lines.
+    ```
+
+    ```text
+    Create a getting started guide that gets the reader from zero to a
+    working hello-world in under 2 minutes. No theory, no background.
+    Jump straight into the install command.
+    ```
+
+    Les contraintes produisent un résultat ciblé. Indiquez à l'IA qui est le lecteur, quelle structure utiliser, et ce qu'il faut omettre.
+  </Tab>
+</Tabs>
+
+### Patterns de prompting efficaces
+
+| Pattern | Exemple |
+|---------|---------|
+| **Préciser le lecteur** | "The reader is a backend developer who has never used our API" |
+| **Nommer la structure** | "Use Steps for the setup flow, then Tabs for language variants" |
+| **Définir des limites de longueur** | "Keep the intro under 2 sentences" ou "Each accordion answer should be 3-4 lines" |
+| **Pointer vers le code source** | "Reference the implementation in /src/auth for accuracy" |
+| **Dire ce qu'il faut omettre** | "Don't explain what REST is. Skip the theory." |
+| **Donner une page d'exemple** | "Match the tone and structure of /quickstart" |
+
+## Réviser le résultat de l'IA
+
+Les outils d'IA produisent du MDX structurellement correct la plupart du temps. Les problèmes plus subtils concernent le ton, l'exactitude et la verbosité. Parcourez cette liste de vérification avant de committer.
+
+### Vérification du ton
+
+Lisez le résultat à voix haute. Si ça ressemble à un chatbot, réécrivez. Surveillez :
+
+- Les phrases de remplissage : "It's important to note that", "This allows you to", "In order to"
+- Les formulations évasives : "You might want to consider", "It's generally recommended"
+- Les transitions vides : "Now that we've covered X, let's move on to Y"
+- Les mots à la mode : "seamlessly", "robust", "leverage", "streamline"
+
+Supprimez-les. La page sera plus courte et meilleure.
+
+### Vérification de l'exactitude
+
+Les outils d'IA produisent des informations erronées avec assurance. Vérifiez :
+
+- Les exemples de code fonctionnent-ils réellement ? Copiez-les et exécutez-les.
+- Les options de configuration sont-elles réelles ? Vérifiez dans le code source.
+- Les noms des composants sont-ils corrects ? N'utilisez que les [composants qui existent](/fr/components/overview).
+- La page décrit-elle le comportement actuel, et non des fonctionnalités aspirationnelles ?
+
+### Vérification de la structure
+
+- [ ] Le frontmatter contient `title` et `description`
+- [ ] Le paragraphe d'introduction existe sans titre avant lui
+- [ ] La page se termine par des cartes "Étapes suivantes" dans un wrapper `<Columns>`
+- [ ] Les nouvelles pages sont ajoutées à la navigation `docs.json`
+- [ ] Aucun composant inventé ; uniquement ceux de la [référence des composants](/fr/components/overview)
+
+## Erreurs courantes de l'IA
+
+Ces erreurs apparaissent assez souvent pour mériter attention :
+
+<AccordionGroup>
+  <Accordion title="Inventer des composants qui n'existent pas">
+    Les outils d'IA génèrent `<CodeBlock>`, `<Alert>`, `<Section>`, `<Callout>` et d'autres composants qui n'existent pas dans Jamdesk. Tenez-vous aux composants listés dans l'[overview](/fr/components/overview).
+  </Accordion>
+  <Accordion title="Oublier la navigation docs.json">
+    Créer une page sans l'ajouter à `docs.json` est l'erreur la plus courante. La page existera mais n'apparaîtra pas dans la barre latérale. Mettez toujours à jour la navigation lors de la création de pages.
+  </Accordion>
+  <Accordion title="Surutiliser les callouts">
+    Les outils d'IA adorent encadrer chaque second paragraphe dans une `<Note>` ou un `<Warning>`. Un ou deux callouts par page suffisent. Si tout est important, rien ne l'est.
+  </Accordion>
+  <Accordion title="Écrire trop">
+    Une page de 200 lignes générée par IA contient généralement 100 lignes de contenu réel. Cherchez les explications répétées, le contexte inutile et les paragraphes qui disent la même chose avec des mots différents. Coupez sans hésiter.
+  </Accordion>
+  <Accordion title="Descriptions génériques">
+    "This powerful feature allows you to..." ne dit rien au lecteur. Remplacez par ce que ça fait réellement : "Send HTTP POST requests to your endpoint when events fire."
+  </Accordion>
+</AccordionGroup>
+
+## Maintenir la documentation à jour
+
+La partie difficile n'est pas d'écrire la documentation. C'est de la maintenir à jour lorsque le code change.
+
+<Tabs>
+  <Tab title="Prompting manuel">
+    Après avoir livré une fonctionnalité, utilisez ce prompt avec votre outil d'IA :
+
+    ```text
+    I just added [feature]. Update the docs to reflect this change.
+    Reference the implementation in /src/[file] for accuracy.
+    ```
+  </Tab>
+  <Tab title="Automatisé avec /update-jamdesk">
+    Le skill `/update-jamdesk` pour Claude Code analyse vos changements de code et génère les mises à jour de documentation correspondantes. Exécutez-le après avoir implémenté des fonctionnalités visibles par les utilisateurs :
+
+    ```text
+    /update-jamdesk
+    ```
+
+    Voir [Mises à jour automatisées](/fr/ai/automated-updates) pour la configuration complète.
+  </Tab>
+</Tabs>
+
+## Squelette de page
+
+Utilisez ceci comme prompt de départ lorsque vous demandez à l'IA de créer une nouvelle page :
+
+```mdx
+---
+title: Feature Name
+description: One sentence summarizing what this page covers.
+---
+
+Opening paragraph: what problem this solves and who should read this.
+
+## Quick Start
+
+<Steps>
+  <Step title="First step">What to do.</Step>
+  <Step title="Second step">What to do next.</Step>
+</Steps>
+
+## How It Works
+
+Explain the mechanics. Use code examples.
+
+## What's Next?
+
+<Columns cols={2}>
+  <Card title="Related Page" icon="arrow-right" href="/path">
+    Why the reader would go here next
+  </Card>
+</Columns>
+```
+
+## Étapes suivantes
+
+<Columns cols={2}>
+  <Card title="Mises à jour automatisées" icon="rotate" href="/fr/ai/automated-updates">
+    Exécutez `/update-jamdesk` pour générer de la documentation à partir des changements de code
+  </Card>
+  <Card title="Composants MDX" icon="puzzle-piece" href="/fr/components/overview">
+    Référence complète des composants disponibles
+  </Card>
+</Columns>

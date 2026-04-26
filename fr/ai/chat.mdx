@@ -1,0 +1,121 @@
+---
+title: AI Chat
+sidebarTitle: AI Chat
+description: Chaque site de documentation Jamdesk inclut un assistant de chat IA intégré. Les visiteurs posent des questions et obtiennent des réponses avec des citations de votre documentation.
+---
+
+Chaque site Jamdesk inclut un assistant de chat qui répond aux questions des visiteurs à partir de votre documentation. Il récupère les sections pertinentes, les envoie à Claude et diffuse une réponse avec des liens vers les pages sources. Le chat est activé par défaut sur tous les plans sans coût supplémentaire.
+
+![Panneau AI Chat affichant une conversation avec des liens de citation](/images/ai/chat-conversation.webp)
+
+Les captures d'écran montrent l'interface en anglais.
+
+## Cas d'utilisation
+
+<Tabs>
+  <Tab title="Intégration API">
+    Un développeur intégrant votre API demande *« Comment authentifier les requêtes ? »* et obtient les étapes exactes avec un exemple de code, ainsi qu'un lien vers la page source.
+  </Tab>
+  <Tab title="Dépannage">
+    *« Mon build échoue avec une erreur de délai d'attente »*
+
+    Au lieu de parcourir plusieurs pages, le visiteur obtient en quelques secondes la solution pertinente depuis votre guide de dépannage.
+  </Tab>
+  <Tab title="Référence rapide">
+    Les utilisateurs réguliers posent des questions comme *« Quels paramètres accepte l'endpoint /users ? »* — le chat récupère la documentation de l'endpoint et retourne directement le tableau de paramètres.
+  </Tab>
+</Tabs>
+
+## Fonctionnement
+
+<Steps>
+  <Step title="Le build indexe votre documentation">
+    À chaque build, Jamdesk divise vos pages en sections et les stocke sous forme d'embeddings consultables.
+  </Step>
+  <Step title="Le visiteur pose une question">
+    Le bouton « Ask AI » (ou Cmd+I / Ctrl+I) ouvre un panneau de chat sur n'importe quelle page.
+  </Step>
+  <Step title="L'IA répond à partir de votre documentation">
+    Les sections pertinentes sont récupérées, envoyées à Claude comme contexte, et la réponse est diffusée avec des liens de citation vers les pages sources.
+  </Step>
+</Steps>
+
+## Fonctionnalités
+
+| Fonctionnalité | Détail |
+|---------|--------|
+| Réponses en streaming | Les réponses arrivent en temps réel |
+| Liens de citation | Chaque réponse renvoie vers les pages de documentation dont elle est issue |
+| Désambiguïsation | Lorsqu'une question correspond à plusieurs sujets, l'IA demande lequel le visiteur souhaite explorer |
+| Contexte de conversation | Historique de 10 messages, persisté par onglet de navigateur |
+| Questions de démarrage | Auto-générées à partir de votre documentation, ou définies manuellement dans docs.json |
+| Raccourcis clavier | Cmd+I / Ctrl+I pour afficher/masquer, Échap pour fermer |
+| Rendu Markdown | Les blocs de code, tableaux et listes s'affichent dans les réponses |
+
+![Panneau de chat vide avec des questions de démarrage](/images/ai/chat-panel.webp)
+
+## Configuration
+
+```json docs.json
+{
+  "chat": {
+    "enabled": true,
+    "starterQuestions": [
+      "How do I get started?",
+      "What API endpoints are available?"
+    ]
+  }
+}
+```
+
+| Champ | Type | Défaut | Description |
+|-------|------|---------|-------------|
+| `enabled` | boolean | `true` | Définir à `false` pour supprimer le panneau de chat et le raccourci clavier de votre site |
+| `starterQuestions` | string[] | auto-générées | Jusqu'à 4 questions affichées à l'ouverture du panneau (5 à 200 caractères chacune). Auto-générées lors des builds si omises. Définir à `[]` pour n'en afficher aucune |
+
+<Note>
+Le chat est activé par défaut. Vous n'avez besoin du champ `chat` dans docs.json que pour personnaliser les questions de démarrage ou désactiver le chat entièrement.
+</Note>
+
+Pour désactiver le chat, définissez `enabled` à `false` :
+
+```json docs.json
+{
+  "chat": {
+    "enabled": false
+  }
+}
+```
+
+## Limites
+
+| Limite | Valeur |
+|-------|-------|
+| Longueur maximale d'un message | 2 000 caractères |
+| Longueur maximale d'une réponse | 2 048 tokens |
+| Limite de débit | 10 requêtes / 60 secondes par visiteur par site |
+| Historique de conversation | 10 messages par onglet |
+| Questions de démarrage | 4 maximum |
+
+Le chat fonctionne sur les [domaines personnalisés](/fr/deploy/custom-domains). L'endpoint `/_chat` est same-origin, il fonctionne donc sur tout domaine depuis lequel votre documentation est servie.
+
+<Accordion title="Fonctionnement du pipeline de récupération">
+  À chaque build, Jamdesk divise vos pages en sections et stocke des embeddings vectoriels pour chacune. Lorsqu'un visiteur pose une question, le système effectue une recherche hybride (correspondance par mots-clés combinée à une similarité sémantique) pour trouver les sections les plus pertinentes dans votre documentation. Ces sections sont envoyées à Claude comme contexte avec des instructions pour répondre uniquement à partir de la documentation fournie. Les citations sont extraites en faisant correspondre les références de pages dans la réponse de Claude avec les sections récupérées.
+</Accordion>
+
+## Et ensuite ?
+
+<Columns cols={2}>
+  <Card title="llms.txt" icon="file-lines" href="/fr/ai/llms-txt">
+    Index de pages auto-généré pour les outils IA
+  </Card>
+  <Card title="MCP Server" icon="robot" href="/fr/ai/mcp-server">
+    Permettez aux outils IA de rechercher et d'interroger votre documentation de manière programmatique
+  </Card>
+  <Card title="Référence docs.json" icon="file-lines" href="/fr/config/docs-json-reference">
+    Tous les champs de configuration, y compris les paramètres de chat
+  </Card>
+  <Card title="Fonctionnement de Jamdesk" icon="gear" href="/fr/how-jamdesk-works">
+    Le pipeline de build qui alimente l'indexation du chat
+  </Card>
+</Columns>

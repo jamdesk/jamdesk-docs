@@ -1,0 +1,245 @@
+---
+title: Mises à jour automatiques de la documentation
+description: Maintenez la documentation synchronisée avec votre code grâce au skill /update-jamdesk pour Claude Code. Mettez automatiquement à jour la documentation lorsque vous implémentez des fonctionnalités.
+---
+
+Le skill `/update-jamdesk` pour Claude Code surveille vos modifications de code et génère les mises à jour de documentation correspondantes. Après avoir livré une fonctionnalité visible par les utilisateurs, exécutez le skill et il déterminera quelles pages de documentation doivent être créées ou modifiées.
+
+<Note>
+**Vous cherchez des conseils généraux sur la rédaction avec l'IA ?** Cette page couvre le skill `/update-jamdesk` pour les mises à jour automatiques de la documentation. Pour la configuration des outils, consultez [Claude Code](/fr/ai/claude-code). Pour des conseils plus généraux sur l'utilisation des outils IA pour rédiger de la documentation, consultez [Rédiger avec l'IA](/fr/ai/writing-with-ai).
+</Note>
+
+## Quand l'utiliser
+
+**À utiliser lorsque :** Vous avez apporté des modifications visibles par les utilisateurs aux API, commandes CLI, interface utilisateur, options de configuration, ou au comportement des composants.
+
+**À ignorer lorsque :** Refactorisations internes, modifications uniquement liées aux tests, configuration build/CI, ou travaux de performance sans changement de comportement — ceux-ci ne nécessitent pas de documentation utilisateur.
+
+## Prérequis
+
+- [Claude Code](https://claude.ai/code) installé et configuré
+- Un projet de documentation Jamdesk avec `docs.json`
+- Optionnel : [CLI Jamdesk](/fr/cli/overview) pour la vérification (`npm install -g jamdesk`)
+
+## Démarrage rapide
+
+<Steps>
+  <Step title="Créer le fichier de configuration">
+    Créez un fichier `.jamdesk-docs-path` dans votre dépôt de code pointant vers votre documentation :
+
+    ```yaml .jamdesk-docs-path
+    docs_path: ../my-docs
+    ```
+
+    Le chemin peut être relatif (depuis le fichier de configuration) ou absolu.
+  </Step>
+  <Step title="Exécuter le skill">
+    Après avoir implémenté une fonctionnalité, exécutez :
+
+    ```text
+    /update-jamdesk
+    ```
+
+    Claude analysera vos modifications et posera des questions de clarification avant de rédiger la documentation.
+  </Step>
+  <Step title="Réviser et valider">
+    Révisez la documentation générée, puis Claude la vérifiera avec `jamdesk validate` et `jamdesk broken-links` avant de valider.
+  </Step>
+</Steps>
+
+## Format du fichier de configuration
+
+Le fichier `.jamdesk-docs-path` indique à Claude où se trouve votre documentation.
+
+**Format simple** - juste le chemin :
+
+```text
+../my-docs
+```
+
+**Format complet** - avec options :
+
+```yaml .jamdesk-docs-path
+# Path to documentation repository
+docs_path: ../my-docs
+
+# Optional: Branch for doc updates (default: main)
+docs_branch: main
+```
+
+<Note>
+  Le fichier de configuration est découvert en remontant depuis votre répertoire courant jusqu'à la racine git. Placez-le à la racine de votre dépôt pour de meilleurs résultats.
+</Note>
+
+## Comment ça fonctionne
+
+Lorsque vous exécutez `/update-jamdesk`, Claude :
+
+1. **Localise votre documentation** - Trouve le fichier de configuration `.jamdesk-docs-path`
+2. **Pose des questions** - Clarifie la stratégie de branche, la portée et le contenu
+3. **Analyse la documentation existante** - Recherche le contenu associé à mettre à jour ou à enrichir
+4. **Rédige la documentation** - Crée ou met à jour des pages en suivant les standards Jamdesk, avec des exemples simples en premier
+5. **Révise le ton** - Vérifie la présence de formulations IA dans le résultat. Claude écrit mieux avec un CLAUDE.md qui définit la voix (voir [Claude Code](/fr/ai/claude-code))
+6. **Vérifie** - Exécute `jamdesk validate` et `jamdesk broken-links`
+7. **Valide** - Prépare les modifications et propose de les valider/pousser/créer une PR
+
+<Tip>
+  Les modifications ne vous conviennent pas ? Exécutez `git checkout .` avant de valider pour annuler toutes les modifications.
+</Tip>
+
+<Accordion title="Comment Claude décide ce qu'il faut créer ou mettre à jour">
+  | Scénario | Action |
+  |----------|--------|
+  | Nouvelle fonctionnalité | Créer une nouvelle page |
+  | Changement de comportement | Mettre à jour la page existante |
+  | Ajout mineur | Ajouter une section à la page existante |
+  | Capacité majeure | Nouvelle page autonome |
+  | Dépréciation/suppression | Mettre à jour l'existant + ajouter des notes de migration |
+</Accordion>
+
+## Exemple de session
+
+```text
+User: I just added a webhook feature. Can you document it?
+
+Claude: I'm using the update-jamdesk skill to update your documentation.
+
+Found .jamdesk-docs-path: ../customer-docs
+
+How should I handle changes to the docs repository?
+1. Create a new feature branch (recommended)
+2. Update directly on main
+3. Use current branch
+
+User: 1
+
+Claude: Based on the webhook implementation, I plan to:
+- Create: webhooks/overview.mdx
+- Update: getting-started.mdx (add link)
+
+Any changes to this plan?
+
+User: Looks good
+
+Claude: [Creates documentation...]
+
+✓ jamdesk validate passed
+✓ jamdesk broken-links passed
+
+Commit these changes?
+```
+
+## Mode preview
+
+Exécutez avec `--preview` pour voir ce qui changerait sans effectuer de modifications :
+
+```text
+/update-jamdesk --preview
+```
+
+Le mode preview vous permet de :
+- Vérifier quelle documentation doit être mise à jour
+- Réviser les modifications proposées avant de valider
+- Voir l'analyse du skill sans effets secondaires
+
+## Suggestions proactives
+
+Après avoir validé des modifications de code visibles par les utilisateurs, Claude peut suggérer :
+
+```text
+Tip: These changes affect user-facing features.
+Run /update-jamdesk to update your documentation.
+```
+
+Ceci apparaît lorsque :
+- Vous avez un fichier de configuration `.jamdesk-docs-path`, ET
+- Votre commit inclut des fichiers correspondant aux patterns visibles par les utilisateurs (API, CLI, composants)
+
+## Installer le skill
+
+Installez le skill `/update-jamdesk` avec le CLI skills :
+
+```bash
+npx skills add jamdesk/skills --skill update-jamdesk
+```
+
+Cela installe le skill dans `.claude/skills/update-jamdesk/` de votre projet.
+
+<Tabs>
+  <Tab title="Installation dans le projet (par défaut)">
+    Installe dans votre répertoire de projet courant :
+
+    ```bash
+    npx skills add jamdesk/skills --skill update-jamdesk
+    ```
+
+    Le skill est disponible lorsque vous travaillez dans ce projet.
+  </Tab>
+  <Tab title="Installation globale">
+    Installe dans votre répertoire personnel pour une utilisation dans tous les projets :
+
+    ```bash
+    npx skills add jamdesk/skills --skill update-jamdesk -g
+    ```
+
+    Le skill est disponible dans n'importe quel projet.
+  </Tab>
+  <Tab title="Autres agents">
+    Installez dans Cursor, Codex, Windsurf, ou d'autres agents supportés :
+
+    ```bash
+    # Install to Cursor
+    npx skills add jamdesk/skills --skill update-jamdesk -a cursor
+
+    # Install to multiple agents
+    npx skills add jamdesk/skills --skill update-jamdesk -a claude-code -a cursor
+    ```
+
+    Exécutez `npx skills add --help` pour voir tous les agents supportés.
+  </Tab>
+</Tabs>
+
+### Lister les skills disponibles
+
+Voir tous les skills Jamdesk :
+
+```bash
+npx skills add jamdesk/skills --list
+```
+
+### Mise à jour
+
+Réexécutez la commande d'installation pour obtenir la dernière version :
+
+```bash
+npx skills add jamdesk/skills --skill update-jamdesk
+```
+
+<Note>
+  Après l'installation ou la mise à jour, redémarrez Claude Code ou démarrez une nouvelle session pour que les modifications prennent effet.
+</Note>
+
+## Dépannage
+
+<Accordion title="Skill non reconnu">
+  Assurez-vous que le fichier skill se trouve à `.claude/skills/update-jamdesk/SKILL.md` et redémarrez votre session Claude Code.
+</Accordion>
+
+<Accordion title="Fichier de configuration introuvable">
+  Créez `.jamdesk-docs-path` à la racine de votre dépôt avec le chemin vers votre répertoire de documentation. Le skill recherche depuis votre répertoire courant jusqu'à la racine git.
+</Accordion>
+
+<Accordion title="CLI jamdesk non installé">
+  Installez avec `npm install -g jamdesk`. Le skill fonctionnera sans lui, mais n'exécutera pas la validation automatique.
+</Accordion>
+
+## Et ensuite ?
+
+<Columns cols={2}>
+  <Card title="Serveur MCP" icon="robot" href="/fr/ai/mcp-server">
+    Connectez des assistants IA directement à votre documentation
+  </Card>
+  <Card title="Aperçu du CLI" icon="terminal" href="/fr/cli/overview">
+    Découvrez le CLI jamdesk pour le développement local
+  </Card>
+</Columns>

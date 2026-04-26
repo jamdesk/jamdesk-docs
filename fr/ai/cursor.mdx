@@ -1,0 +1,139 @@
+---
+title: Cursor
+description: "Configurez Cursor IDE pour rédiger de la documentation Jamdesk avec des règles de formatage MDX, l'autocomplétion des composants et l'accès au serveur MCP pour le contexte des docs en direct."
+---
+
+[Cursor](https://cursor.com) est un éditeur de code IA basé sur VS Code. Son édition en ligne (Cmd+K) et son chat (Cmd+L) fonctionnent bien pour la rédaction MDX itérative — sélectionnez un paragraphe, décrivez ce que vous souhaitez, et Cursor le réécrit en place.
+
+## Configuration rapide
+
+<Steps>
+  <Step title="Ouvrez votre projet de documentation">
+    Ouvrez votre répertoire de documentation Jamdesk dans Cursor.
+  </Step>
+  <Step title="Ajoutez des règles Cursor">
+    Créez `.cursor/rules/jamdesk-docs.mdc` avec les normes de documentation afin que l'IA de Cursor suive vos conventions.
+  </Step>
+  <Step title="Connectez le serveur MCP">
+    Ajoutez votre endpoint MCP de documentation à `.cursor/mcp.json` pour que Cursor puisse effectuer des recherches dans votre documentation publiée.
+  </Step>
+</Steps>
+
+## Modèle de règles Cursor
+
+Créez `.cursor/rules/jamdesk-docs.mdc` à la racine de votre projet :
+
+```markdown .cursor/rules/jamdesk-docs.mdc
+---
+description: Rules for writing Jamdesk documentation in MDX
+globs: "**/*.mdx"
+---
+
+# Jamdesk MDX Rules
+
+## Page Structure
+
+Every page follows this pattern — no exceptions:
+
+1. Frontmatter with `title` and `description`
+2. Opening paragraph (no heading before it)
+3. Content sections with ## headings
+4. "What's Next?" section at the end with Card links inside Columns
+
+## Components
+
+Only use these — do not invent others:
+
+Layout: Card, Columns, Tabs, Tab, Accordion, AccordionGroup, Steps, Step, Expandable, Frame, CodeGroup
+Callouts: Note, Info, Warning, Tip, Check, Danger
+
+| Use | For |
+|-----|-----|
+| Tabs | Mutually exclusive choices (npm/yarn, OS variants) |
+| Steps | Ordered procedures the reader follows |
+| Accordion | Optional detail that would clutter the page |
+| Card + Columns | Navigation links and feature grids |
+| Note/Tip/Warning | Important context — use sparingly |
+
+Cards always go inside Columns: `<Columns cols={2}><Card ... /></Columns>`
+Icons are Font Awesome Light names: "rocket", "code", "terminal", "book-open"
+
+## Style
+
+- Active voice: "Run this command" not "This command should be run"
+- Start with why, then how
+- One idea per paragraph
+- Code examples must be complete and copy-pasteable
+- Write like a person — no filler ("It's important to note"), no hedging ("you might want to consider"). If it sounds like a chatbot, rewrite it shorter.
+
+## Common Mistakes
+
+- `<CodeBlock>`, `<Alert>`, `<Section>` don't exist — use the components listed above
+- `<Card>` without `<Columns>` wrapper won't render correctly
+- Missing `description` in frontmatter breaks search and link previews
+- Raw HTML tags should be MDX components instead
+
+## New Pages
+
+When creating a page, add it to `docs.json` navigation. Without this, the page won't appear in the sidebar. Read `docs.json` first to understand the group structure.
+```
+
+## Configuration MCP
+
+Créez `.cursor/mcp.json` pour connecter votre documentation publiée :
+
+```json .cursor/mcp.json
+{
+  "mcpServers": {
+    "my-docs": {
+      "url": "https://your-project.jamdesk.app/_mcp"
+    }
+  }
+}
+```
+
+Remplacez `your-project` par votre sous-domaine Jamdesk. Consultez [Serveur MCP](/fr/ai/mcp-server) pour les détails de l'endpoint et la configuration des domaines personnalisés.
+
+## Workflows
+
+<Tabs>
+  <Tab title="Édition en ligne (Cmd+K)">
+    Sélectionnez du texte dans un fichier MDX et appuyez sur **Cmd+K** pour décrire ce que vous souhaitez modifier. Fonctionne bien pour :
+    - Réécrire une section pour plus de clarté
+    - Ajouter un exemple de code
+    - Convertir du texte en composant (ex. : envelopper des étapes dans `<Steps>`)
+  </Tab>
+  <Tab title="Chat (Cmd+L)">
+    Ouvrez le chat avec **Cmd+L** et posez des questions avec votre documentation comme contexte :
+    - "Quels composants sont disponibles pour cette page ?"
+    - "Rédige une section de dépannage pour [fonctionnalité]"
+    - "Passe en revue cette page par rapport à nos normes de rédaction"
+  </Tab>
+  <Tab title="Composer">
+    Utilisez Composer pour les tâches de documentation multi-fichiers :
+    - Générer une nouvelle section avec plusieurs pages
+    - Restructurer la navigation sur plusieurs fichiers
+    - Mettre à jour en masse les patterns d'utilisation des composants
+  </Tab>
+</Tabs>
+
+## La compétence /update-jamdesk
+
+Pour les mises à jour automatiques de la documentation lors de changements de code, installez la compétence `/update-jamdesk` :
+
+```bash
+npx skills add jamdesk/skills --skill update-jamdesk -a cursor
+```
+
+Consultez [Mises à jour automatiques](/fr/ai/automated-updates) pour le guide complet.
+
+## Et ensuite ?
+
+<Columns cols={2}>
+  <Card title="Claude Code" icon="terminal" href="/fr/ai/claude-code">
+    Modèle CLAUDE.md et workflows de contexte pour l'ensemble du projet
+  </Card>
+  <Card title="Rédiger avec l'IA" icon="wand-magic-sparkles" href="/fr/ai/writing-with-ai">
+    Prompts efficaces, listes de vérification et erreurs courantes
+  </Card>
+</Columns>
