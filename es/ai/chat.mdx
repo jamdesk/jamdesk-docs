@@ -1,0 +1,121 @@
+---
+title: Chat con IA
+sidebarTitle: Chat con IA
+description: Cada sitio de documentación de Jamdesk incluye un asistente de chat con IA integrado. Los visitantes hacen preguntas y obtienen respuestas con citas de tu documentación.
+---
+
+Cada sitio de Jamdesk incluye un asistente de chat que responde las preguntas de los visitantes a partir de tu documentación. Recupera las secciones relevantes, las envía a Claude y transmite una respuesta con enlaces a las páginas fuente. El chat está habilitado de forma predeterminada en todos los planes sin costo adicional.
+
+![Panel de Chat con IA mostrando una conversación con enlaces de citas](/images/ai/chat-conversation.webp)
+
+Las capturas de pantalla muestran la interfaz en inglés.
+
+## Casos de uso
+
+<Tabs>
+  <Tab title="Incorporación a la API">
+    Un desarrollador que integra tu API pregunta *"¿Cómo autentico las solicitudes?"* y recibe los pasos exactos con un ejemplo de código, más un enlace a la página fuente.
+  </Tab>
+  <Tab title="Solución de problemas">
+    *"Mi build está fallando con un error de tiempo de espera"*
+
+    En lugar de revisar varias páginas, el visitante obtiene la solución relevante de tu guía de solución de problemas en segundos.
+  </Tab>
+  <Tab title="Referencia rápida">
+    Los usuarios que regresan preguntan cosas como *"¿Qué parámetros acepta el endpoint /users?"* — el chat obtiene la documentación del endpoint y devuelve la tabla de parámetros directamente.
+  </Tab>
+</Tabs>
+
+## Cómo funciona
+
+<Steps>
+  <Step title="El build indexa tu documentación">
+    Durante cada build, Jamdesk divide tus páginas en secciones y las almacena como embeddings buscables.
+  </Step>
+  <Step title="El visitante hace una pregunta">
+    El botón "Preguntar a la IA" (o Cmd+I / Ctrl+I) abre un panel de chat en cualquier página.
+  </Step>
+  <Step title="La IA responde desde tu documentación">
+    Se recuperan las secciones relevantes, se envían a Claude como contexto y la respuesta se transmite con enlaces de citas a las páginas fuente.
+  </Step>
+</Steps>
+
+## Características
+
+| Característica | Detalle |
+|---------|--------|
+| Respuestas en streaming | Las respuestas llegan en tiempo real |
+| Enlaces de citas | Cada respuesta enlaza a las páginas de documentación de las que se obtuvo |
+| Desambiguación | Cuando una pregunta coincide con varios temas, la IA pregunta cuál quiere el visitante |
+| Contexto de conversación | Historial de 10 mensajes, persistido por pestaña del navegador |
+| Preguntas iniciales | Generadas automáticamente desde tu documentación, o define las tuyas en docs.json |
+| Atajos de teclado | Cmd+I / Ctrl+I para alternar, Escape para cerrar |
+| Renderizado Markdown | Bloques de código, tablas y listas se renderizan dentro de las respuestas |
+
+![Panel de chat en estado vacío con preguntas iniciales](/images/ai/chat-panel.webp)
+
+## Configuración
+
+```json docs.json
+{
+  "chat": {
+    "enabled": true,
+    "starterQuestions": [
+      "How do I get started?",
+      "What API endpoints are available?"
+    ]
+  }
+}
+```
+
+| Campo | Tipo | Predeterminado | Descripción |
+|-------|------|---------|-------------|
+| `enabled` | boolean | `true` | Establece `false` para eliminar el panel de chat y el atajo de teclado de tu sitio |
+| `starterQuestions` | string[] | generado automáticamente | Hasta 4 preguntas que se muestran al abrir el panel (entre 5 y 200 caracteres cada una). Se generan automáticamente durante los builds si se omiten. Establece `[]` para no mostrar ninguna |
+
+<Note>
+El chat está habilitado de forma predeterminada. Solo necesitas el campo `chat` en docs.json para personalizar las preguntas iniciales o deshabilitarlo por completo.
+</Note>
+
+Para deshabilitar el chat, establece `enabled` en `false`:
+
+```json docs.json
+{
+  "chat": {
+    "enabled": false
+  }
+}
+```
+
+## Límites
+
+| Límite | Valor |
+|-------|-------|
+| Longitud máxima de mensaje | 2,000 caracteres |
+| Longitud máxima de respuesta | 2,048 tokens |
+| Límite de tasa | 10 solicitudes / 60 segundos por visitante por sitio |
+| Historial de conversación | 10 mensajes por pestaña |
+| Preguntas iniciales | 4 como máximo |
+
+El chat funciona en [dominios personalizados](/es/deploy/custom-domains). El endpoint `/_chat` es del mismo origen, por lo que funciona en cualquier dominio donde se sirva tu documentación.
+
+<Accordion title="Cómo funciona el pipeline de recuperación">
+  Durante cada build, Jamdesk divide tus páginas en secciones y almacena embeddings vectoriales para cada una. Cuando un visitante hace una pregunta, el sistema ejecuta una búsqueda híbrida (coincidencia de palabras clave combinada con similitud semántica) para encontrar las secciones más relevantes de tu documentación. Esas secciones se envían a Claude como contexto con instrucciones de responder únicamente desde la documentación proporcionada. Las citas se extraen haciendo coincidir las referencias de página en la respuesta de Claude con las secciones recuperadas.
+</Accordion>
+
+## ¿Qué sigue?
+
+<Columns cols={2}>
+  <Card title="llms.txt" icon="file-lines" href="/es/ai/llms-txt">
+    Índice de páginas generado automáticamente para herramientas de IA
+  </Card>
+  <Card title="MCP Server" icon="robot" href="/es/ai/mcp-server">
+    Permite que las herramientas de IA busquen y consulten tu documentación de forma programática
+  </Card>
+  <Card title="Referencia de docs.json" icon="file-lines" href="/es/config/docs-json-reference">
+    Todos los campos de configuración, incluida la configuración del chat
+  </Card>
+  <Card title="Cómo funciona Jamdesk" icon="gear" href="/es/how-jamdesk-works">
+    El pipeline de build que impulsa la indexación del chat
+  </Card>
+</Columns>

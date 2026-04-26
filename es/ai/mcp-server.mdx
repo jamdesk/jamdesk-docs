@@ -1,0 +1,200 @@
+---
+title: Servidor MCP
+sidebarTitle: Servidor MCP
+description: Cada sitio de Jamdesk incluye un servidor MCP integrado. Los asistentes de IA como Claude y Cursor pueden buscar y leer tu documentación directamente.
+---
+
+Cada sitio de Jamdesk incluye un servidor MCP (Model Context Protocol) integrado. Mientras que `llms.txt` ofrece a las herramientas de IA una instantánea estática de tu documentación, MCP les permite buscar y consultar de forma interactiva — útil cuando los agentes de IA necesitan encontrar respuestas específicas en lugar de leerlo todo.
+
+## ¿Qué es MCP?
+
+El [Model Context Protocol](https://modelcontextprotocol.io) es un estándar abierto que permite a las herramientas de IA acceder a fuentes de datos externas. Tu documentación de Jamdesk expone dos herramientas a través de MCP:
+
+| Herramienta | Propósito |
+|------|---------|
+| `searchDocs` | Busca en la documentación por palabra clave, devuelve resultados ordenados |
+| `getPage` | Recupera el contenido completo de una página específica |
+
+## Configuración rápida
+
+<Tabs>
+  <Tab title="Claude Code">
+    Añade tu documentación como servidor MCP:
+
+    ```bash
+    claude mcp add --transport http my-docs https://my-project.jamdesk.app/_mcp
+    ```
+
+    Reemplaza `my-project` con tu subdominio de Jamdesk.
+
+    Ahora cuando le preguntes a Claude sobre tu proyecto, puede buscar y leer tu documentación directamente.
+  </Tab>
+  <Tab title="Cursor">
+    Añade a tu archivo `.cursor/mcp.json` del proyecto:
+
+    ```json
+    {
+      "mcpServers": {
+        "my-docs": {
+          "url": "https://my-project.jamdesk.app/_mcp"
+        }
+      }
+    }
+    ```
+
+    Cursor se conectará automáticamente a tu documentación cuando abras el proyecto.
+  </Tab>
+</Tabs>
+
+<Note>
+  Los dominios personalizados también funcionan. Si tu documentación está en `docs.example.com`, usa `https://docs.example.com/_mcp` como endpoint.
+</Note>
+
+## Herramientas disponibles
+
+### searchDocs
+
+Busca en tu documentación y obtén resultados ordenados.
+
+**Parámetros:**
+
+| Parámetro | Tipo | Requerido | Descripción |
+|-----------|------|----------|-------------|
+| `query` | string | Sí | Términos de búsqueda (p. ej., "authentication", "getting started") |
+| `limit` | number | No | Máximo de resultados (por defecto: 10, máximo: 50) |
+| `type` | string | No | Filtrar por tipo de contenido: `all`, `api`, `guide`, `quickstart`, `help`, `component` |
+
+**Ejemplo de solicitud:**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "tools/call",
+  "params": {
+    "name": "searchDocs",
+    "arguments": {
+      "query": "authentication",
+      "limit": 5
+    }
+  }
+}
+```
+
+**Ejemplo de respuesta:**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "content": [{
+      "type": "text",
+      "text": "{\"query\":\"authentication\",\"total\":1,\"results\":[{\"title\":\"Authentication\",\"description\":\"How to authenticate API requests\",\"url\":\"/docs/api/authentication\",\"type\":\"api\",\"score\":0.95}]}"
+    }]
+  }
+}
+```
+
+### getPage
+
+Recupera el contenido completo de una página de documentación específica.
+
+**Parámetros:**
+
+| Parámetro | Tipo | Requerido | Descripción |
+|-----------|------|----------|-------------|
+| `slug` | string | Sí | Ruta de la página sin el prefijo `/docs` (p. ej., `api/authentication`) |
+
+**Ejemplo de solicitud:**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 2,
+  "method": "tools/call",
+  "params": {
+    "name": "getPage",
+    "arguments": {
+      "slug": "api/authentication"
+    }
+  }
+}
+```
+
+**Ejemplo de respuesta:**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 2,
+  "result": {
+    "content": [{
+      "type": "text",
+      "text": "{\"title\":\"Authentication\",\"description\":\"How to authenticate\",\"content\":\"## Overview\\n\\nUse API keys to authenticate...\",\"url\":\"/docs/api/authentication\"}"
+    }]
+  }
+}
+```
+
+## Prueba del endpoint
+
+Puedes probar tu endpoint MCP directamente con curl:
+
+```bash
+# List available tools
+curl -X POST https://my-project.jamdesk.app/_mcp \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}'
+
+# Search for content
+curl -X POST https://my-project.jamdesk.app/_mcp \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"searchDocs","arguments":{"query":"getting started"}}}'
+```
+
+## Cómo funciona
+
+El endpoint MCP utiliza un índice de búsqueda construido junto con tu documentación:
+
+- **Ranking BM25** - Ordena los resultados por relevancia
+- **Coincidencia difusa** - Maneja errores tipográficos (tolerancia de 1 carácter)
+- **Potenciación de campos** - Los títulos y encabezados de sección tienen mayor peso que el contenido del cuerpo
+- **Filtrado por tipo** - Filtra los resultados por tipo de contenido (API, guía, etc.)
+
+El índice se reconstruye con cada despliegue.
+
+## Límites de velocidad
+
+El endpoint MCP tiene un límite de velocidad de **60 solicitudes por minuto** por dirección IP. Esto es suficiente para el uso normal de asistentes de IA. Si superas el límite, recibirás una respuesta 429.
+
+## Solución de problemas
+
+<Accordion title="El servidor MCP no se conecta">
+  Verifica que la URL de tu endpoint sea correcta y accesible:
+
+  ```bash
+  curl https://my-project.jamdesk.app/_mcp
+  ```
+
+  Deberías ver una respuesta JSON con información del servidor. Si no es así, comprueba que tu documentación haya sido compilada al menos una vez.
+</Accordion>
+
+<Accordion title="La búsqueda no devuelve resultados">
+  El índice de búsqueda se genera en el momento de la compilación. Si añadiste contenido recientemente, activa una recompilación desde tu dashboard de Jamdesk para actualizar el índice.
+</Accordion>
+
+<Accordion title="getPage devuelve null">
+  Asegúrate de que el slug coincida exactamente con la ruta de tu página (sin la extensión `.mdx`). Por ejemplo, si tu página está en `api/authentication.mdx`, usa `api/authentication` como slug.
+</Accordion>
+
+## ¿Qué sigue?
+
+<Columns cols={2}>
+  <Card title="Escribir con IA" icon="wand-magic-sparkles" href="/es/ai/writing-with-ai">
+    Consejos para usar herramientas de IA para escribir documentación
+  </Card>
+  <Card title="llms.txt" icon="file-lines" href="/es/ai/llms-txt">
+    Índice de páginas autogenerado para herramientas de IA
+  </Card>
+</Columns>

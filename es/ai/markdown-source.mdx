@@ -1,0 +1,103 @@
+---
+title: Fuente Markdown
+description: Accede a la fuente Markdown sin procesar de cualquier página de documentación añadiendo .md a la URL. Texto estructurado para herramientas de IA, scripts y pipelines de contenido.
+---
+
+Las herramientas de IA procesan Markdown de forma más eficiente que el HTML renderizado. Jamdesk pone a disposición la fuente Markdown sin procesar de cada página añadiendo `.md` a cualquier URL. No se requiere autenticación.
+
+## Extensión de URL `.md`
+
+Añade `.md` a cualquier URL de página de documentación para obtener la fuente sin procesar en lugar del HTML renderizado:
+
+```bash
+# Rendered page
+https://acme.jamdesk.app/getting-started
+
+# Raw Markdown source
+https://acme.jamdesk.app/getting-started.md
+```
+
+Esto funciona para cualquier profundidad de ruta. Así es como se ve la respuesta:
+
+```bash
+curl https://acme.jamdesk.app/getting-started.md
+```
+
+```markdown
+---
+title: Getting Started
+description: Set up your first project in 5 minutes.
+---
+
+Welcome to the getting started guide.
+
+## Prerequisites
+
+<Note>You'll need Node.js 18 or later.</Note>
+```
+
+La respuesta es el archivo fuente exacto de tu repositorio, incluyendo el frontmatter y las etiquetas de componentes.
+
+### Dominios personalizados
+
+El contenido sin procesar también funciona en dominios personalizados. Usa la misma URL que ven tus lectores, con `.md` añadido al final:
+
+```bash
+# Docs served at root
+curl https://docs.example.com/getting-started.md
+
+# Docs served at /docs subpath
+curl https://docs.example.com/docs/getting-started.md
+```
+
+## Formato del contenido
+
+El contenido sin procesar es Markdown extendido con etiquetas de componentes como `<Note>`, `<Steps>` y `<Tabs>`. Los parsers de Markdown estándar tratarán las etiquetas de componentes como HTML sin procesar. Consulta [Conceptos básicos de Markdown](/es/content/mdx-basics) para la referencia de sintaxis completa.
+
+## Detalles de la respuesta
+
+### Cabeceras
+
+| Cabecera | Valor | Propósito |
+|--------|-------|---------|
+| `Content-Type` | `text/markdown; charset=utf-8` | Identifica el contenido como Markdown |
+| `Cache-Control` | `public, max-age=0, s-maxage=300, stale-while-revalidate=60` | Caché CDN durante 5 minutos, sin caché en el navegador |
+| `X-Robots-Tag` | `noindex, nofollow` | Impide la indexación por motores de búsqueda |
+| `Content-Disposition` | `inline` | Se muestra en el navegador en lugar de descargarse |
+| `X-Frame-Options` | `DENY` | Impide la incrustación en iframes |
+| `Content-Security-Policy` | `default-src 'none'` | Bloquea la ejecución de scripts |
+
+### Respuestas de error
+
+| Estado | Significado |
+|--------|---------|
+| `308` | Redirección de barra diagonal final (p. ej., `/intro.md/` redirige a `/intro.md`) |
+| `404` | La página no existe (devuelve una página de error HTML, no Markdown) |
+| `500` | Error del servidor (devuelve una página de error HTML) |
+
+## Uso con herramientas de IA
+
+Las URL de fuente Markdown combinan bien con el [servidor MCP](/es/ai/mcp-server). Usa `searchDocs` para encontrar páginas por palabra clave y luego obtén la fuente sin procesar de la página encontrada:
+
+```bash
+# 1. Search for a topic via MCP
+curl -X POST https://acme.jamdesk.app/_mcp \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"searchDocs","arguments":{"query":"authentication"}}}'
+
+# 2. Fetch the raw source of the top result
+curl https://acme.jamdesk.app/guides/authentication.md
+```
+
+Esto proporciona a las herramientas de IA tanto búsqueda como acceso completo a la fuente de tu documentación.
+
+## ¿Qué sigue?
+
+<Columns cols={2}>
+  <Card title="Servidor MCP" icon="robot" href="/es/ai/mcp-server">
+    Conecta asistentes de IA directamente a tus docs
+  </Card>
+  <Card title="Conceptos básicos de Markdown" icon="pen-nib" href="/es/content/mdx-basics">
+    Referencia de sintaxis MDX para páginas de documentación
+  </Card>
+</Columns>

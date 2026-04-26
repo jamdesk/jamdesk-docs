@@ -1,0 +1,112 @@
+---
+title: Menú de Acciones IA
+description: Un menú desplegable en cada página que permite a los lectores copiar Markdown, abrir páginas en ChatGPT/Claude/Perplexity, o instalar tu servidor MCP con un solo clic.
+---
+
+Cada página de tu sitio Jamdesk incluye un menú de Acciones IA: un pequeño desplegable sobre el título que da a los lectores acceso rápido a herramientas de IA. Copia la página como Markdown, ábrela en ChatGPT, instala tu servidor MCP en Cursor. No se necesita configuración.
+
+<div style={{ display: 'flex', justifyContent: 'center' }}>
+  <img src="/images/ai-actions.webp" alt="AI Actions dropdown showing Copy page, View as Markdown, Open in ChatGPT, Open in Claude, Open in Perplexity, Copy MCP config, Add to Cursor, and Add to VS Code options" style={{ width: '100%', maxWidth: '500px' }} />
+</div>
+
+Las capturas de pantalla muestran la interfaz en inglés.
+
+## Opciones integradas
+
+El menú incluye ocho opciones, todas habilitadas por defecto:
+
+| Opción | Clave | Qué hace |
+|--------|-------|----------|
+| **Copiar página** | `copy` | Obtiene el Markdown sin procesar y lo copia al portapapeles |
+| **Ver como Markdown** | `view` | Abre el archivo `.md` en una nueva pestaña |
+| **Abrir en ChatGPT** | `chatgpt` | Abre ChatGPT con un prompt para leer la página actual |
+| **Abrir en Claude** | `claude` | Abre Claude con el mismo prompt |
+| **Abrir en Perplexity** | `perplexity` | Abre Perplexity con el mismo prompt |
+| **Copiar configuración MCP** | `mcp` | Copia la configuración JSON para el [servidor MCP](/es/ai/mcp-server) de tu sitio |
+| **Añadir a Cursor** | `cursor` | Enlace directo para instalar el servidor MCP en Cursor |
+| **Añadir a VS Code** | `vscode` | Enlace directo para instalar el servidor MCP en VS Code |
+
+Gemini también está disponible como `gemini`, pero no está incluido en los valores predeterminados porque no admite el pre-rellenado de prompts por URL de forma fiable. Agrégalo explícitamente si tus lectores lo usan.
+
+Cuando `copy` está en la lista de opciones, se convierte en el botón principal. El resto aparece en un desplegable activado por un chevron. Sin `copy`, todo se contrae en un único desplegable de "Acciones IA".
+
+## Configuración
+
+El menú funciona desde el primer momento. Solo necesitas modificar `docs.json` si quieres personalizar qué opciones aparecen o desactivarlo por completo.
+
+### Mostrar un subconjunto de opciones
+
+```json docs.json
+{
+  "contextual": {
+    "options": ["copy", "claude", "mcp"]
+  }
+}
+```
+
+### Desactivar el menú
+
+```json docs.json
+{
+  "contextual": {
+    "enabled": false
+  }
+}
+```
+
+### Añadir opciones personalizadas
+
+Puedes combinar opciones integradas con las tuyas propias. Las opciones personalizadas abren una URL en una nueva pestaña.
+
+```json docs.json
+{
+  "contextual": {
+    "options": [
+      "copy",
+      "claude",
+      {
+        "title": "Ask on Discord",
+        "description": "Get help from the community",
+        "icon": "discord",
+        "href": "https://discord.gg/your-server"
+      }
+    ]
+  }
+}
+```
+
+Las opciones personalizadas admiten un campo `icon` opcional. Cualquier [nombre de icono de Font Awesome](/es/content/icons) funciona, incluidos los iconos de marca como `discord` o `slack`. Sin icono, se muestra un icono de enlace.
+
+Las opciones personalizadas también admiten parámetros de consulta:
+
+```json docs.json
+{
+  "contextual": {
+    "options": [
+      "copy",
+      {
+        "title": "Search in Notion",
+        "description": "Find related internal docs",
+        "href": {
+          "base": "https://notion.so/search",
+          "query": [
+            { "key": "q", "value": "docs" }
+          ]
+        }
+      }
+    ]
+  }
+}
+```
+
+## Cómo funciona
+
+El menú se ejecuta completamente en el lado del cliente. Las URLs se actualizan en cada navegación de página, por lo que el enlace "Abrir en Claude" siempre apunta a la página que estás viendo, incluso después de navegar por la barra lateral sin una recarga completa de página.
+
+Los enlaces a servicios de IA incluyen la URL `.md` de la página en el prompt. ChatGPT, Claude y Perplexity pueden obtener URLs, por lo que leerán tu documentación directamente desde el enlace.
+
+Las opciones MCP utilizan el endpoint `/_mcp` que expone cada sitio Jamdesk. "Copiar configuración MCP" da a tus lectores el JSON que necesitan para cualquier cliente MCP. "Añadir a Cursor" y "Añadir a VS Code" son enlaces directos de un clic que abren el flujo de instalación del editor directamente. Consulta [Servidor MCP](/es/ai/mcp-server) para más detalles sobre lo que las herramientas de IA pueden hacer con él.
+
+<Card title="Servidor MCP" icon="plug" href="/es/ai/mcp-server">
+  Tu documentación ya tiene un servidor MCP integrado. El menú de Acciones IA simplemente facilita la conexión.
+</Card>
