@@ -1,15 +1,15 @@
 ---
 title: Dépannage DNS
-description: "Résolvez les délais de propagation DNS, les conflits CNAME et les échecs de vérification TXT lors de la configuration de domaines personnalisés. Inclut des commandes dig et des correctifs pour les fournisseurs courants."
+description: "Résolvez propagation DNS, conflits CNAME et échecs de vérification TXT sur vos domaines personnalisés. Commandes dig et correctifs par fournisseur inclus."
 ---
 
-Les problèmes DNS sont la cause la plus fréquente des problèmes de domaine personnalisé.
+Les problèmes DNS sont la cause la plus fréquente des difficultés liées aux domaines personnalisés.
 
 ## Vérifier la propagation DNS
 
-Les modifications DNS peuvent prendre jusqu'à 48 heures pour se propager globalement, bien que la plupart soient effectuées en quelques heures.
+Les modifications DNS peuvent prendre jusqu'à 48 heures pour se propager dans le monde entier, bien que la plupart soient effectuées en quelques heures.
 
-Vérifier l'état de propagation :
+Vérifiez l'état de la propagation :
 
 ```bash
 # Check if your CNAME is resolving
@@ -19,22 +19,22 @@ dig CNAME docs.yourdomain.com
 nslookup -type=CNAME docs.yourdomain.com
 ```
 
-La sortie attendue montre votre CNAME pointant vers `cname.jamdesk.com` :
+Le résultat attendu montre votre CNAME pointant vers `cname.jamdesk.com` :
 
 ```text
 docs.yourdomain.com. 300 IN CNAME cname.jamdesk.com.
 ```
 
-Des outils en ligne comme [whatsmydns.net](https://www.whatsmydns.net/) indiquent la propagation dans plusieurs régions.
+Des outils en ligne comme [whatsmydns.net](https://www.whatsmydns.net/) affichent la propagation dans plusieurs régions.
 
 ## Problèmes courants
 
-### CNAME ne se résout pas
+### CNAME non résolu
 
-**Symptôme** : `dig` n'affiche aucun enregistrement CNAME ou affiche une cible incorrecte.
+**Symptôme** : `dig` ne renvoie aucun enregistrement CNAME ou affiche une cible incorrecte.
 
 **Causes** :
-- Enregistrement non sauvegardé chez le fournisseur DNS
+- Enregistrement non enregistré chez le fournisseur DNS
 - Faute de frappe dans le nom ou la valeur de l'enregistrement
 - Propagation DNS encore en cours
 
@@ -43,7 +43,7 @@ Des outils en ligne comme [whatsmydns.net](https://www.whatsmydns.net/) indiquen
 2. Vérifiez que l'enregistrement CNAME existe avec les valeurs correctes
 3. Attendez 15 à 30 minutes et vérifiez à nouveau
 
-### CNAME sur le domaine racine
+### CNAME au domaine racine
 
 **Symptôme** : Le fournisseur DNS rejette un enregistrement CNAME pour `yourdomain.com` (sans sous-domaine).
 
@@ -55,14 +55,14 @@ Des outils en ligne comme [whatsmydns.net](https://www.whatsmydns.net/) indiquen
 
 **Symptôme** : Erreurs SSL ou boucles de redirection lors de l'utilisation de Cloudflare.
 
-**Cause** : Le proxy de Cloudflare (nuage orange) peut interférer avec le SSL de Vercel.
+**Cause** : Le proxy Cloudflare (nuage orange) peut interférer avec le SSL de Vercel.
 
 **Correctif** :
-1. Dans les paramètres DNS Cloudflare, cliquez sur l'icône du nuage orange
-2. Passez en mode « DNS uniquement » (nuage gris) pour votre sous-domaine docs
+1. Dans les paramètres DNS Cloudflare, cliquez sur l'icône de nuage orange
+2. Passez en mode « DNS uniquement » (nuage gris) pour votre sous-domaine de documentation
 3. Laissez Vercel gérer le SSL
 
-### Enregistrements en conflit
+### Enregistrements conflictuels
 
 **Symptôme** : La vérification CNAME échoue même si l'enregistrement semble correct.
 
@@ -70,8 +70,8 @@ Des outils en ligne comme [whatsmydns.net](https://www.whatsmydns.net/) indiquen
 
 **Correctif** :
 1. Vérifiez la présence d'enregistrements A sur le même sous-domaine
-2. Supprimez les enregistrements A en conflit
-3. Assurez-vous que seul le CNAME reste
+2. Supprimez les enregistrements A conflictuels
+3. Assurez-vous que seul le CNAME subsiste
 
 ```bash
 # Check for A records
@@ -83,14 +83,14 @@ dig A docs.yourdomain.com
 **Symptôme** : L'enregistrement TXT pour l'hébergement en sous-chemin ne se vérifie pas.
 
 **Causes** :
-- Enregistrement ajouté sur le mauvais domaine
+- Enregistrement ajouté au mauvais domaine
 - Faute de frappe dans la valeur de l'enregistrement
-- Des enregistrements TXT existants causent des problèmes
+- Enregistrements TXT existants causant des problèmes
 
 **Correctif** :
-1. Vérifiez que l'enregistrement TXT se trouve à `_jamdesk.yourdomain.com`
+1. Vérifiez que l'enregistrement TXT est bien à `_jamdesk.yourdomain.com`
 2. Copiez la valeur de vérification exacte depuis le dashboard
-3. Vérifiez la présence d'enregistrements TXT en conflit
+3. Vérifiez la présence d'enregistrements TXT conflictuels
 
 ```bash
 # Check TXT records
@@ -99,11 +99,11 @@ dig TXT _jamdesk.yourdomain.com
 
 ### Certificat SSL non émis
 
-**Symptôme** : Le domaine reste indéfiniment en état « en attente ».
+**Symptôme** : Le domaine reste indéfiniment en statut « en attente ».
 
 **Causes** :
 - Des enregistrements CAA bloquent l'émission du certificat
-- DNS pas entièrement propagé
+- DNS pas encore entièrement propagé
 - Domaine inaccessible
 
 **Correctif** :
@@ -137,10 +137,10 @@ dig +noall +answer docs.yourdomain.com
 ## Notes spécifiques aux fournisseurs DNS
 
 ### Cloudflare
-- Définissez le statut du proxy sur « DNS uniquement » (nuage gris) lors de la vérification du domaine
-- Une fois la vérification terminée, repassez en mode proxié (nuage orange)
-- **Vous utilisez un Worker ?** L'enregistrement DNS doit être proxié (nuage orange) pour que le Worker s'exécute. Nuage gris uniquement pendant la vérification, puis repassez en orange.
-- Désactivez « Toujours utiliser HTTPS » pour le sous-domaine docs afin d'éviter les conflits SSL avec Vercel
+- Réglez le statut du proxy sur « DNS uniquement » (nuage gris) pendant la vérification du domaine
+- Une fois la vérification terminée, repassez en mode proxifié (nuage orange)
+- **Vous utilisez un Worker ?** L'enregistrement DNS doit être proxifié (nuage orange) pour que le Worker s'exécute. Nuage gris uniquement pendant la vérification, puis repassez en orange.
+- Désactivez « Always Use HTTPS » pour le sous-domaine de documentation afin d'éviter les conflits SSL avec Vercel
 
 ### GoDaddy
 - La cible CNAME ne doit PAS se terminer par un point
@@ -157,14 +157,14 @@ dig +noall +answer docs.yourdomain.com
 ## Quand contacter le support
 
 Contactez le support si :
-- Les enregistrements DNS sont vérifiés corrects mais le domaine est toujours en attente après 48 heures
-- Les erreurs de certificat SSL persistent après avoir suivi toutes les étapes
-- Vous observez des erreurs spécifiques à l'infrastructure Jamdesk
+- Les enregistrements DNS sont vérifiés comme corrects mais le domaine reste en attente après 48 heures
+- Des erreurs de certificat SSL persistent après avoir suivi toutes les étapes
+- Vous constatez des erreurs spécifiques à l'infrastructure Jamdesk
 
 Incluez dans votre demande de support :
 - Votre nom de domaine
 - Le nom de votre fournisseur DNS
-- La sortie des commandes `dig`
+- Le résultat des commandes `dig`
 - Une capture d'écran de la configuration DNS
 
 ## Et ensuite ?
@@ -177,9 +177,9 @@ Incluez dans votre demande de support :
     Guide complet de configuration des domaines personnalisés
   </Card>
   <Card title="Hébergement en sous-chemin" icon="route" href="/fr/deploy/subpath-hosting">
-    Hébergez sur yourdomain.com/docs
+    Hébergez à yourdomain.com/docs
   </Card>
   <Card title="Contacter le support" icon="headset" href="/fr/help/support/contact">
-    Incluez la sortie dig et les captures d'écran DNS
+    Joignez le résultat de dig et des captures d'écran DNS
   </Card>
 </Columns>
