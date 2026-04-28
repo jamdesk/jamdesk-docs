@@ -175,6 +175,13 @@ paths:
               -H "Authorization: Bearer jd_live_c83003a54ae0a83123454c3f7ec82f0a" \
               -H "Content-Type: application/json" \
               -d '{"query": "How do I authenticate with OAuth?", "limit": 5}'
+        - lang: curl
+          label: curl (Spanish)
+          source: |
+            curl -X POST https://your-project.jamdesk.app/_api/search \
+              -H "Authorization: Bearer jd_live_c83003a54ae0a83123454c3f7ec82f0a" \
+              -H "Content-Type: application/json" \
+              -d '{"query": "¿Cómo configuro un dominio personalizado?", "limit": 5, "language": "es"}'
       requestBody:
         required: true
         content:
@@ -196,6 +203,30 @@ paths:
                   maximum: 20
                   default: 5
                   example: 5
+                language:
+                  type: string
+                  description: |
+                    BCP-47 language code (e.g. `en`, `es`, `fr`, `pt-BR`,
+                    `zh-Hans`). Filters results to chunks indexed for that
+                    language.
+
+                    **Default:** `en`. Pass an explicit value to retrieve a
+                    different language. `null` is treated as omitted.
+
+                    **Multi-language projects only.** The filter is applied
+                    only when your project has multiple languages configured
+                    (`navigation.languages` in `docs.json`). Single-language
+                    projects ignore this parameter and always return all
+                    results — passing it is a no-op on those sites, not an
+                    error.
+
+                    **Limitation:** 3-segment BCP-47 tags such as
+                    `zh-Hant-HK` or `sr-Latn-RS` are not currently
+                    supported and return `400`. Contact support if you
+                    need this.
+                  pattern: "^[a-zA-Z]{2,3}([-_][a-zA-Z]{2,4})?$"
+                  default: en
+                  example: es
             examples:
               naturalQuestion:
                 summary: Natural language question (recommended)
@@ -212,6 +243,12 @@ paths:
                 value:
                   query: "authentication options and API key management"
                   limit: 20
+              multiLanguage:
+                summary: Filter to a specific language (multi-language projects)
+                value:
+                  query: "¿Cómo configuro un dominio personalizado?"
+                  limit: 5
+                  language: "es"
       responses:
         "200":
           description: Search results
@@ -257,6 +294,17 @@ paths:
                     type: string
                     description: The query that was searched.
                     example: "How do I set up webhooks?"
+                  language:
+                    type: string
+                    description: |
+                      Language used to filter results. Echoes the request
+                      value, or `en` if the request omitted (or sent `null`
+                      for) the field. For single-language projects this is
+                      the value that was sent (or `en`) — the filter itself
+                      was not applied. For projects where the per-project
+                      kill switch is enabled, the filter is also bypassed,
+                      but the field still echoes the resolved value.
+                    example: "en"
                   total:
                     type: integer
                     description: Number of results returned.
@@ -270,6 +318,7 @@ paths:
                   summary: Multi-result natural-language query
                   value:
                     query: "How do I set up a custom domain?"
+                    language: "en"
                     results:
                       - title: "Custom Domains"
                         section: "Step 4: Deploy"
@@ -320,6 +369,10 @@ paths:
                   summary: Query too long
                   value:
                     error: "Query exceeds 500 characters"
+                invalidLanguage:
+                  summary: Malformed language code
+                  value:
+                    error: "Invalid language code"
         "401":
           description: |
             Invalid or missing API key. The response body contains a
@@ -391,6 +444,13 @@ paths:
                   summary: Auth store unreachable
                   value:
                     error: "redis_unavailable"
+                configUnavailable:
+                  summary: |
+                    Docs config (R2) unavailable; the request specified an
+                    explicit `language` so the API returns 503 rather than
+                    silently disabling the language filter.
+                  value:
+                    error: "Search temporarily unavailable"
 
 components:
   securitySchemes:

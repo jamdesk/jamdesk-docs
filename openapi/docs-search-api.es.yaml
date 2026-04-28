@@ -177,6 +177,13 @@ paths:
               -H "Authorization: Bearer jd_live_c83003a54ae0a83123454c3f7ec82f0a" \
               -H "Content-Type: application/json" \
               -d '{"query": "How do I authenticate with OAuth?", "limit": 5}'
+        - lang: curl
+          label: curl (Español)
+          source: |
+            curl -X POST https://your-project.jamdesk.app/_api/search \
+              -H "Authorization: Bearer jd_live_c83003a54ae0a83123454c3f7ec82f0a" \
+              -H "Content-Type: application/json" \
+              -d '{"query": "¿Cómo configuro un dominio personalizado?", "limit": 5, "language": "es"}'
       requestBody:
         required: true
         content:
@@ -198,6 +205,29 @@ paths:
                   maximum: 20
                   default: 5
                   example: 5
+                language:
+                  type: string
+                  description: |
+                    Código de idioma BCP-47 (por ejemplo `en`, `es`, `fr`,
+                    `pt-BR`, `zh-Hans`). Filtra los resultados para
+                    devolver solo los pasajes indexados en ese idioma.
+
+                    **Por defecto:** `en`. Indique otro valor para apuntar
+                    a otro idioma. `null` se trata como ausente.
+
+                    **Solo proyectos multilingües.** El filtro se aplica
+                    únicamente cuando su proyecto declara varios idiomas
+                    (`navigation.languages` en `docs.json`). Los proyectos
+                    monolingües ignoran este parámetro y siempre devuelven
+                    todos los resultados — enviarlo no es un error, sino
+                    un no-op.
+
+                    **Limitación:** Los códigos BCP-47 de tres segmentos
+                    como `zh-Hant-HK` o `sr-Latn-RS` no son compatibles y
+                    devuelven `400`. Contacte con soporte si los necesita.
+                  pattern: "^[a-zA-Z]{2,3}([-_][a-zA-Z]{2,4})?$"
+                  default: en
+                  example: es
             examples:
               naturalQuestion:
                 summary: Pregunta en lenguaje natural (recomendado)
@@ -214,6 +244,12 @@ paths:
                 value:
                   query: "authentication options and API key management"
                   limit: 20
+              multiLanguage:
+                summary: Filtrar por idioma (proyectos multilingües)
+                value:
+                  query: "¿Cómo configuro un dominio personalizado?"
+                  limit: 5
+                  language: "es"
       responses:
         "200":
           description: Resultados de búsqueda
@@ -259,6 +295,17 @@ paths:
                     type: string
                     description: La consulta que se buscó.
                     example: "How do I set up webhooks?"
+                  language:
+                    type: string
+                    description: |
+                      Idioma usado para filtrar los resultados. Refleja el
+                      valor enviado, o `en` si la solicitud omitió el
+                      campo o envió `null`. En proyectos monolingües es
+                      el valor recibido (o `en`) — el filtro no se
+                      aplicó. Cuando el interruptor de seguridad por
+                      proyecto está activo, el filtro también se omite,
+                      pero el campo igual refleja el valor resuelto.
+                    example: "en"
                   total:
                     type: integer
                     description: Número de resultados devueltos.
@@ -272,6 +319,7 @@ paths:
                   summary: Consulta en lenguaje natural con múltiples resultados
                   value:
                     query: "How do I set up a custom domain?"
+                    language: "en"
                     results:
                       - title: "Custom Domains"
                         section: "Step 4: Deploy"
@@ -322,6 +370,10 @@ paths:
                   summary: Consulta demasiado larga
                   value:
                     error: "Query exceeds 500 characters"
+                invalidLanguage:
+                  summary: Código de idioma mal formado
+                  value:
+                    error: "Invalid language code"
         "401":
           description: |
             API key inválida o ausente. El cuerpo de la respuesta contiene un
@@ -392,6 +444,14 @@ paths:
                   summary: Almacén de autenticación inaccesible
                   value:
                     error: "redis_unavailable"
+                configUnavailable:
+                  summary: |
+                    Configuración de la documentación (R2) no disponible;
+                    la solicitud especificó un `language` explícito, así
+                    que la API devuelve 503 en lugar de desactivar
+                    silenciosamente el filtro de idioma.
+                  value:
+                    error: "Search temporarily unavailable"
 
 components:
   securitySchemes:
