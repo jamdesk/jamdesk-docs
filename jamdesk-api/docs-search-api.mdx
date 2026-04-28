@@ -35,7 +35,7 @@ The Docs Search API gives you programmatic access to your documentation content 
     curl -X POST https://your-project.jamdesk.app/_api/search \
       -H "Authorization: Bearer jd_live_c83003a54ae0a83123454c3f7ec82f0a" \
       -H "Content-Type: application/json" \
-      -d '{"query": "How do I set up a custom domain?", "limit": 5}'
+      -d '{"query": "How do I set up a custom domain?", "limit": 5, "language": "en"}'
     ```
   </Step>
   <Step title="Use the results">
@@ -44,6 +44,7 @@ The Docs Search API gives you programmatic access to your documentation content 
     ```json
     {
       "query": "How do I set up a custom domain?",
+      "language": "en",
       "results": [
         {
           "title": "Custom Domains",
@@ -128,6 +129,35 @@ A query with no matches returns HTTP 200 with an empty results array:
 {"query": "quantum entanglement", "results": [], "total": 0, "durationMs": 48}
 ```
 
+## Filtering by language
+
+If your docs site supports multiple languages, the API filters results to a single language per request. Pass `language` in the request body with a BCP-47 code (e.g. `en`, `es`, `fr`, `pt-BR`, `zh-Hans`).
+
+```bash
+curl -X POST https://your-project.jamdesk.app/_api/search \
+  -H "Authorization: Bearer jd_live_c83003a54ae0a83123454c3f7ec82f0a" \
+  -H "Content-Type: application/json" \
+  -d '{"query": "¿Cómo configuro un dominio personalizado?", "language": "es"}'
+```
+
+| Rule | Detail |
+|------|--------|
+| **Default** | `en` (English). Omit the field, or pass `null`, to use the default. |
+| **Format** | BCP-47 (`^[a-zA-Z]{2,3}([-_][a-zA-Z]{2,4})?$`). Examples: `en`, `es`, `fr`, `pt-BR`, `zh-Hans`. |
+| **Validation** | Malformed values return `400` with `{"error": "Invalid language code"}`. |
+| **3-segment tags** | Not currently supported. Codes like `zh-Hant-HK` and `sr-Latn-RS` return `400`. [Contact support](mailto:support@jamdesk.com) if you need them. |
+| **Multi-language projects** | The filter is strict — only chunks tagged with the requested language are returned. A request for `de` against a project that only has English and French returns an empty result set, not a `400`. |
+| **Single-language projects** | The filter is ignored; you always get the full result set. Sending `language` is harmless — not an error. |
+| **Echoed in response** | Every successful response includes a `language` field with the value the server resolved (request value, or `en` default). |
+
+<Info>
+A project is multi-language when its `docs.json` has a `navigation.languages` array with two or more entries. To check whether your site is multi-language, open the **Settings → Languages** tab in the dashboard, or open `docs.json` directly.
+</Info>
+
+<Warning>
+The default `en` applies even on projects that don't have an English version. If your multi-language project is e.g. French and Spanish only, calling the endpoint without a `language` field will filter for `en` and return an empty result set. Always pass an explicit `language` from non-English-only sites.
+</Warning>
+
 ## Error Handling
 
 All error responses include a machine-readable `error` field you can branch on programmatically.
@@ -135,6 +165,7 @@ All error responses include a machine-readable `error` field you can branch on p
 | Status | `error` value | Meaning | Action |
 |--------|---------------|---------|--------|
 | **400** | `Missing or empty "query" field` | Request body is missing or has no `query` | Add a non-empty `query` string |
+| **400** | `Invalid language code` | The `language` field is not a string or doesn't match the BCP-47 pattern (`null` is fine; empty/whitespace strings and 3-segment tags are not) | Use a valid 1- or 2-segment code like `en`, `es`, `fr`, or `pt-BR` |
 | **401** | `invalid_key_format` | `Authorization` header is missing or the key doesn't match `jd_live_<32 hex>` | Check the header format; it must be `Bearer jd_live_...` |
 | **401** | `invalid_key` | Key is not recognised or has been revoked | Generate a new key in the dashboard |
 | **403** | `wrong_project` | Key is valid but was generated for a different project | Use a key that matches the project slug in the URL |
