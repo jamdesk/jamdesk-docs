@@ -3,69 +3,54 @@ title: Troubleshooting
 description: Quick fixes for common Jamdesk issues including build failures, DNS verification, GitHub connections, and missing analytics data.
 ---
 
-Start here when something isn't working. Each section gives a quick fix and links to the full guide in the Help Center.
+Start here when something isn't working. Each section has a quick fix and a link to the deeper guide in the Help Center.
 
 ## Build Failures
 
-**Symptom:** Build status shows "Failed" in the dashboard.
-
-**Quick checks:**
-1. Run `jamdesk dev` locally to catch MDX syntax errors
-2. Verify `docs.json` is valid JSON (missing commas, trailing commas)
-3. Check that all pages listed in navigation exist as `.mdx` files
+Your dashboard shows a build as "Failed". Most failures come from one of three things: an MDX page with a broken import or component, an invalid edit to `docs.json` (unclosed brackets, trailing commas after the last array item), or a page listed in `docs.json` navigation that doesn't exist as an `.mdx` file. The first two surface locally with `jamdesk dev` before they ever reach a deployed build. Running it once before pushing tends to save a round trip.
 
 <Tip>
-The build log in your dashboard shows the exact file and line where the error occurred. Start there.
+The build log in your dashboard shows the exact file and line where the error occurred. Start there — it's almost always pointing at the real problem, not just the symptom.
 </Tip>
 
-See [Build Failures](/help/troubleshooting/build-failures) and [Error Reference](/help/troubleshooting/error-reference) for specific error codes.
+For specific error codes, see [Build Failures](/help/troubleshooting/build-failures) and the [Error Reference](/help/troubleshooting/error-reference).
 
 ## Custom Domain Not Verifying
 
-**Symptom:** Domain stuck on "Pending" after adding DNS records.
+Domain stuck on "Pending" after you added the DNS records? Run through these in order:
 
-**Quick checks:**
-1. Confirm you added a **CNAME** record (not A record) for subdomains
-2. If using Cloudflare, set proxy to **DNS only** (gray cloud)
-3. Check propagation at [whatsmydns.net](https://www.whatsmydns.net/)
+1. Confirm you added the `_jamdesk.<hostname>` **TXT** record. Routing doesn't activate without it, and missing TXT is the single most common cause of a Pending domain. The hostname is the full domain you're verifying (for `docs.example.com`, the TXT record name is `_jamdesk.docs.example.com`).
+2. Confirm you added a **CNAME** record (not an A record) for subdomains.
+3. If you're on Cloudflare, set the proxy to **DNS only** (gray cloud) for both records.
+4. Check propagation at [whatsmydns.net](https://www.whatsmydns.net/).
 
 ```bash
+# Verify the TXT verification record
+dig TXT _jamdesk.docs.yourdomain.com
+
 # Verify your CNAME is resolving
 dig CNAME docs.yourdomain.com
 ```
 
-See [DNS Troubleshooting](/help/troubleshooting/dns-issues) for provider-specific guidance.
+One non-obvious thing worth knowing: even after `dig` shows your records resolving, the dashboard can still report "Pending" for up to 30 minutes. The verifier sits behind upstream resolvers that cache negative DNS responses, and that cache window has to age out before re-checking succeeds. If everything resolves locally but the dashboard hasn't updated, give it half an hour before assuming a deeper problem.
+
+[DNS Troubleshooting](/help/troubleshooting/dns-issues) covers provider-specific gotchas.
 
 ## GitHub Repository Not Appearing
 
-**Symptom:** Your repo doesn't show up when creating a project.
-
-**Quick checks:**
-1. Verify the Jamdesk GitHub App is installed on the repo's organization
-2. Check that repository access is set to "All repositories" or the specific repo is selected
-3. Re-authorize at [github.com/settings/installations](https://github.com/settings/installations)
+If your repo isn't in the list when you create a project, the Jamdesk GitHub App likely isn't installed on the repo's organization, or repository access is set to "Selected repositories" without yours included. Re-authorize at [github.com/settings/installations](https://github.com/settings/installations) and grant access to either "All repositories" or the specific repo you need.
 
 See [GitHub Issues](/help/troubleshooting/github-issues) for webhook and permission problems.
 
 ## Analytics Data Missing
 
-**Symptom:** Dashboard shows zero visitors or stale data.
+A few common reasons your dashboard shows zero visitors. Analytics take up to 24 hours to appear after a site's first deploy, so brand-new projects look empty for a while. Ad blockers and Do Not Track stop a chunk of visits from being counted — your numbers will always trail your server logs. If neither of those applies, confirm your site is actually deployed and publicly accessible.
 
-**Quick checks:**
-1. Analytics take up to 24 hours to appear after first deploy
-2. Ad blockers and Do Not Track prevent some visits from being counted
-3. Verify your site is deployed and publicly accessible
-
-See [Analytics Issues](/help/troubleshooting/analytics-issues) for delayed or missing data.
+[Analytics Issues](/help/troubleshooting/analytics-issues) goes deeper on delayed or missing data.
 
 ## Login Problems
 
-**Symptom:** Can't sign in or getting redirected to login repeatedly.
-
-**Quick checks:**
-1. Clear browser cache and cookies for `dashboard.jamdesk.com`
-2. Try an incognito/private window
-3. If using GitHub SSO, verify your GitHub email matches your Jamdesk account
+Can't sign in, or getting bounced back to the login screen? Clear cache and cookies for `dashboard.jamdesk.com`, then try an incognito window. If you sign in with GitHub, your GitHub email needs to match the email on your Jamdesk account.
 
 See [Login Issues](/help/troubleshooting/login-issues) for account recovery steps.
 
