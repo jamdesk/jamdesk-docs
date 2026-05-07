@@ -7,17 +7,17 @@ description: Moving from another documentation platform? Jamdesk can help automa
   See the clean markdown version of this page at https://jamdesk.com/docs/setup/migration.md
 
 </Visibility>
-Switching from Mintlify, GitBook, Docusaurus, ReadMe, or another platform? The Mintlify tab covers automated CLI migration. Everything else is a manual process, but it's straightforward if your content is already Markdown.
+Mintlify projects have a one-command path: `jamdesk migrate` reads `mint.json`, writes `docs.json`, and rewrites your MDX in place. Coming from GitBook, Docusaurus, ReadMe, Confluence, or somewhere else? The "Other Platforms" tab walks through the manual steps — they're short if you can get your content out as Markdown.
 
 <Info>
-**Markdown yields the best results.** If your current platform supports Markdown export, use it. Jamdesk is built on MDX, so Markdown content migrates cleanly.
+**Export as Markdown first if you can.** Jamdesk is built on MDX, so anything already in Markdown drops in with a `.mdx` rename and a few lines of frontmatter.
 </Info>
 
 ## Choose Your Path
 
 <Tabs>
   <Tab title="From Mintlify">
-    The Jamdesk CLI can automatically convert Mintlify projects.
+    The CLI does the bulk of the work for you.
 
     ### Automated Migration
 
@@ -31,10 +31,19 @@ Switching from Mintlify, GitBook, Docusaurus, ReadMe, or another platform? The M
         ```bash
         jamdesk migrate
         ```
-        This reads your `mint.json`, converts it to `docs.json`, and rewrites component syntax where needed.
+
+        From the project root, this runs in one pass:
+
+        - Reads `mint.json` and writes `docs.json`
+        - Renames deprecated components in MDX files (e.g. `CardGroup` → `Columns`)
+        - Moves orphan snippet MDX files into `/snippets/` and rewrites every parent-relative import (`../foo/bar.mdx`) to a root-relative one (`/snippets/foo/bar.mdx`)
+        - Extracts inline components that use React hooks into `/snippets/<name>.tsx` with the `'use client'` directive, then rewrites the original MDX to import from `/snippets/`
+        - Auto-fixes mechanical MDX syntax issues that would crash the build
+
+        The command is idempotent — re-run it after edits and it picks up only what's new. Anything it can't safely auto-handle is printed as a warning with the file, the import, and the action to take.
       </Step>
       <Step title="Review and adjust">
-        Check the generated `docs.json` and MDX files. The CLI handles most conversions, but you should verify component usage and navigation structure.
+        Check the generated `docs.json` and MDX files. Verify navigation structure and any warnings printed by the CLI.
       </Step>
     </Steps>
 
@@ -93,7 +102,7 @@ Switching from Mintlify, GitBook, Docusaurus, ReadMe, or another platform? The M
 
     <AccordionGroup>
       <Accordion title="CardGroup becomes Columns">
-        Rename CardGroup to `<Columns>`. The `cols` prop works the same way. The `jamdesk migrate` CLI handles this, but check any files you've edited manually.
+        `jamdesk migrate` renames `CardGroup` to `Columns` for you across every MDX file. The `cols` prop carries over unchanged. Check any files you've edited after running the migration.
       </Accordion>
       <Accordion title="ResponseField becomes ParamField">
         Rename `<ResponseField>` to `<ParamField>`. Props stay the same.
@@ -110,8 +119,16 @@ Switching from Mintlify, GitBook, Docusaurus, ReadMe, or another platform? The M
         </ParamField>
         ```
       </Accordion>
-      <Accordion title="Snippet import syntax differs">
-        Mintlify uses a `<Snippet>` component. In Jamdesk, use standard MDX imports from a `/snippets/` directory.
+      <Accordion title="Snippets are relocated and rewired automatically">
+        Jamdesk resolves only root-relative `/snippets/*` imports. Mintlify projects often keep snippet MDX files anywhere in the tree and import them with parent-relative paths (`import X from '../shared/x.mdx'`).
+
+        `jamdesk migrate` does three things here in one pass:
+
+        - Detects MDX files that are imported as snippets but live outside `/snippets/`, and moves them under `/snippets/` while preserving their relative path (so locale-prefixed snippets like `de/foo.mdx` don't collide).
+        - Rewrites every parent-relative snippet import in every MDX file to the new root-relative path.
+        - Extracts any inline component that uses React hooks into a `'use client'` file at `/snippets/<name>.tsx` and replaces the inline export with an import from `/snippets/`.
+
+        If you used Mintlify's `<Snippet file="my-snippet.mdx" />` JSX element, swap it for an MDX import — that one isn't auto-rewritten:
 
         ```mdx
         {/* Before (Mintlify) */}
@@ -122,6 +139,8 @@ Switching from Mintlify, GitBook, Docusaurus, ReadMe, or another platform? The M
 
         <MySnippet />
         ```
+
+        The relocator is conservative — if your project has no resolved navigation, or the planned moves exceed `max(5, 25%)` of all MDX files, it aborts without touching anything and tells you why. Re-run after fixing the abort reason.
       </Accordion>
       <Accordion title="topbarLinks maps to navbar.links">
         Mintlify's `topbarLinks` and `topbarCtaButton` both map to `navbar.links` in `docs.json`. The `name` field becomes `label`, and `url` becomes `href`.
