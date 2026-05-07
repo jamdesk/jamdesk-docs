@@ -4,44 +4,44 @@ info:
   version: "1.0.0"
   summary: Recherche vectorielle sémantique dans votre documentation pour les chatbots, les pipelines RAG et les intégrations personnalisées.
   description: |
-    L'API Jamdesk Docs Search vous permet d'interroger votre documentation par programmation
+    L'API Jamdesk Docs Search vous permet d'interroger votre documentation de façon programmatique
     en langage naturel. Elle repose sur le même moteur de recherche vectorielle sémantique
     qui alimente le chat IA intégré de Jamdesk — toute requête fonctionnant dans le
     widget de chat fonctionne ici et retourne les mêmes résultats.
 
-    ## Cas d'usage
+    ## Cas d'utilisation
 
     - **Base de connaissances pour chatbot** — alimentez un bot de support ou un bot Slack avec une
-      documentation à jour afin qu'il puisse répondre précisément aux questions des utilisateurs.
+      documentation à jour pour qu'il réponde précisément aux questions des utilisateurs.
     - **Intégration dans un pipeline RAG** — récupérez des extraits de documentation pertinents à
-      injecter dans les prompts LLM pour une génération ancrée dans les faits (compatible avec OpenAI
+      injecter dans les prompts LLM pour une génération ancrée (compatible avec OpenAI
       Assistants, les agents Claude, LangChain et LlamaIndex).
     - **Intégrations personnalisées** — connectez la recherche dans la documentation à des outils internes,
       des extensions IDE, des dashboards CRM et des flux d'onboarding.
-    - **Récupération pour assistant IA** — alimentez n'importe quel assistant IA avec une recherche
-      documentaire en temps réel sans avoir à préconstruire vous-même des embeddings.
+    - **Récupération pour assistant IA** — dotez tout assistant IA d'une consultation de documentation
+      en temps réel sans avoir à construire vous-même les embeddings au préalable.
 
     ## Fonctionnement
 
-    Chaque requête est encodée dans un vecteur à l'aide du même modèle d'embeddings qui a
+    Chaque requête est transformée en vecteur à l'aide du même modèle d'embeddings qui a
     indexé votre documentation. L'API retourne les meilleures correspondances classées par similarité
-    cosinus, avec des extraits que vous pouvez passer directement à un LLM en tant que contexte.
+    cosinus, avec des extraits directement utilisables comme contexte pour un LLM.
 
-    Les requêtes en langage naturel sont plus efficaces que les requêtes par mots-clés — posez
-    « comment s'authentifier avec OAuth » plutôt que « configuration authentification OAuth ».
+    Les requêtes en langage naturel donnent de meilleurs résultats que les requêtes par mots-clés — posez
+    « comment m'authentifier avec OAuth » plutôt que « configuration authentification OAuth ».
     Le moteur comprend l'intention, les synonymes et le contexte.
 
     ## Authentification et limites
 
-    - **Authentification :** jeton Bearer. Générez une clé API dans votre
+    - **Authentification :** token Bearer. Générez une clé API dans votre
       [Jamdesk dashboard](https://dashboard.jamdesk.com) sous
       Paramètres → Clés API. Les clés sont préfixées `jd_live_` suivies de 32
-      caractères hexadécimaux (40 caractères au total) et n'expirent jamais. Révoquez-les depuis
+      caractères hexadécimaux (40 chars au total) et n'expirent jamais. Révoquez-les depuis
       le dashboard.
-    - **Prérequis d'abonnement :** Jamdesk Pro ou supérieur.
-    - **Limite de débit :** 60 requêtes par minute par clé API. Les requêtes dépassant cette limite
+    - **Offre requise :** Jamdesk Pro ou supérieur.
+    - **Limite de débit :** 60 requêtes par minute par clé API. Les requêtes dépassant ce seuil
       retournent HTTP 429 avec un en-tête `Retry-After`.
-    - **CORS :** Activé. Les clients côté navigateur peuvent appeler l'API directement
+    - **CORS :** Activé. Les clients navigateur peuvent appeler l'API directement
       sans proxy backend.
     - **Format de réponse :** JSON. Chaque réponse inclut les champs `query`, `results`,
       `total` et `durationMs`.
@@ -49,7 +49,7 @@ info:
     ## URL de base
 
     `https://YOUR-PROJECT.jamdesk.app` ou votre domaine personnalisé. Le slug de votre projet
-    est visible dans l'URL du Jamdesk dashboard.
+    est visible dans l'URL du dashboard Jamdesk.
   contact:
     name: Jamdesk Support
     url: https://jamdesk.com/support
@@ -61,14 +61,32 @@ externalDocs:
   url: https://jamdesk.com/docs/jamdesk-api
 
 servers:
+  - url: https://{host}{basePath}
+    description: |
+      Site de documentation servi sous un sous-chemin (ex. `jamdesk.com/docs`). L'
+      API Docs Search est accessible à la fois via `{basePath}/_api/search` et
+      (si appelée directement) via `/_api/search` de l'origine — les deux sont réécrits
+      côté serveur vers le même endpoint scopé au projet. Il s'agit de la
+      configuration par défaut pour la démo publique Jamdesk.
+    variables:
+      host:
+        default: jamdesk.com
+        description: |
+          L'hôte de votre site de documentation. Pour la démo publique Jamdesk,
+          il s'agit de `jamdesk.com`.
+      basePath:
+        default: /docs
+        description: |
+          Préfixe de chemin si votre documentation est sous un sous-chemin. Chaîne vide
+          (ou omettez le serveur) si servie à la racine du domaine.
   - url: https://{project}.jamdesk.app
-    description: Sous-domaine Jamdesk (par défaut)
+    description: Sous-domaine Jamdesk
     variables:
       project:
         default: your-project
         description: |
           Le slug de votre projet Jamdesk. Visible dans l'URL de votre dashboard
-          (par exemple `acme` pour `acme.jamdesk.app`).
+          (ex. `acme` pour `acme.jamdesk.app`).
   - url: https://{customDomain}
     description: Domaine personnalisé (documentation servie à la racine)
     variables:
@@ -76,25 +94,6 @@ servers:
         default: docs.example.com
         description: |
           Votre domaine personnalisé Jamdesk, configuré dans Paramètres du projet → Domaine.
-  - url: https://{host}{basePath}
-    description: |
-      Hôte personnalisé avec sous-chemin hostAtDocs. Utilisez cette option lorsque votre site de documentation
-      est servi sous un chemin (par exemple `jamdesk.com/docs`) plutôt qu'à la
-      racine d'un domaine. L'API Docs Search est accessible à la fois via
-      `{basePath}/_api/search` et (en accès direct) via `/_api/search` de l'origine
-      — les deux sont réécrits côté serveur vers le même
-      endpoint avec portée de projet.
-    variables:
-      host:
-        default: jamdesk.com
-        description: |
-          L'hôte de votre site de documentation. Pour la démo publique Jamdesk docs,
-          il s'agit de `jamdesk.com`.
-      basePath:
-        default: /docs
-        description: |
-          Préfixe de chemin si votre documentation est sous un sous-chemin. Chaîne vide
-          (ou omettez le serveur) si elle est servie à la racine du domaine.
 
 tags:
   - name: Search
@@ -176,7 +175,7 @@ paths:
               -H "Content-Type: application/json" \
               -d '{"query": "How do I authenticate with OAuth?", "limit": 5}'
         - lang: curl
-          label: curl (Espagnol)
+          label: curl (Spanish)
           source: |
             curl -X POST https://your-project.jamdesk.app/_api/search \
               -H "Authorization: Bearer jd_live_c83003a54ae0a83123454c3f7ec82f0a" \
