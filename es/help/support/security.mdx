@@ -1,68 +1,86 @@
 ---
 title: Seguridad
-description: Prácticas de seguridad de Jamdesk - cifrado, controles de acceso, aislamiento de builds, cumplimiento del GDPR y divulgación responsable.
+description: Prácticas de seguridad de Jamdesk: cifrado, controles de acceso, aislamiento de builds, cumplimiento GDPR y divulgación responsable.
 ---
 
 Cómo Jamdesk protege tu documentación y los datos de tu cuenta.
 
-## Seguridad de la infraestructura
+## Seguridad de Infraestructura
 
-### Centros de datos
+### Alojamiento
 
-Jamdesk opera en los principales proveedores de nube con cumplimiento SOC 2:
-
-- **Servicio de build**: Google Cloud Platform
-- **CDN**: Cloudflare (más de 300 ubicaciones edge)
-- **Base de datos**: Google Cloud Firestore
+Jamdesk opera en proveedores de nube con certificación SOC 2. Los builds, los datos de la aplicación y la documentación compilada residen en servicios gestionados y reforzados de dichos proveedores, y el tráfico se sirve a través de un CDN global con protección DDoS incorporada.
 
 ### Cifrado
 
 | Estado de los datos | Protección |
-|------------|------------|
-| En tránsito | Cifrado TLS 1.3 |
-| En reposo | Cifrado AES-256 |
-| Copias de seguridad | Cifradas y distribuidas geográficamente |
+|---------------------|------------|
+| En tránsito | TLS 1.3 entre tú, nuestro edge y nuestros orígenes |
+| En reposo | AES-256 para todo lo que persistimos, incluyendo registros de base de datos, almacenamiento de objetos y logs |
+| Copias de seguridad | Cifradas con las mismas claves y replicadas en múltiples regiones |
 
-## Controles de acceso
+## Controles de Acceso
+
+### Inicio de Sesión
+
+Puedes iniciar sesión en el dashboard con correo electrónico y contraseña, o mediante inicio de sesión único a través de Google o GitHub. Las contraseñas nunca se almacenan en texto plano; nuestro proveedor de autenticación guarda únicamente hashes unidireccionales.
+
+Si inicias sesión con Google o GitHub, cualquier MFA que tengas configurado en esa cuenta (TOTP, claves de seguridad, passkeys) se aplica también a tu inicio de sesión en Jamdesk. Para mayor protección, recomendamos habilitar MFA en tu cuenta de Google o GitHub y usar SSO.
+
+### Acceso del Equipo
+
+El acceso basado en roles (Owner, Admin, Member) se aplica tanto en las reglas de seguridad de nuestra base de datos como en cada llamada al backend. Las sesiones expiran automáticamente tras períodos de inactividad, y los cambios en facturación, miembros, dominios personalizados o claves API se registran en un log de auditoría por proyecto.
 
 ### Integración con GitHub
 
-La aplicación GitHub de Jamdesk solicita permisos mínimos:
+Jamdesk se conecta a tus repositorios a través de una GitHub App con los permisos mínimos necesarios:
 
-- **Acceso de solo lectura** al contenido del repositorio
-- Acceso **Webhook** para activar builds
-- **Sin acceso de escritura** a tu código
+- Acceso de solo lectura al contenido del repositorio
+- Entrega vía Webhook para los triggers de build
+- Sin acceso de escritura a tu código
 
-Nunca modificamos tu repositorio.
+Nunca hacemos push, creamos ramas ni modificamos tu repositorio.
 
-### Acceso del equipo
+### Tokens y Secretos
 
-- Control de acceso basado en roles (Propietario, Administrador, Miembro)
-- Registros de auditoría para acciones sensibles
-- Expiración automática de sesión
+Cada secreto que nos confías se cifra en reposo. Esto incluye:
 
-## Manejo de datos
+- Conexiones de GitHub App, donde solo guardamos tu ID de instalación numérico. Los tokens de instalación de corta duración (válidos por una hora) se generan bajo demanda y nunca se persisten.
+- Tokens OAuth de GitHub utilizados durante el flujo de starter-repo, que se intercambian una vez, se usan para clonar la plantilla y luego se descartan.
+- Credenciales de integraciones de terceros, como URLs de webhooks entrantes de Slack, tokens de verificación de dominios personalizados y claves API de analytics.
 
-### Qué almacenamos
+El dashboard nunca devuelve estos valores al navegador una vez guardados; solo el pipeline de build del lado del servidor puede leerlos.
 
-- Tu configuración `docs.json`
+Las claves API programáticas se almacenan como hashes unidireccionales. El texto en claro se muestra exactamente una vez en el momento de la creación. Si lo pierdes, rota la clave.
+
+## Manejo de Datos
+
+### Qué Almacenamos
+
+- Tu configuración `docs.json` y cualquier recurso de branding que hayas subido
 - Documentación compilada (HTML, CSS, JS)
-- Registros de build (conservados durante 30 días)
-- Datos de analítica (anonimizados)
+- Logs de build, conservados durante 30 días
+- Eventos de analytics anonimizados (vistas de página, país, familia de dispositivo)
+- Secretos cifrados para cualquier integración de terceros que hayas configurado
 
-### Qué no almacenamos
+### Qué No Almacenamos
 
-- Tu código fuente (obtenido bajo demanda, no retenido)
-- Contraseñas de usuarios (cifradas con bcrypt)
-- Números de tarjetas de pago (gestionados por Stripe)
+- Tu código fuente. Clonamos el repositorio en el momento del build y descartamos el árbol de trabajo cuando el contenedor de build se destruye.
+- Credenciales de GitHub de larga duración. Consulta **Tokens y Secretos** más arriba.
+- Contraseñas de usuarios en ninguna forma reversible.
+- Números de tarjetas de pago. Stripe gestiona todos los datos de tarjetas; solo guardamos el ID de cliente y los metadatos de suscripción.
 
-## Aislamiento de builds
+### Acceso Interno
 
-Cada build de documentación se ejecuta en un contenedor aislado:
+El acceso a datos de producción está limitado a un pequeño número de empleados que lo necesitan para operar el servicio o atender solicitudes de soporte. El acceso queda registrado.
+
+## Aislamiento de Builds
+
+Cada build de documentación se ejecuta en un contenedor dedicado:
 
 - Sin acceso a los datos de otros clientes
-- Entorno limpio para cada build
-- Contenedores destruidos tras su finalización
+- Entorno limpio para cada build, con secretos inyectados justo a tiempo
+- El contenedor se destruye una vez que el build se completa o falla
 
 ## Cumplimiento
 
@@ -70,50 +88,52 @@ Cada build de documentación se ejecuta en un contenedor aislado:
 
 Jamdesk cumple con los requisitos del GDPR:
 
-- Acuerdos de procesamiento de datos disponibles
-- Derecho de supresión respetado
-- Portabilidad de datos admitida
+- Acuerdo de Procesamiento de Datos disponible bajo solicitud en `privacy@jamdesk.com`
+- Una lista pública de subprocesadores en [jamdesk.com/subprocessors](https://www.jamdesk.com/subprocessors)
+- Derecho de eliminación atendido en un plazo de 30 días
+- Portabilidad de datos disponible mediante exportación
 
 ### Privacidad
 
-Nuestra analítica:
-- No usa cookies
-- No rastrea individuos
-- Respeta los encabezados Do Not Track
+Nuestros analytics integrados:
 
-Consulta nuestra [Política de privacidad](https://www.jamdesk.com/privacy) para más detalles.
+- No utilizan cookies
+- No rastrean individuos
+- Respetan las cabeceras Do Not Track
 
-## Respuesta a incidentes
+Consulta nuestra [Política de Privacidad](https://www.jamdesk.com/privacy) para más detalles.
 
-En caso de un incidente de seguridad:
+## Respuesta ante Incidentes
 
-1. Investigamos y contenemos el problema
-2. Los clientes afectados son notificados en un plazo de 72 horas
-3. Se proporciona un informe posterior al incidente
+Si un incidente de seguridad afecta a tu cuenta o tus datos, seguimos tres pasos:
 
-## Reporte de vulnerabilidades
+1. Investigar y contener el problema.
+2. Notificar a los clientes afectados en un plazo de 72 horas, en línea con nuestras obligaciones GDPR.
+3. Proporcionar un informe escrito post-incidente una vez confirmada la causa.
+
+## Reporte de Vulnerabilidades
 
 ¿Encontraste un problema de seguridad? Repórtalo de forma responsable:
 
-- Correo electrónico: security@jamdesk.com
-- Incluye: descripción, pasos para reproducirlo, evaluación del impacto
-- Acusamos recibo en un plazo de 48 horas
+- Envía un correo a `security@jamdesk.com`
+- Incluye una descripción, los pasos para reproducirlo y una evaluación del impacto
+- Confirmaremos la recepción en un plazo de 48 horas
 
-Actualmente no contamos con un programa de recompensas por errores.
+Actualmente no gestionamos un programa de bug bounty remunerado, pero nos complace reconocer a los investigadores que reportan de buena fe.
 
-## ¿Tienes preguntas?
+## ¿Preguntas?
 
-<Card title="Contactar con soporte" icon="shield" href="/es/help/support/contact">
+<Card title="Contactar con Soporte" icon="shield" href="/es/help/support/contact">
   Para consultas relacionadas con la seguridad
 </Card>
 
-## Artículos relacionados
+## Artículos Relacionados
 
 <Columns cols={2}>
-  <Card title="Contactar con soporte" icon="headset" href="/es/help/support/contact">
+  <Card title="Contactar con Soporte" icon="headset" href="/es/help/support/contact">
     Contacta con el equipo de Jamdesk
   </Card>
-  <Card title="Preguntas frecuentes" icon="circle-question" href="/es/help/faq">
-    Preguntas y respuestas frecuentes
+  <Card title="Preguntas Frecuentes" icon="circle-question" href="/es/help/faq">
+    Preguntas y respuestas habituales
   </Card>
 </Columns>
