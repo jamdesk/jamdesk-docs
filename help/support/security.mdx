@@ -7,62 +7,80 @@ How Jamdesk protects your documentation and account data.
 
 ## Infrastructure Security
 
-### Data Centers
+### Hosting
 
-Jamdesk runs on major cloud providers with SOC 2 compliance:
-
-- **Build service**: Google Cloud Platform
-- **CDN**: Cloudflare (300+ edge locations)
-- **Database**: Google Cloud Firestore
+Jamdesk runs on SOC 2-compliant cloud providers. Builds, application data, and compiled documentation each live in managed, hardened services from those providers, and traffic is served through a global CDN with built-in DDoS protection.
 
 ### Encryption
 
 | Data State | Protection |
 |------------|------------|
-| In transit | TLS 1.3 encryption |
-| At rest | AES-256 encryption |
-| Backups | Encrypted and geographically distributed |
+| In transit | TLS 1.3 between you, our edge, and our origins |
+| At rest | AES-256 for everything we persist, including database records, object storage, and logs |
+| Backups | Encrypted with the same keys and replicated across multiple regions |
 
 ## Access Controls
 
-### GitHub Integration
+### Sign-in
 
-Jamdesk's GitHub App requests minimal permissions:
+You can sign in to the dashboard with email and password or with single sign-on through Google or GitHub. Passwords are never stored in plaintext; our authentication provider keeps only one-way hashes.
 
-- **Read-only access** to repository contents
-- **Webhook** access for build triggers
-- **No write access** to your code
-
-We never modify your repository.
+If you sign in with Google or GitHub, any MFA you have configured on that account (TOTP, security keys, passkeys) applies to your Jamdesk sign-in as well. For the strongest protection, we recommend enabling MFA on your Google or GitHub account and using SSO.
 
 ### Team Access
 
-- Role-based access control (Owner, Admin, Member)
-- Audit logs for sensitive actions
-- Automatic session expiration
+Role-based access (Owner, Admin, Member) is enforced both in our database security rules and on every backend call. Sessions expire automatically after periods of inactivity, and changes to billing, members, custom domains, or API keys are written to a per-project audit log.
+
+### GitHub Integration
+
+Jamdesk connects to your repositories through a GitHub App with the minimum permissions it needs:
+
+- Read-only access to repository contents
+- Webhook delivery for build triggers
+- No write access to your code
+
+We never push, branch, or modify your repository.
+
+### Tokens and Secrets
+
+Every secret you trust us with is encrypted at rest. That includes:
+
+- GitHub App connections, where we keep only your numeric installation ID. Short-lived installation tokens (valid for one hour) are minted on demand and never persisted.
+- GitHub OAuth tokens used during the starter-repo flow, which are exchanged once, used to clone the template, then discarded.
+- Third-party integration credentials such as Slack incoming-webhook URLs, custom-domain verification tokens, and analytics API keys.
+
+The dashboard never returns these values to the browser after they're saved; only the server-side build pipeline can read them.
+
+Programmatic API keys are stored as one-way hashes. The plaintext is shown to you exactly once at creation time. If you lose it, rotate the key.
 
 ## Data Handling
 
 ### What We Store
 
-- Your `docs.json` configuration
+- Your `docs.json` configuration and any uploaded branding assets
 - Compiled documentation (HTML, CSS, JS)
-- Build logs (retained for 30 days)
-- Analytics data (anonymized)
+- Build logs, retained for 30 days
+- Anonymized analytics events (page views, country, device family)
+- Encrypted secrets for any third-party integration you have configured
 
 ### What We Don't Store
 
-- Your source code (fetched on-demand, not retained)
-- User passwords (hashed with bcrypt)
-- Payment card numbers (handled by Stripe)
+- Your source code. We clone the repository at build time and discard the working tree when the build container is destroyed.
+- Long-lived GitHub credentials. See **Tokens and Secrets** above.
+- User passwords in any reversible form.
+- Payment card numbers. Stripe handles all card data; we keep only the customer ID and subscription metadata.
+
+### Internal Access
+
+Production data access is limited to a small number of employees who need it to operate the service or respond to support requests. Access is logged.
 
 ## Build Isolation
 
-Each documentation build runs in an isolated container:
+Each documentation build runs in a dedicated container:
 
 - No access to other customers' data
-- Fresh environment for every build
-- Containers destroyed after completion
+- Fresh environment for every build, with secrets injected just-in-time
+- Container is destroyed after the build completes or fails
 
 ## Compliance
 
@@ -70,13 +88,15 @@ Each documentation build runs in an isolated container:
 
 Jamdesk complies with GDPR requirements:
 
-- Data processing agreements available
-- Right to deletion honored
-- Data portability supported
+- Data Processing Agreement available on request from `privacy@jamdesk.com`
+- A public list of subprocessors at [jamdesk.com/subprocessors](https://www.jamdesk.com/subprocessors)
+- Right to deletion honored within 30 days
+- Data portability supported via export
 
 ### Privacy
 
-Our analytics:
+Our built-in analytics:
+
 - Don't use cookies
 - Don't track individuals
 - Respect Do Not Track headers
@@ -85,21 +105,21 @@ See our [Privacy Policy](https://www.jamdesk.com/privacy) for details.
 
 ## Incident Response
 
-In case of a security incident:
+If a security incident affects your account or data, we do three things:
 
-1. We investigate and contain the issue
-2. Affected customers are notified within 72 hours
-3. Post-incident report provided
+1. Investigate and contain the issue.
+2. Notify affected customers within 72 hours, in line with our GDPR obligations.
+3. Provide a written post-incident report once the cause is confirmed.
 
 ## Reporting Vulnerabilities
 
 Found a security issue? Report it responsibly:
 
-- Email: security@jamdesk.com
-- Include: Description, steps to reproduce, impact assessment
+- Email `security@jamdesk.com`
+- Include a description, steps to reproduce, and an impact assessment
 - We'll acknowledge within 48 hours
 
-We don't currently have a bug bounty program.
+We don't currently run a paid bug bounty program, but we're happy to credit researchers who report in good faith.
 
 ## Questions?
 
