@@ -1,0 +1,237 @@
+---
+title: Diagrammes D2
+description: Générez des diagrammes d'architecture, des organigrammes, des séquences et des modèles SQL à partir de la syntaxe textuelle D2. Rendu SVG avec thème clair et sombre automatique.
+---
+
+Optez pour D2 lorsqu'un diagramme nécessite des conteneurs imbriqués et des frontières, un schéma de base de données avec clés primaires et étrangères, ou une disposition que vous pouvez ajuster en changeant de moteur. D2 vient compléter la prise en charge de Mermaid déjà présente dans Jamdesk : continuez à utiliser Mermaid pour les organigrammes rapides, et passez à D2 quand la structure devient architecturale. Les deux s'écrivent au même endroit — un bloc de code délimité dans votre Markdown — donc le choix est une question d'adéquation, pas de méthode de travail.
+
+## Utilisation de base
+
+Utilisez un bloc de code délimité avec l'identifiant de langage `d2` :
+
+````mdx
+```d2
+a -> b -> c
+```
+````
+
+```d2
+a -> b -> c
+```
+
+## Types de diagrammes
+
+### Architecture
+
+Les diagrammes d'architecture cartographient la façon dont les services se connectent. Utilisez des formes étiquetées pour montrer le chemin d'une requête à travers votre système.
+
+```d2
+Client: Web Client
+API: API Server
+Database: { shape: cylinder }
+
+Client -> API: request
+API -> Database: query
+```
+
+````mdx
+```d2
+Client: Web Client
+API: API Server
+Database: { shape: cylinder }
+
+Client -> API: request
+API -> Database: query
+```
+````
+
+### Conteneurs
+
+Les conteneurs regroupent les nœuds connexes. Imbriquez des formes dans des accolades `{ }` pour modéliser des frontières comme un compte cloud ou un déploiement, puis tracez des connexions qui traversent ces frontières.
+
+```d2
+cloud: Cloud {
+  api: API
+  worker: Worker
+}
+
+queue: Message Queue
+
+cloud.api -> queue: publish
+queue -> cloud.worker: consume
+```
+
+````mdx
+```d2
+cloud: Cloud {
+  api: API
+  worker: Worker
+}
+
+queue: Message Queue
+
+cloud.api -> queue: publish
+queue -> cloud.worker: consume
+```
+````
+
+### Diagrammes de séquence
+
+Les diagrammes de séquence montrent comment les composants communiquent dans le temps. Définissez `shape: sequence_diagram` sur un conteneur et listez les messages dans l'ordre pour documenter un flux d'API ou d'authentification.
+
+```d2
+flow: {
+  shape: sequence_diagram
+
+  Client -> Server: request
+  Server -> Database: query
+  Database -> Server: results
+  Server -> Client: response
+}
+```
+
+````mdx
+```d2
+flow: {
+  shape: sequence_diagram
+
+  Client -> Server: request
+  Server -> Database: query
+  Database -> Server: results
+  Server -> Client: response
+}
+```
+````
+
+### Tables SQL
+
+Les formes de table SQL documentent un schéma de base de données avec ses colonnes et ses types. Marquez une colonne avec `{ constraint: primary_key }` ou `{ constraint: foreign_key }` pour afficher les badges PK et FK, puis reliez une clé étrangère à la table qu'elle référence pour montrer la relation.
+
+```d2
+users: {
+  shape: sql_table
+  id: int { constraint: primary_key }
+  email: varchar
+}
+
+orders: {
+  shape: sql_table
+  id: int { constraint: primary_key }
+  user_id: int { constraint: foreign_key }
+  total: decimal
+}
+
+orders.user_id -> users.id
+```
+
+````mdx
+```d2
+users: {
+  shape: sql_table
+  id: int { constraint: primary_key }
+  email: varchar
+}
+
+orders: {
+  shape: sql_table
+  id: int { constraint: primary_key }
+  user_id: int { constraint: foreign_key }
+  total: decimal
+}
+
+orders.user_id -> users.id
+```
+````
+
+## Formes
+
+Définissez une `shape` sur n'importe quel nœud pour modifier son rendu :
+
+| Syntaxe             | Forme     | Utilisation |
+| ------------------- | --------- | ------- |
+| `shape: rectangle`  | Rectangle | Nœuds par défaut, processus |
+| `shape: circle`     | Cercle    | États, nœuds simples |
+| `shape: cylinder`   | Cylindre  | Bases de données, stockage |
+| `shape: cloud`      | Nuage     | Services externes, réseaux |
+| `shape: diamond`    | Losange   | Décisions, conditions |
+| `shape: person`     | Personne  | Utilisateurs, acteurs |
+| `shape: sql_table`  | Table SQL | Schémas de base de données, modèles ER |
+
+## Connexions
+
+Les connexions définissent la direction et les relations entre les nœuds :
+
+| Syntaxe           | Description            | Utilisation |
+| ----------------- | ---------------------- | ------- |
+| `a -> b`          | Flèche dirigée         | Flux normal |
+| `a -- b`          | Ligne non dirigée      | Associations |
+| `a <-> b`         | Flèche bidirectionnelle | Échange à double sens |
+| `a <- b`          | Flèche inverse         | Flux inverse |
+| `a -> b: label`   | Connexion étiquetée    | Décrire la relation |
+
+## Choisir un moteur de disposition
+
+D2 est fourni avec plusieurs moteurs de disposition. Le moteur par défaut est `dagre`. Pour passer à ELK sur des graphes plus denses, définissez-le dans la source du diagramme à l'aide du bloc de configuration natif de D2. Il n'existe pas de propriété de composant pour cela dans cette version ; le moteur est sélectionné dans le diagramme lui-même.
+
+```d2
+vars: {
+  d2-config: {
+    layout-engine: elk
+  }
+}
+
+ingress -> service -> database
+```
+
+````mdx
+```d2
+vars: {
+  d2-config: {
+    layout-engine: elk
+  }
+}
+
+ingress -> service -> database
+```
+````
+
+Les diagrammes larges défilent horizontalement dans leur conteneur, ce qui permet à un graphe dense de rester lisible sans déborder de la page.
+
+## Conseils de mise en forme
+
+<Tip>
+  Les diagrammes D2 s'adaptent aux modes clair et sombre. Jamdesk génère un SVG à
+  double thème, donc les couleurs restent lisibles dans les deux thèmes sans
+  configuration supplémentaire.
+</Tip>
+
+Pour des diagrammes efficaces :
+
+- Gardez chaque diagramme compact : décomposez un grand système en vues ciblées.
+- Étiquetez les connexions pour que la relation soit claire au premier coup d'œil.
+- Regroupez les nœuds connexes dans des conteneurs plutôt que dans un graphe à plat.
+- Passez au moteur de disposition ELK pour les graphes denses comportant de nombreuses connexions.
+
+## D2 ou Mermaid
+
+Les deux langages sont générés au moment du build, donc le choix se résume à l'adéquation :
+
+- **Choisissez D2** pour les diagrammes d'architecture et d'infrastructure, les modèles SQL et ER, les visuels au style esquissé, et lorsque vous souhaitez pouvoir choisir le moteur de disposition.
+- **Choisissez Mermaid** pour les organigrammes, les diagrammes de Gantt et les graphes Git. Les deux génèrent des diagrammes de séquence ; la syntaxe de séquence de Mermaid est plus riche en fonctionnalités, tandis que celle de D2 garde le reste de votre diagramme dans un seul langage. Mermaid est largement adopté et dispose d'un vaste écosystème.
+
+Consultez la page [Diagrammes Mermaid](/fr/components/mermaid) pour la syntaxe et des exemples Mermaid.
+
+## En savoir plus
+
+Pour la référence complète de la syntaxe D2, notamment le style, les classes et l'animation, consultez la [documentation officielle D2](https://d2lang.com).
+
+## Prochaines étapes
+
+<Columns cols={2}>
+  <Card title="Diagrammes Mermaid" icon="chart-network" href="/fr/components/mermaid">
+    Générer des organigrammes et des diagrammes de séquence avec Mermaid
+  </Card>
+  <Card title="Vue d'ensemble des composants" icon="puzzle-piece" href="/fr/components/overview">
+    Parcourir tous les composants disponibles
+  </Card>
+</Columns>
