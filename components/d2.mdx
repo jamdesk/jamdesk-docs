@@ -1,0 +1,236 @@
+---
+title: D2 Diagrams
+description: Render architecture diagrams, flowcharts, sequences, and SQL models from text-based D2 syntax. Diagrams render as SVG with automatic light and dark theming.
+---
+
+Reach for D2 when a diagram needs nested containers and boundaries, a database schema with primary and foreign keys, or a layout you can tune by swapping engines. It sits alongside the Mermaid support already in Jamdesk: keep using Mermaid for quick flowcharts, and move to D2 when the structure gets architectural. Both share the same authoring spot — a fenced code block in your Markdown — so picking one is a question of fit, not workflow.
+
+## Basic Usage
+
+Use a fenced code block with the `d2` language identifier:
+
+````mdx
+```d2
+a -> b -> c
+```
+````
+
+```d2
+a -> b -> c
+```
+
+## Diagram Types
+
+### Architecture
+
+Architecture diagrams map how services connect. Use labeled shapes to show the request path through your system.
+
+```d2
+Client: Web Client
+API: API Server
+Database: { shape: cylinder }
+
+Client -> API: request
+API -> Database: query
+```
+
+````mdx
+```d2
+Client: Web Client
+API: API Server
+Database: { shape: cylinder }
+
+Client -> API: request
+API -> Database: query
+```
+````
+
+### Containers
+
+Containers group related nodes. Nest shapes inside `{ }` to model boundaries like a cloud account or a deployment, then draw connections that cross those boundaries.
+
+```d2
+cloud: Cloud {
+  api: API
+  worker: Worker
+}
+
+queue: Message Queue
+
+cloud.api -> queue: publish
+queue -> cloud.worker: consume
+```
+
+````mdx
+```d2
+cloud: Cloud {
+  api: API
+  worker: Worker
+}
+
+queue: Message Queue
+
+cloud.api -> queue: publish
+queue -> cloud.worker: consume
+```
+````
+
+### Sequence Diagrams
+
+Sequence diagrams show how components talk over time. Set `shape: sequence_diagram` on a container and list messages in order to document an API or authentication flow.
+
+```d2
+flow: {
+  shape: sequence_diagram
+
+  Client -> Server: request
+  Server -> Database: query
+  Database -> Server: results
+  Server -> Client: response
+}
+```
+
+````mdx
+```d2
+flow: {
+  shape: sequence_diagram
+
+  Client -> Server: request
+  Server -> Database: query
+  Database -> Server: results
+  Server -> Client: response
+}
+```
+````
+
+### SQL Tables
+
+SQL table shapes document a database schema with columns and types. Mark a column with `{ constraint: primary_key }` or `{ constraint: foreign_key }` to render PK and FK badges, then connect a foreign key to its referenced table to show the relationship.
+
+```d2
+users: {
+  shape: sql_table
+  id: int { constraint: primary_key }
+  email: varchar
+}
+
+orders: {
+  shape: sql_table
+  id: int { constraint: primary_key }
+  user_id: int { constraint: foreign_key }
+  total: decimal
+}
+
+orders.user_id -> users.id
+```
+
+````mdx
+```d2
+users: {
+  shape: sql_table
+  id: int { constraint: primary_key }
+  email: varchar
+}
+
+orders: {
+  shape: sql_table
+  id: int { constraint: primary_key }
+  user_id: int { constraint: foreign_key }
+  total: decimal
+}
+
+orders.user_id -> users.id
+```
+````
+
+## Shapes
+
+Set a `shape` on any node to change how it renders:
+
+| Syntax              | Shape     | Use For |
+| ------------------- | --------- | ------- |
+| `shape: rectangle`  | Rectangle | Default nodes, processes |
+| `shape: circle`     | Circle    | States, simple nodes |
+| `shape: cylinder`   | Cylinder  | Databases, storage |
+| `shape: cloud`      | Cloud     | External services, networks |
+| `shape: diamond`    | Diamond   | Decisions, conditions |
+| `shape: person`     | Person    | Users, actors |
+| `shape: sql_table`  | SQL table | Database schemas, ER models |
+
+## Connections
+
+Connections define direction and relationships between nodes:
+
+| Syntax            | Description            | Use For |
+| ----------------- | ---------------------- | ------- |
+| `a -> b`          | Directed arrow         | Normal flow |
+| `a -- b`          | Undirected line        | Associations |
+| `a <-> b`         | Bidirectional arrow    | Two-way exchange |
+| `a <- b`          | Reverse arrow          | Reverse flow |
+| `a -> b: label`   | Labeled connection     | Describe the relationship |
+
+## Choosing a Layout Engine
+
+D2 ships with multiple layout engines. The default is `dagre`. To switch to ELK for denser graphs, set it in the diagram source using D2's native config block. There is no component prop for this in this release; the engine is selected in the diagram itself.
+
+```d2
+vars: {
+  d2-config: {
+    layout-engine: elk
+  }
+}
+
+ingress -> service -> database
+```
+
+````mdx
+```d2
+vars: {
+  d2-config: {
+    layout-engine: elk
+  }
+}
+
+ingress -> service -> database
+```
+````
+
+Wide diagrams scroll horizontally inside their container, so a dense graph stays readable without overflowing the page.
+
+## Styling Tips
+
+<Tip>
+  D2 diagrams adapt to light and dark mode. Jamdesk builds a dual-theme SVG, so
+  colors stay readable in both themes without extra configuration.
+</Tip>
+
+For effective diagrams:
+
+- Keep each diagram small: split a large system into focused views.
+- Label connections so the relationship is clear at a glance.
+- Group related nodes into containers instead of one flat graph.
+- Switch to the ELK layout engine for dense graphs with many connections.
+
+## D2 vs Mermaid
+
+Both languages render at build time, so the choice comes down to fit:
+
+- **Pick D2** for architecture and infrastructure diagrams, SQL and ER models, sketch-style visuals, and when you want a choice of layout engines.
+- **Pick Mermaid** for flowcharts, Gantt charts, and Git graphs. Both render sequence diagrams; Mermaid's sequence syntax is more feature-rich, while D2's keeps the rest of your diagram in one language. Mermaid is widely adopted and has a broad ecosystem.
+
+See the [Mermaid Diagrams](/components/mermaid) page for Mermaid syntax and examples.
+
+## Learn More
+
+For the full D2 syntax reference, including styling, classes, and animation, see the [official D2 documentation](https://d2lang.com).
+
+## What's Next?
+
+<Columns cols={2}>
+  <Card title="Mermaid Diagrams" icon="chart-network" href="/components/mermaid">
+    Render flowcharts and sequence diagrams with Mermaid
+  </Card>
+  <Card title="Components Overview" icon="puzzle-piece" href="/components/overview">
+    Browse all available components
+  </Card>
+</Columns>
