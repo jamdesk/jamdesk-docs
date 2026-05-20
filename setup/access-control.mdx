@@ -1,0 +1,78 @@
+---
+title: Access Control
+description: "Choose how readers reach your docs: fully public, password-gated, mixed public/private, or SSO. Compare options and pick the one that fits your audience."
+---
+
+Jamdesk gives you four ways to control who can read your docs. Most teams pick one and stick with it; some mix and match. This page frames the decision, then points you at the deep-dive guide for whichever option you pick.
+
+## Pick the right approach
+
+| Approach | Use when | Setup |
+|---|---|---|
+| **Fully public** | External-facing product docs, open-source projects, anything you want indexed and shareable. | Default — no configuration. |
+| **Whole-site password** | Everything is internal: engineering runbooks, partner-only docs, an unreleased product. One shared passphrase gates the whole site. | `auth.password.enabled: true` in `docs.json` + set password in dashboard. See [Password Protection](/setup/password-protection). |
+| **Mixed (some pages private)** | Most docs are public; a handful are internal (a runbook, a beta feature, an internal API reference). | Add `private: true` to frontmatter on internal pages, or list them under `auth.password.private[]`. See [Password Protection](/setup/password-protection). |
+| **SSO (Enterprise)** | Readers should sign in with your existing identity provider — no shared passwords, audit trail, deprovision-by-removing-the-user. | Enterprise plan. See [SSO](/setup/sso). |
+
+<Tip>
+  You can switch between approaches at any time by editing `docs.json` and pushing. Switching from whole-site to mixed (or vice versa) takes one build.
+</Tip>
+
+## Common patterns
+
+### Internal and external docs in one project
+
+The most common ask: "I want extensive internal docs locked behind a login, plus a smaller public site for customers." You don't need two projects for this. Use **mixed mode** in a single Jamdesk project:
+
+```yaml
+---
+title: Incident Runbook
+private: true
+---
+```
+
+Pages with `private: true` are gated; everything else stays public. One repo, one build, one dashboard. The unlock screen only appears when a reader hits a gated page.
+
+For larger internal sections, list the paths in `docs.json` instead of marking each file. Note: `auth.password.private[]` activates specific-pages mode automatically — you don't add `enabled: true` (that's whole-site mode, the opposite of what you want here).
+
+```json docs.json
+{
+  "auth": {
+    "password": {
+      "hint": "Ask the on-call engineer",
+      "private": ["/internal/**", "/admin/runbook"]
+    }
+  }
+}
+```
+
+### Two separate projects
+
+Use two projects only when the audiences need fully different branding, separate custom domains, separate analytics, or different plan tiers. Examples: a public docs site at `docs.acme.com` and a separate internal wiki at `internal.acme.com`. Maintenance cost is higher — two builds, two dashboards, two domains.
+
+### SSO for the docs site
+
+On Enterprise plans, readers sign in with your identity provider (Okta, Google Workspace, Azure AD, etc.) instead of typing a shared password. Best fit when you need an audit trail of who read what, or when offboarding a user must immediately revoke their docs access. See [SSO](/setup/sso) for the high-level overview and how to start a conversation with sales.
+
+## Editors vs readers
+
+People sometimes confuse three different access concepts. Here's the clean split:
+
+| Role | What they do | How access is granted |
+|---|---|---|
+| **Editors** | Write and update MDX content. | Docs are edited by committing MDX to your connected GitHub repo, so **your GitHub repo permissions are the editor permissions**. There's no separate Jamdesk editor role layered on top — anyone who can push to your docs branch can publish a change. |
+| **Readers** | View the published docs site. | Everyone (public), anyone with the password (password mode), or anyone authenticated via your IdP (SSO). |
+| **Dashboard team members** | Manage builds, analytics, and project settings in the Jamdesk dashboard. | Invited via **Settings → Team** in the dashboard. They don't author content directly. See [Team Members](/help/projects/team-members). |
+
+A teammate can be one, two, or all three — they're independent axes.
+
+## What's Next?
+
+<Columns cols={2}>
+  <Card title="Password Protection" icon="lock" href="/setup/password-protection">
+    Whole-site and per-page password gating, hints, rotation, and session controls.
+  </Card>
+  <Card title="SSO (Enterprise)" icon="key" href="/setup/sso">
+    Sign-in with your identity provider for both dashboard and docs.
+  </Card>
+</Columns>
