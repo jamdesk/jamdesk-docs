@@ -1,9 +1,11 @@
 ---
-title: Navigation dans Jamdesk
-description: "La navigation Jamdesk utilise onglets, groupes et pages pour organiser votre doc. Des liens externes peuvent être ajoutés via des ancres."
+title: Navigation
+description: La navigation Jamdesk utilise onglets, groupes et pages pour organiser votre documentation. Ajoutez des liens externes via des ancres.
 ---
 
-Votre barre latérale et votre barre supérieure sont entièrement définies dans `docs.json`. La hiérarchie de navigation comporte trois niveaux -- des onglets pour les sections de niveau supérieur, des groupes pour les dossiers réductibles, et des pages pour les entrées individuelles -- ainsi que des ancres pour les liens externes qui apparaissent sur chaque page.
+Votre barre latérale et votre barre supérieure sont entièrement définies dans `docs.json`. La hiérarchie de navigation comprend trois niveaux — des onglets pour les sections de premier niveau, des groupes pour les dossiers réductibles, et des pages pour les entrées individuelles — ainsi que des ancres pour les liens externes qui apparaissent sur chaque page.
+
+Les captures d'écran montrent l'interface en anglais.
 
 ## Aperçu de la structure
 
@@ -30,12 +32,12 @@ Votre barre latérale et votre barre supérieure sont entièrement définies dan
 
 ### Onglets
 
-Sections de navigation de niveau supérieur. Contrôlez leur position avec le paramètre `tabsPosition` :
+Sections de navigation de premier niveau. Contrôlez leur position avec le paramètre `tabsPosition` :
 
-| Valeur   | Position                         |
-| -------- | -------------------------------- |
-| `"top"`  | Dans la barre d'onglets d'en-tête |
-| `"left"` | En haut de la barre latérale     |
+| Valeur   | Position                          |
+| -------- | --------------------------------- |
+| `"top"`  | Dans la barre d'onglets de l'en-tête |
+| `"left"` | En haut de la barre latérale      |
 
 La position par défaut dépend de votre thème :
 
@@ -59,7 +61,7 @@ La position par défaut dépend de votre thème :
 
 <Note>
   Les icônes utilisent la variante Font Awesome Light pour maintenir une
-  apparence propre et cohérente.
+  apparence soignée et cohérente.
 </Note>
 
 ### Liens externes (Ancres)
@@ -75,15 +77,15 @@ Ajoutez des liens externes qui apparaissent en haut de la barre latérale sur to
 }
 ```
 
-| Champ  | Type   | Requis | Description                      |
-| ------ | ------ | ------ | -------------------------------- |
-| `name` | string | Oui    | Texte d'affichage du lien        |
-| `href` | string | Oui    | URL (s'ouvre dans un nouvel onglet) |
-| `icon` | string | Non    | Nom d'icône Font Awesome          |
+| Champ  | Type   | Requis | Description                          |
+| ------ | ------ | ------ | ------------------------------------ |
+| `name` | string | Oui    | Texte affiché pour le lien           |
+| `href` | string | Oui    | URL (s'ouvre dans un nouvel onglet)  |
+| `icon` | string | Non    | Nom d'icône Font Awesome             |
 
 ### Groupes
 
-Sections réductibles au sein d'un onglet :
+Un groupe est un ensemble étiqueté d'entrées de barre latérale à l'intérieur d'un onglet. Les groupes donnent à votre barre latérale un rythme à deux niveaux et permettent de masquer les sections plus profondes derrière des dossiers de type accordéon.
 
 ```json
 {
@@ -91,6 +93,50 @@ Sections réductibles au sein d'un onglet :
   "pages": ["auth/overview", "auth/tokens"]
 }
 ```
+
+#### Deux niveaux de rendu
+
+La barre latérale affiche différemment les groupes de premier niveau et les groupes imbriqués :
+
+| Niveau | Emplacement | Comportement |
+| --- | --- | --- |
+| **Groupe de premier niveau** | Directement sous un onglet dans `docs.json` | Agit comme un en-tête de section persistant. Affiche toujours ses pages. Cliquer sur l'en-tête accède à la première page du groupe. |
+| **Groupe imbriqué** | À l'intérieur du tableau `pages` d'un autre groupe | S'affiche comme un dossier de type accordéon avec un chevron de bascule. Cliquer pour développer ou réduire. |
+
+Le niveau d'un groupe est positionnel : les groupes les plus extérieurs sous un onglet s'affichent en premier niveau, et tout groupe placé dans le tableau `pages` d'un autre groupe s'affiche comme dossier imbriqué. Il n'existe pas de flag `topLevel`.
+
+Utilisez les groupes de premier niveau pour les sections principales de votre barre latérale (Get Started, Reference, Guides) et les sous-groupes lorsqu'une section de premier niveau contient suffisamment de pages pour qu'un second niveau de hiérarchie aide le lecteur à s'y retrouver. Consultez [Sous-groupes](#sous-groupes) pour la forme JSON.
+
+#### Comportement des groupes imbriqués
+
+<Frame caption="Un groupe imbriqué dans son état réduit. Le chevron pointe vers la droite et les pages enfants sont masquées.">
+  <img src="/images/navigation/sidebar-group-collapsed.webp" alt="Sidebar with the 'Privacy & Access' nested group collapsed: chevron points right, child pages hidden" width="320" height="900" />
+</Frame>
+
+- **Développement automatique vers la page courante.** Le groupe contenant la page que vous consultez s'ouvre automatiquement, de sorte que le lien actif est toujours visible.
+- **Cliquer pour basculer.** Cliquer sur l'en-tête d'un groupe imbriqué le développe (et accède à sa première page) ou le réduit s'il est déjà ouvert.
+- **L'état persiste pendant la navigation dans l'application.** Les groupes que vous ouvrez manuellement restent ouverts lorsque vous naviguez entre les pages. Un rechargement complet de la page réinitialise l'état ouvert/fermé.
+
+<Frame caption="Le même groupe après avoir navigué vers l'une de ses pages enfants. Le chevron pivote et les pages enfants apparaissent en dessous.">
+  <img src="/images/navigation/sidebar-group-expanded.webp" alt="Sidebar with the 'Privacy & Access' nested group expanded: chevron rotated down, three child pages visible below" width="320" height="900" />
+</Frame>
+
+<Tip>
+  Si vous souhaitez un en-tête de section qui ne se réduit jamais, conservez-le au premier niveau. Si vous souhaitez un dossier que les lecteurs peuvent masquer, imbriquez-le dans un autre groupe.
+</Tip>
+
+#### Champs d'un groupe
+
+| Champ | Type | Requis | Description |
+| --- | --- | --- | --- |
+| `group` | string | Oui | Étiquette d'affichage visible dans la barre latérale. |
+| `pages` | array | Oui | Liste de chemins de pages et/ou d'objets de groupes imbriqués (consultez [Sous-groupes](#sous-groupes) pour la forme imbriquée). |
+| `icon` | string | Non | Nom d'icône Font Awesome affiché à côté de l'étiquette du groupe. |
+| `tag` | string | Non | Petit badge à côté de l'étiquette (ex. : `"New"`, `"Beta"`). |
+| `root` | string | Non | Chemin de page vers lequel le groupe renvoie lorsque l'étiquette est cliquée (au lieu d'accéder à la première page enfant). |
+| `hidden` | boolean | Non | Masquer le groupe de la barre latérale par défaut. Les pages restent accessibles par lien direct. |
+| `public` | boolean | Non | Marquer le groupe comme accessible publiquement. Par défaut, reprend le paramètre de l'onglet parent. |
+| `expanded` | boolean | Non | Ouvrir le groupe par défaut au premier chargement de la page. Uniquement significatif pour les groupes imbriqués (les groupes de premier niveau affichent toujours leurs pages). |
 
 ### Pages
 
@@ -100,9 +146,9 @@ Pages de documentation individuelles, référencées par leur chemin de fichier 
 "pages": ["introduction", "guides/quickstart", "api/endpoints"]
 ```
 
-Par défaut, le titre de la barre latérale est généré à partir du nom du fichier -- les tirets deviennent des espaces et chaque mot est mis en majuscule. Par exemple, `"api/getting-started"` s'affiche sous la forme "Getting Started".
+Par défaut, le titre de la barre latérale est généré à partir du nom du fichier — les tirets deviennent des espaces et chaque mot commence par une majuscule. Par exemple, `"api/getting-started"` s'affiche comme "Getting Started".
 
-Pour définir un titre de barre latérale personnalisé, utilisez un objet à la place d'une chaîne de caractères :
+Pour définir un titre personnalisé dans la barre latérale, utilisez un objet au lieu d'une chaîne de caractères :
 
 ```json
 "pages": [
@@ -115,17 +161,17 @@ Pour définir un titre de barre latérale personnalisé, utilisez un objet à la
 
 Cela est utile pour les acronymes, les noms propres et les badges d'endpoint API.
 
-| Champ   | Type   | Requis | Description                                                         |
-| ------- | ------ | ------ | ------------------------------------------------------------------- |
-| `page`  | string | Oui    | Chemin du fichier sans `.mdx`                                       |
-| `title` | string | Non    | Titre personnalisé de la barre latérale                             |
-| `icon`  | string | Non    | Nom d'icône Font Awesome                                            |
-| `tag`   | string | Non    | Petit badge à côté du titre (ex. : "New", "Beta")                   |
-| `method`| string | Non    | Badge de méthode HTTP : GET, POST, PUT, PATCH ou DELETE             |
+| Champ | Type | Requis | Description |
+| --- | --- | --- | --- |
+| `page` | string | Oui | Chemin du fichier sans `.mdx` |
+| `title` | string | Non | Titre personnalisé dans la barre latérale |
+| `icon` | string | Non | Nom d'icône Font Awesome |
+| `tag` | string | Non | Petit badge à côté du titre (ex. : "New", "Beta") |
+| `method` | string | Non | Badge de méthode HTTP : GET, POST, PUT, PATCH ou DELETE |
 
-## Onglets multiples
+## Plusieurs onglets
 
-Créez des sections distinctes pour différents publics :
+Créez des sections séparées pour différents publics :
 
 ```json
 {
@@ -150,7 +196,7 @@ Créez des sections distinctes pour différents publics :
 
 ## Liens d'onglets externes
 
-Liez directement à une documentation externe ou à des ressources depuis les onglets :
+Liez une documentation ou des ressources externes directement depuis les onglets :
 
 ```json
 {
@@ -163,9 +209,9 @@ Liez directement à une documentation externe ou à des ressources depuis les on
 }
 ```
 
-Les onglets externes s'ouvrent dans un nouvel onglet de navigateur.
+Les onglets externes s'ouvrent dans un nouvel onglet du navigateur.
 
-## Groupes imbriqués
+## Sous-groupes
 
 Organisez une documentation complexe avec des structures imbriquées :
 
@@ -193,6 +239,6 @@ Organisez une documentation complexe avec des structures imbriquées :
     Liez votre dépôt pour des builds automatiques
   </Card>
   <Card title="Structure des répertoires" icon="folder-tree" href="/fr/setup/directory-structure">
-    Organisez votre documentation pour la mise à l'échelle
+    Organisez votre documentation pour tenir à l'échelle
   </Card>
 </Columns>
