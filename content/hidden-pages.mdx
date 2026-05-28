@@ -1,0 +1,101 @@
+---
+title: Hidden pages
+description: Keep pages out of your sidebar and search results without deleting them. Use frontmatter, docs.json, or seo controls to manage visibility.
+---
+
+Some pages don't belong in the public sidebar — drafts, internal handbooks, deprecated guides you still need to link to. Hidden pages stay reachable by direct URL but disappear from navigation, search, your sitemap, and the AI context fed to LLMs.
+
+## Hide a single page
+
+Add `hidden: true` to the page's frontmatter:
+
+```mdx
+---
+title: Internal handbook
+hidden: true
+---
+```
+
+The page renders normally when someone visits its URL, but Jamdesk:
+
+- Drops it from the sidebar
+- Adds `<meta name="robots" content="noindex, follow">` so search engines skip it
+- Excludes it from `sitemap.xml`, `llms.txt`, `llms-full.txt`, and on-site search
+
+## Hide a whole group or tab
+
+Set `"hidden": true` on a group or tab in `docs.json`:
+
+```json
+{
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Public",
+        "groups": [{ "group": "Guides", "pages": ["intro", "quickstart"] }]
+      },
+      {
+        "tab": "Internal",
+        "hidden": true,
+        "groups": [{ "group": "Runbooks", "pages": ["oncall", "postmortems"] }]
+      }
+    ]
+  }
+}
+```
+
+Every page under the hidden node inherits the rule. The same flag works on `tabs`, `groups`, `anchors`, `dropdowns`, `products`, `languages`, and `versions`.
+
+## Keep hidden pages in search
+
+If you want a hidden tab or group out of the sidebar but still indexed for site search, AI answers, and the sitemap, add `"searchable": true`:
+
+```json
+{
+  "tab": "Internal",
+  "hidden": true,
+  "searchable": true,
+  "groups": [{ "group": "Runbooks", "pages": ["oncall"] }]
+}
+```
+
+Frontmatter `hidden: true` on a child page still wins — `searchable` only re-opens descendants that haven't opted out themselves.
+
+## Project-wide controls
+
+Both flags live under `seo` in `docs.json`:
+
+| Flag | Default | Effect |
+|---|---|---|
+| `seo.indexing` | `"navigable"` | Only pages listed in your navigation appear in artifacts. Set to `"all"` to include every MDX file in your repo. |
+| `seo.indexHiddenPages` | `false` | Set to `true` to include `hidden: true` pages in sitemap, llms.txt, and search, and drop the auto-noindex tag. |
+
+Example:
+
+```json
+{
+  "seo": {
+    "indexing": "all"
+  }
+}
+```
+
+## Quick reference
+
+| Scenario | Frontmatter | docs.json | Visible in sidebar | Direct URL | In sitemap |
+|---|---|---|---|---|---|
+| Normal page | — | listed | Yes | Yes | Yes |
+| Hidden via frontmatter | `hidden: true` | listed | No | Yes | No |
+| Page not in nav (orphan) | — | omitted | No | Yes | No |
+| Hidden group | — | `hidden: true` on group | No | Yes | No |
+| Hidden + searchable group | — | `hidden: true, searchable: true` | No | Yes | Yes |
+| Project opts into indexing all | — | any | Same as above | Yes | Yes |
+
+## When to use each
+
+- **Drafts and previews** — frontmatter `hidden: true` on individual pages
+- **Internal sections** for a small team — a hidden group or tab
+- **Compliance docs** that should be public but not promoted — hidden group with `searchable: true`
+- **Full-repo indexing** for AI grounding only — `seo.indexing: "all"`
+
+Hidden pages aren't access control. Anyone who has the URL can read them. For real access control, see [Password Protection](/setup/password-protection).
