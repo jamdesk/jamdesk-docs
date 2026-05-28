@@ -1,0 +1,101 @@
+---
+title: Pages cachées
+description: Gardez des pages hors de votre barre latérale et des résultats de recherche sans les supprimer. Utilisez le frontmatter, docs.json ou les contrôles seo pour gérer la visibilité.
+---
+
+Certaines pages n'ont pas leur place dans la barre latérale publique — brouillons, manuels internes, guides dépréciés que vous devez encore pouvoir lier. Les pages cachées restent accessibles par URL directe, mais disparaissent de la navigation, de la recherche, du sitemap et du contexte IA transmis aux LLMs.
+
+## Cacher une seule page
+
+Ajoutez `hidden: true` dans le frontmatter de la page :
+
+```mdx
+---
+title: Internal handbook
+hidden: true
+---
+```
+
+La page s'affiche normalement quand quelqu'un visite son URL, mais Jamdesk :
+
+- La retire de la barre latérale
+- Ajoute `<meta name="robots" content="noindex, follow">` pour que les moteurs de recherche l'ignorent
+- L'exclut de `sitemap.xml`, `llms.txt`, `llms-full.txt` et de la recherche sur le site
+
+## Cacher un groupe ou un onglet entier
+
+Définissez `"hidden": true` sur un groupe ou un onglet dans `docs.json` :
+
+```json
+{
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Public",
+        "groups": [{ "group": "Guides", "pages": ["intro", "quickstart"] }]
+      },
+      {
+        "tab": "Internal",
+        "hidden": true,
+        "groups": [{ "group": "Runbooks", "pages": ["oncall", "postmortems"] }]
+      }
+    ]
+  }
+}
+```
+
+Toutes les pages sous le nœud caché héritent de la règle. Le même flag fonctionne sur `tabs`, `groups`, `anchors`, `dropdowns`, `products`, `languages` et `versions`.
+
+## Conserver les pages cachées dans la recherche
+
+Si vous souhaitez qu'un onglet ou un groupe caché n'apparaisse pas dans la barre latérale tout en restant indexé pour la recherche sur le site, les réponses IA et le sitemap, ajoutez `"searchable": true` :
+
+```json
+{
+  "tab": "Internal",
+  "hidden": true,
+  "searchable": true,
+  "groups": [{ "group": "Runbooks", "pages": ["oncall"] }]
+}
+```
+
+Le `hidden: true` en frontmatter d'une page enfant prime toujours — `searchable` ne réouvre que les descendants qui ne l'ont pas eux-mêmes désactivé.
+
+## Contrôles à l'échelle du projet
+
+Ces deux flags se trouvent sous `seo` dans `docs.json` :
+
+| Flag | Défaut | Effet |
+|---|---|---|
+| `seo.indexing` | `"navigable"` | Seules les pages listées dans votre navigation apparaissent dans les artefacts. Définissez à `"all"` pour inclure tous les fichiers MDX de votre dépôt. |
+| `seo.indexHiddenPages` | `false` | Définissez à `true` pour inclure les pages `hidden: true` dans le sitemap, llms.txt et la recherche, et supprimer le tag noindex automatique. |
+
+Exemple :
+
+```json
+{
+  "seo": {
+    "indexing": "all"
+  }
+}
+```
+
+## Référence rapide
+
+| Scénario | Frontmatter | docs.json | Visible dans la barre latérale | URL directe | Dans le sitemap |
+|---|---|---|---|---|---|
+| Page normale | — | listée | Oui | Oui | Oui |
+| Cachée via frontmatter | `hidden: true` | listée | Non | Oui | Non |
+| Page absente de la nav (orpheline) | — | omise | Non | Oui | Non |
+| Groupe caché | — | `hidden: true` sur le groupe | Non | Oui | Non |
+| Groupe caché + searchable | — | `hidden: true, searchable: true` | Non | Oui | Oui |
+| Projet avec indexation complète | — | quelconque | Comme ci-dessus | Oui | Oui |
+
+## Quand utiliser chaque option
+
+- **Brouillons et previews** — frontmatter `hidden: true` sur les pages individuelles
+- **Sections internes** pour une petite équipe — un groupe ou onglet caché
+- **Docs de conformité** qui doivent être publiques mais pas mises en avant — groupe caché avec `searchable: true`
+- **Indexation complète du dépôt** pour l'ancrage IA uniquement — `seo.indexing: "all"`
+
+Les pages cachées ne constituent pas un contrôle d'accès. Quiconque possède l'URL peut les lire. Pour un vrai contrôle d'accès, consultez [Protection par mot de passe](/fr/setup/password-protection).

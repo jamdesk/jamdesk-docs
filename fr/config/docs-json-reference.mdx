@@ -1,21 +1,21 @@
 ---
 title: Référence docs.json
-description: "Référence complète de chaque champ de docs.json — thèmes, couleurs, navigation, onglets, OpenAPI, branding, SEO, analytique et chat IA."
+description: "Référence complète de chaque champ dans docs.json — thèmes, couleurs, navigation, onglets, intégration OpenAPI, branding, SEO, analytique et chat IA."
 ---
 
 Le fichier `docs.json` est la configuration centrale de votre site de documentation Jamdesk.
 
 <Tip>
-  Les paramètres clés de votre docs.json sont affichés dans le dashboard sous
+  Les paramètres clés de votre docs.json sont affichés dans le Dashboard sous
   **Paramètres du projet → Points forts de la configuration**. Cette vue est en lecture seule
   et se met à jour automatiquement après chaque build réussi.
 </Tip>
 
-## Champs obligatoires
+## Champs requis
 
 ### name
 
-**Type :** `string` (obligatoire)
+**Type :** `string` (requis)
 
 Le nom de votre site de documentation. Affiché dans l'en-tête et l'onglet du navigateur.
 
@@ -25,7 +25,7 @@ Le nom de votre site de documentation. Affiché dans l'en-tête et l'onglet du n
 
 ### theme
 
-**Type :** `"jam" | "nebula" | "pulsar"` (obligatoire)
+**Type :** `"jam" | "nebula" | "pulsar"` (requis)
 
 <Tabs>
   <Tab title="jam">
@@ -34,12 +34,12 @@ Le nom de votre site de documentation. Affiché dans l'en-tête et l'onglet du n
     **Idéal pour :** La plupart des sites de documentation, les références API
   </Tab>
   <Tab title="nebula">
-    Ambiance légère et détendue avec JetBrains Mono.
+    Style aéré et détendu avec JetBrains Mono.
 
     **Idéal pour :** Documentation narrative, guides
   </Tab>
   <Tab title="pulsar">
-    Style net et haut contraste avec navigation par barre latérale.
+    Design net et à fort contraste avec navigation en barre latérale.
 
     **Idéal pour :** Référence technique dense
   </Tab>
@@ -47,13 +47,13 @@ Le nom de votre site de documentation. Affiché dans l'en-tête et l'onglet du n
 
 ### colors
 
-**Type :** `object` (obligatoire)
+**Type :** `object` (requis)
 
-| Champ | Type | Obligatoire | Description |
-|-------|------|-------------|-------------|
+| Champ | Type | Requis | Description |
+|-------|------|--------|-------------|
 | `primary` | string (hex) | Oui | Couleur principale de la marque |
-| `light` | string (hex) | Non | Couleur d'accentuation pour le thème clair |
-| `dark` | string (hex) | Non | Couleur d'accentuation pour le thème sombre |
+| `light` | string (hex) | Non | Accent pour le thème clair |
+| `dark` | string (hex) | Non | Accent pour le thème sombre |
 
 ```json
 {
@@ -69,12 +69,26 @@ Le nom de votre site de documentation. Affiché dans l'en-tête et l'onglet du n
 
 ### favicon
 
-**Type :** `string`
+**Type :** `string` ou `object`
 
-Chemin vers votre fichier favicon (SVG recommandé).
+Chemin vers votre fichier favicon (SVG recommandé). Fournissez une seule image pour les deux modes, ou des variantes `light` / `dark` séparées.
+
+| Champ | Type | Description |
+|-------|------|-------------|
+| `light` | string | Favicon pour le mode clair (requis avec la forme objet) |
+| `dark` | string | Favicon pour le mode sombre (optionnel — utilise `light` en repli) |
 
 ```json
 { "favicon": "/images/favicon.svg" }
+```
+
+```json
+{
+  "favicon": {
+    "light": "/images/favicon.svg",
+    "dark": "/images/favicon-dark.svg"
+  }
+}
 ```
 
 ### logo
@@ -85,7 +99,7 @@ Chemin vers votre fichier favicon (SVG recommandé).
 |-------|------|-------------|
 | `light` | string | Logo pour le mode clair |
 | `dark` | string | Logo pour le mode sombre |
-| `href` | string | URL lorsque le logo est cliqué |
+| `href` | string | URL au clic sur le logo |
 
 ```json
 {
@@ -96,6 +110,68 @@ Chemin vers votre fichier favicon (SVG recommandé).
   }
 }
 ```
+
+## Typographie
+
+### fonts
+
+**Type :** `object` (optionnel)
+
+Remplacez la police par défaut du thème pour le texte courant et les titres. Chaque thème est livré avec une police par défaut optimisée — ne définissez `fonts` que si vous souhaitez un rendu différent.
+
+Utiliser la même police partout :
+
+```json
+{
+  "fonts": {
+    "family": "Lora"
+  }
+}
+```
+
+Séparer les titres et le corps :
+
+```json
+{
+  "fonts": {
+    "heading": { "family": "Space Grotesk" },
+    "body": { "family": "Inter" }
+  }
+}
+```
+
+| Champ | Type | Description |
+|-------|------|-------------|
+| `family` | string | Nom de la famille de polices. Toute Google Font fonctionne — le build la récupère automatiquement |
+| `weight` | number | Graisse unique à charger (ex. `400`). Omettez pour charger `400, 500, 600, 700` |
+| `source` | string | URL ou chemin relatif `/` vers un fichier de police auto-hébergé. Ignore Google Fonts |
+| `format` | `"woff"` \| `"woff2"` | Requis quand `source` est défini |
+
+`heading` et `body` acceptent tous deux les mêmes champs. Voir [Thèmes → Typographie](/fr/customization/theming#typographie) pour les conseils de sélection de polices.
+
+## Apparence
+
+### appearance
+
+**Type :** `object` (optionnel)
+
+Contrôlez le comportement par défaut du mode sombre de votre site.
+
+```json
+{
+  "appearance": {
+    "default": "dark",
+    "strict": true
+  }
+}
+```
+
+| Champ | Type | Défaut | Description |
+|-------|------|--------|-------------|
+| `default` | `"system"` \| `"light"` \| `"dark"` | `"system"` | Mode initial pour les nouveaux visiteurs |
+| `strict` | boolean | `false` | Si `true`, masque le bouton de bascule dans la barre de navigation afin que les visiteurs restent sur le mode `default` |
+
+Voir [Thèmes → Mode sombre](/fr/customization/theming#mode-sombre) pour le comportement du bouton de bascule.
 
 ## OpenAPI
 
@@ -122,7 +198,7 @@ openapi: /openapi/api.yaml POST /tickets
 ---
 ```
 
-Si vous n'avez qu'une seule spec listée, vous pouvez également utiliser le format court :
+Si vous n'avez qu'une seule spec listée, vous pouvez aussi utiliser le format court :
 
 ```mdx
 ---
@@ -131,9 +207,9 @@ openapi: POST /tickets
 ---
 ```
 
-Voir [Exemple OpenAPI](/fr/api-reference/openapi-example) pour une page d'endpoint en direct et [Structure des répertoires](/fr/setup/directory-structure) pour le placement des fichiers.
+Voir [Exemple OpenAPI](/fr/api-reference/openapi-example) pour une page d'endpoint en conditions réelles et [Structure des répertoires](/fr/setup/directory-structure) pour le placement des fichiers.
 
-Si votre site est multilingue, déposez un fichier `<spec>.<lang>.<ext>` à côté de chaque spec source (par exemple, `openapi/api.fr.yaml`) et Jamdesk le sert sur les URL de cette langue. Voir [Traduction des specs OpenAPI](/fr/setup/languages#traduction-des-specs-openapi).
+Si votre site est multilingue, déposez un fichier `<spec>.<lang>.<ext>` à côté de chaque spec source (ex. `openapi/api.fr.yaml`) et Jamdesk le sert sur les URL de cette langue. Voir [Traduire les specs OpenAPI](/fr/setup/languages#traduction-des-specs-openapi).
 
 ### api.examples.languages
 
@@ -142,9 +218,9 @@ Si votre site est multilingue, déposez un fichier `<spec>.<lang>.<ext>` à côt
 
 Choisissez les langages de programmation qui apparaissent dans les exemples de code API auto-générés sur les pages `openapi:`. L'ordre du tableau détermine l'ordre d'affichage des onglets, et le premier langage est sélectionné par défaut.
 
-**Valeurs supportées :** `curl`, `bash`, `python`, `javascript`, `go`, `ruby`, `csharp`, `java`, `rust`, `php`
+**Valeurs prises en charge :** `curl`, `bash`, `python`, `javascript`, `go`, `ruby`, `csharp`, `java`, `rust`, `php`
 
-<Note>`bash` est un alias pour `curl` ; les deux produisent le même résultat. Utilisez l'étiquette que vous préférez.</Note>
+<Note>`bash` est un alias de `curl` ; les deux produisent le même résultat. Utilisez l'étiquette que vous préférez.</Note>
 
 ```json All supported languages
 {
@@ -174,8 +250,8 @@ Choisissez les langages de programmation qui apparaissent dans les exemples de c
 Contrôlez quels paramètres apparaissent dans les exemples de code auto-générés.
 
 | Valeur | Comportement |
-|--------|--------------|
-| `"all"` | Les exemples incluent tous les paramètres avec des valeurs de substitution |
+|--------|-------------|
+| `"all"` | Les exemples incluent tous les paramètres avec des valeurs de remplacement |
 | `"required"` | Les exemples n'incluent que les paramètres marqués comme `required` dans la spec |
 
 ```json
@@ -193,7 +269,7 @@ Contrôlez quels paramètres apparaissent dans les exemples de code auto-génér
 **Type :** `boolean`
 **Défaut :** `false`
 
-Lorsque `true`, le [playground API](/fr/api-reference/playground) pré-remplit les champs de paramètres avec les valeurs `example` de votre spec OpenAPI.
+Si `true`, l'[API Playground](/fr/api-reference/playground) pré-remplit les champs de paramètres avec les valeurs `example` de votre spec OpenAPI.
 
 ```json
 {
@@ -210,12 +286,12 @@ Lorsque `true`, le [playground API](/fr/api-reference/playground) pré-remplit l
 **Type :** `"interactive" | "simple" | "none"`
 **Défaut :** `"interactive"`
 
-Contrôle le [playground API](/fr/api-reference/playground) sur les pages d'endpoint. Un bouton "Essayer" apparaît sur chaque page `openapi:` et `api:` par défaut.
+Contrôle l'[API Playground](/fr/api-reference/playground) sur les pages d'endpoint. Un bouton « Essayer » apparaît par défaut sur chaque page `openapi:` et `api:`.
 
 | Valeur | Comportement |
-|--------|--------------|
-| `"interactive"` | Playground complet : remplir les paramètres, générer du code, envoyer des requêtes (par défaut) |
-| `"simple"` | Remplir les paramètres et copier le code, mais pas de bouton Envoyer |
+|--------|-------------|
+| `"interactive"` | Mode playground complet : remplir les paramètres, générer du code, envoyer des requêtes (défaut) |
+| `"simple"` | Remplir les paramètres et copier le code, mais sans bouton Envoyer |
 | `"none"` | Playground désactivé |
 
 ```json
@@ -228,13 +304,13 @@ Contrôle le [playground API](/fr/api-reference/playground) sur les pages d'endp
 }
 ```
 
-Voir [Playground API](/fr/api-reference/playground) pour les détails d'utilisation et les remplacements par page.
+Voir [API Playground](/fr/api-reference/playground) pour les détails d'utilisation et les substitutions par page.
 
 ### api.mdx.auth.method
 
 **Type :** `"bearer" | "basic" | "key" | "cobo"`
 
-Méthode d'authentification utilisée dans les exemples de code auto-générés. Lorsque défini, les exemples incluent l'en-tête d'authentification approprié.
+Méthode d'authentification utilisée dans les exemples de code auto-générés. Quand ce champ est défini, les exemples incluent l'en-tête d'authentification approprié.
 
 | Valeur | Format de l'en-tête |
 |--------|---------------------|
@@ -259,7 +335,7 @@ Méthode d'authentification utilisée dans les exemples de code auto-générés.
 
 **Type :** `string`
 
-Nom d'en-tête personnalisé pour l'authentification par clé. Utilisé uniquement lorsque `api.mdx.auth.method` est `"key"`.
+Nom d'en-tête personnalisé pour l'authentification par clé. Utilisé uniquement quand `api.mdx.auth.method` vaut `"key"`.
 
 ```json
 {
@@ -284,7 +360,7 @@ Contrôle l'emplacement d'affichage des onglets de navigation.
 
 | Valeur | Description |
 |--------|-------------|
-| `"top"` | Les onglets apparaissent dans la barre d'onglets de l'en-tête |
+| `"top"` | Les onglets apparaissent dans la barre d'en-tête |
 | `"left"` | Les onglets apparaissent en haut de la barre latérale |
 
 La valeur par défaut dépend de votre thème :
@@ -305,9 +381,9 @@ La valeur par défaut dépend de votre thème :
 
 Liens externes qui apparaissent en haut de la barre latérale sur toutes les pages.
 
-| Champ | Type | Obligatoire | Description |
-|-------|------|-------------|-------------|
-| `name` | string | Oui | Texte d'affichage |
+| Champ | Type | Requis | Description |
+|-------|------|--------|-------------|
+| `name` | string | Oui | Texte affiché |
 | `href` | string | Oui | URL (lien externe) |
 | `icon` | string | Non | Nom d'icône Font Awesome |
 
@@ -325,7 +401,7 @@ Liens externes qui apparaissent en haut de la barre latérale sur toutes les pag
 
 La structure de navigation de votre documentation. Voir [Navigation](/fr/navigation/overview) pour la documentation détaillée.
 
-Les pages peuvent être des chaînes de caractères (titre auto-généré à partir du nom de fichier) ou des objets avec un titre personnalisé :
+Les pages peuvent être des chaînes (titre auto-généré à partir du nom de fichier) ou des objets avec un titre personnalisé :
 
 ```json
 "pages": [
@@ -355,7 +431,7 @@ Les pages peuvent être des chaînes de caractères (titre auto-généré à par
 ```
 </Accordion>
 
-## Barre de navigation & Pied de page
+## Barre de navigation et pied de page
 
 ### navbar
 
@@ -364,13 +440,13 @@ Les pages peuvent être des chaînes de caractères (titre auto-généré à par
 | Champ | Type | Description |
 |-------|------|-------------|
 | `links` | array | Liens de navigation |
-| `links[].label` | string | Texte par défaut du bouton |
-| `links[].labels` | object | Traductions optionnelles par langue (clés : `fr`, `es`, etc.). Retombe sur `label` |
+| `links[].label` | string | Texte du bouton par défaut |
+| `links[].labels` | object | Substitutions optionnelles par langue, indexées par code de langue (ex. `fr`, `es`). Utilise `label` en repli |
 | `links[].icon` | icon | Icône optionnelle à afficher à côté du libellé |
 | `links[].href` | string | URL de destination |
 | `primary` | object | Bouton CTA principal |
-| `primary.label` | string | Texte par défaut du bouton |
-| `primary.labels` | object | Traductions optionnelles par langue. Retombe sur `label` |
+| `primary.label` | string | Texte du bouton par défaut |
+| `primary.labels` | object | Substitutions optionnelles par langue, indexées par code de langue. Utilise `label` en repli |
 
 ```json
 {
@@ -398,14 +474,14 @@ Les pages peuvent être des chaînes de caractères (titre auto-généré à par
 ```
 
 <Note>
-  `labels` est optionnel — les documentations monolingues peuvent l'omettre. Lorsqu'il est défini, la langue de l'URL courante (par ex. `/fr/...`) sélectionne la traduction correspondante.
+  `labels` est optionnel — les docs en langue unique peuvent l'omettre. Quand il est défini, la langue de l'URL courante (ex. `/fr/...`) sélectionne la substitution correspondante.
 </Note>
 
 ### footer
 
 **Type :** `object`
 
-Configurez le pied de page avec des liens sociaux et des colonnes de liens personnalisées.
+Configurez le pied de page avec des liens vers les réseaux sociaux et des colonnes de liens personnalisés.
 
 ```json
 {
@@ -430,20 +506,20 @@ Configurez le pied de page avec des liens sociaux et des colonnes de liens perso
 
 | Champ | Type | Description |
 |-------|------|-------------|
-| `socials` | object | URL des plateformes de réseaux sociaux |
+| `socials` | object | URLs des plateformes de réseaux sociaux |
 | `links` | array | Configurations des colonnes de liens |
-| `links[].header` | string | Titre de la colonne |
+| `links[].header` | string | En-tête de colonne |
 | `links[].items` | array | Tableau d'objets `{ label, href }` |
 
-**Plateformes sociales supportées :** `github`, `x`, `twitter`, `linkedin`, `discord`, `slack`, `youtube`, `instagram`, `facebook`, `reddit`, `telegram`, `bluesky`, `threads`, `medium`, `hacker-news`, `website`
+**Plateformes sociales prises en charge :** `github`, `x`, `twitter`, `linkedin`, `discord`, `slack`, `youtube`, `instagram`, `facebook`, `reddit`, `telegram`, `bluesky`, `threads`, `medium`, `hacker-news`, `website`
 
-## Style
+## Styles
 
 ### styling.latex
 
 **Type :** `boolean`
 
-Activez le rendu mathématique LaTeX avec KaTeX. Lorsqu'activé, vous pouvez utiliser `$...$` pour les mathématiques en ligne et `$$...$$` pour les équations en bloc.
+Active le rendu mathématique LaTeX avec KaTeX. Une fois activé, vous pouvez utiliser `$...$` pour les maths en ligne et `$$...$$` pour les équations en bloc.
 
 ```json
 {
@@ -453,7 +529,7 @@ Activez le rendu mathématique LaTeX avec KaTeX. Lorsqu'activé, vous pouvez uti
 }
 ```
 
-Voir [Math & LaTeX](/fr/content/math) pour les détails d'utilisation.
+Voir [Maths et LaTeX](/fr/content/math) pour les détails d'utilisation.
 
 ### styling.js
 
@@ -479,7 +555,7 @@ Passez un tableau pour plusieurs fichiers :
 }
 ```
 
-Sans ce champ, Jamdesk détecte automatiquement les fichiers `.js` dans la racine de votre projet. Voir [JavaScript personnalisé](/fr/customization/custom-javascript) pour plus de détails.
+Sans ce champ, Jamdesk détecte automatiquement les fichiers `.js` à la racine de votre projet. Voir [JavaScript personnalisé](/fr/customization/custom-javascript) pour les détails.
 
 ## Chat
 
@@ -491,8 +567,8 @@ Configurez l'assistant de chat IA intégré. Le chat est activé par défaut sur
 
 | Champ | Type | Défaut | Description |
 |-------|------|--------|-------------|
-| `enabled` | boolean | `true` | Mettre à `false` pour supprimer le panneau de chat de votre site |
-| `starterQuestions` | string[] | auto-généré | Jusqu'à 4 questions affichées à l'ouverture du chat (5-200 caractères chacune). Auto-générées lors des builds si omises. Mettre à `[]` pour aucune |
+| `enabled` | boolean | `true` | Mettez `false` pour supprimer le panneau de chat de votre site |
+| `starterQuestions` | string[] | auto-générées | Jusqu'à 4 questions affichées à l'ouverture du chat (5 à 200 caractères chacune). Auto-générées lors des builds si omises. Mettez `[]` pour n'en afficher aucune |
 
 ```json
 {
@@ -505,7 +581,7 @@ Configurez l'assistant de chat IA intégré. Le chat est activé par défaut sur
 }
 ```
 
-Voir [Chat IA](/fr/ai/chat) pour plus de détails sur le fonctionnement du chat et ce que voient les visiteurs.
+Voir [Chat IA](/fr/ai/chat) pour les détails sur le fonctionnement du chat et ce que voient les visiteurs.
 
 ## Menu Actions IA
 
@@ -513,14 +589,14 @@ Voir [Chat IA](/fr/ai/chat) pour plus de détails sur le fonctionnement du chat 
 
 **Type :** `object` (optionnel)
 
-Configurez le menu déroulant Actions IA qui apparaît sur chaque page. Activé par défaut avec toutes les options ; vous n'avez besoin de ce champ que pour personnaliser les options affichées ou le désactiver.
+Configurez le menu déroulant Actions IA qui apparaît sur chaque page. Activé par défaut avec toutes les options ; vous n'avez besoin de ce champ que pour personnaliser les options affichées ou désactiver le menu.
 
 | Champ | Type | Défaut | Description |
 |-------|------|--------|-------------|
-| `enabled` | boolean | `true` | Mettre à `false` pour supprimer le menu Actions IA de votre site |
-| `options` | array | toutes intégrées | Liste des clés d'option et/ou objets d'option personnalisés |
+| `enabled` | boolean | `true` | Mettez `false` pour supprimer le menu Actions IA de votre site |
+| `options` | array | toutes les intégrées | Liste de clés d'options et/ou d'objets d'options personnalisés |
 
-**Clés d'option intégrées :** `copy`, `view`, `chatgpt`, `claude`, `perplexity`, `gemini`, `mcp`, `cursor`, `vscode`
+**Clés d'options intégrées :** `copy`, `view`, `chatgpt`, `claude`, `perplexity`, `gemini`, `mcp`, `cursor`, `vscode`
 
 ```json
 {
@@ -571,7 +647,7 @@ Configurez la commande CLI `jamdesk spellcheck`. Vous n'avez besoin de ce champ 
 }
 ```
 
-Le CLI inclut plus de 180 termes techniques intégrés (API, GraphQL, Kubernetes, React, etc.) et ignore automatiquement le nom de votre projet à partir du champ `name`. N'ajoutez que les mots spécifiques à votre projet.
+La CLI inclut plus de 180 termes techniques intégrés (API, GraphQL, Kubernetes, React, etc.) et ignore automatiquement le nom de votre projet défini dans le champ `name`. N'ajoutez que les mots spécifiques à votre projet.
 
 Voir [Aperçu CLI : Vérification orthographique](/fr/cli/overview) pour les détails d'utilisation et le mode de correction interactif.
 
@@ -581,9 +657,9 @@ Voir [Aperçu CLI : Vérification orthographique](/fr/cli/overview) pour les dé
 
 **Type :** `boolean` (optionnel, défaut `false`)
 
-Activez la conversion automatique en WebP pour les ressources PNG et JPG lors des builds. Les fichiers convertis sont généralement 60-80 % plus petits que les originaux sans perte de qualité visible. Les références dans votre MDX, CSS personnalisé, JS personnalisé et `docs.json` sont réécrites automatiquement, vous n'avez donc pas à modifier les chemins.
+Active la conversion automatique en WebP des ressources PNG et JPG lors des builds. Les fichiers convertis sont généralement 60 à 80 % plus légers que les originaux sans perte de qualité visible. Les références dans votre MDX, CSS personnalisé, JS personnalisé et `docs.json` sont réécrites automatiquement, vous n'avez donc aucun chemin à modifier.
 
-Les favicons, `og:image` et `twitter:image` conservent leur format d'origine. Tous les robots d'indexation sociaux ou clients de messagerie ne rendent pas le WebP de manière fiable, et une carte de preview cassée est pire qu'un JPG légèrement plus grand.
+Les favicons, `og:image` et `twitter:image` restent dans leur format d'origine. Tous les robots d'exploration de réseaux sociaux ou clients de messagerie ne gèrent pas le WebP de manière fiable, et une carte de preview brisée est pire qu'un JPG légèrement plus lourd.
 
 ```json
 {
@@ -593,7 +669,7 @@ Les favicons, `og:image` et `twitter:image` conservent leur format d'origine. To
 }
 ```
 
-Voir [Conversion automatique d'images](/fr/builds/image-optimization) pour savoir ce qui est converti, comment fonctionne la mise en cache et l'indicateur de progression du build.
+Voir [Conversion automatique des images](/fr/builds/image-optimization) pour ce qui est converti, le fonctionnement du cache et l'indicateur de progression du build.
 
 ## Contrôle d'accès
 
@@ -601,9 +677,9 @@ Voir [Conversion automatique d'images](/fr/builds/image-optimization) pour savoi
 
 **Type :** `object` (optionnel)
 
-Activez la protection par mot de passe partagé pour votre site. Configuration déclarative uniquement. Vous définissez toujours la phrase de passe réelle dans le [dashboard](/fr/setup/password-protection#rotation-et-r-vocation-des-sessions) après l'exécution du prochain build.
+Activez la protection par mot de passe partagé pour votre site. Configuration déclarative uniquement. Vous devrez toujours définir la phrase de passe dans le [dashboard](/fr/setup/password-protection#rotation-et-r-vocation-des-sessions) après le prochain build.
 
-Définissez `auth.password.enabled: true` pour verrouiller tout le site, ou listez les chemins sous `auth.password.private[]` pour protéger uniquement ces pages. Les deux déclenchent la même invite de mot de passe du dashboard lors du prochain build.
+Définissez `auth.password.enabled: true` pour verrouiller tout le site, ou listez des chemins sous `auth.password.private[]` pour protéger uniquement ces pages. Les deux déclenchent la même invite de mot de passe dans le dashboard lors du prochain build.
 
 ```json
 {
@@ -619,12 +695,12 @@ Définissez `auth.password.enabled: true` pour verrouiller tout le site, ou list
 
 | Champ | Type | Description |
 |-------|------|-------------|
-| `enabled` | `boolean` | Mode site entier. Lorsque `true`, chaque page nécessite le mot de passe (sauf ce qui est marqué public). |
-| `hint` | `string` (max 200 caractères) | Indice en texte brut affiché sur l'écran de déverrouillage. Pas de HTML. |
+| `enabled` | `boolean` | Mode site entier. Si `true`, chaque page requiert le mot de passe (sauf celles marquées publiques). |
+| `hint` | `string` (200 caractères max) | Indication en texte brut affichée sur l'écran de déverrouillage. Pas de HTML. |
 | `public` | `string[]` | Globs de chemins qui contournent le mot de passe. Supporte `*` (un segment) et `**` (récursif). Un `/` seul est rejeté. |
-| `private` | `string[]` | Chemins exacts qui nécessitent le mot de passe. Définir ceci sans `enabled` active le mode pages spécifiques. |
+| `private` | `string[]` | Chemins exacts qui requièrent le mot de passe. Définir ceci sans `enabled` active le mode pages spécifiques. |
 
-Voir [Protection par mot de passe](/fr/setup/password-protection) pour la procédure complète, y compris le flux du dashboard et comment le frontmatter `public: true` / `private: true` interagit avec ces tableaux.
+Voir [Protection par mot de passe](/fr/setup/password-protection) pour le guide complet, y compris le flux dans le dashboard et l'interaction entre le frontmatter `public: true` / `private: true` et ces tableaux.
 
 ## Exemple complet
 

@@ -1,6 +1,6 @@
 ---
 title: Optimisation SEO
-description: Contrôlez les titres, descriptions et balises meta pour les moteurs de recherche. Jamdesk génère automatiquement sitemaps et images Open Graph.
+description: Contrôlez les titres, descriptions et balises meta pour les moteurs de recherche et aperçus sociaux. Jamdesk génère automatiquement les sitemaps et images Open Graph.
 ---
 
 Optimisez votre documentation pour les moteurs de recherche et les aperçus sociaux en définissant les titres, descriptions et métadonnées dans le frontmatter.
@@ -12,19 +12,19 @@ Optimisez votre documentation pour les moteurs de recherche et les aperçus soci
     Le titre et la description du frontmatter deviennent des balises meta.
   </Card>
   <Card title="Open Graph" icon="share">
-    Images de partage social générées pour chaque page.
+    Des images de partage social générées pour chaque page.
   </Card>
   <Card title="Sitemap & Robots" icon="sitemap">
-    Sitemap XML et robots.txt générés à chaque build.
+    Le sitemap XML et le robots.txt sont générés à chaque build.
   </Card>
   <Card title="JSON-LD" icon="code">
-    Données structurées Schema.org sur chaque page pour des résultats de recherche enrichis.
+    Données structurées schema.org sur chaque page pour des résultats de recherche enrichis.
   </Card>
   <Card title="IndexNow" icon="bolt">
-    Les URL modifiées sont soumises aux moteurs de recherche après chaque build.
+    Les URLs modifiées sont soumises aux moteurs de recherche après chaque build.
   </Card>
   <Card title="Endpoints IA" icon="robot" href="/fr/ai/overview">
-    `llms.txt` et serveur MCP pour permettre aux outils IA de lire votre documentation.
+    `llms.txt` et serveur MCP pour que les outils IA lisent votre documentation.
   </Card>
 </Columns>
 
@@ -40,23 +40,23 @@ description: Set up OAuth, JWT, and session-based authentication  # 120-160 char
 ```
 
 <Tip>
-**Mettez les mots-clés en avant.** « Configuration de l'authentification » est meilleur que « Comment configurer l'authentification. »
+**Placez les mots-clés en tête.** « Configuration de l'authentification » est meilleur que « Comment configurer l'authentification ».
 </Tip>
 
 ### Titres de page
 
-- Restez sous 60 caractères pour éviter la troncature dans les résultats de recherche
+- Limitez-vous à 60 caractères pour éviter la troncature dans les résultats de recherche
 - Incluez votre mot-clé principal dès le début
-- Rendez chaque titre unique dans votre documentation
+- Donnez un titre unique à chaque page dans votre documentation
 
 ### Descriptions
 
 - Visez 120 à 160 caractères
 - Résumez ce que le lecteur va apprendre
-- Incluez les mots-clés pertinents de façon naturelle
+- Intégrez les mots-clés pertinents de façon naturelle
 
 <Note>
-**Valeur de repli générée automatiquement.** Lorsque `description` est absent du frontmatter, Jamdesk extrait automatiquement le premier paragraphe de texte du contenu de votre page (jusqu'à 155 caractères). Les titres, blocs de code, images et composants MDX sont ignorés. Cette valeur est utilisée pour `<meta name="description">`, Open Graph et les Twitter cards. Il est toutefois recommandé d'écrire une description explicite pour de meilleurs résultats.
+**Repli automatique.** Lorsque `description` est absent du frontmatter, Jamdesk extrait automatiquement le premier paragraphe de prose du contenu de la page (jusqu'à 155 caractères). Les titres, blocs de code, images et composants MDX sont ignorés. Ce texte est utilisé pour `<meta name="description">`, Open Graph et les cartes Twitter. Il est tout de même recommandé de rédiger une description explicite pour de meilleurs résultats.
 </Note>
 
 ## Contrôler l'indexation
@@ -87,13 +87,13 @@ noindex: true
 ```
 
 Utilisez `noindex` pour :
-- Les pages brouillon ou en cours de rédaction
+- Les pages en brouillon ou en cours de rédaction
 - La documentation interne
-- Le contenu obsolète que vous conservez pour référence
+- Le contenu déprécié conservé pour référence
 
-## URL canoniques
+## URLs canoniques
 
-Si votre documentation est accessible à plusieurs URL, définissez une URL canonique :
+Si votre documentation est accessible depuis plusieurs URLs, définissez une URL canonique :
 
 ```yaml
 ---
@@ -102,33 +102,101 @@ canonical: https://docs.example.com/getting-started
 ---
 ```
 
-## Personnalisation d'Open Graph
+Vous pouvez également définir une base canonique à l'échelle du site dans `docs.json`. Jamdesk y ajoute le chemin de chaque page, afin que chaque page dispose d'une URL canonique correcte :
 
-Remplacez l'image sociale générée automatiquement :
+```json docs.json
+{
+  "seo": {
+    "metatags": {
+      "canonical": "https://docs.acme.com"
+    }
+  }
+}
+```
 
-```yaml
+## Aperçus sociaux & Open Graph
+
+Jamdesk génère automatiquement une carte sociale aux dimensions 1200×630 pour chaque page. Remplacez n'importe quelle balise sociale dans le frontmatter. Vous pouvez utiliser des **clés de premier niveau** (style Mintlify) ou un bloc **`seo:`** imbriqué. Les deux fonctionnent, et lorsqu'une même clé est définie des deux façons, la valeur de premier niveau l'emporte.
+
+<CodeGroup>
+```yaml Flat (top-level)
 ---
 title: API Reference
-og:image: /images/api-social-card.png
+description: REST API endpoints and authentication
+"og:title": API Reference — Acme
+"og:description": Everything you need to call the Acme API
+"og:image": /images/api-social-card.png
+"twitter:card": summary_large_image
+"twitter:creator": "@acme"
+keywords: ["api", "rest", "authentication"]
+canonical: https://docs.acme.com/api-reference
 ---
 ```
 
+```yaml Nested (seo block)
+---
+title: API Reference
+description: REST API endpoints and authentication
+seo:
+  og:title: API Reference — Acme
+  og:image: /images/api-social-card.png
+  twitter:card: summary_large_image
+  x-custom-tag: any custom meta value
+---
+```
+</CodeGroup>
+
+### Balises prises en charge
+
+| Groupe | Balises |
+|--------|---------|
+| Open Graph | `og:title`, `og:description`, `og:image`, `og:image:width`, `og:image:height`, `og:image:alt`, `og:url`, `og:type`, `og:site_name`, `og:locale`, `og:video`, `og:audio` |
+| Article | `og:type: article` avec `article:published_time`, `article:modified_time`, `article:author`, `article:section`, `article:tag` |
+| Twitter / X | `twitter:card`, `twitter:title`, `twitter:description`, `twitter:image`, `twitter:image:alt`, `twitter:site`, `twitter:creator`, `twitter:player`, balises app-card |
+| Autre | `keywords`, `author`, `robots`, `googlebot`, `google-site-verification`, `theme-color`, ainsi que toute balise personnalisée (placez les balises personnalisées sous `seo:`) |
+
+<Note>
+**Dimensions personnalisées de l'image OG.** Lorsque vous définissez un `og:image` personnalisé, renseignez également `og:image:width` et `og:image:height` afin que les robots d'exploration l'affichent correctement. La carte générée automatiquement est toujours en 1200×630.
+</Note>
+
+<Note>
+**Balises personnalisées.** Les balises meta arbitraires (ex. `x-pinterest`) sont émises sous la forme `<meta name="...">`. Placez-les sous le bloc `seo:`. Seules les clés SEO reconnues sont prises en compte lorsqu'elles sont placées à plat.
+</Note>
+
+### Image par défaut à l'échelle du site
+
+Définissez une image sociale de repli pour chaque page dans `docs.json`. Toute page qui définit son propre `og:image` la remplace :
+
+```json docs.json
+{
+  "seo": {
+    "metatags": {
+      "og:image": "https://docs.acme.com/images/default-card.png"
+    }
+  }
+}
+```
+
+<Tip>
+**Prévisualisez avant de publier.** Après un build, collez l'URL de la page dans un outil de preview Open Graph (comme [opengraph.xyz](https://www.opengraph.xyz)) pour vérifier le rendu de la carte sur chaque plateforme.
+</Tip>
+
 ## Sitemap & Robots.txt
 
-Chaque site Jamdesk génère automatiquement un `sitemap.xml` et un `robots.txt` à chaque build.
+Chaque site Jamdesk génère automatiquement `sitemap.xml` et `robots.txt` à chaque build.
 
-| Fichier | Fonction |
-|------|---------|
+| Fichier | Rôle |
+|---------|------|
 | `sitemap.xml` | Liste toutes les pages avec leurs dates de dernière modification pour les moteurs de recherche |
-| `robots.txt` | Autorise tous les robots d'exploration et les oriente vers le sitemap |
+| `robots.txt` | Autorise tous les robots et les redirige vers le sitemap |
 
 ### Où les trouver
 
-Les URL dépendent de si votre documentation est hébergée à un domaine racine ou sous un sous-chemin `/docs` :
+Les URLs dépendent de si votre documentation se trouve à la racine d'un domaine ou dans un sous-chemin `/docs` :
 
 <Tabs>
   <Tab title="Domaine racine">
-    Si votre documentation est à la racine de votre domaine (par ex., `docs.acme.com` ou `acme.jamdesk.app`) :
+    Si votre documentation est à la racine de votre domaine (ex. `docs.acme.com` ou `acme.jamdesk.app`) :
 
     ```bash
     https://docs.acme.com/sitemap.xml
@@ -147,7 +215,7 @@ Les URL dépendent de si votre documentation est hébergée à un domaine racine
 
 ### Contenu du sitemap
 
-- Toutes les pages publiées (à l'exclusion de celles avec le frontmatter `noindex` ou `hidden`)
+- Toutes les pages publiées (hors celles avec `noindex` ou `hidden` dans le frontmatter)
 - Les dates de dernière modification issues du frontmatter lorsqu'elles sont disponibles
 - Une fréquence de modification hebdomadaire
 
@@ -169,30 +237,47 @@ Les pages avec `hidden: true` sont également exclues automatiquement.
 Chaque page inclut automatiquement des données structurées [schema.org](https://schema.org) sous forme de balise `<script type="application/ld+json">` avec deux schémas :
 
 - `WebSite` : le nom, l'URL et la description de votre site (issus de `docs.json`).
-- `BreadcrumbList` : le chemin de navigation de la page d'accueil à la page actuelle, dérivé de votre configuration `navigation`.
+- `BreadcrumbList` : le chemin de navigation de l'accueil jusqu'à la page actuelle, dérivé de votre configuration `navigation`.
 
-Aucune configuration requise. Les moteurs de recherche utilisent ces données pour des résultats enrichis comme les fils d'Ariane dans les listes de résultats.
+Aucune configuration requise. Les moteurs de recherche utilisent ces données pour des résultats enrichis tels que les fils d'Ariane dans les listes de recherche.
 
 <Tip>
-**Vérifiez votre balisage.** Collez n'importe quelle URL de page dans le [Test des résultats enrichis de Google](https://search.google.com/test/rich-results) pour confirmer que les données structurées sont détectées.
+**Vérifiez votre balisage.** Collez n'importe quelle URL de page dans le [Test des résultats enrichis de Google](https://search.google.com/test/rich-results) pour confirmer que les données structurées sont bien détectées.
 </Tip>
 
 ## IndexNow
 
-Après chaque build, Jamdesk soumet automatiquement les URL de pages modifiées à [IndexNow](https://www.indexnow.org) pour une indexation plus rapide par les moteurs de recherche. Cela notifie Bing, Yandex et d'autres moteurs participants de vos modifications de contenu sans attendre leur prochain cycle d'exploration.
+Après chaque build, Jamdesk soumet automatiquement les URLs de pages modifiées à [IndexNow](https://www.indexnow.org) pour une indexation plus rapide par les moteurs de recherche. Cela notifie Bing, Yandex et les autres moteurs participants de vos mises à jour de contenu, sans attendre leur prochain cycle d'exploration.
 
 - Se déclenche après chaque build réussi
-- Ne soumet que les pages ayant réellement changé
-- Non bloquant, ne retarde donc jamais votre build
+- Soumet uniquement les pages qui ont réellement changé
+- Non bloquant, n'impacte jamais la durée du build
 - Aucune configuration requise
 
 ## Bonnes pratiques
 
-<Check>Chaque page a un titre unique et descriptif</Check>
-<Check>Les descriptions résument le contenu avec précision</Check>
-<Check>Les titres suivent une hiérarchie logique (H1 → H2 → H3)</Check>
-<Check>Les liens internes utilisent un texte d'ancre descriptif</Check>
-<Check>Les images ont un texte alternatif pour l'accessibilité</Check>
+Parcourez cette liste de contrôle avant de publier :
+
+<Columns cols={2}>
+  <Card title="Titres uniques" icon="heading">
+    Chaque page possède un titre distinct et descriptif de moins de 60 caractères.
+  </Card>
+  <Card title="Descriptions précises" icon="align-left">
+    Les descriptions résument la page en 120–160 caractères.
+  </Card>
+  <Card title="Titres logiques" icon="list-tree">
+    Les titres suivent une hiérarchie claire : un H1, puis H2 → H3.
+  </Card>
+  <Card title="Liens descriptifs" icon="link">
+    Les liens internes utilisent un texte d'ancre explicite, jamais « cliquez ici ».
+  </Card>
+  <Card title="Texte alternatif des images" icon="image">
+    Chaque image possède un texte alternatif pour l'accessibilité et la recherche d'images.
+  </Card>
+  <Card title="Image sociale" icon="share-nodes">
+    Définissez un `og:image` personnalisé sur les pages clés, ou fiez-vous à la carte générée automatiquement.
+  </Card>
+</Columns>
 
 ## Articles connexes
 
@@ -201,6 +286,6 @@ Après chaque build, Jamdesk soumet automatiquement les URL de pages modifiées 
     Toutes les options de frontmatter disponibles
   </Card>
   <Card title="Référence docs.json" icon="gear" href="/fr/config/docs-json-reference">
-    Options de configuration globale du site
+    Options de configuration à l'échelle du site
   </Card>
 </Columns>

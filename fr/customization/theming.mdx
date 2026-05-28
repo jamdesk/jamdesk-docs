@@ -1,17 +1,17 @@
 ---
-title: Thématisation
-description: Choisissez Jam, Nebula ou Pulsar pour la typographie, la mise en page, l'espacement et le mode sombre. Remplacez les couleurs.
+title: Thèmes
+description: Choisissez un thème intégré — Jam, Nebula ou Pulsar — pour contrôler la typographie, la mise en page, l'espacement et le mode sombre. Personnalisez les couleurs pour correspondre à votre marque.
 ---
 
 Définissez `theme` dans `docs.json` pour contrôler la mise en page, la typographie, l'espacement et le comportement du mode sombre. Trois thèmes sont disponibles : `jam` (par défaut), `nebula` et `pulsar`.
+
+Les captures d'écran montrent l'interface en anglais.
 
 ```json docs.json
 {
   "theme": "jam"
 }
 ```
-
-Les captures d'écran montrent l'interface en anglais.
 
 ## Thèmes disponibles
 
@@ -36,7 +36,7 @@ Les captures d'écran montrent l'interface en anglais.
       <img src="/images/themes/nebula-theme.webp" alt="Nebula theme preview" />
     </Frame>
 
-    Mise en page avec logo dans l'en-tête et IBM Plex Mono partout. Fond crème chaud (`#FEFCF9`) en mode clair. Rayon de bordure minimal (2-8px).
+    Mise en page avec logo dans l'en-tête et IBM Plex Mono sur l'ensemble du site. Fond crème chaud (`#FEFCF9`) en mode clair. Rayon de bordure minimal (2-8px).
 
     [Voir un exemple en direct](https://nebula.jamdesk.com)
 
@@ -51,7 +51,7 @@ Les captures d'écran montrent l'interface en anglais.
       <img src="/images/themes/pulsar-theme.webp" alt="Pulsar theme preview" />
     </Frame>
 
-    Mise en page barre latérale en premier, avec le logo dans la barre latérale et des indicateurs de navigation à bordure gauche. Pleine largeur avec contenu centré sur 780px. En-tête masqué par défaut.
+    Mise en page avec la barre latérale en premier, le logo dans la barre latérale et des indicateurs de navigation à bordure gauche. Pleine largeur avec contenu centré sur 780px. En-tête masqué par défaut.
 
     [Voir un exemple en direct](https://pulsar.jamdesk.com)
 
@@ -73,7 +73,40 @@ Chaque thème inclut des polices chargées depuis Google Fonts :
 | [Nebula](https://nebula.jamdesk.com) | IBM Plex Mono | IBM Plex Mono | IBM Plex Mono |
 | [Pulsar](https://pulsar.jamdesk.com) | Inter | Inter | JetBrains Mono |
 
-Remplacez les piles de polices du thème avec le [CSS personnalisé](/fr/customization/custom-css#polices-externes). Chargez n'importe quelle police Google Font ou une police auto-hébergée, puis réaffectez les variables CSS `--font-family-sans` et `--font-family-mono`.
+Nous recommandons les valeurs par défaut — elles sont optimisées pour chaque thème. Si vous avez besoin d'un aspect différent, définissez `fonts` dans `docs.json` pour remplacer la police de l'ensemble du site par une Google Font :
+
+```json
+{
+  "fonts": {
+    "family": "Lora"
+  }
+}
+```
+
+Utilisez des polices distinctes pour les titres et le corps :
+
+```json
+{
+  "fonts": {
+    "heading": { "family": "Space Grotesk" },
+    "body": { "family": "Inter" }
+  }
+}
+```
+
+Toute Google Font est compatible — définissez simplement `family` et le build la récupère automatiquement. Pour héberger vous-même une police personnalisée, ajoutez `source` (URL ou chemin relatif commençant par `/`) et `format` :
+
+```json
+{
+  "fonts": {
+    "family": "AcmeSans",
+    "source": "/fonts/acme-sans.woff2",
+    "format": "woff2"
+  }
+}
+```
+
+Pour tout ce qui dépasse le champ `fonts` — remplacement des polices de code, ajustement des graisses par niveau de titre, ou chargement de webfonts non-Google — consultez [CSS personnalisé](/fr/customization/custom-css#polices-externes).
 
 ## Couleurs personnalisées
 
@@ -105,14 +138,32 @@ Utilisez un outil de couleurs comme [Coolors](https://coolors.co) ou [Realtime C
 </Tip>
 
 <Tip>
-**Besoin de plus que des couleurs ?** Le [CSS personnalisé](/fr/customization/custom-css) vous permet de remplacer les polices, l'espacement, la largeur du contenu, les rayons de bordure, les styles de blocs d'appel et les détails au niveau des composants. Les thèmes définissent les valeurs par défaut ; le CSS personnalisé est la solution de secours pour tout ce que CSS peut modifier.
+**Besoin de plus que des couleurs ?** Le [CSS personnalisé](/fr/customization/custom-css) vous permet de remplacer les polices, l'espacement, la largeur du contenu, les rayons de bordure, les styles de blocs d'appel et les détails au niveau des composants. Les thèmes définissent les valeurs par défaut ; le CSS personnalisé est l'échappatoire pour tout ce que CSS peut modifier.
 </Tip>
 
 ## Mode sombre
 
-Tous les thèmes incluent le mode sombre. Jamdesk suit les préférences système de l'utilisateur et fournit un bouton de basculement dans la barre de navigation. Votre palette de couleurs s'adapte automatiquement.
+Tous les thèmes incluent le mode sombre. Par défaut, Jamdesk suit la préférence système de l'utilisateur et propose un bouton bascule dans la barre de navigation. Votre palette de couleurs s'adapte automatiquement.
 
-Pour tester le mode sombre pendant le développement, utilisez le bouton de basculement dans la barre de navigation ou émulez-le dans DevTools :
+Fixez le site à un mode spécifique avec `appearance` dans `docs.json` :
+
+```json
+{
+  "appearance": {
+    "default": "dark",
+    "strict": true
+  }
+}
+```
+
+| Champ | Valeurs | Défaut | Description |
+|-------|---------|--------|-------------|
+| `default` | `"system"` \| `"light"` \| `"dark"` | `"system"` | Mode initial pour les nouveaux visiteurs |
+| `strict` | boolean | `false` | Lorsque `true`, masque le bouton bascule dans la barre de navigation afin que les visiteurs restent sur le mode `default` |
+
+Définissez `default` seul pour suggérer un mode de départ tout en laissant les utilisateurs changer. Ajoutez `strict: true` pour supprimer entièrement le bouton bascule et verrouiller le site sur ce mode.
+
+Pour tester le mode sombre en cours de développement, utilisez le bouton bascule de la barre de navigation ou émulez-en le comportement dans DevTools :
 
 1. Ouvrez DevTools
 2. Appuyez sur Cmd+Shift+P (Mac) ou Ctrl+Shift+P (Windows)
@@ -120,10 +171,10 @@ Pour tester le mode sombre pendant le développement, utilisez le bouton de basc
 
 Pour un contrôle précis des styles en mode sombre, utilisez le [CSS personnalisé](/fr/customization/custom-css).
 
-## Étapes suivantes
+## Et ensuite ?
 
 <Columns cols={3}>
-  <Card title="Branding" icon="palette" href="/fr/customization/branding">
+  <Card title="Marque" icon="palette" href="/fr/customization/branding">
     Personnalisez les logos, les couleurs et les favicons
   </Card>
   <Card title="CSS personnalisé" icon="paintbrush" href="/fr/customization/custom-css">
