@@ -1,35 +1,96 @@
 ---
 title: Single Sign-On (SSO)
-description: "Sign in to both the Jamdesk dashboard and your docs sites using your existing identity provider. Available on Enterprise plans."
+description: "Sign in to the Jamdesk dashboard with your identity provider. Set up SAML or OIDC yourself on any paid plan; docs-site reader SSO is Enterprise."
 ---
 
-Jamdesk supports Single Sign-On for both the dashboard (where you manage projects) and your published docs sites (where your team reads internal documentation). SSO is available on **Enterprise plans**.
+Single Sign-On comes in two flavors at Jamdesk. **Dashboard SSO** lets your team sign in to manage projects through your identity provider, and you configure it yourself from Settings on any paid plan. **Docs-site SSO** lets readers of your published docs authenticate against your IdP instead of a shared password, and is set up with our team on Enterprise plans.
 
 ## What SSO covers
 
 <Columns cols={2}>
   <Card title="Dashboard SSO" icon="gauge">
-    Your team signs in to `dashboard.jamdesk.com` with your identity provider. Best fit when you want centralized account management, mandatory MFA via your IdP, and instant deprovisioning when a user leaves.
+    Your team signs in to `dashboard.jamdesk.com` with your identity provider. Best fit when you want centralized account management, mandatory MFA via your IdP, and instant deprovisioning when a user leaves. Set it up yourself in **Settings → Single Sign-On**. The steps are below.
   </Card>
   <Card title="Docs site SSO" icon="book-open">
-    Readers authenticate against your IdP before they can view protected docs. Replaces the shared password model with per-user sign-in, an audit trail, and deprovision-on-removal.
+    Readers authenticate against your IdP before they can view protected docs. Replaces the shared password model with per-user sign-in, an audit trail, and deprovision-on-removal. Set up with our team on Enterprise plans.
   </Card>
 </Columns>
 
 ## Who it's for
 
-- Companies with an existing identity provider (Okta, Google Workspace, Azure AD / Entra ID, Auth0, etc.).
-- Teams that need an audit trail of who accessed which docs.
-- Organizations where deprovisioning must be instant, so removing a user from the IdP immediately revokes their docs access.
-- Anyone uncomfortable sharing a single passphrase across a large reader pool.
+Both flavors suit organizations that already run an identity provider: Okta, Google Workspace, Microsoft Entra ID, Auth0, or any SAML 2.0 / OIDC provider.
 
-## How to enable it
+Dashboard SSO fits teams that want central control over who manages projects. You get mandatory MFA through your own IdP, and when SSO is enforced, removing someone from your directory cuts off their dashboard sign-in too.
 
-SSO setup is hands-on. Every IdP is configured slightly differently, and we want to make sure your team's metadata, claim mappings, and group filters are right before flipping the gate.
+Docs-site SSO answers a different need: an audit trail of who read which docs, and per-user access for teams that have outgrown sharing one passphrase across a large reader pool.
+
+## Enable dashboard SSO
+
+Dashboard SSO is self-service on any paid plan. You verify that you own your email domain, connect your identity provider, and optionally require everyone on that domain to sign in through it.
+
+### Before you start
+
+- A paid Jamdesk plan.
+- Owner access to the project. The SSO connection lives at the account-owner level and covers every project you own, so only the owner sees the Single Sign-On settings.
+- Access to your domain's DNS to add a TXT record.
+- Admin access to your identity provider — Okta, Microsoft Entra, Google Workspace, Auth0, or any SAML 2.0 / OIDC provider.
+
+### Set up the connection
+
+<Steps>
+  <Step title="Open Single Sign-On settings">
+    In the dashboard, go to **Settings → Single Sign-On** and enter your company email domain, for example `acme.com`. Jamdesk creates a connection and shows a DNS TXT record to prove you own the domain.
+  </Step>
+  <Step title="Verify your domain">
+    The dashboard shows a record name and value. Add the matching TXT record to your domain's DNS, then click **Verify**. DNS changes can take up to an hour to propagate, so a first attempt may fail before the record is visible. Wait and try again. Leave the record in place after you verify: Jamdesk re-checks it periodically and disables the connection if it disappears.
+  </Step>
+  <Step title="Configure your identity provider">
+    Copy the **Entity ID** and **ACS URL** shown in the dashboard into a new SAML or OIDC application in your IdP, then paste your IdP's details back into Jamdesk:
+
+    - **SAML 2.0** — IdP Entity ID, SSO URL, and the X.509 signing certificate in PEM format.
+    - **OIDC** — issuer URL, client ID, and client secret.
+
+    Pick your provider from the list for a vendor-specific setup guide, then click **Save & activate**. The connection moves to **Active**.
+  </Step>
+  <Step title="Require SSO (optional)">
+    Once the connection is **Active**, turn on **Require SSO for all users on your domain** to push everyone with an email on that domain through your IdP. Password and Google sign-in stop working for them. Your owner account stays exempt, and you can add up to 20 **break-glass emails** for other admins who need a password fallback if your IdP is ever unreachable.
+  </Step>
+</Steps>
+
+<Warning>
+  Add at least one break-glass email before you turn on enforcement. If your identity provider becomes unavailable and no break-glass account exists, no one on the domain can sign in to the dashboard.
+</Warning>
+
+### How users sign in
+
+Once dashboard SSO is active, sign-in is **email-first**. On the login screen a user types their company email. If its domain has an SSO connection, Jamdesk redirects them to your identity provider automatically, with no separate "Sign in with SSO" button to hunt for.
+
+One thing trips people up: signing in through your IdP authenticates a user, but it doesn't grant access on its own. The person still has to be invited to a project. A teammate who authenticates but was never invited sees "Your account isn't provisioned" and needs an [invitation](/help/projects/team-members) before they can get in. Whenever a sign-in is blocked, the user lands on an SSO error page that explains the next step.
+
+### Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="The domain won't verify">
+    DNS changes can take up to an hour to reach Jamdesk, so a verify attempt right after you add the record often fails. Wait, then click **Verify** again. If it still fails, check that the record name and value match the dashboard exactly. Some DNS providers append your domain to the record name automatically, which turns `_jamdesk` into `_jamdesk.acme.com.acme.com`. Drop the duplicate suffix if that happens.
+  </Accordion>
+  <Accordion title="The connection shows as Disabled">
+    Jamdesk re-checks your domain's TXT record after setup. If the record is removed or changes, the connection moves to **Disabled** and sign-ins stop routing to your IdP. Add the record back to DNS and click **Re-check status**, or delete the connection and start over.
+  </Accordion>
+  <Accordion title="A teammate sees 'Your account isn't provisioned'">
+    They authenticated with your identity provider, but they were never invited to a project. SSO proves who they are; it doesn't create access by itself. Invite them from **Settings → Members**, then have them sign in again. See [Team Members](/help/projects/team-members).
+  </Accordion>
+  <Accordion title="Someone is blocked with 'Your organization requires SSO'">
+    Enforcement is on, and they tried to sign in with a password or Google instead of your IdP. They should use the email-first flow so Jamdesk redirects them to your provider. If they genuinely need a password fallback (for example, your IdP is down), add their address to the break-glass list.
+  </Accordion>
+</AccordionGroup>
+
+## Enable docs-site SSO
+
+Docs-site reader SSO is set up with our team. Every IdP is configured slightly differently, and we want to make sure your team's metadata, claim mappings, and group filters are right before gating your published docs.
 
 [**Contact Enterprise sales →**](https://jamdesk.com/pricing)
 
-The pricing page lists current plan tiers and the contact path for Enterprise. From there, our team will walk you through IdP configuration, test the integration on a staging subdomain, and roll it out to production when you're ready.
+The pricing page lists current plan tiers and the contact path for Enterprise. From there, our team walks you through IdP configuration, tests the integration on a staging subdomain, and rolls it out to production when you're ready.
 
 ## Alternatives
 
