@@ -1,0 +1,205 @@
+---
+title: Fondo
+description: Elige una decoración (gradiente, cuadrícula de puntos, manchas esmeriladas o plano), anula el color de fondo por modo, o ajusta el color, tamaño, posición y opacidad del gradiente Jam.
+---
+
+El bloque `background` en `docs.json` controla el fondo de la página: permite elegir entre cuatro tratamientos de decoración (gradiente predeterminado, cuadrícula de puntos, manchas esmeriladas estilo Windows 11 o plano), anular el color base por modo, y ajustar el color, tamaño, posición y opacidad del gradiente predeterminado.
+
+```json docs.json
+{
+  "theme": "jam",
+  "background": {
+    "decoration": "none",
+    "color": {
+      "light": "#faf7f2",
+      "dark": "#0a0a0d"
+    }
+  }
+}
+```
+
+Todos los campos son opcionales. Omite el bloque `background` completo para usar los valores predeterminados del tema.
+
+## decoration
+
+Elige el tratamiento de fondo para el modo claro del tema Jam. Cada valor renderiza un patrón distinto sobre el color base `--color-bg-primary`; el modo oscuro siempre renderiza sólido independientemente del valor.
+
+```json docs.json
+{
+  "background": {
+    "decoration": "grid"
+  }
+}
+```
+
+| Valor | Comportamiento |
+|-------|----------------|
+| `gradient` (predeterminado) | Gradiente radial anclado en la parte superior. Ajustable mediante el bloque `gradient` a continuación |
+| `grid` | Cuadrícula de puntos sutil: puntos de 1.5px en `--color-primary` con 8% de opacidad, espaciado de 24px |
+| `windows` | Dos manchas radiales suaves en las esquinas superiores (aspecto esmerilado estilo Windows 11) |
+| `none` | Relleno plano `--color-bg-primary`, sin decoración |
+
+<Note>
+`decoration` solo afecta el modo claro del tema Jam. Nebula y Pulsar renderizan fondos sólidos independientemente. En el modo oscuro de Jam, todos los valores renderizan sólido.
+</Note>
+
+## color
+
+Anula el color de fondo de la página por modo. Acepta cualquier color CSS: hex, `rgb(...)`, `rgba(...)` o `hsl(...)`.
+
+```json docs.json
+{
+  "background": {
+    "color": {
+      "light": "#faf7f2",
+      "dark": "#0a0a0d"
+    }
+  }
+}
+```
+
+| Campo | Se aplica a |
+|-------|-------------|
+| `color.light` | Fondo del cuerpo en modo claro |
+| `color.dark` | Fondo del cuerpo en modo oscuro |
+
+Ambos campos son opcionales. Define solo `light` para anular el modo claro y conservar el valor oscuro predeterminado del tema, o viceversa. Funciona en todos los temas (Jam, Nebula, Pulsar).
+
+<Tip>
+Combina `decoration: "none"` con un valor `color` personalizado para un fondo plano con identidad de marca — habitual en documentación de estilo editorial o marketing.
+</Tip>
+
+## gradient
+
+Ajusta el gradiente radial del modo claro del tema Jam. Los cuatro campos son opcionales y se aplican de forma independiente. Define solo `color` para cambiar el color, o solo `size` para reducir o ampliar.
+
+```json docs.json
+{
+  "background": {
+    "gradient": {
+      "color": "#a855f7",
+      "size": "800px",
+      "position": "top center",
+      "opacity": 0.25
+    }
+  }
+}
+```
+
+| Campo | Predeterminado | Descripción |
+|-------|----------------|-------------|
+| `color` | Hereda `colors.primary` | Color del gradiente (cualquier color CSS) |
+| `size` | `500px` | Radio. Cualquier longitud CSS (`px`, `rem`, `%`, `vh`) |
+| `position` | `top center` | Punto central. Palabras clave `top`/`bottom`/`center`/`left`/`right`, porcentajes o coordenadas en píxeles |
+| `opacity` | `0.12` | Opacidad máxima en el centro. Número entre `0` y `1` |
+
+<Note>
+`gradient` solo se aplica cuando `decoration` es `gradient` (o no está definido). Las decoraciones `grid`, `windows` y `none` ignoran este bloque — `grid` y `windows` leen `--color-primary` para el color del patrón, por lo que personalízalo mediante el bloque `colors` en su lugar.
+</Note>
+
+### Compatibilidad con navegadores
+
+El gradiente paramétrico (consumo de variables CSS) utiliza `color-mix()`, que requiere:
+
+- Chrome / Edge 111+
+- Firefox 113+
+- Safari 16.2+
+
+Los navegadores más antiguos usan como alternativa el gradiente Jam original: renderizan el valor predeterminado de marca e ignoran los ajustes de `gradient`. El fallback tiene buen aspecto por sí solo; simplemente no puede personalizarse.
+
+## Recetas comunes
+
+<AccordionGroup>
+  <Accordion title="Fondo crema plano, sin gradiente">
+    ```json docs.json
+    {
+      "background": {
+        "decoration": "none",
+        "color": {
+          "light": "#faf7f2",
+          "dark": "#0a0a0d"
+        }
+      }
+    }
+    ```
+    Habitual en documentación de estilo editorial. Funciona en cualquier tema.
+  </Accordion>
+
+  <Accordion title="Gradiente morado sutil">
+    ```json docs.json
+    {
+      "background": {
+        "gradient": {
+          "color": "#a855f7",
+          "opacity": 0.15
+        }
+      }
+    }
+    ```
+    Cambia el color del gradiente Jam sin modificar su tamaño ni posición.
+  </Accordion>
+
+  <Accordion title="Gradiente más grande, descentrado">
+    ```json docs.json
+    {
+      "background": {
+        "gradient": {
+          "size": "1200px",
+          "position": "top left",
+          "opacity": 0.2
+        }
+      }
+    }
+    ```
+    Gradiente más amplio y difuso anclado en la esquina superior izquierda.
+  </Accordion>
+
+  <Accordion title="Cuadrícula de puntos sutil">
+    ```json docs.json
+    {
+      "background": {
+        "decoration": "grid"
+      }
+    }
+    ```
+    Pinta una cuadrícula de puntos tenue de 24px en el color primario del tema. Lee `--color-primary`, así que cambia el color de los puntos definiendo `colors.primary` en `docs.json`.
+  </Accordion>
+
+  <Accordion title="Aspecto esmerilado estilo Windows 11">
+    ```json docs.json
+    {
+      "background": {
+        "decoration": "windows"
+      }
+    }
+    ```
+    Dos manchas radiales suaves en las esquinas superiores, ancladas al viewport. Lee `--color-primary` para el color de las manchas.
+  </Accordion>
+
+  <Accordion title="Solo anular el modo oscuro">
+    ```json docs.json
+    {
+      "background": {
+        "color": {
+          "dark": "#0d0d12"
+        }
+      }
+    }
+    ```
+    Conserva los valores predeterminados del tema en modo claro y aplica un fondo personalizado en modo oscuro.
+  </Accordion>
+</AccordionGroup>
+
+## ¿Qué sigue?
+
+<Columns cols={3}>
+  <Card title="Temas" icon="palette" href="/es/customization/theming">
+    Elige un tema base y personaliza los colores
+  </Card>
+  <Card title="CSS personalizado" icon="paintbrush" href="/es/customization/custom-css">
+    Anula cualquier elemento que CSS pueda modificar
+  </Card>
+  <Card title="Marca" icon="image" href="/es/customization/branding">
+    Logotipos, favicons y recursos de marca
+  </Card>
+</Columns>

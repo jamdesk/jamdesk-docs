@@ -1,24 +1,24 @@
 ---
 title: Optimización SEO
-description: Controla títulos, descripciones y metaetiquetas para buscadores y vistas previas sociales. Jamdesk genera sitemaps e imágenes Open Graph automáticamente.
+description: Controla títulos, descripciones y metaetiquetas para motores de búsqueda y previsualizaciones sociales. Jamdesk genera sitemaps e imágenes Open Graph automáticamente.
 ---
 
-Optimiza tu documentación para motores de búsqueda y vistas previas sociales configurando títulos, descripciones y metadatos en el frontmatter.
+Optimiza tu documentación para motores de búsqueda y previsualizaciones sociales configurando títulos, descripciones y metadatos en el frontmatter.
 
-## Qué hace Jamdesk automáticamente
+## Lo que Jamdesk hace automáticamente
 
 <Columns cols={3}>
   <Card title="Metaetiquetas" icon="tags">
     El título y la descripción del frontmatter se convierten en metaetiquetas.
   </Card>
   <Card title="Open Graph" icon="share">
-    Imágenes para compartir en redes sociales generadas para cada página.
+    Se generan imágenes de compartición social para cada página.
   </Card>
   <Card title="Sitemap y Robots" icon="sitemap">
-    Sitemap XML y robots.txt generados en cada build.
+    El sitemap XML y robots.txt se generan en cada build.
   </Card>
   <Card title="JSON-LD" icon="code">
-    Datos estructurados de Schema.org en cada página para resultados enriquecidos en buscadores.
+    Datos estructurados de Schema.org en cada página para resultados de búsqueda enriquecidos.
   </Card>
   <Card title="IndexNow" icon="bolt">
     Las URLs modificadas se envían a los motores de búsqueda después de cada build.
@@ -30,7 +30,7 @@ Optimiza tu documentación para motores de búsqueda y vistas previas sociales c
 
 ## Optimizar tu contenido
 
-### Escribe un frontmatter eficaz
+### Escribe un frontmatter efectivo
 
 ```yaml
 ---
@@ -56,7 +56,7 @@ description: Set up OAuth, JWT, and session-based authentication  # 120-160 char
 - Incluye palabras clave relevantes de forma natural
 
 <Note>
-**Descripción generada automáticamente.** Cuando `description` no está en el frontmatter, Jamdesk extrae automáticamente el primer párrafo de prosa del contenido de tu página (hasta 155 caracteres). Se omiten encabezados, bloques de código, imágenes y componentes MDX. Esto se usa para `<meta name="description">`, Open Graph y tarjetas de Twitter. Aun así, se recomienda escribir una descripción explícita para obtener mejores resultados.
+**Descripción generada automáticamente.** Cuando `description` no está en el frontmatter, Jamdesk extrae automáticamente el primer párrafo de texto de tu página (hasta 155 caracteres). Se omiten encabezados, bloques de código, imágenes y componentes MDX. Esto se usa para `<meta name="description">`, Open Graph y tarjetas de Twitter. Escribir una descripción explícita sigue siendo recomendable para obtener los mejores resultados.
 </Note>
 
 ## Controlar la indexación
@@ -77,7 +77,7 @@ En tu `docs.json`, configura el comportamiento predeterminado de los robots:
 
 ### Control por página
 
-Anula la indexación de páginas específicas en el frontmatter:
+Sobrescribe la indexación de páginas específicas en el frontmatter:
 
 ```yaml
 ---
@@ -87,13 +87,13 @@ noindex: true
 ```
 
 Usa `noindex` para:
-- Páginas en borrador o en curso
+- Páginas en borrador o en progreso
 - Documentación interna
 - Contenido obsoleto que conservas como referencia
 
 ## URLs canónicas
 
-Si tu documentación es accesible desde varias URLs, establece una canónica:
+Si tu documentación es accesible desde múltiples URLs, define una canónica:
 
 ```yaml
 ---
@@ -102,25 +102,96 @@ canonical: https://docs.example.com/getting-started
 ---
 ```
 
-## Personalización de Open Graph
+También puedes establecer una base canónica global en `docs.json`. Jamdesk agrega la ruta de cada página, de modo que cada una obtiene su propia URL canónica correcta:
 
-Reemplaza la imagen social generada automáticamente:
+```json docs.json
+{
+  "seo": {
+    "metatags": {
+      "canonical": "https://docs.acme.com"
+    }
+  }
+}
+```
 
-```yaml
+## Previsualizaciones sociales y Open Graph
+
+Jamdesk genera automáticamente una tarjeta social de 1200×630 píxeles con tu marca para cada página. Puedes sobrescribir cualquier etiqueta social en el frontmatter. Puedes usar **claves planas de nivel superior** (estilo Mintlify) o un bloque **`seo:`** anidado. Ambas opciones funcionan; cuando la misma clave se define de las dos formas, el valor plano de nivel superior tiene prioridad.
+
+<CodeGroup>
+```yaml Flat (top-level)
 ---
 title: API Reference
-og:image: /images/api-social-card.png
+description: REST API endpoints and authentication
+"og:title": API Reference — Acme
+"og:description": Everything you need to call the Acme API
+"og:image": /images/api-social-card.png
+"twitter:card": summary_large_image
+"twitter:creator": "@acme"
+keywords: ["api", "rest", "authentication"]
+canonical: https://docs.acme.com/api-reference
 ---
 ```
 
-## Sitemap y Robots.txt
+```yaml Nested (seo block)
+---
+title: API Reference
+description: REST API endpoints and authentication
+seo:
+  og:title: API Reference — Acme
+  og:image: /images/api-social-card.png
+  twitter:card: summary_large_image
+  x-custom-tag: any custom meta value
+---
+```
+</CodeGroup>
+
+### Etiquetas compatibles
+
+| Grupo | Etiquetas |
+|-------|-----------|
+| Open Graph | `og:title`, `og:description`, `og:image`, `og:image:width`, `og:image:height`, `og:image:alt`, `og:url`, `og:type`, `og:site_name`, `og:locale`, `og:video`, `og:audio` |
+| Artículo | `og:type: article` con `article:published_time`, `article:modified_time`, `article:author`, `article:section`, `article:tag` |
+| Twitter / X | `twitter:card`, `twitter:title`, `twitter:description`, `twitter:image`, `twitter:image:alt`, `twitter:site`, `twitter:creator`, `twitter:player`, etiquetas de app-card |
+| Otros | `keywords`, `author`, `robots`, `googlebot`, `google-site-verification`, `theme-color`, además de cualquier etiqueta personalizada (coloca las etiquetas personalizadas bajo `seo:`) |
+
+<Note>
+**Dimensiones de imagen OG personalizada.** Cuando defines un `og:image` personalizado, incluye también `og:image:width`
+y `og:image:height` para que los rastreadores la rendericen correctamente. La tarjeta generada automáticamente siempre mide
+1200×630.
+</Note>
+
+<Note>
+**Etiquetas personalizadas.** Las metaetiquetas arbitrarias (p. ej., `x-pinterest`) se emiten como `<meta name="...">`.
+Colócalas bajo el bloque `seo:`. Solo las claves SEO reconocidas se procesan cuando se colocan de forma plana.
+</Note>
+
+### Imagen predeterminada para todo el sitio
+
+Define una imagen social de reserva para todas las páginas en `docs.json`. Cualquier página que tenga su propio `og:image` la sobreescribirá:
+
+```json docs.json
+{
+  "seo": {
+    "metatags": {
+      "og:image": "https://docs.acme.com/images/default-card.png"
+    }
+  }
+}
+```
+
+<Tip>
+**Previsualiza antes de publicar.** Tras un build, pega la URL de la página en una herramienta de preview Open Graph (como [opengraph.xyz](https://www.opengraph.xyz)) para verificar cómo se renderiza la tarjeta en cada plataforma.
+</Tip>
+
+## Sitemap y robots.txt
 
 Cada sitio de Jamdesk genera `sitemap.xml` y `robots.txt` automáticamente en cada build.
 
 | Archivo | Propósito |
-|------|---------|
+|---------|-----------|
 | `sitemap.xml` | Lista todas las páginas con fechas de última modificación para los motores de búsqueda |
-| `robots.txt` | Permite todos los rastreadores y los dirige al sitemap |
+| `robots.txt` | Permite el acceso a todos los rastreadores y los dirige al sitemap |
 
 ### Dónde encontrarlos
 
@@ -147,13 +218,13 @@ Las URLs dependen de si tu documentación está en un dominio raíz o bajo una s
 
 ### Qué se incluye en el sitemap
 
-- Todas las páginas publicadas (excluyendo las que tengan `noindex` o `hidden` en el frontmatter)
-- Fechas de última modificación del frontmatter cuando estén disponibles
+- Todas las páginas publicadas (excepto las que tienen frontmatter `noindex` o `hidden`)
+- Fechas de última modificación del frontmatter cuando están disponibles
 - Frecuencia de cambio semanal
 
 ### Excluir páginas del sitemap
 
-Añade `noindex` al frontmatter para excluir una página tanto del sitemap como de los motores de búsqueda:
+Agrega `noindex` al frontmatter para excluir una página tanto del sitemap como de los motores de búsqueda:
 
 ```yaml
 ---
@@ -168,31 +239,48 @@ Las páginas con `hidden: true` también se excluyen automáticamente.
 
 Cada página incluye automáticamente datos estructurados de [schema.org](https://schema.org) como una etiqueta `<script type="application/ld+json">` con dos esquemas:
 
-- `WebSite`: el nombre, URL y descripción de tu sitio (de `docs.json`).
-- `BreadcrumbList`: la ruta de navegación desde la página de inicio hasta la página actual, derivada de tu configuración de `navigation`.
+- `WebSite`: el nombre, URL y descripción de tu sitio (desde `docs.json`).
+- `BreadcrumbList`: la ruta de navegación desde Inicio hasta la página actual, derivada de tu configuración de `navigation`.
 
-No se requiere configuración. Los motores de búsqueda utilizan esto para resultados enriquecidos, como rutas de navegación en los listados de búsqueda.
+No se requiere ninguna configuración. Los motores de búsqueda utilizan estos datos para resultados enriquecidos, como rutas de navegación en los listados de búsqueda.
 
 <Tip>
-**Verifica tu marcado.** Pega cualquier URL de página en la [Prueba de resultados enriquecidos de Google](https://search.google.com/test/rich-results) para confirmar que los datos estructurados se detectan correctamente.
+**Verifica tu marcado.** Pega cualquier URL de página en la [herramienta de prueba de resultados enriquecidos de Google](https://search.google.com/test/rich-results) para confirmar que los datos estructurados se detectan correctamente.
 </Tip>
 
 ## IndexNow
 
-Después de cada build, Jamdesk envía automáticamente las URLs de páginas modificadas a [IndexNow](https://www.indexnow.org) para una indexación más rápida en los motores de búsqueda. Esto notifica a Bing, Yandex y otros motores participantes sobre los cambios en tu contenido sin esperar a su próximo ciclo de rastreo.
+Tras cada build, Jamdesk envía automáticamente las URLs de las páginas modificadas a [IndexNow](https://www.indexnow.org) para una indexación más rápida. Esto notifica a Bing, Yandex y otros motores de búsqueda participantes sobre los cambios en tu contenido sin esperar su próximo ciclo de rastreo.
 
 - Se activa después de cada build exitoso
-- Solo envía las páginas que realmente cambiaron
+- Solo envía las páginas que realmente han cambiado
 - No bloquea el proceso, por lo que nunca retrasa tu build
-- No requiere configuración
+- No requiere ninguna configuración
 
 ## Buenas prácticas
 
-<Check>Cada página tiene un título único y descriptivo</Check>
-<Check>Las descripciones resumen el contenido con precisión</Check>
-<Check>Los encabezados usan una jerarquía lógica (H1 → H2 → H3)</Check>
-<Check>Los enlaces internos usan texto de anclaje descriptivo</Check>
-<Check>Las imágenes tienen texto alternativo para accesibilidad</Check>
+Repasa esta lista de verificación antes de publicar:
+
+<Columns cols={2}>
+  <Card title="Títulos únicos" icon="heading">
+    Cada página tiene un título distinto y descriptivo de menos de 60 caracteres.
+  </Card>
+  <Card title="Descripciones precisas" icon="align-left">
+    Las descripciones resumen la página en 120–160 caracteres.
+  </Card>
+  <Card title="Encabezados lógicos" icon="list-tree">
+    Los encabezados siguen una jerarquía limpia: un H1, luego H2 → H3.
+  </Card>
+  <Card title="Enlaces descriptivos" icon="link">
+    Los enlaces internos usan texto de anclaje significativo, nunca "haz clic aquí."
+  </Card>
+  <Card title="Texto alternativo en imágenes" icon="image">
+    Todas las imágenes tienen texto alternativo para accesibilidad y búsqueda de imágenes.
+  </Card>
+  <Card title="Imagen social" icon="share-nodes">
+    Define un `og:image` personalizado en páginas clave, o usa la tarjeta generada automáticamente.
+  </Card>
+</Columns>
 
 ## Artículos relacionados
 

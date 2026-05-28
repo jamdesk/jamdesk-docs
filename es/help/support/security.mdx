@@ -1,139 +1,139 @@
 ---
 title: Seguridad
-description: Prácticas de seguridad de Jamdesk — cifrado, controles de acceso, aislamiento de compilación, cumplimiento de GDPR y divulgación responsable.
+description: Prácticas de seguridad de Jamdesk — cifrado, controles de acceso, aislamiento de builds, cumplimiento GDPR y divulgación responsable.
 ---
 
-Cómo Jamdesk protege tu documentación y los datos de tu cuenta.
+Cómo Jamdesk protege su documentación y los datos de su cuenta.
 
-## Seguridad de la infraestructura
+## Seguridad de la Infraestructura
 
 ### Alojamiento
 
-Jamdesk se ejecuta en proveedores de nube conformes con SOC 2. Las compilaciones, los datos de la aplicación y la documentación compilada residen en servicios gestionados y reforzados de esos proveedores, y el tráfico se sirve a través de una CDN global con protección DDoS integrada.
+Jamdesk opera en proveedores cloud con certificación SOC 2. Los builds, los datos de la aplicación y la documentación compilada residen en servicios administrados y reforzados de esos proveedores, y el tráfico se sirve a través de un CDN global con protección DDoS integrada.
 
 ### Cifrado
 
 | Estado de los datos | Protección |
 |---------------------|------------|
-| En tránsito | TLS 1.3 entre tú, nuestro edge y nuestros orígenes |
+| En tránsito | TLS 1.3 entre usted, nuestro edge y nuestros orígenes |
 | En reposo | AES-256 para todo lo que persistimos, incluidos registros de base de datos, almacenamiento de objetos y logs |
 | Copias de seguridad | Cifradas con las mismas claves y replicadas en múltiples regiones |
 
-## Controles de acceso
+## Controles de Acceso
 
 ### Inicio de sesión
 
-Puedes iniciar sesión en el dashboard con correo electrónico y contraseña, o mediante inicio de sesión único a través de Google o GitHub. Las contraseñas nunca se almacenan en texto plano; nuestro proveedor de autenticación guarda únicamente hashes unidireccionales.
+Puede iniciar sesión en el dashboard con correo electrónico y contraseña, o mediante inicio de sesión único a través de Google o GitHub. Las contraseñas nunca se almacenan en texto plano; nuestro proveedor de autenticación conserva únicamente hashes unidireccionales.
 
-Si inicias sesión con Google o GitHub, cualquier MFA que tengas configurado en esa cuenta (TOTP, llaves de seguridad, passkeys) se aplica también a tu inicio de sesión en Jamdesk. Para la mayor protección posible, recomendamos activar MFA en tu cuenta de Google o GitHub y utilizar SSO.
+Si inicia sesión con Google o GitHub, cualquier MFA que tenga configurado en esa cuenta (TOTP, llaves de seguridad, passkeys) se aplica también a su inicio de sesión en Jamdesk. Para mayor protección, recomendamos activar MFA en su cuenta de Google o GitHub y utilizar SSO.
 
-### Acceso del equipo
+### Acceso del Equipo
 
-El acceso basado en roles (Owner, Admin, Member) se aplica tanto en las reglas de seguridad de nuestra base de datos como en cada llamada al backend. Las sesiones expiran automáticamente tras períodos de inactividad, y los cambios en facturación, miembros, dominios personalizados o claves API quedan registrados en un log de auditoría por proyecto.
+El acceso basado en roles (Owner, Admin, Member) se aplica tanto en las reglas de seguridad de nuestra base de datos como en cada llamada al backend. Las sesiones expiran automáticamente tras períodos de inactividad, y los cambios en facturación, miembros, dominios personalizados o API keys se registran en un log de auditoría por proyecto.
 
 ### Integración con GitHub
 
-Jamdesk se conecta a tus repositorios a través de una GitHub App con los permisos mínimos necesarios:
+Jamdesk se conecta a sus repositorios mediante una GitHub App con los permisos mínimos necesarios:
 
 - Acceso de solo lectura al contenido del repositorio
-- Entrega de Webhook para activar compilaciones
-- Sin acceso de escritura a tu código
+- Entrega de Webhook para disparadores de build
+- Sin acceso de escritura a su código
 
-Nunca hacemos push, creamos ramas ni modificamos tu repositorio. Puedes revocar el acceso de Jamdesk en cualquier momento desde la [configuración de Aplicaciones](https://github.com/settings/installations) de GitHub.
+Nunca hacemos push, creamos ramas ni modificamos su repositorio. Puede revocar el acceso de Jamdesk en cualquier momento desde la configuración de [Applications](https://github.com/settings/installations) de GitHub.
 
-### Tokens y secretos
+### Tokens y Secretos
 
-Cada secreto que nos confías se cifra en reposo. Esto incluye:
+Cada secreto que nos confía se cifra en reposo. Esto incluye:
 
-- Conexiones de la GitHub App, donde solo conservamos tu ID de instalación numérico. Los tokens de instalación de corta duración (válidos por una hora) se generan bajo demanda y nunca se persisten.
-- Tokens OAuth de GitHub utilizados durante el flujo del repositorio inicial, que se intercambian una vez, se usan para clonar la plantilla y luego se descartan.
-- Credenciales de integraciones de terceros, como URLs de webhooks entrantes de Slack, tokens de verificación de dominios personalizados y claves API de analíticas.
+- Conexiones de la GitHub App, donde conservamos únicamente su ID de instalación numérico. Los tokens de instalación de corta duración (válidos por una hora) se generan bajo demanda y nunca se persisten.
+- Tokens OAuth de GitHub utilizados durante el flujo de repositorio inicial, que se intercambian una sola vez, se usan para clonar la plantilla y luego se descartan.
+- Credenciales de integraciones de terceros, como URLs de incoming-webhook de Slack, tokens de verificación de dominios personalizados y API keys de analytics.
 
-El dashboard nunca devuelve estos valores al navegador una vez guardados; solo el pipeline de compilación del lado del servidor puede leerlos.
+El dashboard nunca devuelve estos valores al navegador una vez guardados; solo el pipeline de build del lado del servidor puede leerlos.
 
-Las claves API programáticas se almacenan como hashes unidireccionales. El texto en claro se muestra una única vez en el momento de la creación. Si lo pierdes, rota la clave.
+Las API keys programáticas se almacenan como hashes unidireccionales. El texto en claro se muestra exactamente una vez en el momento de su creación. Si lo pierde, rote la clave.
 
-## Gestión de datos
+## Gestión de Datos
 
-### Qué almacenamos
+### Qué Almacenamos
 
-- Tu configuración `docs.json` y cualquier recurso de marca que hayas subido
+- Su configuración `docs.json` y cualquier asset de branding que haya subido
 - Documentación compilada (HTML, CSS, JS)
-- Logs de compilación, conservados durante 30 días
-- Eventos de analíticas anonimizados (páginas vistas, país, familia de dispositivo)
-- Secretos cifrados para cualquier integración de terceros que hayas configurado
+- Logs de build, conservados durante 30 días
+- Eventos de analytics anonimizados (páginas vistas, país, familia de dispositivo)
+- Secretos cifrados para cualquier integración de terceros que haya configurado
 
-### Qué no almacenamos
+### Qué No Almacenamos
 
-- Tu código fuente. Clonamos el repositorio en el momento de la compilación y descartamos el árbol de trabajo cuando se destruye el contenedor de compilación.
-- Credenciales de GitHub de larga duración. Consulta **Tokens y secretos** más arriba.
-- Contraseñas de usuario en ninguna forma reversible.
-- Números de tarjetas de pago. Stripe gestiona todos los datos de las tarjetas; nosotros solo conservamos el ID de cliente y los metadatos de la suscripción.
+- Su código fuente. Clonamos el repositorio en el momento del build y descartamos el árbol de trabajo cuando el contenedor de build se destruye.
+- Credenciales de GitHub de larga duración. Consulte **Tokens y Secretos** más arriba.
+- Contraseñas de usuarios en ninguna forma reversible.
+- Números de tarjetas de pago. Stripe gestiona todos los datos de tarjetas; nosotros conservamos únicamente el ID de cliente y los metadatos de suscripción.
 
-### Acceso interno
+### Acceso Interno
 
-El acceso a los datos de producción está limitado a un número reducido de empleados que lo necesitan para operar el servicio o atender solicitudes de soporte. El acceso queda registrado.
+El acceso a datos de producción está limitado a un pequeño número de empleados que lo necesitan para operar el servicio o atender solicitudes de soporte. El acceso queda registrado.
 
-## Aislamiento de compilaciones
+## Aislamiento de Builds
 
-Cada compilación de documentación se ejecuta en un contenedor dedicado:
+Cada build de documentación se ejecuta en un contenedor dedicado:
 
 - Sin acceso a los datos de otros clientes
-- Entorno nuevo para cada compilación, con secretos inyectados en el momento exacto
-- El contenedor se destruye una vez completada o fallida la compilación
+- Entorno nuevo para cada build, con secretos inyectados en el momento justo
+- El contenedor se destruye una vez que el build finaliza o falla
 
-## Cumplimiento normativo
+## Cumplimiento
 
 ### GDPR
 
 Jamdesk cumple con los requisitos del GDPR:
 
-- Acuerdo de procesamiento de datos disponible previa solicitud a `privacy@jamdesk.com`
+- Acuerdo de Procesamiento de Datos disponible bajo solicitud en `privacy@jamdesk.com`
 - Lista pública de subprocesadores en [jamdesk.com/subprocessors](https://jamdesk.com/subprocessors)
 - Derecho a la eliminación atendido en un plazo de 30 días
-- Portabilidad de datos compatible mediante exportación
+- Portabilidad de datos admitida mediante exportación
 
 ### Privacidad
 
-Nuestras analíticas integradas:
+Nuestros analytics integrados:
 
 - No utilizan cookies
-- No rastrean a personas individuales
+- No rastrean personas individuales
 - Respetan las cabeceras Do Not Track
 
-Consulta nuestra [Política de privacidad](https://jamdesk.com/privacy) para más detalles.
+Consulte nuestra [Política de Privacidad](https://jamdesk.com/privacy) para más detalles.
 
-## Respuesta ante incidentes
+## Respuesta a Incidentes
 
-Si un incidente de seguridad afecta a tu cuenta o a tus datos, tomamos tres medidas:
+Si un incidente de seguridad afecta a su cuenta o datos, tomamos tres medidas:
 
 1. Investigamos y contenemos el problema.
-2. Notificamos a los clientes afectados en un plazo de 72 horas, de acuerdo con nuestras obligaciones bajo el GDPR.
-3. Proporcionamos un informe escrito posterior al incidente una vez confirmada la causa.
+2. Notificamos a los clientes afectados en un plazo de 72 horas, en línea con nuestras obligaciones GDPR.
+3. Proporcionamos un informe post-incidente por escrito una vez confirmada la causa.
 
-## Notificación de vulnerabilidades
+## Reporte de Vulnerabilidades
 
-¿Has encontrado un problema de seguridad? Repórtalo de forma responsable:
+¿Ha encontrado un problema de seguridad? Repórtelo de forma responsable:
 
-- Envía un correo a `security@jamdesk.com`
-- Incluye una descripción, los pasos para reproducirlo y una evaluación del impacto
-- Confirmaremos la recepción en un plazo de 48 horas
+- Envíe un correo a `security@jamdesk.com`
+- Incluya una descripción, los pasos para reproducirlo y una evaluación del impacto
+- Responderemos en un plazo de 48 horas
 
-Actualmente no gestionamos un programa de recompensas por bugs remunerado, pero nos complace reconocer a los investigadores que reporten de buena fe.
+Actualmente no contamos con un programa de bug bounty remunerado, pero nos complace reconocer a los investigadores que reportan de buena fe.
 
-## ¿Tienes preguntas?
+## ¿Preguntas?
 
-<Card title="Contactar con soporte" icon="shield" href="/es/help/support/contact">
+<Card title="Contactar con Soporte" icon="shield" href="/es/help/support/contact">
   Para consultas relacionadas con la seguridad
 </Card>
 
-## Artículos relacionados
+## Artículos Relacionados
 
 <Columns cols={2}>
-  <Card title="Contactar con soporte" icon="headset" href="/es/help/support/contact">
-    Contacta con el equipo de Jamdesk
+  <Card title="Contactar con Soporte" icon="headset" href="/es/help/support/contact">
+    Contacte con el equipo de Jamdesk
   </Card>
-  <Card title="Preguntas frecuentes" icon="circle-question" href="/es/help/faq">
-    Preguntas y respuestas habituales
+  <Card title="FAQ" icon="circle-question" href="/es/help/faq">
+    Preguntas frecuentes y respuestas
   </Card>
 </Columns>
