@@ -91,6 +91,22 @@ Use `noindex` for:
 - Internal documentation
 - Deprecated content you're keeping for reference
 
+### Default social image
+
+Set a fallback social image for every page in `docs.json`:
+
+```json docs.json
+{
+  "seo": {
+    "metatags": {
+      "og:image": "https://docs.acme.com/images/default-card.png"
+    }
+  }
+}
+```
+
+Pages that set their own `og:image` override this default.
+
 ## Canonical URLs
 
 If your docs are accessible at multiple URLs, set a canonical:
@@ -102,16 +118,73 @@ canonical: https://docs.example.com/getting-started
 ---
 ```
 
-## Open Graph Customization
+You can also set a site-wide canonical base in `docs.json`. Jamdesk appends each page's
+path to it, so every page gets a correct per-page canonical:
 
-Override the auto-generated social image:
+```json docs.json
+{
+  "seo": {
+    "metatags": {
+      "canonical": "https://docs.acme.com"
+    }
+  }
+}
+```
 
-```yaml
+## Social Previews & Open Graph
+
+Jamdesk auto-generates a branded 1200×630 social card for every page. Override any
+social tag in frontmatter. You can use **flat top-level keys** (Mintlify style) or a
+nested **`seo:`** block — both work. When the same key is set both ways, the flat
+top-level value wins.
+
+<CodeGroup>
+```yaml Flat (top-level)
 ---
 title: API Reference
-og:image: /images/api-social-card.png
+description: REST API endpoints and authentication
+"og:title": API Reference — Acme
+"og:description": Everything you need to call the Acme API
+"og:image": /images/api-social-card.png
+"twitter:card": summary_large_image
+"twitter:creator": "@acme"
+keywords: ["api", "rest", "authentication"]
+canonical: https://docs.acme.com/api-reference
 ---
 ```
+
+```yaml Nested (seo block)
+---
+title: API Reference
+description: REST API endpoints and authentication
+seo:
+  og:title: API Reference — Acme
+  og:image: /images/api-social-card.png
+  twitter:card: summary_large_image
+  x-custom-tag: any custom meta value
+---
+```
+</CodeGroup>
+
+### Supported tags
+
+| Group | Tags |
+|-------|------|
+| Open Graph | `og:title`, `og:description`, `og:image`, `og:image:width`, `og:image:height`, `og:image:alt`, `og:url`, `og:type`, `og:site_name`, `og:locale`, `og:video`, `og:audio` |
+| Article | `og:type: article` with `article:published_time`, `article:modified_time`, `article:author`, `article:section`, `article:tag` |
+| Twitter / X | `twitter:card`, `twitter:title`, `twitter:description`, `twitter:image`, `twitter:image:alt`, `twitter:site`, `twitter:creator`, `twitter:player`, app-card tags |
+| Other | `keywords`, `author`, `robots`, `googlebot`, `google-site-verification`, `theme-color`, plus any custom tag (place custom tags under `seo:`) |
+
+<Note>
+**Custom OG image dimensions.** When you set a custom `og:image`, also set `og:image:width`
+and `og:image:height` so crawlers render it crisply. The auto-generated card is always
+1200×630.
+</Note>
+
+<Note>
+**Custom tags.** Arbitrary meta tags (e.g. `x-pinterest`) are emitted as `<meta name="...">`.
+Put them under the `seo:` block — only recognized SEO keys are picked up when placed flat.
+</Note>
 
 ## Sitemap & Robots.txt
 
@@ -188,11 +261,28 @@ After each build, Jamdesk automatically submits changed page URLs to [IndexNow](
 
 ## Best Practices
 
-<Check>Every page has a unique, descriptive title</Check>
-<Check>Descriptions summarize the content accurately</Check>
-<Check>Headings use a logical hierarchy (H1 → H2 → H3)</Check>
-<Check>Internal links use descriptive anchor text</Check>
-<Check>Images have alt text for accessibility</Check>
+Run through this checklist before you publish:
+
+<Columns cols={2}>
+  <Card title="Unique titles" icon="heading">
+    Every page has a distinct, descriptive title under 60 characters.
+  </Card>
+  <Card title="Accurate descriptions" icon="align-left">
+    Descriptions summarize the page in 120–160 characters.
+  </Card>
+  <Card title="Logical headings" icon="list-tree">
+    Headings follow a clean hierarchy — one H1, then H2 → H3.
+  </Card>
+  <Card title="Descriptive links" icon="link">
+    Internal links use meaningful anchor text, never "click here."
+  </Card>
+  <Card title="Image alt text" icon="image">
+    Every image has alt text for accessibility and image search.
+  </Card>
+  <Card title="Social image" icon="share-nodes">
+    Set a custom `og:image` on key pages, or rely on the auto-generated card.
+  </Card>
+</Columns>
 
 ## Related Articles
 
