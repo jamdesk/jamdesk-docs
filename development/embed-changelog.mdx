@@ -1,0 +1,123 @@
+---
+title: Embed Your Changelog
+description: Add a "What's new?" button to your own app that opens your Jamdesk changelog in a modal, with an unread dot. One script tag, no build step.
+---
+
+Your changelog already lives in your docs. This guide puts a "What's new?" trigger inside your own product: a button or floating launcher that opens those same entries in a modal, with a dot that marks unread updates per visitor. You paste one `<script>` tag; Jamdesk hosts and versions the widget.
+
+## Prerequisites
+
+- **A published Jamdesk site** on its `*.jamdesk.app` subdomain (the widget always loads from there, even if you also serve docs on a custom domain).
+- **A changelog page** built from [`<Update>`](/components/update) entries with `rss: true` in its frontmatter (see [Opt in with `rss: true`](#opt-in-with-rss-true)).
+
+## Quick Start
+
+Open your dashboard, go to **Settings → What's New widget**, set the page and launcher options, and copy the generated snippet. It looks like this:
+
+```html
+<script
+  src="https://acme.jamdesk.app/_jd/widget.js"
+  data-base="https://acme.jamdesk.app"
+  data-page="/changelog"
+  data-theme="auto"
+  async
+></script>
+```
+
+Paste it into your app's HTML, before the closing `</body>` tag. On load it adds a floating **What's new** launcher in the corner. Clicking it opens your changelog in a modal; an unread dot appears when there's an entry the visitor hasn't seen.
+
+<Note>
+Replace `acme` with your own subdomain. The dashboard card fills this in for you and keeps the `data-base` value pointed at the right origin, including the `/docs` path if you host docs under a subpath.
+</Note>
+
+## Opt in with `rss: true`
+
+The widget reads the newest entry from the same feed that powers your RSS, so a page only feeds the widget when its frontmatter sets `rss: true`:
+
+```mdx
+---
+title: Changelog
+rss: true
+---
+
+<Update label="June 2026" date="2026-06-01">
+**Spec validation at build time.** Every deploy validates the OpenAPI specs your `docs.json` references.
+</Update>
+```
+
+Without `rss: true`, the widget loads but shows no entries and the launcher stays hidden. A docs page that merely *demonstrates* the `<Update>` component (with no `rss: true`) is correctly left out, so a demo date never lights up the dot.
+
+## Configure the Snippet
+
+Every option is a `data-` attribute on the script tag.
+
+| Attribute | Values | Default | Purpose |
+|-----------|--------|---------|---------|
+| `data-base` | Your site URL | script origin | The `*.jamdesk.app` origin (plus `/docs` if you host under a subpath). |
+| `data-page` | Path | `/changelog` | The changelog page to open in the modal. |
+| `data-theme` | `auto`, `light`, `dark` | `auto` | Force the modal's color scheme, or follow the visitor's system setting. |
+| `data-position` | `bottom-right`, `bottom-left` | `bottom-right` | Where the floating launcher sits. |
+| `data-trigger` | CSS selector | _(none)_ | Bind to your own element instead of the floating launcher. |
+
+### Launcher modes
+
+<Columns cols={2}>
+  <Card title="Floating launcher" icon="circle-dot">
+    Leave `data-trigger` off and the widget renders its own button in the corner, placed by `data-position`.
+  </Card>
+  <Card title="Bind to your own element" icon="link">
+    Set `data-trigger="#whats-new"` (any CSS selector) and the widget opens from your existing nav link or button instead.
+  </Card>
+</Columns>
+
+When you bind to your own element, the widget adds the unread dot to that element and never renders a floating button:
+
+```html
+<script
+  src="https://acme.jamdesk.app/_jd/widget.js"
+  data-base="https://acme.jamdesk.app"
+  data-page="/changelog"
+  data-trigger="#whats-new"
+  async
+></script>
+```
+
+## The Unread Dot
+
+The widget keeps an unread indicator per visitor. It compares the newest entry's id against a value in the browser's `localStorage` (one key per project). When they differ, a dot shows on the launcher; opening the modal marks the entry seen and clears the dot until the next update ships.
+
+Because the state lives in `localStorage`, it's per-browser and per-visitor — there's no account or tracking, and clearing site data resets it. A visitor in a fresh browser sees the dot once, then not again until you publish something new.
+
+## Content-Security-Policy
+
+If your own site sends a strict `Content-Security-Policy`, allow your `*.jamdesk.app` origin in three directives, or the widget silently does nothing:
+
+```
+Content-Security-Policy:
+  script-src  https://acme.jamdesk.app;
+  frame-src   https://acme.jamdesk.app;
+  connect-src https://acme.jamdesk.app;
+```
+
+- **`script-src`** loads `widget.js`.
+- **`frame-src`** renders the modal's iframe.
+- **`connect-src`** fetches the changelog metadata for the unread dot.
+
+Miss one and there's no error banner — the launcher just won't appear or the modal stays blank. Check your browser console for CSP violations if the widget doesn't show.
+
+## Password-Protected Sites
+
+<Warning>
+Don't embed the widget if your docs site is password-protected. The unlock screen is built to be entered first-party on your `*.jamdesk.app` site, not inside a third-party iframe. Embedding it would ask visitors to type your site password into a frame on another origin, which is exactly the shape of a phishing prompt. Keep the widget for public changelogs.
+</Warning>
+
+## What's Next?
+
+<Columns cols={2}>
+  <Card title="Update Component" icon="timeline" href="/components/update">
+    Write the changelog entries the widget reads
+  </Card>
+  <Card title="Custom Domains" icon="globe" href="/deploy/custom-domains">
+    Serve docs on your own domain (the widget still loads from jamdesk.app)
+  </Card>
+</Columns>
