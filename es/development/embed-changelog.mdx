@@ -1,0 +1,263 @@
+---
+title: Integra tu changelog
+description: Añade un botón «¿Qué hay de nuevo?» a tu aplicación que abre tu changelog de Jamdesk en una ventana modal, con un punto de novedades. Una etiqueta script, sin paso de build.
+---
+
+Tu changelog ya vive en tu documentación. Esta guía coloca un disparador «¿Qué hay de nuevo?» dentro de tu propio producto: un botón o un lanzador flotante que abre esas mismas entradas en una ventana modal, con un punto que marca las novedades sin leer para cada visitante. Pegas una sola etiqueta `<script>`; Jamdesk aloja y versiona el widget.
+
+<Frame>
+  <img src="/images/embed-changelog/modal.webp" alt="La ventana modal «What's new» abierta sobre una aplicación atenuada, mostrando la página de changelog de Jamdesk con un botón Copy page, entradas con fecha y un botón de cierre en la esquina" />
+</Frame>
+
+## Requisitos previos
+
+- **Un sitio Jamdesk publicado** en su subdominio `*.jamdesk.app` (el widget siempre se carga desde ahí, aunque también sirvas tu documentación en un dominio personalizado).
+- **Una página de changelog** construida a partir de entradas [`<Update>`](/es/components/update) con `rss: true` en su frontmatter (consulta [Activar con `rss: true`](#activar-con-rss-true)).
+
+## Inicio rápido
+
+Abre tu panel, ve a **Configuración → widget Novedades**, elige la página y las opciones del lanzador, y copia el snippet generado. Tiene este aspecto:
+
+```html
+<script
+  src="https://acme.jamdesk.app/_jd/widget.js"
+  data-base="https://acme.jamdesk.app"
+  data-page="/changelog"
+  data-theme="auto"
+  async
+></script>
+```
+
+Pégalo en el HTML de tu aplicación, justo antes de la etiqueta `</body>` de cierre. Al cargarse, añade un lanzador flotante **What's new** en la esquina. Al hacer clic, tu changelog se abre en una modal; aparece un punto cuando hay una entrada que el visitante todavía no ha visto.
+
+<Note>
+Reemplaza `acme` por tu propio subdominio. La tarjeta del panel lo rellena por ti y mantiene el valor `data-base` apuntando a la origen correcta, incluida la ruta `/docs` si alojas la documentación bajo una subruta.
+</Note>
+
+## Fijar una versión o autoalojar
+
+El widget es de código abierto, y el snippet alojado de arriba sirve siempre la última versión — la opción correcta por defecto para la mayoría de los sitios. Cuando prefieras congelar una versión conocida o servir el archivo tú mismo, el repositorio [`jamdesk-widget`](https://github.com/jamdesk/jamdesk-widget) ofrece dos formas más de cargarlo.
+
+**Fijar una versión con jsDelivr.** Carga una versión etiquetada desde el CDN y los bytes nunca cambian sin que lo sepas:
+
+```html
+<script
+  src="https://cdn.jsdelivr.net/gh/jamdesk/jamdesk-widget@v1.0.0/widget.js"
+  data-base="https://acme.jamdesk.app"
+  data-page="/changelog"
+  async
+></script>
+```
+
+**Autoalojar.** Descarga `widget.js` desde la [última versión](https://github.com/jamdesk/jamdesk-widget/releases/latest) y sírvelo desde tu propia origen. Útil cuando una política `script-src` estricta excluye los scripts de terceros.
+
+En cualquier caso, asigna a `data-base` tu origen `*.jamdesk.app`: el snippet alojado lo deduce de la URL del propio script, algo que un CDN o tu propio servidor no pueden hacer. Cada versión publica un hash de Subresource Integrity para fijar los bytes exactos. El [README del repositorio](https://github.com/jamdesk/jamdesk-widget#install) recorre los tres métodos de instalación.
+
+## Activar con `rss: true`
+
+El widget lee la entrada más reciente del mismo feed que alimenta tu RSS, así que una página solo nutre al widget si su frontmatter tiene `rss: true`:
+
+```mdx
+---
+title: Changelog
+rss: true
+---
+
+<Update label="Junio 2026" date="2026-06-01">
+**Validación de specs en el momento del build.** Cada despliegue valida las specs OpenAPI que referencia tu `docs.json`.
+</Update>
+```
+
+Sin `rss: true`, el widget se carga pero no muestra ninguna entrada y el lanzador permanece oculto. Una página de documentación que solo *demuestra* el componente `<Update>` (sin `rss: true`) queda correctamente fuera, de modo que una fecha de demostración nunca enciende el punto.
+
+## Configurar el snippet
+
+Cada opción es un atributo `data-` en la etiqueta de script. La tarjeta del panel los escribe por ti, pero también puedes editar el snippet a mano.
+
+| Atributo | Valores | Predeterminado | Función |
+|----------|---------|----------------|---------|
+| `data-base` | URL de tu sitio | origen del script | La origen `*.jamdesk.app` (con `/docs` si alojas bajo una subruta). |
+| `data-page` | Ruta | `/changelog` | Cualquier ruta de tu documentación para abrir en la modal, no solo el changelog. Consulta [Abrir cualquier página](#abrir-cualquier-pagina). |
+| `data-theme` | `auto`, `light`, `dark` | `auto` | Forzar el esquema de color de la modal, o seguir el ajuste del sistema del visitante. |
+| `data-position` | `bottom-right`, `bottom-left`, `top-right`, `top-left` | `bottom-right` | En qué esquina se sitúa el lanzador flotante. Se ignora cuando `data-trigger` está definido. |
+| `data-label` | Texto | `What's new` | El texto del botón del lanzador flotante. |
+| `data-width` | Longitud CSS | `560px` | Ancho de la modal. Consulta [Dimensionar la modal](#dimensionar-la-modal). |
+| `data-height` | Longitud CSS | `680px` | Alto de la modal. |
+| `data-radius` | Longitud CSS | `12px` | El radio de las esquinas de la modal. Redúcelo para esquinas más cuadradas. |
+| `data-unread` | `off` para desactivar | activado | Si se muestra el punto de novedades. |
+| `data-unread-color` | Hex o nombre de color CSS | `#e5484d` | El color del punto. |
+| `data-button-color` | Hex o nombre de color CSS | `#111` | Fondo del lanzador flotante. Se ignora cuando `data-trigger` está definido. |
+| `data-button-text-color` | Hex o nombre de color CSS | `#fff` | Color del texto del lanzador flotante. |
+| `data-trigger` | Selector CSS | _(ninguno)_ | Enlazar el widget a tu propio elemento en vez del lanzador flotante. |
+| `data-project` | Identificador | derivado de `data-base` | La clave bajo la que se guarda el estado «visto» por visitante. Solo conviene cambiarlo si una origen sirve más de un changelog. |
+
+### Abrir cualquier página
+
+`data-page` abre cualquier ruta de tu sitio de documentación, no solo `/changelog`. La modal muestra la página que indiques, sin el armazón del sitio: un anuncio concreto, una guía de inicio, una nota de migración. Apúntala donde una página enfocada y en contexto ayude:
+
+```html
+<script
+  src="https://acme.jamdesk.app/_jd/widget.js"
+  data-base="https://acme.jamdesk.app"
+  data-page="/announcements/2026-migration"
+  data-unread="off"
+  async
+></script>
+```
+
+Dos comportamientos siguen ligados a tu feed de changelog; tenlos en cuenta cuando la página no sea un changelog:
+
+- **El punto de novedades** sigue la entrada más reciente de tu changelog, no la página que se abre en la modal. Pon `data-unread="off"` cuando la modal abra otra cosa, o el punto se encenderá por novedades del changelog que el visitante no verá ahí.
+- **El lanzador flotante** solo aparece automáticamente cuando tu changelog tiene una entrada (consulta [Activar con `rss: true`](#activar-con-rss-true)). Para integrar una página en un sitio sin changelog, enlaza el widget a tu propio elemento con [`data-trigger`](#modos-de-lanzamiento): tu elemento se muestra en todos los casos.
+
+### Modos de lanzamiento
+
+<Columns cols={2}>
+  <Card title="Lanzador flotante" icon="circle-dot">
+    Deja `data-trigger` vacío y el widget muestra su propio botón en la esquina que define `data-position`, con el texto de `data-label`.
+  </Card>
+  <Card title="Enlazar a tu propio elemento" icon="link">
+    Define `data-trigger="#whats-new"` (cualquier selector CSS) y el widget se abre desde tu enlace o botón de navegación existente.
+  </Card>
+</Columns>
+
+Cuando lo enlazas a tu propio elemento, el widget añade el punto a ese elemento y nunca muestra un botón flotante (`data-position` y `data-label` dejan de aplicarse):
+
+```html
+<script
+  src="https://acme.jamdesk.app/_jd/widget.js"
+  data-base="https://acme.jamdesk.app"
+  data-page="/changelog"
+  data-trigger="#whats-new"
+  async
+></script>
+```
+
+### Dimensionar la modal
+
+La modal se abre a 560 × 680 px. Ajusta `data-width` y `data-height` para cambiarla. Un número solo se interpreta en píxeles, o usa un valor en `px`, `vw`, `vh`, `rem`, `em` o `%`:
+
+```html
+<script
+  src="https://acme.jamdesk.app/_jd/widget.js"
+  data-base="https://acme.jamdesk.app"
+  data-page="/changelog"
+  data-width="720px"
+  data-height="600px"
+  async
+></script>
+```
+
+Ambas dimensiones tienen un tope responsivo (`92vw` de ancho, `86vh` de alto) para que un tamaño grande quepa igualmente en un teléfono. Un valor no reconocido vuelve al predeterminado. Las esquinas tienen un radio de 12px por defecto; define `data-radius` (cualquier longitud CSS) para cuadrarlas o redondearlas más.
+
+### Dar estilo al botón del lanzador
+
+El lanzador flotante es una pastilla oscura por defecto. Recolórealo con `data-button-color` (el fondo) y `data-button-text-color` (el texto), cada uno un valor hex o un nombre de color CSS:
+
+```html
+<script
+  src="https://acme.jamdesk.app/_jd/widget.js"
+  data-base="https://acme.jamdesk.app"
+  data-page="/changelog"
+  data-button-color="#4f46e5"
+  data-button-text-color="#ffffff"
+  async
+></script>
+```
+
+Estos dos atributos solo dan estilo al botón flotante del propio widget. Cuando lo enlazas a tu propio elemento con `data-trigger`, el lanzador hereda el estilo de ese elemento, así que no tienen efecto.
+
+### Personalizar el punto de novedades
+
+El punto de novedades es rojo (`#e5484d`) y está activado por defecto. Cámbiale el color con `data-unread-color` (un valor hex o un nombre de color CSS), o desactívalo con `data-unread="off"`:
+
+```html
+<!-- Cambiar el color del punto -->
+<script src="https://acme.jamdesk.app/_jd/widget.js" data-base="https://acme.jamdesk.app" data-unread-color="#7c3aed" async></script>
+
+<!-- Desactivar el punto -->
+<script src="https://acme.jamdesk.app/_jd/widget.js" data-base="https://acme.jamdesk.app" data-unread="off" async></script>
+```
+
+Desactivar el punto mantiene el lanzador y la modal — solo quita el indicador. La siguiente sección explica cómo se registra el estado «visto».
+
+## El punto de novedades
+
+El widget mantiene un indicador de novedades por visitante. Compara el identificador de la entrada más reciente con un valor guardado en el `localStorage` del navegador (una clave por proyecto). Cuando difieren, aparece un punto en el lanzador; abrir la modal marca la entrada como vista y borra el punto hasta que se publique la próxima novedad.
+
+Como el estado vive en el `localStorage`, es propio del navegador y del visitante — no hay cuenta ni seguimiento, y borrar los datos del sitio lo reinicia. Un visitante en un navegador nuevo ve el punto una vez, y luego no más hasta que publiques algo nuevo.
+
+## Ejemplos
+
+<CodeGroup>
+```html Flotante, abajo a la izquierda, punto verde
+<script
+  src="https://acme.jamdesk.app/_jd/widget.js"
+  data-base="https://acme.jamdesk.app"
+  data-page="/changelog"
+  data-position="bottom-left"
+  data-unread-color="#22c55e"
+  async
+></script>
+```
+
+```html Enlazado a un enlace de navegación, modal más grande
+<script
+  src="https://acme.jamdesk.app/_jd/widget.js"
+  data-base="https://acme.jamdesk.app"
+  data-page="/changelog"
+  data-trigger="#whats-new"
+  data-width="720px"
+  data-height="600px"
+  async
+></script>
+```
+
+```html Sin punto, texto personalizado
+<script
+  src="https://acme.jamdesk.app/_jd/widget.js"
+  data-base="https://acme.jamdesk.app"
+  data-page="/changelog"
+  data-label="Notas de versión"
+  data-unread="off"
+  async
+></script>
+```
+</CodeGroup>
+
+## Content-Security-Policy
+
+Si tu propio sitio envía una `Content-Security-Policy` estricta, permite tu origen `*.jamdesk.app` en tres directivas, o el widget no hará nada sin avisar:
+
+```
+Content-Security-Policy:
+  script-src  https://acme.jamdesk.app;
+  frame-src   https://acme.jamdesk.app;
+  connect-src https://acme.jamdesk.app;
+```
+
+- **`script-src`** carga `widget.js`.
+- **`frame-src`** muestra el iframe de la modal.
+- **`connect-src`** obtiene los metadatos del changelog para el punto.
+
+Si falta una, no aparece ningún aviso de error — el lanzador simplemente no se muestra, o la modal se queda en blanco. Revisa la consola de tu navegador en busca de violaciones de CSP si el widget no aparece.
+
+## Sitios protegidos con contraseña
+
+<Warning>
+No integres el widget si tu sitio de documentación está protegido con contraseña. La pantalla de desbloqueo está pensada para introducirse de forma propia en tu sitio `*.jamdesk.app`, no dentro de un iframe de terceros. Integrarla pediría a los visitantes que escriban la contraseña de tu sitio en un marco de otra origen, que es exactamente la forma de un intento de phishing. Reserva el widget para changelogs públicos.
+</Warning>
+
+## ¿Qué sigue?
+
+<Columns cols={2}>
+  <Card title="Componente Update" icon="timeline" href="/es/components/update">
+    Escribe las entradas de changelog que lee el widget
+  </Card>
+  <Card title="Dominios personalizados" icon="globe" href="/es/deploy/custom-domains">
+    Sirve tu documentación en tu propio dominio (el widget se sigue cargando desde jamdesk.app)
+  </Card>
+  <Card title="Código fuente del widget" icon="github" href="https://github.com/jamdesk/jamdesk-widget">
+    Fija una versión, autoaloja o lee el código fuente en GitHub
+  </Card>
+</Columns>
