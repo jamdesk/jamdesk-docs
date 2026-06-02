@@ -54,6 +54,18 @@ curl https://docs.example.com/docs/getting-started.md
 
 The raw content is Markdown extended with component tags like `<Note>`, `<Steps>`, and `<Tabs>`. Standard Markdown parsers will treat component tags as raw HTML. See [Markdown basics](/content/mdx-basics) for the full syntax reference.
 
+## OpenAPI specs on API reference pages
+
+When you fetch the Markdown for an API reference page — one whose frontmatter declares an `api:` or `openapi:` spec — Jamdesk appends a short footer that points AI agents at every OpenAPI specification in your project, bundled as a single download:
+
+```markdown
+---
+
+📦 **OpenAPI specs:** Every OpenAPI specification referenced by this documentation is available as a single download — https://acme.jamdesk.app/api-specs.zip
+```
+
+It's the same `api-specs.zip` offered by the [Download API spec](/ai/ai-actions#download-api-spec) action, assembled fresh on each request. The point is reach: an agent reading one endpoint page learns it can grab the full machine-readable contract in a single request, instead of scraping every endpoint. The footer appears only on API reference pages of projects that have at least one spec — regular guides are untouched.
+
 ## Response Details
 
 ### Headers
@@ -61,18 +73,21 @@ The raw content is Markdown extended with component tags like `<Note>`, `<Steps>
 | Header | Value | Purpose |
 |--------|-------|---------|
 | `Content-Type` | `text/markdown; charset=utf-8` | Identifies content as Markdown |
-| `Cache-Control` | `public, max-age=0, s-maxage=300, stale-while-revalidate=60` | CDN-cached for 5 minutes, no browser cache |
+| `Cache-Control` | `public, max-age=3600, s-maxage=86400` | Browser-cached 1 hour, CDN-cached 1 day (`.md` URLs) |
+| `Vary` | `Accept` | The same URL serves HTML or Markdown depending on the request's `Accept` header |
 | `X-Robots-Tag` | `noindex, nofollow` | Prevents search engine indexing |
 | `Content-Disposition` | `inline` | Displays in browser instead of downloading |
 | `X-Frame-Options` | `DENY` | Prevents embedding in iframes |
 | `Content-Security-Policy` | `default-src 'none'` | Blocks script execution |
+
+Requesting a page's canonical URL (no `.md`) with the header `Accept: text/markdown` returns the same Markdown, but with `Cache-Control: private, no-store` — it shares a cache key with the HTML page, so that response is never cached.
 
 ### Error responses
 
 | Status | Meaning |
 |--------|---------|
 | `308` | Trailing slash redirect (e.g., `/intro.md/` redirects to `/intro.md`) |
-| `404` | Page does not exist (returns an HTML error page, not Markdown) |
+| `404` | Page does not exist (returns a short plain-text error, not Markdown) |
 | `500` | Server error (returns an HTML error page) |
 
 ## Use with AI Tools
