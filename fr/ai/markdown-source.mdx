@@ -1,13 +1,13 @@
 ---
 title: Source Markdown
-description: "Accédez à la source Markdown brute de n'importe quelle page en ajoutant .md à l'URL. Texte structuré pour les outils IA, scripts et pipelines de contenu."
+description: Accédez à la source Markdown brute de n'importe quelle page en ajoutant .md à l'URL. Texte structuré pour les outils IA, scripts et pipelines de contenu.
 ---
 
 Les outils IA traitent le Markdown plus efficacement que le HTML rendu. Jamdesk rend la source Markdown brute de chaque page accessible en ajoutant `.md` à n'importe quelle URL. Aucune authentification requise.
 
 ## Extension d'URL `.md`
 
-Ajoutez `.md` à n'importe quelle URL de page de documentation pour obtenir la source brute au lieu du HTML rendu :
+Ajoutez `.md` à l'URL de n'importe quelle page de documentation pour obtenir la source brute au lieu du HTML rendu :
 
 ```bash
 # Rendered page
@@ -36,11 +36,11 @@ Welcome to the getting started guide.
 <Note>You'll need Node.js 18 or later.</Note>
 ```
 
-La réponse est le fichier source exact de votre dépôt, incluant le frontmatter et les balises de composants.
+La réponse est le fichier source exact de votre dépôt, y compris le frontmatter et les balises de composants.
 
 ### Domaines personnalisés
 
-Le contenu brut fonctionne également sur les domaines personnalisés. Utilisez la même URL que vos lecteurs voient, avec `.md` ajouté :
+Le contenu brut fonctionne également sur les domaines personnalisés. Utilisez la même URL que celle de vos lecteurs, avec `.md` ajouté à la fin :
 
 ```bash
 # Docs served at root
@@ -54,30 +54,45 @@ curl https://docs.example.com/docs/getting-started.md
 
 Le contenu brut est du Markdown étendu avec des balises de composants comme `<Note>`, `<Steps>` et `<Tabs>`. Les parseurs Markdown standard traiteront les balises de composants comme du HTML brut. Consultez les [bases de Markdown](/fr/content/mdx-basics) pour la référence complète de la syntaxe.
 
+## Spécifications OpenAPI sur les pages de référence API
+
+Lorsque vous récupérez le Markdown d'une page de référence API — dont le frontmatter déclare une spécification `api:` ou `openapi:` — Jamdesk ajoute un court pied de page qui indique aux agents IA chaque spécification OpenAPI de votre projet, regroupée en un seul téléchargement :
+
+```markdown
+---
+
+📦 **OpenAPI specs:** Every OpenAPI specification referenced by this documentation is available as a single download — https://acme.jamdesk.app/api-specs.zip
+```
+
+C'est le même `api-specs.zip` proposé par l'action [Télécharger la spécification API](/fr/ai/ai-actions#télécharger-la-spec-api), assemblé à chaque requête. L'objectif est la portée : un agent qui lit une page d'endpoint apprend qu'il peut récupérer l'intégralité du contrat lisible par machine en une seule requête, plutôt que de scraper chaque endpoint. Le pied de page n'apparaît que sur les pages de référence API des projets ayant au moins une spécification — les guides classiques ne sont pas concernés.
+
 ## Détails de la réponse
 
 ### En-têtes
 
-| En-tête | Valeur | Objectif |
+| En-tête | Valeur | Rôle |
 |--------|-------|---------|
-| `Content-Type` | `text/markdown; charset=utf-8` | Identifie le contenu comme du Markdown |
-| `Cache-Control` | `public, max-age=0, s-maxage=300, stale-while-revalidate=60` | Mis en cache par le CDN pendant 5 minutes, pas de cache navigateur |
+| `Content-Type` | `text/markdown; charset=utf-8` | Identifie le contenu comme Markdown |
+| `Cache-Control` | `public, max-age=3600, s-maxage=86400` | Mis en cache navigateur 1 heure, CDN 1 jour (URL `.md`) |
+| `Vary` | `Accept` | La même URL sert du HTML ou du Markdown selon l'en-tête `Accept` de la requête |
 | `X-Robots-Tag` | `noindex, nofollow` | Empêche l'indexation par les moteurs de recherche |
 | `Content-Disposition` | `inline` | Affiche dans le navigateur au lieu de télécharger |
 | `X-Frame-Options` | `DENY` | Empêche l'intégration dans des iframes |
 | `Content-Security-Policy` | `default-src 'none'` | Bloque l'exécution de scripts |
 
+Requêter l'URL canonique d'une page (sans `.md`) avec l'en-tête `Accept: text/markdown` retourne le même Markdown, mais avec `Cache-Control: private, no-store` — cette URL partage une clé de cache avec la page HTML, donc cette réponse n'est jamais mise en cache.
+
 ### Réponses d'erreur
 
 | Statut | Signification |
 |--------|---------|
-| `308` | Redirection de barre oblique finale (ex. : `/intro.md/` redirige vers `/intro.md`) |
-| `404` | La page n'existe pas (renvoie une page d'erreur HTML, pas du Markdown) |
-| `500` | Erreur serveur (renvoie une page d'erreur HTML) |
+| `308` | Redirection de barre oblique finale (ex. `/intro.md/` redirige vers `/intro.md`) |
+| `404` | La page n'existe pas (retourne une courte erreur en texte brut, pas en Markdown) |
+| `500` | Erreur serveur (retourne une page d'erreur HTML) |
 
 ## Utilisation avec les outils IA
 
-Les URL de source Markdown s'associent bien au [serveur MCP](/fr/ai/mcp-server). Utilisez `searchDocs` pour trouver des pages par mot-clé, puis récupérez la source brute de la page correspondante :
+Les URL de source Markdown se combinent bien avec le [serveur MCP](/fr/ai/mcp-server). Utilisez `searchDocs` pour trouver des pages par mot-clé, puis récupérez la source brute de la page correspondante :
 
 ```bash
 # 1. Search for a topic via MCP
@@ -89,15 +104,15 @@ curl -X POST https://acme.jamdesk.app/_mcp \
 curl https://acme.jamdesk.app/guides/authentication.md
 ```
 
-Cela donne aux outils IA à la fois un accès de recherche et un accès à la source complète de votre documentation.
+Cela offre aux outils IA à la fois la recherche et l'accès à la source complète de votre documentation.
 
-## Prochaines étapes
+## Et ensuite ?
 
 <Columns cols={2}>
   <Card title="Serveur MCP" icon="robot" href="/fr/ai/mcp-server">
-    Connectez des assistants IA directement à votre documentation
+    Connectez des assistants IA directement à vos docs
   </Card>
   <Card title="Bases de Markdown" icon="pen-nib" href="/fr/content/mdx-basics">
-    Référence de la syntaxe MDX pour les pages de documentation
+    Référence de syntaxe MDX pour les pages de documentation
   </Card>
 </Columns>
