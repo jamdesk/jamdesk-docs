@@ -4,12 +4,12 @@ sidebarTitle: llms.txt
 description: Cada sitio de Jamdesk genera llms.txt y llms-full.txt automáticamente. Las herramientas de IA usan estos archivos para entender tu documentación.
 ---
 
-Si quieres que herramientas de IA como ChatGPT, Claude o Copilot den respuestas precisas sobre tu producto, necesitan acceso estructurado a tu documentación, no solo lo que haya llegado a sus datos de entrenamiento.
+Si quieres que herramientas de IA como ChatGPT, Claude o Copilot den respuestas precisas sobre tu producto, necesitan acceso estructurado a tus docs, no solo lo que quedó en sus datos de entrenamiento.
 
 Cada sitio de Jamdesk genera `llms.txt` y `llms-full.txt` siguiendo la especificación de [llmstxt.org](https://llmstxt.org). Las herramientas de IA leen estos archivos en lugar de rastrear páginas individuales.
 
 <Note>
-  Google ahora audita `llms.txt` como parte de las [comprobaciones de navegación agéntica de Lighthouse](https://developer.chrome.com/docs/lighthouse/agentic-browsing/llms-txt). Los sitios que publican un `llms.txt` válido son más descubribles por los agentes de IA — y, cada vez más, por el propio Google al clasificar contenido para respuestas basadas en IA. Jamdesk te lo ofrece de forma gratuita.
+  Google ahora audita `llms.txt` como parte de las [comprobaciones de navegación agéntica de Lighthouse](https://developer.chrome.com/docs/lighthouse/agentic-browsing/llms-txt). Los sitios que publican un `llms.txt` válido son más descubribles para los agentes de IA — y, cada vez más, para el propio Google al clasificar contenido para respuestas basadas en IA. Jamdesk te ofrece esto de forma gratuita.
 </Note>
 
 ## Qué genera Jamdesk
@@ -17,9 +17,9 @@ Cada sitio de Jamdesk genera `llms.txt` y `llms-full.txt` siguiendo la especific
 | Archivo | Contenido |
 |---------|-----------|
 | `llms.txt` | Títulos de páginas, descripciones y URLs (una tabla de contenidos estructurada) |
-| `llms-full.txt` | Contenido completo de la documentación en un solo archivo |
+| `llms-full.txt` | Contenido completo de la documentación en un único archivo |
 
-Jamdesk genera ambos en el momento del build y los sirve desde el mismo CDN que tu documentación.
+Jamdesk genera ambos en tiempo de build y los sirve desde el mismo CDN que tus docs.
 
 ## Verifica tus archivos
 
@@ -27,7 +27,7 @@ Comprueba que tus archivos existen después de tu primer build:
 
 <Tabs>
   <Tab title="Dominio raíz">
-    Si tu documentación está en la raíz de tu dominio (p. ej., `docs.acme.com` o `acme.jamdesk.app`):
+    Si tus docs están en la raíz de tu dominio (p. ej., `docs.acme.com` o `acme.jamdesk.app`):
 
     ```bash
     curl https://docs.acme.com/llms.txt
@@ -35,7 +35,7 @@ Comprueba que tus archivos existen después de tu primer build:
     ```
   </Tab>
   <Tab title="Subruta /docs">
-    Si tu documentación está bajo `/docs` en tu sitio principal (como este sitio en `jamdesk.com/docs`):
+    Si tus docs están bajo `/docs` en tu sitio principal (como este sitio en `jamdesk.com/docs`):
 
     ```bash
     curl https://jamdesk.com/docs/llms.txt
@@ -44,34 +44,54 @@ Comprueba que tus archivos existen después de tu primer build:
   </Tab>
 </Tabs>
 
-## Formato de los archivos
+## Formato del archivo
 
-El archivo `llms.txt` lista cada página con su título, descripción y URL:
+El archivo `llms.txt` lista cada página con su título, descripción y URL, agrupadas en secciones que reflejan tu navegación:
 
 ```text
 # Your Project Documentation
 
 > Documentation for Your Project
 
-## Pages
+## Get Started
 
 - [Getting Started](https://your-project.jamdesk.app/getting-started): Set up your first project in 5 minutes
-- [Authentication](https://your-project.jamdesk.app/authentication): How to authenticate API requests
 - [Configuration](https://your-project.jamdesk.app/configuration): Configure your project settings
+
+## API Reference
+
+- [Authentication](https://your-project.jamdesk.app/authentication): How to authenticate API requests
 ```
 
-El archivo `llms-full.txt` contiene el contenido Markdown completo de cada página, concatenado con límites de página marcados mediante encabezados.
+El archivo `llms-full.txt` contiene el contenido Markdown completo de cada página, concatenado con límites de página marcados por encabezados.
 
-## Cómo se genera
+## Estructura
 
-- Se genera en el momento del build junto con tu HTML
-- Se sirve desde CDN con la misma política de caché que tu documentación
+`llms.txt` sigue la propuesta de [llmstxt.org](https://llmstxt.org/): un título H1,
+un resumen en bloque de cita, y las pestañas y grupos de tu navegación como secciones `##` de
+enlaces Markdown.
+
+Los sitios multilingües obtienen un índice por idioma. El `llms.txt` raíz lista tu
+idioma predeterminado y enlaza cada índice traducido al final — por ejemplo
+`/es/llms.txt` para español. Cada archivo de idioma enlaza de vuelta a sus equivalentes.
+
+## Directiva de agente en cada página
+
+Cada página también lleva una nota invisible y silenciosa para lectores de pantalla destinada a los agentes de IA
+que apunta a `llms.txt`, y cada exportación Markdown comienza con un bloque de cita
+que enlaza el índice. Los agentes que llegan a tu HTML encuentran la ruta Markdown
+sin necesidad de rastrear.
+
+## Cómo se construye
+
+- Generado en tiempo de build junto con tu HTML
+- Servido desde CDN con la misma política de caché que tus docs
 - Se actualiza automáticamente en cada build
-- No requiere configuración; todas las páginas se incluyen por defecto
+- No se necesita configuración; todas las páginas se incluyen por defecto
 
 ## Rastreadores de IA
 
-El `robots.txt` predeterminado de Jamdesk permite todos los rastreadores de IA principales (Claude, ChatGPT, Copilot, Gemini). Tu documentación es accesible para herramientas de IA de forma inmediata.
+El `robots.txt` predeterminado de Jamdesk permite todos los rastreadores de IA principales (Claude, ChatGPT, Copilot, Gemini). Tu documentación es accesible para herramientas de IA desde el primer momento.
 
 <Accordion title="En qué se diferencia llms.txt de sitemap.xml">
   `sitemap.xml` lista URLs para que los motores de búsqueda las rastreen e indexen. No incluye ningún contenido, solo enlaces y metadatos como fechas de última modificación.
@@ -86,9 +106,9 @@ El `robots.txt` predeterminado de Jamdesk permite todos los rastreadores de IA p
     Asistente de chat integrado para preguntas de visitantes
   </Card>
   <Card title="MCP Server" icon="robot" href="/es/ai/mcp-server">
-    Permite que las herramientas de IA busquen y consulten tu documentación de forma interactiva
+    Permite que las herramientas de IA busquen y consulten tus docs de forma interactiva
   </Card>
   <Card title="Markdown Source" icon="file-code" href="/es/ai/markdown-source">
-    Obtén Markdown sin procesar para páginas individuales
+    Obtén el Markdown sin procesar de páginas individuales
   </Card>
 </Columns>
