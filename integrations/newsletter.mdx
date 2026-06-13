@@ -1,0 +1,90 @@
+---
+title: Email Signups
+description: Connect Resend, Mailchimp, Kit, Loops, beehiiv, Brevo, or SendGrid to collect email signups from your docs straight into your own provider's audience.
+---
+
+Jamdesk can collect email addresses from your documentation site and add them straight to the email provider you already use. No third-party form service sits in between. Connect a provider once in the dashboard, then drop a signup form onto any page. You own the list and you own the sending; Jamdesk just captures the address and hands it to your provider.
+
+## Prerequisites
+
+- An account with one of the [supported providers](#supported-providers)
+- An API key from that provider with permission to add contacts
+- The audience identifier most providers use to pick a list (Audience ID, List ID, Form ID, or Publication ID)
+
+## How capture works
+
+When you connect a provider, Jamdesk validates the API key against that provider's API before saving it. After that, every form submission on your docs site calls the provider and adds the reader to your audience. Submissions are rate-limited per visitor and per project to block abuse, and a hidden honeypot field filters out bots.
+
+<Note>
+Your API key is stored on Jamdesk's backend and used only to add contacts. It is never written into your published site, your `docs.json`, or any client-side code, so it can't be read by visitors.
+</Note>
+
+## Supported providers
+
+Seven providers capture signups **natively**. Readers submit a Jamdesk-hosted form and land in your audience without leaving your docs:
+
+| Provider | What you connect |
+|----------|------------------|
+| Resend | API key (full-access) + Audience ID |
+| Mailchimp | API key (ends in your datacenter, e.g. `-us21`) + Audience (List) ID |
+| Kit (ConvertKit) | v4 API key + Form ID |
+| Loops | API key |
+| beehiiv | API key + Publication ID |
+| Brevo | v3 API key + Contact List ID |
+| SendGrid | API key with Marketing Contacts write access + Marketing List ID |
+
+Two more providers are **embed-only**. Jamdesk renders their own form or iframe instead of capturing the address itself, so there's no key to connect:
+
+| Provider | What you supply |
+|----------|------------------|
+| Buttondown | Your account `username` (on the `<EmailSubscribe>` tag) |
+| Substack | Your account `username` (on the `<EmailSubscribe>` tag) |
+
+See [EmailSubscribe](/components/email-subscribe) for the embed-only setup.
+
+## Connect a provider
+
+<Steps>
+  <Step title="Open the Email Signups card">
+    In the dashboard, open your project and go to **Settings**. Find the **Email Signups** card.
+  </Step>
+  <Step title="Choose your provider">
+    Pick a provider from the **Provider** dropdown. The form updates to ask for exactly the fields that provider needs, with a link to where you find its API key.
+  </Step>
+  <Step title="Paste your key and audience ID">
+    Enter the API key and, for most providers, the audience identifier (Loops needs only the key). The key field is masked.
+  </Step>
+  <Step title="Connect">
+    Click **Connect**. Jamdesk validates the key with your provider before saving. If the key is wrong or lacks contact permissions, you'll see an error and nothing is stored.
+  </Step>
+</Steps>
+
+Once connected, the card shows a **Configured** badge with your provider and audience ID. New publishes of your docs render live capture forms.
+
+## Add a form to your docs
+
+Connecting a provider doesn't place a form by itself. You choose where signups appear:
+
+- Write `<EmailSubscribe provider="resend" />` (using your connected provider's id) on any page.
+- Or auto-place a form on every changelog page by setting `placement: changelog` in `docs.json`.
+
+Both paths are covered on the [EmailSubscribe component page](/components/email-subscribe).
+
+## Disconnect a provider
+
+To stop collecting signups, open the **Email Signups** card and click **Remove**. Forms stop capturing on your next publish.
+
+<Warning>
+Disconnecting removes the key from Jamdesk only. Subscribers you already collected stay in your provider's audience — Jamdesk never deletes them. You can reconnect at any time.
+</Warning>
+
+## What's next
+
+<Columns cols={2}>
+  <Card title="EmailSubscribe component" icon="envelope" href="/components/email-subscribe">
+    Place signup forms and auto-mount them on changelog pages
+  </Card>
+  <Card title="Update component" icon="timeline" href="/components/update">
+    Write the changelog entries readers subscribe to hear about
+  </Card>
+</Columns>

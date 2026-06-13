@@ -1,0 +1,100 @@
+---
+title: EmailSubscribe
+description: Add a newsletter or changelog signup form to any docs page with the EmailSubscribe component: native capture for seven providers, embeds for the rest.
+---
+
+`<EmailSubscribe>` puts an email signup form inline on a docs page with a single MDX tag. When you've [connected a provider](/integrations/newsletter) in the dashboard, it renders a Jamdesk-hosted form that writes new subscribers straight to your audience. Without a connected provider, it can host another service's paste-in embed instead. It's built for changelog and release-notes pages, where readers want to hear about what's new.
+
+## Quick Start
+
+Connect a provider in the dashboard first, then add the tag with that provider's id:
+
+```mdx
+<EmailSubscribe provider="resend" />
+```
+
+That renders a labeled email field and a Subscribe button. On submit, the address is added to the audience you connected. The same tag works for any native provider (`mailchimp`, `kit`, `loops`, `beehiiv`, `brevo`, or `sendgrid`) once that provider is connected.
+
+Add an optional heading and supporting line:
+
+```mdx
+<EmailSubscribe
+  provider="resend"
+  title="Get release notes"
+  description="One email when we ship something new. No spam."
+/>
+```
+
+## Props
+
+| Prop | Type | Purpose |
+|------|------|---------|
+| `provider` | string | Provider id: `resend`, `mailchimp`, `kit`, `loops`, `beehiiv`, `brevo`, `sendgrid`, `buttondown`, or `substack`. |
+| `title` | string | Optional heading shown above the form. |
+| `description` | string | Optional supporting line under the heading. |
+| `username` | string | Buttondown / Substack account username (embed-only providers). |
+| `snippet` | string | Raw embed markup from any provider. The escape hatch (see below). |
+| `className` | string | Extra CSS class on the wrapper. |
+
+## Native vs. embed
+
+The `provider` you pass decides how the form behaves:
+
+- **Native providers** (`resend`, `mailchimp`, `kit`, `loops`, `beehiiv`, `brevo`, `sendgrid`) render a Jamdesk-hosted form. Jamdesk captures the address and adds it through your connected key. This is the path that needs a provider [connected in the dashboard](/integrations/newsletter).
+- **Embed-only providers** (`buttondown`, `substack`) render that service's own form or iframe. There's no key to connect — you supply your `username` and the visitor submits to the provider directly.
+
+<Note>
+If you name a native provider that you haven't connected in the dashboard yet, the form won't capture. Connect the provider first so submissions have somewhere to go.
+</Note>
+
+### Embed-only providers
+
+Buttondown and Substack work without a dashboard connection. Pass your account username:
+
+```mdx
+<EmailSubscribe provider="buttondown" username="acme" />
+<EmailSubscribe provider="substack" username="acme" />
+```
+
+### Escape hatch: paste any embed
+
+For a provider Jamdesk doesn't have a shorthand for, paste its embed markup into `snippet`. It renders as-is on the published page:
+
+```mdx
+<EmailSubscribe snippet={`<form action="https://example.com/subscribe">...</form>`} />
+```
+
+<Warning>
+A `snippet` runs the provider's own code on your page. Some providers ship a one-time script that won't re-run when a reader navigates between pages without a full reload. Place script-based embeds on a dedicated, directly-loaded page (like your changelog) rather than deep in a navigation flow.
+</Warning>
+
+## Auto-place on changelog pages
+
+Instead of adding the tag to every release page by hand, mount the form automatically on changelog pages. In `docs.json`, set the newsletter integration's `placement` to `changelog`:
+
+```json
+{
+  "integrations": {
+    "newsletter": {
+      "provider": "resend",
+      "title": "Get release notes",
+      "placement": "changelog"
+    }
+  }
+}
+```
+
+With `placement: "changelog"`, the form mounts on every changelog page (any page with `rss: true`). To skip it on one such page, set `newsletter: false` in that page's frontmatter. If a page already has a hand-placed `<EmailSubscribe>`, the auto-placement steps aside so you don't get two forms.
+
+The full `integrations.newsletter` block accepts the same fields as the component (`provider`, `title`, `description`, `username`, `snippet`, `height`) plus `placement` (`none`, the default, or `changelog`).
+
+## What's Next?
+
+<Columns cols={2}>
+  <Card title="Connect a provider" icon="envelope" href="/integrations/newsletter">
+    Set up Resend, Mailchimp, Kit, Loops, beehiiv, Brevo, or SendGrid
+  </Card>
+  <Card title="Update Component" icon="timeline" href="/components/update">
+    Write the changelog entries your subscribers hear about
+  </Card>
+</Columns>
