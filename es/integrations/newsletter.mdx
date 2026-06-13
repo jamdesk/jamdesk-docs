@@ -1,0 +1,90 @@
+---
+title: Suscripciones por correo
+description: Conecta Resend, Mailchimp, Kit, Loops, beehiiv, Brevo o SendGrid para recopilar suscripciones por correo desde tu documentación directamente en la audiencia de tu propio proveedor.
+---
+
+Jamdesk puede recopilar direcciones de correo desde tu sitio de documentación y añadirlas directamente al proveedor de correo que ya usas. Ningún servicio de formularios de terceros se interpone. Conecta un proveedor una vez en el dashboard y luego coloca un formulario de suscripción en cualquier página. Tú eres dueño de la lista y del envío; Jamdesk solo captura la dirección y se la entrega a tu proveedor.
+
+## Requisitos previos
+
+- Una cuenta con uno de los [proveedores compatibles](#proveedores-compatibles)
+- Una clave API de ese proveedor con permiso para añadir contactos
+- El identificador de audiencia que la mayoría de los proveedores usan para elegir una lista (Audience ID, List ID, Form ID o Publication ID)
+
+## Cómo funciona la captura
+
+Cuando conectas un proveedor, Jamdesk valida la clave API contra la API de ese proveedor antes de guardarla. Después, cada envío de formulario en tu sitio de documentación llama al proveedor y añade al lector a tu audiencia. Los envíos tienen límite de frecuencia por visitante y por proyecto para bloquear abusos, y un campo honeypot oculto filtra los bots.
+
+<Note>
+Tu clave API se almacena en el backend de Jamdesk y solo se usa para añadir contactos. Nunca se escribe en tu sitio publicado, en tu `docs.json` ni en ningún código del lado del cliente, por lo que los visitantes no pueden leerla.
+</Note>
+
+## Proveedores compatibles
+
+Siete proveedores capturan suscripciones de forma **nativa**. Los lectores envían un formulario alojado por Jamdesk y llegan a tu audiencia sin salir de tu documentación:
+
+| Proveedor | Lo que conectas |
+|----------|------------------|
+| Resend | Clave API (acceso completo) + Audience ID |
+| Mailchimp | Clave API (termina en tu datacenter, p. ej. `-us21`) + Audience (List) ID |
+| Kit (ConvertKit) | Clave API v4 + Form ID |
+| Loops | Clave API |
+| beehiiv | Clave API + Publication ID |
+| Brevo | Clave API v3 + Contact List ID |
+| SendGrid | Clave API con acceso de escritura a Marketing Contacts + Marketing List ID |
+
+Otros dos proveedores son **solo de incrustación**. Jamdesk muestra su propio formulario o iframe en lugar de capturar la dirección, así que no hay clave que conectar:
+
+| Proveedor | Lo que proporcionas |
+|----------|------------------|
+| Buttondown | El `username` de tu cuenta (en la etiqueta `<EmailSubscribe>`) |
+| Substack | El `username` de tu cuenta (en la etiqueta `<EmailSubscribe>`) |
+
+Consulta [EmailSubscribe](/es/components/email-subscribe) para la configuración solo de incrustación.
+
+## Conectar un proveedor
+
+<Steps>
+  <Step title="Abrir la tarjeta Suscripciones por correo">
+    En el dashboard, abre tu proyecto y ve a **Configuración**. Busca la tarjeta **Suscripciones por correo**.
+  </Step>
+  <Step title="Elegir tu proveedor">
+    Elige un proveedor en el menú desplegable **Provider**. El formulario se actualiza para pedir exactamente los campos que ese proveedor necesita, con un enlace a dónde encontrar su clave API.
+  </Step>
+  <Step title="Pegar tu clave y el ID de audiencia">
+    Introduce la clave API y, para la mayoría de los proveedores, el identificador de audiencia (Loops solo necesita la clave). El campo de la clave está enmascarado.
+  </Step>
+  <Step title="Conectar">
+    Haz clic en **Connect**. Jamdesk valida la clave con tu proveedor antes de guardarla. Si la clave es incorrecta o carece de permisos sobre contactos, verás un error y no se almacena nada.
+  </Step>
+</Steps>
+
+Una vez conectado, la tarjeta muestra una insignia **Configured** con tu proveedor y el ID de audiencia. Las nuevas publicaciones de tu documentación muestran formularios de captura en vivo.
+
+## Añadir un formulario a tu documentación
+
+Conectar un proveedor no coloca un formulario por sí solo. Tú eliges dónde aparecen las suscripciones:
+
+- Escribe `<EmailSubscribe provider="resend" />` (con el id de tu proveedor conectado) en cualquier página.
+- O coloca automáticamente un formulario en cada página del registro de cambios estableciendo `placement: changelog` en `docs.json`.
+
+Ambas vías se describen en la [página del componente EmailSubscribe](/es/components/email-subscribe).
+
+## Desconectar un proveedor
+
+Para dejar de recopilar suscripciones, abre la tarjeta **Suscripciones por correo** y haz clic en **Remove**. Los formularios dejan de capturar en tu próxima publicación.
+
+<Warning>
+Desconectar elimina la clave solo de Jamdesk. Los suscriptores que ya recopilaste permanecen en la audiencia de tu proveedor — Jamdesk nunca los elimina. Puedes volver a conectar en cualquier momento.
+</Warning>
+
+## Qué sigue
+
+<Columns cols={2}>
+  <Card title="Componente EmailSubscribe" icon="envelope" href="/es/components/email-subscribe">
+    Coloca formularios de suscripción y móntalos automáticamente en las páginas del registro de cambios
+  </Card>
+  <Card title="Componente Update" icon="timeline" href="/es/components/update">
+    Escribe las entradas del registro de cambios que tus suscriptores siguen
+  </Card>
+</Columns>

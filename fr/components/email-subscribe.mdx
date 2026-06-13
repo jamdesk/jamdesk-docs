@@ -1,0 +1,100 @@
+---
+title: EmailSubscribe
+description: Ajoutez un formulaire d'inscription à une newsletter ou à un changelog sur n'importe quelle page avec le composant EmailSubscribe : capture native pour sept fournisseurs, embeds pour les autres.
+---
+
+`<EmailSubscribe>` place un formulaire d'inscription e-mail directement dans une page de documentation avec une seule balise MDX. Lorsque vous avez [connecté un fournisseur](/fr/integrations/newsletter) dans le dashboard, il affiche un formulaire hébergé par Jamdesk qui ajoute les nouveaux abonnés directement à votre audience. Sans fournisseur connecté, il peut à la place héberger l'embed à coller d'un autre service. Il est conçu pour les pages de changelog et de notes de version, où les lecteurs veulent suivre les nouveautés.
+
+## Démarrage rapide
+
+Connectez d'abord un fournisseur dans le dashboard, puis ajoutez la balise avec l'id de ce fournisseur :
+
+```mdx
+<EmailSubscribe provider="resend" />
+```
+
+Cela affiche un champ e-mail étiqueté et un bouton S'abonner. À l'envoi, l'adresse est ajoutée à l'audience que vous avez connectée. La même balise fonctionne pour tout fournisseur natif (`mailchimp`, `kit`, `loops`, `beehiiv`, `brevo` ou `sendgrid`) une fois ce fournisseur connecté.
+
+Ajoutez un titre et une ligne de description facultatifs :
+
+```mdx
+<EmailSubscribe
+  provider="resend"
+  title="Get release notes"
+  description="One email when we ship something new. No spam."
+/>
+```
+
+## Props
+
+| Prop | Type | Rôle |
+|------|------|---------|
+| `provider` | string | Id du fournisseur : `resend`, `mailchimp`, `kit`, `loops`, `beehiiv`, `brevo`, `sendgrid`, `buttondown` ou `substack`. |
+| `title` | string | Titre facultatif affiché au-dessus du formulaire. |
+| `description` | string | Ligne de description facultative sous le titre. |
+| `username` | string | Nom d'utilisateur du compte Buttondown / Substack (fournisseurs embed uniquement). |
+| `snippet` | string | Code d'embed brut de n'importe quel fournisseur. La solution de secours (voir ci-dessous). |
+| `className` | string | Classe CSS supplémentaire sur le conteneur. |
+
+## Natif ou embed
+
+Le `provider` que vous passez détermine le comportement du formulaire :
+
+- **Fournisseurs natifs** (`resend`, `mailchimp`, `kit`, `loops`, `beehiiv`, `brevo`, `sendgrid`) affichent un formulaire hébergé par Jamdesk. Jamdesk capture l'adresse et l'ajoute via votre clé connectée. C'est la voie qui nécessite un fournisseur [connecté dans le dashboard](/fr/integrations/newsletter).
+- **Fournisseurs embed uniquement** (`buttondown`, `substack`) affichent le formulaire ou l'iframe de ce service. Il n'y a aucune clé à connecter — vous fournissez votre `username` et le visiteur envoie directement au fournisseur.
+
+<Note>
+Si vous indiquez un fournisseur natif que vous n'avez pas encore connecté dans le dashboard, le formulaire ne capturera rien. Connectez d'abord le fournisseur pour que les envois aient une destination.
+</Note>
+
+### Fournisseurs embed uniquement
+
+Buttondown et Substack fonctionnent sans connexion au dashboard. Indiquez le nom d'utilisateur de votre compte :
+
+```mdx
+<EmailSubscribe provider="buttondown" username="acme" />
+<EmailSubscribe provider="substack" username="acme" />
+```
+
+### Solution de secours : coller n'importe quel embed
+
+Pour un fournisseur dont Jamdesk n'a pas de raccourci, collez son code d'embed dans `snippet`. Il s'affiche tel quel sur la page publiée :
+
+```mdx
+<EmailSubscribe snippet={`<form action="https://example.com/subscribe">...</form>`} />
+```
+
+<Warning>
+Un `snippet` exécute le code du fournisseur sur votre page. Certains fournisseurs livrent un script à exécution unique qui ne se relance pas quand un lecteur navigue entre les pages sans rechargement complet. Placez les embeds à base de script sur une page dédiée chargée directement (comme votre changelog) plutôt qu'au fond d'un parcours de navigation.
+</Warning>
+
+## Placement automatique sur les pages de changelog
+
+Au lieu d'ajouter la balise à chaque page de version à la main, montez le formulaire automatiquement sur les pages de changelog. Dans `docs.json`, réglez le `placement` de l'intégration newsletter sur `changelog` :
+
+```json
+{
+  "integrations": {
+    "newsletter": {
+      "provider": "resend",
+      "title": "Get release notes",
+      "placement": "changelog"
+    }
+  }
+}
+```
+
+Avec `placement: "changelog"`, le formulaire se monte sur chaque page de changelog (toute page avec `rss: true`). Pour l'ignorer sur une de ces pages, définissez `newsletter: false` dans le frontmatter de cette page. Si une page contient déjà un `<EmailSubscribe>` placé à la main, le placement automatique s'efface pour éviter d'avoir deux formulaires.
+
+Le bloc complet `integrations.newsletter` accepte les mêmes champs que le composant (`provider`, `title`, `description`, `username`, `snippet`, `height`) plus `placement` (`none`, la valeur par défaut, ou `changelog`).
+
+## Et ensuite
+
+<Columns cols={2}>
+  <Card title="Connecter un fournisseur" icon="envelope" href="/fr/integrations/newsletter">
+    Configurez Resend, Mailchimp, Kit, Loops, beehiiv, Brevo ou SendGrid
+  </Card>
+  <Card title="Composant Update" icon="timeline" href="/fr/components/update">
+    Rédigez les entrées de changelog que vos abonnés suivent
+  </Card>
+</Columns>

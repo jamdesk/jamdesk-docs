@@ -1,0 +1,90 @@
+---
+title: Inscriptions e-mail
+description: Connectez Resend, Mailchimp, Kit, Loops, beehiiv, Brevo ou SendGrid pour collecter des inscriptions e-mail depuis votre documentation directement dans l'audience de votre propre fournisseur.
+---
+
+Jamdesk peut collecter des adresses e-mail depuis votre site de documentation et les ajouter directement au fournisseur d'e-mail que vous utilisez déjà. Aucun service de formulaire tiers ne s'intercale. Connectez un fournisseur une fois dans le dashboard, puis placez un formulaire d'inscription sur n'importe quelle page. Vous possédez la liste et vous gérez l'envoi ; Jamdesk se contente de capturer l'adresse et de la transmettre à votre fournisseur.
+
+## Prérequis
+
+- Un compte chez l'un des [fournisseurs pris en charge](#fournisseurs-pris-en-charge)
+- Une clé API de ce fournisseur, autorisée à ajouter des contacts
+- L'identifiant d'audience que la plupart des fournisseurs utilisent pour choisir une liste (Audience ID, List ID, Form ID ou Publication ID)
+
+## Comment fonctionne la capture
+
+Lorsque vous connectez un fournisseur, Jamdesk valide la clé API auprès de l'API de ce fournisseur avant de l'enregistrer. Ensuite, chaque envoi de formulaire sur votre site de documentation appelle le fournisseur et ajoute le lecteur à votre audience. Les envois sont limités en débit par visiteur et par projet pour bloquer les abus, et un champ honeypot caché filtre les bots.
+
+<Note>
+Votre clé API est stockée sur le backend de Jamdesk et sert uniquement à ajouter des contacts. Elle n'est jamais écrite dans votre site publié, votre `docs.json`, ni dans aucun code côté client, et reste donc illisible pour les visiteurs.
+</Note>
+
+## Fournisseurs pris en charge
+
+Sept fournisseurs capturent les inscriptions **nativement**. Les lecteurs envoient un formulaire hébergé par Jamdesk et arrivent dans votre audience sans quitter votre documentation :
+
+| Fournisseur | Ce que vous connectez |
+|----------|------------------|
+| Resend | Clé API (accès complet) + Audience ID |
+| Mailchimp | Clé API (se termine par votre datacenter, p. ex. `-us21`) + Audience (List) ID |
+| Kit (ConvertKit) | Clé API v4 + Form ID |
+| Loops | Clé API |
+| beehiiv | Clé API + Publication ID |
+| Brevo | Clé API v3 + Contact List ID |
+| SendGrid | Clé API avec accès en écriture à Marketing Contacts + Marketing List ID |
+
+Deux autres fournisseurs sont **embed uniquement**. Jamdesk affiche leur propre formulaire ou iframe au lieu de capturer l'adresse lui-même, il n'y a donc aucune clé à connecter :
+
+| Fournisseur | Ce que vous fournissez |
+|----------|------------------|
+| Buttondown | Le `username` de votre compte (sur la balise `<EmailSubscribe>`) |
+| Substack | Le `username` de votre compte (sur la balise `<EmailSubscribe>`) |
+
+Voir [EmailSubscribe](/fr/components/email-subscribe) pour la configuration embed uniquement.
+
+## Connecter un fournisseur
+
+<Steps>
+  <Step title="Ouvrir la carte Inscriptions e-mail">
+    Dans le dashboard, ouvrez votre projet et allez dans **Paramètres**. Trouvez la carte **Inscriptions e-mail**.
+  </Step>
+  <Step title="Choisir votre fournisseur">
+    Sélectionnez un fournisseur dans le menu déroulant **Provider**. Le formulaire se met à jour pour demander exactement les champs dont ce fournisseur a besoin, avec un lien vers l'endroit où trouver sa clé API.
+  </Step>
+  <Step title="Coller votre clé et votre identifiant d'audience">
+    Saisissez la clé API et, pour la plupart des fournisseurs, l'identifiant d'audience (Loops ne demande que la clé). Le champ de la clé est masqué.
+  </Step>
+  <Step title="Connecter">
+    Cliquez sur **Connect**. Jamdesk valide la clé auprès de votre fournisseur avant de l'enregistrer. Si la clé est incorrecte ou ne dispose pas des autorisations sur les contacts, une erreur s'affiche et rien n'est stocké.
+  </Step>
+</Steps>
+
+Une fois connecté, la carte affiche un badge **Configured** avec votre fournisseur et votre identifiant d'audience. Les nouvelles publications de votre documentation affichent des formulaires de capture en direct.
+
+## Ajouter un formulaire à votre documentation
+
+Connecter un fournisseur ne place pas de formulaire en soi. Vous choisissez où apparaissent les inscriptions :
+
+- Écrivez `<EmailSubscribe provider="resend" />` (avec l'id de votre fournisseur connecté) sur n'importe quelle page.
+- Ou placez automatiquement un formulaire sur chaque page de changelog en définissant `placement: changelog` dans `docs.json`.
+
+Les deux approches sont décrites sur la [page du composant EmailSubscribe](/fr/components/email-subscribe).
+
+## Déconnecter un fournisseur
+
+Pour arrêter de collecter des inscriptions, ouvrez la carte **Inscriptions e-mail** et cliquez sur **Remove**. Les formulaires cessent de capturer dès votre prochaine publication.
+
+<Warning>
+La déconnexion supprime la clé de Jamdesk uniquement. Les abonnés déjà collectés restent dans l'audience de votre fournisseur — Jamdesk ne les supprime jamais. Vous pouvez vous reconnecter à tout moment.
+</Warning>
+
+## Et ensuite
+
+<Columns cols={2}>
+  <Card title="Composant EmailSubscribe" icon="envelope" href="/fr/components/email-subscribe">
+    Placez des formulaires d'inscription et montez-les automatiquement sur les pages de changelog
+  </Card>
+  <Card title="Composant Update" icon="timeline" href="/fr/components/update">
+    Rédigez les entrées de changelog que vos lecteurs suivent
+  </Card>
+</Columns>
