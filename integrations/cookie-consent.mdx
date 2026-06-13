@@ -1,0 +1,153 @@
+---
+title: Cookie Consent
+description: Gate analytics scripts behind cookie consent with integrations.cookies, and load an Osano or Termly consent banner on your docs site.
+---
+
+Jamdesk can withhold every analytics and tracking script — Google Analytics, Google Tag Manager, Plausible, Crisp chat, custom JavaScript, and Jamdesk's own built-in analytics — until a visitor consents to cookies. Consent is read from the browser's `localStorage`, so it works with any consent management platform (CMP) that records consent there, including Osano and Termly.
+
+This helps you comply with privacy regulations such as the GDPR, CCPA, and the ePrivacy Directive by ensuring no tracking runs before the visitor agrees.
+
+## How It Works
+
+Set a `localStorage` key and the value that means "consent granted" in `docs.json`:
+
+```json docs.json
+{
+  "integrations": {
+    "cookies": {
+      "key": "jamdesk_consent",
+      "value": "granted"
+    }
+  }
+}
+```
+
+When `integrations.cookies` is set, no analytics script loads until `localStorage["jamdesk_consent"]` equals `"granted"`. The moment your consent banner records acceptance, the scripts load — no page reload needed. If a visitor revokes consent, scripts stop loading from their next full page load (scripts already running in the current page keep running until the visitor navigates away or reloads).
+
+<Info>
+Both `key` and `value` are required. If either is missing or empty, consent gating is off and scripts load normally.
+</Info>
+
+<Warning>
+Gating applies to Jamdesk's built-in analytics too: visitors who never consent are not counted, so expect lower pageview numbers in your project dashboard after you enable this.
+</Warning>
+
+## Connecting Your Consent Banner
+
+Most CMPs — including Osano and Termly — don't expose a simple, stable `localStorage` flag you can point Jamdesk at directly: they store consent in cookies or in values that change per visitor. Instead, add a short **bridge snippet** in your CMP's own custom-code area that writes `jamdesk_consent` when a visitor accepts. Because the snippet runs as part of the CMP (not as Jamdesk custom JavaScript, which is itself gated), it always runs.
+
+The snippet writes `granted` on consent and removes the key when consent is withdrawn, so gating re-applies on the next page load.
+
+## Osano
+
+Add your Osano script in `docs.json`:
+
+```json docs.json
+{
+  "integrations": {
+    "osano": {
+      "scriptSource": "https://cmp.osano.com/YOUR_CUSTOMER_ID/YOUR_CONFIG_ID/osano.js"
+    }
+  }
+}
+```
+
+The script URL comes from your Osano dashboard — it always starts with `https://cmp.osano.com/` and ends with `/osano.js`.
+
+Then add this bridge in Osano (Consent Manager → your config → custom JavaScript) so consent reaches Jamdesk:
+
+```js
+function jdOsanoBridge(consent) {
+  if (consent && consent.ANALYTICS === 'ACCEPT') {
+    localStorage.setItem('jamdesk_consent', 'granted');
+  } else {
+    localStorage.removeItem('jamdesk_consent');
+  }
+}
+if (window.Osano && window.Osano.cm) {
+  jdOsanoBridge(window.Osano.cm.getConsent());
+  window.Osano.cm.addEventListener('osano-cm-consent-saved', jdOsanoBridge);
+} else {
+  window.addEventListener('osano-cm-initialized', function () {
+    jdOsanoBridge(window.Osano.cm.getConsent());
+    window.Osano.cm.addEventListener('osano-cm-consent-saved', jdOsanoBridge);
+  });
+}
+```
+
+## Termly
+
+Add your Termly script in `docs.json`:
+
+```json docs.json
+{
+  "integrations": {
+    "termly": {
+      "scriptSource": "https://app.termly.io/resource-blocker/YOUR-WEBSITE-UUID?autoBlock=on"
+    }
+  }
+}
+```
+
+The URL comes from Termly's embed instructions for your website (the Resource Blocker script). The `?autoBlock=on` query enables Termly's automatic script blocking and is optional.
+
+Then add this bridge in Termly (your website → custom HTML/JavaScript) so consent reaches Jamdesk:
+
+```js
+function jdTermlyBridge() {
+  var s = Termly.getConsentState();
+  if (s && s.analytics) {
+    localStorage.setItem('jamdesk_consent', 'granted');
+  } else {
+    localStorage.removeItem('jamdesk_consent');
+  }
+}
+(function register() {
+  if (window.Termly && typeof Termly.on === 'function') {
+    Termly.on('consent', jdTermlyBridge);
+    try { jdTermlyBridge(); } catch (e) {}
+  } else {
+    setTimeout(register, 200);
+  }
+})();
+```
+
+Both Osano and Termly load first in the page `<head>`, before any other script, so their automatic blocking works.
+
+<Warning>
+If your CMP runs in strict or auto-blocking mode, allowlist `*.jamdesk.app` and your custom docs domain in its managed rules (Osano: classification/allowlist; Termly: Domain Rules or Custom Blocking Map). Otherwise the CMP may block your docs site's own assets and break the page.
+</Warning>
+
+## Testing Your Setup
+
+Gating runs only on your live, published site — not in `jamdesk dev` (the local preview ignores consent configuration). To test:
+
+1. Open your live docs site with an empty `localStorage`. Analytics should not load (check the browser Network tab — no requests to Google, Plausible, or `/api/ev`).
+2. In the browser console, run `localStorage.setItem("jamdesk_consent", "granted")`. The scripts should load within about a second, without a reload.
+
+## Disabling Jamdesk Analytics Entirely
+
+To turn off Jamdesk's built-in (cookieless) analytics for all visitors regardless of consent:
+
+```json docs.json
+{
+  "analytics": { "enabled": false }
+}
+```
+
+## Related Articles
+
+<Columns cols={2}>
+  <Card title="Google Tag Manager" icon="tags" href="/integrations/google-tag-manager">
+    Manage tags and GTM consent mode
+  </Card>
+  <Card title="Google Analytics" icon="chart-simple" href="/integrations/google-analytics">
+    Add GA4 directly
+  </Card>
+  <Card title="Plausible Analytics" icon="chart-pie" href="/integrations/plausible-analytics">
+    Privacy-focused, often consent-exempt
+  </Card>
+  <Card title="Custom JavaScript" icon="code" href="/customization/custom-javascript">
+    Custom scripts are consent-gated too
+  </Card>
+</Columns>
