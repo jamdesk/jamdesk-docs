@@ -32,6 +32,7 @@ Añade un título y una línea de apoyo opcionales:
 | `provider` | string | Id del proveedor: `resend`, `mailchimp`, `kit`, `loops`, `beehiiv`, `brevo`, `sendgrid`, `buttondown` o `substack`. |
 | `title` | string | Título opcional mostrado encima del formulario. |
 | `description` | string | Línea de apoyo opcional bajo el título. |
+| `collapsed` | boolean | Solo proveedores nativos. Empieza como un botón Suscribirse compacto que se despliega al formulario completo al hacer clic. |
 | `username` | string | Nombre de usuario de la cuenta de Buttondown / Substack (proveedores solo de incrustación). |
 | `snippet` | string | Código de incrustación en bruto de cualquier proveedor. La solución alternativa (ver abajo). |
 | `className` | string | Clase CSS adicional en el contenedor. |
@@ -68,6 +69,22 @@ Para un proveedor del que Jamdesk no tiene un atajo, pega su código de incrusta
 Un `snippet` ejecuta el código del proveedor en tu página. Algunos proveedores incluyen un script de un solo uso que no se vuelve a ejecutar cuando un lector navega entre páginas sin una recarga completa. Coloca las incrustaciones basadas en script en una página dedicada y cargada directamente (como tu registro de cambios) en lugar de en medio de un flujo de navegación.
 </Warning>
 
+## Modo compacto
+
+Un campo de correo completo más un botón Suscribirse es mucho peso para soltar en medio de una página. Define `collapsed` y el formulario nativo empieza como un solo botón Suscribirse. El lector que hace clic obtiene el campo completo, en línea, sin recargar la página:
+
+```mdx
+<EmailSubscribe provider="resend" collapsed title="Subscribe to updates" />
+```
+
+La etiqueta del botón viene de `title` (vuelve a «Subscribe to updates» cuando no defines uno). Esto es solo para nativos — los proveedores de incrustación muestran su propio código, así que no hay nada que Jamdesk pueda contraer.
+
+## Suscriptores que regresan
+
+Una vez que un lector se suscribe mediante un formulario nativo, el navegador lo recuerda. En su próxima visita, en lugar del formulario completo ve una línea breve: *Estás suscrito al boletín.* A nadie se le vuelve a pedir registrarse en algo a lo que ya se unió.
+
+Si quiere añadir una segunda dirección, la línea ofrece un control «¿Usar otro correo?» que reabre el formulario completo en el momento. La memoria es por navegador (vive en `localStorage`, no en tu audiencia), así que borrar los datos del sitio o cambiar de navegador vuelve a mostrar el formulario. No hay nada que configurar — cada formulario nativo lo hace.
+
 ## Colocación automática en páginas de registro de cambios
 
 En lugar de añadir la etiqueta a cada página de versión a mano, monta el formulario automáticamente en las páginas de registro de cambios. En `docs.json`, ajusta el `placement` de la integración de newsletter a `changelog`:
@@ -86,7 +103,11 @@ En lugar de añadir la etiqueta a cada página de versión a mano, monta el form
 
 Con `placement: "changelog"`, el formulario se monta en cada página de registro de cambios (cualquier página con `rss: true`). Para omitirlo en una de esas páginas, establece `newsletter: false` en el frontmatter de esa página. Si una página ya tiene un `<EmailSubscribe>` colocado a mano, la colocación automática se aparta para que no obtengas dos formularios.
 
-El bloque completo `integrations.newsletter` acepta los mismos campos que el componente (`provider`, `title`, `description`, `username`, `snippet`, `height`) más `placement` (`none`, el valor predeterminado, o `changelog`).
+El bloque completo `integrations.newsletter` acepta los mismos campos que el componente (`provider`, `title`, `description`, `collapsed`, `username`, `snippet`, `height`) más `placement` (`none`, el valor predeterminado, o `changelog`).
+
+<Tip>
+No tienes que definir el título y la línea de apoyo en `docs.json`. La tarjeta **Suscripciones por correo** del dashboard tiene campos de Título del formulario y Subtítulo del formulario, y un formulario colocado automáticamente los toma cuando `docs.json` los omite. Define `title`/`description` aquí solo cuando quieras que el `docs.json` de este sitio gane sobre el texto del dashboard.
+</Tip>
 
 ## Qué sigue
 

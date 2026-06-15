@@ -32,6 +32,7 @@ Add an optional heading and supporting line:
 | `provider` | string | Provider id: `resend`, `mailchimp`, `kit`, `loops`, `beehiiv`, `brevo`, `sendgrid`, `buttondown`, or `substack`. |
 | `title` | string | Optional heading shown above the form. |
 | `description` | string | Optional supporting line under the heading. |
+| `collapsed` | boolean | Native providers only. Start as a compact Subscribe button that expands to the full form on click. |
 | `username` | string | Buttondown / Substack account username (embed-only providers). |
 | `snippet` | string | Raw embed markup from any provider. The escape hatch (see below). |
 | `className` | string | Extra CSS class on the wrapper. |
@@ -68,6 +69,22 @@ For a provider Jamdesk doesn't have a shorthand for, paste its embed markup into
 A `snippet` runs the provider's own code on your page. Some providers ship a one-time script that won't re-run when a reader navigates between pages without a full reload. Place script-based embeds on a dedicated, directly-loaded page (like your changelog) rather than deep in a navigation flow.
 </Warning>
 
+## Compact mode
+
+A full email field plus a Subscribe button is a lot of weight to drop into the middle of a page. Set `collapsed` and the native form starts as a single Subscribe button instead. A reader who clicks it gets the full field, inline, without a page reload:
+
+```mdx
+<EmailSubscribe provider="resend" collapsed title="Subscribe to updates" />
+```
+
+The button's label comes from `title` (it falls back to "Subscribe to updates" when you don't set one). This is native-only — embed providers render their own markup, so there's nothing for Jamdesk to collapse.
+
+## Returning subscribers
+
+Once a reader subscribes through a native form, the browser remembers it. On their next visit, instead of the full form they see a short line: *You're subscribed to the newsletter.* Nobody gets asked to sign up for something they already joined.
+
+If they want to add a second address, the line has a "Use a different email?" control that reopens the full form on the spot. The memory is per-browser (it lives in `localStorage`, not your audience), so clearing site data or switching browsers shows the form again. There's nothing to configure — every native form does this.
+
 ## Auto-place on changelog pages
 
 Instead of adding the tag to every release page by hand, mount the form automatically on changelog pages. In `docs.json`, set the newsletter integration's `placement` to `changelog`:
@@ -86,7 +103,11 @@ Instead of adding the tag to every release page by hand, mount the form automati
 
 With `placement: "changelog"`, the form mounts on every changelog page (any page with `rss: true`). To skip it on one such page, set `newsletter: false` in that page's frontmatter. If a page already has a hand-placed `<EmailSubscribe>`, the auto-placement steps aside so you don't get two forms.
 
-The full `integrations.newsletter` block accepts the same fields as the component (`provider`, `title`, `description`, `username`, `snippet`, `height`) plus `placement` (`none`, the default, or `changelog`).
+The full `integrations.newsletter` block accepts the same fields as the component (`provider`, `title`, `description`, `collapsed`, `username`, `snippet`, `height`) plus `placement` (`none`, the default, or `changelog`).
+
+<Tip>
+You don't have to set the heading and supporting line in `docs.json`. The **Email Signups** card in the dashboard has Form title and Form subtitle inputs, and an auto-placed form falls back to those when `docs.json` leaves them out. Set `title`/`description` here only when you want this site's `docs.json` to win over the dashboard copy.
+</Tip>
 
 ## What's Next?
 

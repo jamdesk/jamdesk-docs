@@ -32,6 +32,7 @@ Ajoutez un titre et une ligne de description facultatifs :
 | `provider` | string | Id du fournisseur : `resend`, `mailchimp`, `kit`, `loops`, `beehiiv`, `brevo`, `sendgrid`, `buttondown` ou `substack`. |
 | `title` | string | Titre facultatif affiché au-dessus du formulaire. |
 | `description` | string | Ligne de description facultative sous le titre. |
+| `collapsed` | boolean | Fournisseurs natifs uniquement. Démarre comme un bouton S'abonner compact qui se déploie en formulaire complet au clic. |
 | `username` | string | Nom d'utilisateur du compte Buttondown / Substack (fournisseurs embed uniquement). |
 | `snippet` | string | Code d'embed brut de n'importe quel fournisseur. La solution de secours (voir ci-dessous). |
 | `className` | string | Classe CSS supplémentaire sur le conteneur. |
@@ -68,6 +69,22 @@ Pour un fournisseur dont Jamdesk n'a pas de raccourci, collez son code d'embed d
 Un `snippet` exécute le code du fournisseur sur votre page. Certains fournisseurs livrent un script à exécution unique qui ne se relance pas quand un lecteur navigue entre les pages sans rechargement complet. Placez les embeds à base de script sur une page dédiée chargée directement (comme votre changelog) plutôt qu'au fond d'un parcours de navigation.
 </Warning>
 
+## Mode compact
+
+Un champ e-mail complet plus un bouton S'abonner, c'est beaucoup de poids à déposer au milieu d'une page. Définissez `collapsed` et le formulaire natif démarre comme un simple bouton S'abonner. Le lecteur qui clique obtient le champ complet, en ligne, sans rechargement de page :
+
+```mdx
+<EmailSubscribe provider="resend" collapsed title="Subscribe to updates" />
+```
+
+Le libellé du bouton vient de `title` (il revient à « Subscribe to updates » si vous n'en définissez pas). C'est réservé au natif — les fournisseurs embed affichent leur propre code, il n'y a donc rien que Jamdesk puisse réduire.
+
+## Abonnés de retour
+
+Une fois qu'un lecteur s'est abonné via un formulaire natif, le navigateur s'en souvient. À sa prochaine visite, au lieu du formulaire complet il voit une courte ligne : *Vous êtes abonné à la newsletter.* Personne ne se voit redemander de s'inscrire à quelque chose qu'il a déjà rejoint.
+
+S'il veut ajouter une deuxième adresse, la ligne propose un contrôle « Utiliser une autre adresse ? » qui rouvre le formulaire complet sur place. La mémoire est propre au navigateur (elle vit dans le `localStorage`, pas dans votre audience), donc effacer les données du site ou changer de navigateur réaffiche le formulaire. Rien à configurer — chaque formulaire natif le fait.
+
 ## Placement automatique sur les pages de changelog
 
 Au lieu d'ajouter la balise à chaque page de version à la main, montez le formulaire automatiquement sur les pages de changelog. Dans `docs.json`, réglez le `placement` de l'intégration newsletter sur `changelog` :
@@ -86,7 +103,11 @@ Au lieu d'ajouter la balise à chaque page de version à la main, montez le form
 
 Avec `placement: "changelog"`, le formulaire se monte sur chaque page de changelog (toute page avec `rss: true`). Pour l'ignorer sur une de ces pages, définissez `newsletter: false` dans le frontmatter de cette page. Si une page contient déjà un `<EmailSubscribe>` placé à la main, le placement automatique s'efface pour éviter d'avoir deux formulaires.
 
-Le bloc complet `integrations.newsletter` accepte les mêmes champs que le composant (`provider`, `title`, `description`, `username`, `snippet`, `height`) plus `placement` (`none`, la valeur par défaut, ou `changelog`).
+Le bloc complet `integrations.newsletter` accepte les mêmes champs que le composant (`provider`, `title`, `description`, `collapsed`, `username`, `snippet`, `height`) plus `placement` (`none`, la valeur par défaut, ou `changelog`).
+
+<Tip>
+Vous n'êtes pas obligé de définir le titre et la ligne de description dans `docs.json`. La carte **Inscriptions e-mail** du dashboard comporte des champs Titre du formulaire et Sous-titre du formulaire, et un formulaire placé automatiquement les reprend quand `docs.json` les omet. Définissez `title`/`description` ici uniquement quand vous voulez que le `docs.json` de ce site l'emporte sur le texte du dashboard.
+</Tip>
 
 ## Et ensuite
 
