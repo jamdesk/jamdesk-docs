@@ -1,0 +1,102 @@
+---
+title: Corregir enlaces rotos
+description: Corrige automáticamente los enlaces internos rotos — anclas con erratas y desfase de ancla entre idiomas — con un solo comando de CLI.
+---
+
+`jamdesk fix` es el complemento de corrección automática de `jamdesk broken-links`. Lee los mismos avisos de enlaces rotos y reescribe cualquier archivo cuyo destino correcto pueda determinarse de forma no ambigua. Los casos ambiguos se marcan para revisión manual y se dejan sin tocar.
+
+Corrige dos tipos de enlaces internos rotos:
+
+- **Anclas con erratas** — un fragmento que es un error ortográfico claro de un título real en la página de destino (p. ej. `#instalation` → `#installation`)
+- **Desfase de ancla entre idiomas** — una página traducida renombró sus títulos, pero los enlaces en ese idioma siguen apuntando al fragmento inglés antiguo (p. ej. `/fr/ai/selectors#ai-strategies` → `/fr/ai/selectors#stratégies-ia`)
+
+## Paso 1: Encontrar los enlaces rotos
+
+Ejecuta `jamdesk broken-links` para ver qué necesita corrección:
+
+```bash
+jamdesk broken-links
+```
+
+Revisa el resultado. `jamdesk fix` actúa sobre los avisos donde se puede asociar un ancla correcta probable a un título real.
+
+## Paso 2: Previsualizar las correcciones
+
+Ejecuta con `--dry-run` para ver exactamente qué cambiaría antes de tocar ningún archivo:
+
+```bash
+jamdesk fix --dry-run
+```
+
+**Ejemplo de salida:**
+
+```text
+Planned fixes:
+
+  fr/ai/overview.mdx:9
+    /fr/ai/selectors#ai-strategies  →  /fr/ai/selectors#stratégies-ia
+
+(dry run — no files written)
+```
+
+Comprueba cada corrección planificada. Si algún cambio no parece correcto, corrige ese enlace a mano en lugar de aplicarlo — `jamdesk fix` solo reescribe los enlaces que puede resolver de forma no ambigua.
+
+## Paso 3: Aplicar las correcciones
+
+Ejecuta sin `--dry-run` para aplicar. Se te pedirá confirmación:
+
+```bash
+jamdesk fix
+```
+
+```text
+Apply 3 fix(es) to local files? (y/N)
+```
+
+Pulsa `y` para escribir los cambios. Para omitir la confirmación en CI o en scripts, usa `-y`:
+
+```bash
+jamdesk fix -y
+```
+
+Después de aplicar, el comando muestra:
+
+```text
+Fixed 2 file(s); 1 warning(s) left for manual review.
+```
+
+Los avisos restantes son aquellos cuyo destino era ambiguo — `jamdesk fix` los deja para que los resuelvas tú.
+
+## Paso 4: Revisar el diff y confirmar
+
+Comprueba los cambios antes de confirmar:
+
+```bash
+git diff
+```
+
+Verifica que cada enlace reescrito apunta donde esperas. Luego confirma:
+
+```bash
+git add -A
+git commit -m "fix(docs): auto-fix broken internal links"
+```
+
+## Opciones
+
+| Opción | Descripción |
+|------|-------------|
+| `--dry-run` | Previsualizar las correcciones planificadas sin escribir ningún archivo |
+| `-y, --yes` | Aplicar las correcciones sin solicitar confirmación |
+| `--types <lista>` | Tipos de advertencias a corregir separados por comas (por defecto: todos los compatibles) |
+
+## ¿Qué sigue?
+
+<Columns cols={2}>
+  <Card title="Descripción general del CLI" icon="terminal" href="/es/cli/overview">
+    Referencia completa de comandos
+  </Card>
+  <Card title="Enlaces y navegación" icon="link" href="/es/content/links">
+    Cómo se detectan y resuelven los enlaces internos
+  </Card>
+</Columns>

@@ -1,0 +1,102 @@
+---
+title: Corriger les liens brisés
+description: Corrigez automatiquement les liens internes brisés — ancres avec fautes de frappe et dérive d'ancre cross-locale — avec une seule commande CLI.
+---
+
+`jamdesk fix` est le compagnon de correction automatique de `jamdesk broken-links`. Il lit les mêmes avertissements de liens brisés et réécrit tout fichier dont la cible correcte peut être déterminée de manière non ambiguë. Les cas ambigus sont signalés pour révision manuelle et laissés intacts.
+
+Il corrige deux types de liens internes brisés :
+
+- **Ancres avec fautes de frappe** — un fragment qui est une faute d'orthographe évidente d'un titre réel sur la page cible (ex. `#instalation` → `#installation`)
+- **Dérive d'ancre cross-locale** — une page traduite a renommé ses titres, mais les liens dans cette locale pointent encore vers l'ancien fragment anglais (ex. `/fr/ai/selectors#ai-strategies` → `/fr/ai/selectors#stratégies-ia`)
+
+## Étape 1 : Trouver les liens brisés
+
+Exécutez `jamdesk broken-links` pour voir ce qui nécessite une correction :
+
+```bash
+jamdesk broken-links
+```
+
+Examinez le résultat. `jamdesk fix` cible les avertissements pour lesquels une ancre correcte probable peut être associée à un titre réel.
+
+## Étape 2 : Prévisualiser les corrections
+
+Exécutez avec `--dry-run` pour voir exactement ce qui changerait avant de toucher des fichiers :
+
+```bash
+jamdesk fix --dry-run
+```
+
+**Exemple de sortie :**
+
+```text
+Planned fixes:
+
+  fr/ai/overview.mdx:9
+    /fr/ai/selectors#ai-strategies  →  /fr/ai/selectors#stratégies-ia
+
+(dry run — no files written)
+```
+
+Vérifiez chaque correction planifiée. Si une modification ne semble pas correcte, corrigez ce lien manuellement plutôt que de l'appliquer — `jamdesk fix` ne réécrit que les liens qu'il peut résoudre de manière non ambiguë.
+
+## Étape 3 : Appliquer les corrections
+
+Exécutez sans `--dry-run` pour appliquer. Une confirmation vous sera demandée :
+
+```bash
+jamdesk fix
+```
+
+```text
+Apply 3 fix(es) to local files? (y/N)
+```
+
+Appuyez sur `y` pour écrire les modifications. Pour ignorer la confirmation dans un pipeline CI ou un script, utilisez `-y` :
+
+```bash
+jamdesk fix -y
+```
+
+Après application, la commande affiche :
+
+```text
+Fixed 2 file(s); 1 warning(s) left for manual review.
+```
+
+Les avertissements restants sont ceux dont la cible était ambiguë — `jamdesk fix` les laisse pour que vous les résolviez.
+
+## Étape 4 : Réviser le diff et valider
+
+Vérifiez les modifications avant de valider :
+
+```bash
+git diff
+```
+
+Assurez-vous que chaque lien réécrit pointe bien là où vous l'attendez. Puis validez :
+
+```bash
+git add -A
+git commit -m "fix(docs): auto-fix broken internal links"
+```
+
+## Options
+
+| Indicateur | Description |
+|------|-------------|
+| `--dry-run` | Prévisualiser les corrections planifiées sans écrire aucun fichier |
+| `-y, --yes` | Appliquer les corrections sans demande de confirmation |
+| `--types <liste>` | Types d'avertissements à corriger, séparés par des virgules (par défaut : tous supportés) |
+
+## Prochaines étapes
+
+<Columns cols={2}>
+  <Card title="Aperçu du CLI" icon="terminal" href="/fr/cli/overview">
+    Référence complète des commandes
+  </Card>
+  <Card title="Liens & Navigation" icon="link" href="/fr/content/links">
+    Comment les liens internes sont détectés et résolus
+  </Card>
+</Columns>
