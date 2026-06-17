@@ -97,6 +97,8 @@ jamdesk --version
     ```bash
     jamdesk validate
     jamdesk broken-links
+    jamdesk fix --dry-run
+    jamdesk fix
     jamdesk spellcheck
     ```
   </Step>
@@ -222,6 +224,44 @@ Run `jamdesk <command> --help` for detailed information about any command.
   ```
 
   Detects links to missing pages and typos. See [Links & Navigation](/content/links#how-internal-links-are-detected) for details.
+</Accordion>
+
+<Accordion title="jamdesk fix" icon="wrench">
+  Auto-fix broken internal-link warnings that have an unambiguous target. Handles two categories:
+  - **Typo'd anchors** — a fragment like `#instalation` that clearly should be `#installation`
+  - **Cross-locale anchor drift** — a translated page renamed its headings, but links in that locale still point at the old English fragment
+
+  ```bash
+  # Preview what would change without touching any files
+  jamdesk fix --dry-run
+
+  # Apply fixes (prompts for confirmation)
+  jamdesk fix
+  ```
+
+  **Example dry-run output:**
+  ```text
+  Planned fixes:
+
+    fr/ai/overview.mdx:9
+      /fr/ai/selectors#ai-strategies  →  /fr/ai/selectors#stratégies-ia
+
+  (dry run — no files written)
+  ```
+
+  A fix is only written when the corrected anchor resolves to a real heading in the target page. Ambiguous cases are left for manual review.
+
+  **Options:**
+
+  | Flag | Description |
+  |------|-------------|
+  | `--dry-run` | Preview planned fixes without writing any files |
+  | `-y, --yes` | Apply fixes without a confirmation prompt |
+  | `--types <list>` | Limit to specific fix types (e.g. `--types anchor-typo,locale-drift`) |
+
+  <Card title="Fix Broken Links Guide" icon="wrench" href="/cli/fix-broken-links">
+    Step-by-step walkthrough: preview, apply, review, and commit
+  </Card>
 </Accordion>
 
 <Accordion title="jamdesk spellcheck" icon="spell-check">

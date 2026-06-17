@@ -1,0 +1,102 @@
+---
+title: Fix Broken Links
+description: Auto-fix broken internal links — typo'd anchors and cross-locale anchor drift — with a single CLI command.
+---
+
+`jamdesk fix` is the auto-fix companion to `jamdesk broken-links`. It reads the same broken-link warnings and rewrites any file where the correct target can be determined unambiguously. Ambiguous cases are flagged for manual review and left untouched.
+
+It fixes two types of broken internal links:
+
+- **Typo'd anchors** — a fragment that's a clear misspelling of a real heading on the target page (e.g. `#instalation` → `#installation`)
+- **Cross-locale anchor drift** — a translated page renamed its headings, but links in that locale still point at the old English fragment (e.g. `/fr/ai/selectors#ai-strategies` → `/fr/ai/selectors#stratégies-ia`)
+
+## Step 1: Find broken links
+
+Run `jamdesk broken-links` to see what needs fixing:
+
+```bash
+jamdesk broken-links
+```
+
+Review the output. `jamdesk fix` targets warnings where a likely correct anchor can be matched to a real heading.
+
+## Step 2: Preview the fixes
+
+Run with `--dry-run` to see exactly what would change before touching any files:
+
+```bash
+jamdesk fix --dry-run
+```
+
+**Example output:**
+
+```text
+Planned fixes:
+
+  fr/ai/overview.mdx:9
+    /fr/ai/selectors#ai-strategies  →  /fr/ai/selectors#stratégies-ia
+
+(dry run — no files written)
+```
+
+Check each planned fix. If a change doesn't look right, you can address it manually and exclude it from the run using `--types` to limit which fix categories apply.
+
+## Step 3: Apply the fixes
+
+Run without `--dry-run` to apply. You'll be prompted to confirm:
+
+```bash
+jamdesk fix
+```
+
+```text
+Apply 3 fix(es) to local files? (y/N)
+```
+
+Press `y` to write the changes. To skip the prompt in CI or scripts, use `-y`:
+
+```bash
+jamdesk fix -y
+```
+
+After applying, the command prints:
+
+```text
+Fixed 2 file(s); 1 warning(s) left for manual review.
+```
+
+Remaining warnings are ones where the target was ambiguous — `jamdesk fix` leaves those for you to resolve.
+
+## Step 4: Review the diff and commit
+
+Check the changes before committing:
+
+```bash
+git diff
+```
+
+Verify that each rewritten link points where you expect. Then commit:
+
+```bash
+git add -A
+git commit -m "fix(docs): auto-fix broken internal links"
+```
+
+## Options
+
+| Flag | Description |
+|------|-------------|
+| `--dry-run` | Preview planned fixes without writing any files |
+| `-y, --yes` | Apply fixes without a confirmation prompt |
+| `--types <list>` | Limit to specific fix types: `anchor-typo`, `locale-drift` |
+
+## What's Next?
+
+<Columns cols={2}>
+  <Card title="CLI Overview" icon="terminal" href="/cli/overview">
+    Full command reference
+  </Card>
+  <Card title="Links & Navigation" icon="link" href="/content/links">
+    How internal links are detected and resolved
+  </Card>
+</Columns>
