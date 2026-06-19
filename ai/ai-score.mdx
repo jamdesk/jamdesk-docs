@@ -1,0 +1,102 @@
+---
+title: AI Score
+sidebarTitle: AI Score
+description: Jamdesk scores how well AI agents can read your docs against the open AFDocs standard on every build — see your grade, fix issues, and track it over time.
+---
+
+AI assistants increasingly answer questions about your product straight from your documentation, but only when they can actually read it. AI Score measures that. After every build, Jamdesk scans your published site against the open [AFDocs](https://afdocs.dev) agent-readiness standard and gives you a 0–100 score, a letter grade, and a per-issue breakdown you can act on. This page is for anyone maintaining a Jamdesk site who wants it to work as well for AI agents as it does for human readers.
+
+<Tip>
+  **Try it on any site first.** The free [AI Score tool](https://www.jamdesk.com/ai-score) grades any documentation URL against the same standard, and the [AI Score Chrome extension](https://chromewebstore.google.com/detail/jamdesk-ai-score/mhihkkgpcbmapmojnakhjfhjmiagkhlj) grades sites as you browse. Inside Jamdesk, the score runs automatically on your own docs.
+</Tip>
+
+## How scoring works
+
+AI Score runs automatically, with no setup. After each successful build, Jamdesk waits for the new version to go live, then scans your published docs and records the result.
+
+- **Runs on every build.** Each deploy re-scores your site, so a regression shows up the moment it ships.
+- **0–100 score and a letter grade** (A+ down to F), measured against the open AFDocs standard. It's the same engine behind the free public tool.
+- **Re-run any time.** Open your project's **AI Score** page and click **Run score now** to score the live site again without waiting for a build.
+
+Find it in the dashboard under your project → **AI Score**.
+
+## Read your score
+
+<Frame>
+  <img src="/images/ai-score/dashboard.webp" alt="The AI Score dashboard showing a score donut at 94 with an A grade, a trend line over six builds, and expandable category cards, one of which shows a failed check with a Copy prompt to fix button" />
+</Frame>
+
+The AI Score page has three parts:
+
+- **Score donut.** Your current score and grade, plus the change since your last build.
+- **Trend line.** Your score across recent builds, so a drop shows up at a glance.
+- **Category cards.** Your checks grouped into seven areas, each with its own grade. Expand one to see the individual checks and whether they passed, warned, or failed.
+
+A footer notes what was scanned, how many pages were sampled, and the AFDocs spec version.
+
+### What the score measures
+
+Each category groups related agent-readiness checks:
+
+| Category | What it covers |
+|---|---|
+| Content Discoverability | `llms.txt` and the signals that point agents at your content |
+| Markdown Availability | A clean Markdown version of every page for agents to read |
+| Page Size & Truncation Risk | Pages small enough to fit an agent's context window |
+| Content Structure | Headings, ordering, and content that starts early on the page |
+| URL Stability & Redirects | Stable URLs and proper same-host redirects |
+| Observability & Content Health | Status codes, caching, and parity between what readers and agents see |
+| Authentication & Access | Whether pages are reachable by agents at all |
+
+## Fix issues
+
+Every check that warns or fails comes with a plain-language explanation and a fix written for Jamdesk docs, never raw command-line jargon. Two kinds of findings show up:
+
+- **Things you fix in your content.** For example, a page whose real content starts too far down, an oversized page that should be split, or content rendered by an interactive component that doesn't appear in the page's Markdown. The fix text names the next step and which pages it applies to.
+- **Things Jamdesk handles for you.** `llms.txt`, Markdown export, status codes, and caching are all generated automatically. If one of these ever fails, it usually means a transient build issue, so re-run the score after your next build, and contact support if it persists.
+
+### Copy the fix prompt
+
+Each fixable check has a **Copy prompt to fix** button. It copies a ready-to-paste prompt that names the check, the finding, and how to resolve it in your MDX or `docs.json`. Paste it into an AI coding agent ([Claude Code](/ai/claude-code), the [Jamdesk Claude plugin](/claude-code-plugin), [Cursor](/ai/cursor), or [Codex](/ai/codex)) and let it make the edit, then push to rebuild and re-score.
+
+## Get emailed when your score changes
+
+Your team doesn't have to watch the dashboard. When a build changes your score or grade (or produces your first score), Jamdesk emails your project members with the new score and the single most important issue to fix.
+
+- **Toggle it per project.** The **Email team when score changes** switch sits at the top of the AI Score page. It's on by default.
+- **Only meaningful changes send.** A build that leaves your score unchanged doesn't trigger an email, so the inbox stays quiet unless something actually moved.
+
+<Note>
+  The email reports a change, not every build. Manual re-runs and build-triggered scores can both send; backfilled and public-tool scans never do.
+</Note>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="The score says it couldn't read my site">
+    A scan can come back empty if your site was momentarily unreachable, returned an error, or blocked the scanner. Jamdesk does **not** save these results, so a transient blip won't pin a wrong score or dent your trend line. Your last good score stays shown; click **Run score now** to try again.
+  </Accordion>
+  <Accordion title="My score is low because my docs are password-protected">
+    AI agents can't read pages behind a password, so the score reflects that. If gating access is intentional (internal or pre-release docs), a low score here is expected and fine. It's a trade-off, not a defect.
+  </Accordion>
+  <Accordion title="A check failed that I can't act on">
+    Some checks cover platform behavior Jamdesk owns (`llms.txt`, Markdown export, status codes, caching). These pass by construction, so a failure almost always means a transient build issue. Re-run the score after your next build, and contact support if it persists.
+  </Accordion>
+</AccordionGroup>
+
+## What's Next?
+
+<Columns cols={2}>
+  <Card title="llms.txt" icon="file-lines" href="/ai/llms-txt">
+    The index AI tools read to understand your whole site
+  </Card>
+  <Card title="Markdown Source" icon="file-code" href="/ai/markdown-source">
+    The raw Markdown agents fetch for any page
+  </Card>
+  <Card title="Automated Updates" icon="arrows-rotate" href="/ai/automated-updates">
+    Keep docs current as your product changes
+  </Card>
+  <Card title="AI Score tool" icon="gauge-high" href="https://www.jamdesk.com/ai-score">
+    Grade any documentation site for free
+  </Card>
+</Columns>
