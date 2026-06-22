@@ -3,102 +3,84 @@ title: Build Troubleshooting
 description: "Fix common build failures by matching error messages to causes and solutions. Covers config errors, missing dependencies, MDX syntax, and icon issues."
 ---
 
-When a build fails, check the error message in the build log and find the matching section below.
+When a build fails, the build log tells you what broke and where. Find your error message below and jump to the fix.
 
 ## Viewing Error Details
 
-1. Go to your project's **Deployments** tab
+1. Open your project's **Deployments** tab
 2. Click the failed build
-3. Review the error message and build log
+3. Read the error message and scroll through the build log
 
-The log shows exactly where the build failed and why.
+The log points to the exact file and line that stopped the build.
 
 ## Common Errors
 
 ### Configuration Errors
 
-**"Invalid docs.json"** — Your configuration file has syntax errors.
+`Invalid docs.json` means your configuration file won't parse. The cause is almost always small: a stray comma, an unclosed bracket, a missing quote.
 
 <Steps>
   <Step title="Check JSON syntax">
     Look for missing commas, brackets, or quotes.
   </Step>
   <Step title="Validate locally">
-    Run `jamdesk validate` to see detailed errors.
+    Run `jamdesk validate` to see the exact errors.
   </Step>
   <Step title="Fix and push">
-    Correct the errors and push to trigger a new build.
+    Correct them and push to trigger a new build.
   </Step>
 </Steps>
 
 ### Missing Pages
 
-**"Page not found"** — A page in your navigation doesn't exist.
-
-- Check the filename matches the path in `docs.json`
-- Paths are case-sensitive
-- Don't include the `.mdx` extension
+A `Page not found` error fires when your navigation points at a file that isn't there. Check that the filename matches the path in `docs.json`, that the case lines up exactly, and that you left off the `.mdx` extension.
 
 ### MDX Syntax Errors
 
-**"MDX compilation failed"** — Invalid MDX or JSX syntax.
-
-Common causes:
-- Unclosed tags (`<Card>` without `</Card>`)
-- Unescaped special characters (`{` instead of `\{`)
-- Invalid prop syntax
+`MDX compilation failed` points to malformed MDX or JSX on a page. Usually it's an unclosed tag (a `<Card>` with no matching `</Card>`), an unescaped character such as a literal `{` where you meant `\{`, or invalid prop syntax.
 
 ### Build Timeout
 
-**"Build exceeded time limit"** — Build took too long.
-
-Try:
-- Optimizing large images
-- Splitting very large pages
-- Reducing total page count
+`Build exceeded time limit` is exactly what it says: the build ran past the time we allow. Large, unoptimized images are the usual culprit. Compress them, split any pages that have grown huge, and drop pages you no longer publish.
 
 ## Build Warnings
 
-Warnings never fail a build — your site still publishes. They flag issues worth fixing and surface in three places: the build-warnings email, the build's entry in the **Deployments** tab, and locally when you run `jamdesk validate` or `jamdesk dev`.
+Warnings never fail a build; your site still publishes either way. They flag issues worth fixing and surface in three places: the build-warnings email, the build's entry in the **Deployments** tab, and your terminal when you run `jamdesk validate` or `jamdesk dev`.
 
 ### Missing Images
 
-**"Image not found"** — A page references an image that isn't in your project.
+`Image not found` warns that a page references an image your project doesn't contain.
 
-Jamdesk checks every image reference — Markdown `![alt](/images/photo.webp)` and `<img>`/`<Image>` `src` attributes — against the files in your repository. When the target is missing, the warning reports the page, line number, and the unresolved path, so a broken image never ships silently as a 404.
+Jamdesk checks every image reference (Markdown `![alt](/images/photo.webp)` plus the `src` on `<img>` and `<Image>` tags) against the files in your repository. When the target is missing, the warning hands you the page, the line number, and the path it couldn't resolve, so a broken image never ships as a silent 404.
 
-To fix it:
+To fix it, upload the image or repoint the path at a file that exists. Paths are case-sensitive and resolve either from your project root (a leading `/`) or relative to the page. And a reference to `photo.png` still works after [image optimization](/builds/image-optimization) converts it to WebP.
 
-- Upload the image to your repository, or correct the path to point at an existing file
-- Paths are case-sensitive and resolve from your project root (a leading `/`) or relative to the page
-- A reference to `photo.png` still resolves when [image optimization](/builds/image-optimization) converts it to WebP
-
-References to external URLs, `data:` URIs, and image syntax shown inside code blocks are ignored, so examples in your own docs never trigger a false warning.
+References to external URLs, `data:` URIs, and image syntax shown inside code blocks are skipped, so the examples in your own docs never trip a false warning.
 
 ## Debugging Steps
 
 <Accordion title="Step 1: Check the build log">
-  The log shows the exact line and file causing the error. Start there.
+  The log names the exact file and line behind the error. Start there.
 </Accordion>
 
 <Accordion title="Step 2: Test locally">
-  Run `jamdesk dev` locally to reproduce and debug the issue.
+  Run `jamdesk dev` to reproduce the failure on your own machine.
 </Accordion>
 
 <Accordion title="Step 3: Validate configuration">
-  Run `jamdesk validate` to check your `docs.json` and `jamdesk broken-links` for broken internal links.
+  Run `jamdesk validate` to check your `docs.json`, then `jamdesk broken-links` to catch broken internal links.
 </Accordion>
 
 <Accordion title="Step 4: Check recent changes">
-  Review your last commit. Did you add a new page? Change configuration?
+  Look at your last commit. Did you add a page or change configuration?
 </Accordion>
 
 ## Still Stuck?
 
-If you can't resolve the issue:
+If none of the above resolves it:
 
 1. Copy the full build log
-2. Note your project ID (in URL)
+2. Note your project ID (it's in the URL)
 3. [Contact support](/help/support/contact)
 
 ## Related Articles
