@@ -1,109 +1,91 @@
 ---
 title: Dépannage des builds
-description: "Résolvez les échecs de build courants en associant les messages d'erreur à leurs causes et solutions. Couvre les erreurs de configuration, la syntaxe MDX et les icônes."
+description: "Corrigez les échecs de build courants en reliant messages d'erreur, causes et solutions : configuration, dépendances, syntaxe MDX et icônes."
 ---
 
-Lorsqu'un build échoue, consultez le message d'erreur dans le journal de build et trouvez la section correspondante ci-dessous.
+Lorsqu'un build échoue, le journal de build indique ce qui a échoué et où. Trouvez votre message d'erreur ci-dessous et passez directement à la solution.
 
 Les captures d'écran montrent l'interface en anglais.
 
-## Afficher les détails de l'erreur
+## Consulter les détails de l'erreur
 
-1. Accédez à l'onglet **Deployments** de votre projet
+1. Ouvrez l'onglet **Deployments** de votre projet
 2. Cliquez sur le build en échec
-3. Examinez le message d'erreur et le journal de build
+3. Lisez le message d'erreur et faites défiler le journal de build
 
-Le journal indique exactement où et pourquoi le build a échoué.
+Le journal indique le fichier exact et la ligne qui ont arrêté le build.
 
 ## Erreurs courantes
 
 ### Erreurs de configuration
 
-**"Invalid docs.json"** — Votre fichier de configuration contient des erreurs de syntaxe.
+`Invalid docs.json` signifie que votre fichier de configuration ne peut pas être analysé. La cause est presque toujours mineure : une virgule en trop, un crochet non fermé, un guillemet manquant.
 
 <Steps>
   <Step title="Vérifier la syntaxe JSON">
     Recherchez les virgules, crochets ou guillemets manquants.
   </Step>
   <Step title="Valider localement">
-    Exécutez `jamdesk validate` pour afficher les erreurs détaillées.
+    Exécutez `jamdesk validate` pour voir les erreurs exactes.
   </Step>
   <Step title="Corriger et pousser">
-    Corrigez les erreurs et poussez pour déclencher un nouveau build.
+    Corrigez-les et poussez pour déclencher un nouveau build.
   </Step>
 </Steps>
 
 ### Pages manquantes
 
-**"Page not found"** — Une page de votre navigation n'existe pas.
-
-- Vérifiez que le nom de fichier correspond au chemin dans `docs.json`
-- Les chemins sont sensibles à la casse
-- N'incluez pas l'extension `.mdx`
+Une erreur `Page not found` se déclenche lorsque votre navigation pointe vers un fichier qui n'existe pas. Vérifiez que le nom du fichier correspond au chemin dans `docs.json`, que la casse est exactement identique, et que vous avez omis l'extension `.mdx`.
 
 ### Erreurs de syntaxe MDX
 
-**"MDX compilation failed"** — Syntaxe MDX ou JSX invalide.
-
-Causes courantes :
-- Balises non fermées (`<Card>` sans `</Card>`)
-- Caractères spéciaux non échappés (`{` au lieu de `\{`)
-- Syntaxe de prop invalide
+`MDX compilation failed` indique un MDX ou JSX malformé sur une page. Il s'agit généralement d'une balise non fermée (un `<Card>` sans `</Card>` correspondant), d'un caractère non échappé comme un `{` littéral là où vous vouliez `\{`, ou d'une syntaxe de prop invalide.
 
 ### Dépassement du délai de build
 
-**"Build exceeded time limit"** — Le build a pris trop de temps.
-
-Essayez de :
-- Optimiser les images volumineuses
-- Diviser les pages très longues
-- Réduire le nombre total de pages
+`Build exceeded time limit` signifie exactement cela : le build a dépassé le temps imparti. Les images volumineuses et non optimisées en sont généralement la cause. Compressez-les, découpez les pages qui sont devenues trop grandes, et supprimez les pages que vous ne publiez plus.
 
 ## Avertissements de build
 
-Les avertissements n'empêchent jamais un build de réussir — votre site est tout de même publié. Ils signalent des problèmes à corriger et apparaissent à trois endroits : l'e-mail de build-warnings, l'entrée du build dans l'onglet **Deployments**, et localement lorsque vous exécutez `jamdesk validate` ou `jamdesk dev`.
+Les avertissements n'entraînent jamais l'échec d'un build ; votre site est publié dans tous les cas. Ils signalent des problèmes à corriger et apparaissent à trois endroits : l'e-mail de build-warnings, l'entrée du build dans l'onglet **Deployments**, et votre terminal lorsque vous exécutez `jamdesk validate` ou `jamdesk dev`.
 
 ### Images manquantes
 
-**"Image not found"** — Une page fait référence à une image absente de votre projet.
+`Image not found` avertit qu'une page référence une image absente de votre projet.
 
-Jamdesk vérifie chaque référence d'image — Markdown `![alt](/images/photo.webp)` et attributs `src` des balises `<img>`/`<Image>` — par rapport aux fichiers de votre dépôt. Lorsque la cible est manquante, l'avertissement indique la page, le numéro de ligne et le chemin non résolu, afin qu'une image cassée ne soit jamais déployée silencieusement en 404.
+Jamdesk vérifie chaque référence d'image (Markdown `![alt](/images/photo.webp)` ainsi que `src` sur les balises `<img>` et `<Image>`) par rapport aux fichiers de votre dépôt. Lorsque la cible est manquante, l'avertissement vous indique la page, le numéro de ligne et le chemin non résolu, afin qu'une image cassée ne soit jamais publiée silencieusement en 404.
 
-Pour corriger le problème :
+Pour corriger cela, téléversez l'image ou redirigez le chemin vers un fichier existant. Les chemins sont sensibles à la casse et se résolvent soit depuis la racine de votre projet (avec un `/` en début), soit de manière relative à la page. Une référence à `photo.png` fonctionne toujours après que [l'optimisation des images](/fr/builds/image-optimization) l'a convertie en WebP.
 
-- Ajoutez l'image à votre dépôt ou corrigez le chemin pour pointer vers un fichier existant
-- Les chemins sont sensibles à la casse et se résolvent depuis la racine de votre projet (avec un `/` initial) ou de manière relative à la page
-- Une référence à `photo.png` reste résolue lorsque [l'optimisation des images](/fr/builds/image-optimization) la convertit en WebP
-
-Les références aux URL externes, aux URI `data:` et à la syntaxe d'image dans les blocs de code sont ignorées, de sorte que les exemples de votre documentation ne déclenchent jamais de faux avertissement.
+Les références aux URL externes, aux URI `data:`, et la syntaxe d'image affichée dans des blocs de code sont ignorées, de sorte que les exemples dans votre propre documentation ne déclenchent jamais de faux avertissement.
 
 ## Étapes de débogage
 
 <Accordion title="Étape 1 : Consulter le journal de build">
-  Le journal indique la ligne exacte et le fichier à l'origine de l'erreur. Commencez par là.
+  Le journal indique le fichier exact et la ligne à l'origine de l'erreur. Commencez par là.
 </Accordion>
 
 <Accordion title="Étape 2 : Tester localement">
-  Exécutez `jamdesk dev` localement pour reproduire et déboguer le problème.
+  Exécutez `jamdesk dev` pour reproduire l'échec sur votre propre machine.
 </Accordion>
 
 <Accordion title="Étape 3 : Valider la configuration">
-  Exécutez `jamdesk validate` pour vérifier votre `docs.json` et `jamdesk broken-links` pour les liens internes cassés.
+  Exécutez `jamdesk validate` pour vérifier votre `docs.json`, puis `jamdesk broken-links` pour détecter les liens internes cassés.
 </Accordion>
 
-<Accordion title="Étape 4 : Examiner les modifications récentes">
-  Passez en revue votre dernier commit. Avez-vous ajouté une nouvelle page ? Modifié la configuration ?
+<Accordion title="Étape 4 : Vérifier les modifications récentes">
+  Examinez votre dernier commit. Avez-vous ajouté une page ou modifié la configuration ?
 </Accordion>
 
 ## Toujours bloqué ?
 
-Si vous ne parvenez pas à résoudre le problème :
+Si rien de ce qui précède ne résout le problème :
 
-1. Copiez le journal de build complet
-2. Notez l'ID de votre projet (dans l'URL)
+1. Copiez l'intégralité du journal de build
+2. Notez l'ID de votre projet (il figure dans l'URL)
 3. [Contacter le support](/fr/help/support/contact)
 
-## Articles associés
+## Articles connexes
 
 <Columns cols={2}>
   <Card title="Référence des erreurs" icon="book" href="/fr/help/troubleshooting/error-reference">
