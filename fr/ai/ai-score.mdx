@@ -1,0 +1,104 @@
+---
+title: AI Score
+sidebarTitle: AI Score
+description: Jamdesk évalue la lisibilité de vos docs par les agents IA selon le standard AFDocs à chaque build — consultez votre note, corrigez les problèmes et suivez l'évolution.
+---
+
+Les assistants IA répondent de plus en plus aux questions sur votre produit directement depuis votre documentation, mais seulement lorsqu'ils peuvent réellement la lire. AI Score mesure cela. Après chaque build, Jamdesk analyse votre site publié selon le standard ouvert [AFDocs](https://afdocs.dev) de préparation aux agents et vous attribue un score de 0 à 100, une note alphabétique et une liste détaillée des problèmes sur lesquels vous pouvez agir. Cette page s'adresse à toute personne qui maintient un site Jamdesk et souhaite qu'il fonctionne aussi bien pour les agents IA que pour les lecteurs humains.
+
+<Tip>
+  **Essayez-le d'abord sur n'importe quel site.** L'[outil AI Score](https://www.jamdesk.com/ai-score) gratuit évalue n'importe quelle URL de documentation selon le même standard, et l'[extension Chrome AI Score de Jamdesk](https://chromewebstore.google.com/detail/jamdesk-ai-score/mhihkkgpcbmapmojnakhjfhjmiagkhlj) évalue les sites pendant votre navigation. Dans Jamdesk, le score s'exécute automatiquement sur vos propres docs.
+</Tip>
+
+## Fonctionnement du score
+
+AI Score s'exécute automatiquement, sans aucune configuration. Après chaque build réussi, Jamdesk attend que la nouvelle version soit en ligne, puis analyse vos docs publiées et enregistre le résultat.
+
+- **S'exécute à chaque build.** Chaque déploiement re-note votre site, de sorte qu'une régression apparaît dès qu'elle est déployée.
+- **Score de 0 à 100 et une note alphabétique** (de A+ à F), mesurés selon le standard ouvert AFDocs. C'est le même moteur que l'outil public gratuit.
+- **Relancez à tout moment.** Ouvrez la page **AI Score** de votre projet et cliquez sur **Lancer le score maintenant** pour noter à nouveau le site en production sans attendre un build.
+
+Trouvez-le dans le dashboard sous votre projet → **AI Score**.
+
+## Lire votre score
+
+<Frame>
+  <img src="/images/ai-score/dashboard.webp" alt="The AI Score dashboard showing a score donut at 94 with an A grade, a trend line over six builds, and expandable category cards, one of which shows a failed check with a Copy prompt to fix button" />
+</Frame>
+
+Les captures d'écran montrent l'interface en anglais.
+
+La page AI Score comporte trois parties :
+
+- **Anneau de score.** Votre score et votre note actuels, ainsi que l'évolution depuis votre dernier build.
+- **Courbe de tendance.** Votre score sur les builds récents, afin qu'une baisse soit visible d'un coup d'œil.
+- **Cartes de catégories.** Vos vérifications regroupées en sept domaines, chacun avec sa propre note. Développez-en une pour voir les vérifications individuelles et si elles ont réussi, averti ou échoué.
+
+Un pied de page indique ce qui a été analysé, le nombre de pages échantillonnées et la version de la spécification AFDocs.
+
+### Ce que mesure le score
+
+Chaque catégorie regroupe des vérifications de préparation aux agents connexes :
+
+| Catégorie | Ce qu'elle couvre |
+|---|---|
+| Découvrabilité du contenu | `llms.txt` et les signaux qui orientent les agents vers votre contenu |
+| Disponibilité Markdown | Une version Markdown propre de chaque page pour que les agents puissent la lire |
+| Taille des pages et risque de troncature | Des pages suffisamment petites pour tenir dans la fenêtre de contexte d'un agent |
+| Structure du contenu | Titres, ordre et contenu qui commence tôt sur la page |
+| Stabilité des URL et redirections | URL stables et redirections appropriées sur le même hôte |
+| Observabilité et santé du contenu | Codes de statut, mise en cache et parité entre ce que voient les lecteurs et les agents |
+| Authentification et accès | Si les pages sont accessibles aux agents |
+
+## Corriger les problèmes
+
+Chaque vérification qui avertit ou échoue est accompagnée d'une explication en langage clair et d'une correction rédigée pour les docs Jamdesk, sans jargon de ligne de commande brut. Deux types de résultats apparaissent :
+
+- **Ce que vous corrigez dans votre contenu.** Par exemple, une page dont le contenu réel commence trop bas, une page trop volumineuse qui devrait être divisée, ou du contenu rendu par un composant interactif qui n'apparaît pas dans le Markdown de la page. Le texte de correction indique la prochaine étape et les pages concernées.
+- **Ce que Jamdesk gère pour vous.** `llms.txt`, l'export Markdown, les codes de statut et la mise en cache sont tous générés automatiquement. Si l'une de ces vérifications échoue, cela signifie généralement un problème de build passager ; relancez le score après votre prochain build et contactez le support si cela persiste.
+
+### Copier le prompt de correction
+
+Chaque vérification corrigeable dispose d'un bouton **Copier le prompt de correction**. Il copie un prompt prêt à coller qui nomme la vérification, le résultat et la manière de le résoudre dans votre MDX ou `docs.json`. Collez-le dans un agent de codage IA ([Claude Code](/fr/ai/claude-code), le [plugin Claude de Jamdesk](/fr/claude-code-plugin), [Cursor](/fr/ai/cursor) ou [Codex](/fr/ai/codex)) et laissez-le effectuer la modification, puis poussez pour reconstruire et re-noter.
+
+## Recevoir un email quand votre score change
+
+Votre équipe n'a pas à surveiller le dashboard. Quand un build modifie votre score ou votre note (ou produit votre premier score), Jamdesk envoie un email aux membres de votre projet avec le nouveau score et le problème le plus important à corriger.
+
+- **À activer par projet.** Le bouton **Envoyer un email à l'équipe quand le score change** se trouve en haut de la page AI Score. Il est activé par défaut.
+- **Seuls les changements significatifs déclenchent un envoi.** Un build qui laisse votre score inchangé ne déclenche pas d'email, de sorte que la boîte de réception reste calme sauf si quelque chose a réellement bougé.
+
+<Note>
+  L'email signale un changement, pas chaque build. Les relances manuelles et les scores déclenchés par un build peuvent tous deux envoyer ; les analyses de remplissage et les scans de l'outil public n'envoient jamais.
+</Note>
+
+## Dépannage
+
+<AccordionGroup>
+  <Accordion title="Le score indique qu'il n'a pas pu lire mon site">
+    Une analyse peut revenir vide si votre site était momentanément inaccessible, a renvoyé une erreur ou a bloqué le scanner. Jamdesk **n'enregistre pas** ces résultats, donc un incident passager ne figera pas un mauvais score ni n'entamera votre courbe de tendance. Votre dernier bon score reste affiché ; cliquez sur **Lancer le score maintenant** pour réessayer.
+  </Accordion>
+  <Accordion title="Mon score est bas parce que mes docs sont protégées par un mot de passe">
+    Les agents IA ne peuvent pas lire les pages derrière un mot de passe, donc le score le reflète. Si la restriction d'accès est intentionnelle (docs internes ou en avant-première), un score bas est attendu et normal. C'est un compromis, pas un défaut.
+  </Accordion>
+  <Accordion title="Une vérification a échoué et je ne peux pas agir dessus">
+    Certaines vérifications couvrent le comportement de la plateforme que Jamdesk gère (`llms.txt`, export Markdown, codes de statut, mise en cache). Celles-ci réussissent par construction, donc un échec signifie presque toujours un problème de build passager. Relancez le score après votre prochain build et contactez le support si cela persiste.
+  </Accordion>
+</AccordionGroup>
+
+## Et ensuite ?
+
+<Columns cols={2}>
+  <Card title="llms.txt" icon="file-lines" href="/fr/ai/llms-txt">
+    L'index que les outils IA lisent pour comprendre l'ensemble de votre site
+  </Card>
+  <Card title="Source Markdown" icon="file-code" href="/fr/ai/markdown-source">
+    Le Markdown brut que les agents récupèrent pour n'importe quelle page
+  </Card>
+  <Card title="Mises à jour automatisées" icon="arrows-rotate" href="/fr/ai/automated-updates">
+    Gardez les docs à jour au fil des évolutions de votre produit
+  </Card>
+  <Card title="Outil AI Score" icon="gauge-high" href="https://www.jamdesk.com/ai-score">
+    Évaluez gratuitement n'importe quel site de documentation
+  </Card>
+</Columns>
