@@ -1,0 +1,97 @@
+---
+title: Fix with AI
+sidebarTitle: Fix with AI
+description: Examinez et appliquez les corrections suggérées par l'IA pour les liens brisés et les descriptions de page manquantes depuis votre dashboard Jamdesk, validées sur GitHub pour vous.
+---
+
+Quand un build se termine avec des liens brisés ou des pages sans description, Jamdesk peut en corriger un grand nombre pour vous. Le bouton **Fix with AI** lit ces avertissements de build, propose une modification concrète pour chacun, et valide sur votre dépôt GitHub connecté les corrections que vous approuvez, ce qui lance un nouveau build. Cette page s'adresse à toute personne qui maintient un site Jamdesk et souhaite résoudre les avertissements de build sans modifier le MDX à la main.
+
+Pour une version locale de la même idée, en ligne de commande, voir la [commande CLI `jamdesk fix`](/fr/cli/fix-broken-links). Le flux du dashboard ci-dessous valide pour vous ; le CLI écrit dans votre copie de travail et vous laisse faire le commit.
+
+## Ce qu'il corrige
+
+Fix with AI traite deux types d'avertissement de build :
+
+- **Liens internes brisés.** Un fragment de lien qui pointe vers un titre qui n'existe plus sur la page cible, comme une faute de frappe (`#instalation` → `#installation`), ou une page traduite dont le titre a été renommé.
+- **Descriptions de page manquantes.** Une page sans `description` dans son frontmatter. Jamdesk rédige un court résumé à partir du contenu de la page, que vous pouvez relire.
+
+Il ne propose une modification que lorsqu'il peut déterminer la cible avec certitude. Tout ce qui est ambigu est laissé intact et listé à part pour que vous le corrigiez à la main.
+
+<Note>
+  Le nombre de corrections possibles n'est pas le même que le nombre d'avertissements. Un build peut afficher cinq avertissements alors que Fix with AI propose d'en corriger trois, parce que les deux autres n'ont pas de correction non ambiguë. La bannière reflète toujours ce qui peut réellement être corrigé.
+</Note>
+
+## Prérequis
+
+- Un [dépôt GitHub connecté](/fr/integrations/github) pour le projet.
+- L'accès en écriture pour la GitHub App de Jamdesk, afin qu'elle puisse valider les corrections. Si l'accès manque, la fenêtre affiche un lien **Grant access** qui vous amène sur GitHub pour l'ajouter.
+- Un build terminé qui porte des avertissements de lien brisé ou de description manquante.
+
+## Trouver la bannière
+
+Ouvrez votre projet et faites défiler jusqu'à **Build History** sur la page **Project Home**. Lorsque votre dernier build a des problèmes corrigeables, une bannière apparaît au-dessus de la liste des builds, avec un décompte et un bouton **Fix with AI**.
+
+<Frame>
+  <img src="/images/fix-with-ai/banner.webp" alt="Un panneau d'historique des builds avec une bannière en surbrillance indiquant que 3 problèmes de ce build peuvent être corrigés par l'IA, à côté d'un bouton Fix with AI. La ligne du build le plus récent affiche un statut réussi avec un badge de 5 avertissements." />
+</Frame>
+
+La bannière n'apparaît que sur votre dernier build terminé. Les builds plus anciens de l'historique ne l'affichent pas, car les corrections s'appliquent toujours à l'état actuel de votre documentation.
+
+## Examiner et appliquer les corrections
+
+<Steps>
+  <Step title="Ouvrir l'aperçu">
+    Cliquez sur **Fix with AI**. La fenêtre s'ouvre et l'agent IA examine votre documentation pour établir un plan de correction. Cela prend quelques secondes.
+  </Step>
+  <Step title="Lire chaque modification proposée">
+    Les corrections sont regroupées par type. **Broken links** affiche chaque ancre réécrite, et **Missing descriptions** affiche le résumé suggéré pour chaque page. Décochez la case de tout ce que vous préférez ignorer. Les problèmes sans correction claire apparaissent sous **Can't be fixed automatically** et vous sont laissés à corriger à la main.
+
+    <Frame>
+      <img src="/images/fix-with-ai/modal.webp" alt="La fenêtre Fix with AI. Une section Broken links liste trois corrections cochées, chacune montrant l'ancienne ancre barrée et l'ancre corrigée. Une section Can't be fixed automatically liste deux problèmes à corriger manuellement, au-dessus des boutons Cancel et Apply 3 fixes." />
+    </Frame>
+  </Step>
+  <Step title="Appliquer">
+    Cliquez sur **Apply fixes**. Jamdesk valide les modifications sélectionnées sur votre branche connectée avec le message `docs: apply AI-suggested fixes (via Jamdesk)` et lance un nouveau build.
+  </Step>
+  <Step title="Confirmer le nouveau build">
+    Suivez le nouveau build dans l'[historique des builds](/fr/builds/monitoring). Une fois en ligne, les avertissements corrigés ont disparu. Ce qui reste est soit un avertissement que Fix with AI n'a pas pu résoudre, soit un nouveau problème issu du contenu le plus récent.
+  </Step>
+</Steps>
+
+<Note>
+  L'application écrit un vrai commit dans votre dépôt, donc la modification est tracée dans votre historique Git et vous pouvez la relire ou l'annuler sur GitHub comme n'importe quel autre commit.
+</Note>
+
+## Quand certains problèmes ne peuvent pas être corrigés
+
+Si un avertissement n'a pas de correction claire, la fenêtre le liste sous une rubrique distincte et le laisse intact. Raisons fréquentes :
+
+- Un lien brisé dont la page ou le titre cible n'existe nulle part, donc il n'y a rien vers quoi pointer.
+- Une entrée de navigation sans fichier source correspondant.
+- Une page pour laquelle l'agent n'a pas pu générer de description automatiquement.
+
+Ces cas nécessitent une modification manuelle. Ouvrez la page dans l'[éditeur](/fr/development/local-preview) ou votre éditeur de code, corrigez le lien ou ajoutez la description, puis poussez pour relancer un build.
+
+## Fix with AI ou le CLI
+
+Les deux outils corrigent les ancres de liens brisés. Ils diffèrent par l'endroit où ils s'exécutent et la façon dont la modification est appliquée.
+
+| | Fix with AI (dashboard) | [`jamdesk fix`](/fr/cli/fix-broken-links) (CLI) |
+|---|---|---|
+| Exécution | Dans le dashboard, sur un build | Dans votre terminal, sur les fichiers locaux |
+| Corrige | Liens brisés et descriptions manquantes | Ancres de liens brisés |
+| Commit | Valide sur votre branche pour vous | Écrit les fichiers locaux ; vous faites le commit |
+| Déclencheur | Un clic sur la bannière du build | `jamdesk fix` |
+
+Utilisez le flux du dashboard pour une correction rapide sans quitter Jamdesk. Utilisez le CLI quand vous voulez d'abord les modifications dans votre copie de travail, par exemple pour les regrouper avec d'autres changements.
+
+## Et ensuite ?
+
+<Columns cols={2}>
+  <Card title="Suivi des builds" icon="chart-line" href="/fr/builds/monitoring">
+    Suivez l'état des builds et lisez les avertissements et suggestions
+  </Card>
+  <Card title="Corriger les liens brisés (CLI)" icon="terminal" href="/fr/cli/fix-broken-links">
+    Corrigez automatiquement les liens brisés depuis votre terminal
+  </Card>
+</Columns>

@@ -1,0 +1,97 @@
+---
+title: Fix with AI
+sidebarTitle: Fix with AI
+description: Revisa y aplica las correcciones sugeridas por IA para enlaces rotos y descripciones de página faltantes desde tu dashboard de Jamdesk, confirmadas en GitHub por ti.
+---
+
+Cuando un build termina con enlaces rotos o páginas sin descripción, Jamdesk puede corregir muchos de ellos por ti. El botón **Fix with AI** lee esos avisos de build, propone una edición concreta para cada uno y confirma en tu repositorio de GitHub conectado las correcciones que apruebas, lo que inicia un nuevo build. Esta página es para cualquier persona que mantenga un sitio de Jamdesk y quiera resolver los avisos de build sin editar el MDX a mano.
+
+Para una versión local de la misma idea, desde la terminal, consulta el [comando de CLI `jamdesk fix`](/es/cli/fix-broken-links). El flujo del dashboard de abajo confirma por ti; la CLI escribe en tu copia de trabajo y te deja el commit a ti.
+
+## Qué corrige
+
+Fix with AI funciona con dos tipos de aviso de build:
+
+- **Enlaces internos rotos.** Un fragmento de enlace que apunta a un título que ya no existe en la página de destino, como una errata (`#instalation` → `#installation`), o una página traducida cuyo título se renombró.
+- **Descripciones de página faltantes.** Una página sin `description` en su frontmatter. Jamdesk redacta un breve resumen a partir del contenido de la página para que lo revises.
+
+Solo propone un cambio cuando puede resolver el destino con confianza. Todo lo ambiguo se deja sin tocar y se lista por separado para que lo corrijas a mano.
+
+<Note>
+  El número de correcciones posibles no es lo mismo que el número de avisos. Un build puede mostrar cinco avisos mientras Fix with AI ofrece corregir tres de ellos, porque los otros dos no tienen una corrección no ambigua. El banner siempre refleja lo que realmente se puede corregir.
+</Note>
+
+## Requisitos previos
+
+- Un [repositorio de GitHub conectado](/es/integrations/github) para el proyecto.
+- Acceso de escritura para la GitHub App de Jamdesk, para que pueda confirmar las correcciones. Si falta el acceso, la ventana muestra un enlace **Grant access** que te lleva a GitHub para añadirlo.
+- Un build terminado que tenga avisos de enlace roto o de descripción faltante.
+
+## Encontrar el banner
+
+Abre tu proyecto y desplázate hasta **Build History** en la página **Project Home**. Cuando tu último build tiene problemas corregibles, aparece un banner sobre la lista de builds, con un recuento y un botón **Fix with AI**.
+
+<Frame>
+  <img src="/images/fix-with-ai/banner.webp" alt="Un panel de historial de builds con un banner resaltado que indica que 3 problemas de este build pueden corregirse con IA, junto a un botón Fix with AI. La fila del build más reciente muestra un estado correcto con una insignia de 5 avisos." />
+</Frame>
+
+El banner solo aparece en tu build terminado más reciente. Los builds más antiguos del historial no la muestran, porque las correcciones siempre se aplican al estado actual de tu documentación.
+
+## Revisar y aplicar las correcciones
+
+<Steps>
+  <Step title="Abrir la vista previa">
+    Haz clic en **Fix with AI**. La ventana se abre y el agente de IA revisa tu documentación para crear un plan de corrección. Esto tarda unos segundos.
+  </Step>
+  <Step title="Leer cada cambio propuesto">
+    Las correcciones se agrupan por tipo. **Broken links** muestra cada ancla reescrita, y **Missing descriptions** muestra el resumen sugerido para cada página. Desmarca la casilla de lo que prefieras omitir. Los problemas sin una corrección clara aparecen bajo **Can't be fixed automatically** y se dejan para que los resuelvas a mano.
+
+    <Frame>
+      <img src="/images/fix-with-ai/modal.webp" alt="La ventana Fix with AI. Una sección Broken links lista tres correcciones marcadas, cada una mostrando el ancla antigua tachada y el ancla corregida. Una sección Can't be fixed automatically lista dos problemas para corregir a mano, sobre los botones Cancel y Apply 3 fixes." />
+    </Frame>
+  </Step>
+  <Step title="Aplicar">
+    Haz clic en **Apply fixes**. Jamdesk confirma los cambios seleccionados en tu rama conectada con el mensaje `docs: apply AI-suggested fixes (via Jamdesk)` e inicia un nuevo build.
+  </Step>
+  <Step title="Confirmar el nuevo build">
+    Sigue el nuevo build en el [historial de builds](/es/builds/monitoring). Cuando esté en línea, los avisos corregidos habrán desaparecido. Lo que quede será un aviso que Fix with AI no pudo resolver o un problema nuevo del contenido más reciente.
+  </Step>
+</Steps>
+
+<Note>
+  Aplicar escribe un commit real en tu repositorio, así que el cambio queda registrado en tu historial de Git y puedes revisarlo o revertirlo en GitHub como cualquier otro commit.
+</Note>
+
+## Cuando algunos problemas no se pueden corregir
+
+Si un aviso no tiene una corrección clara, la ventana lo lista bajo un encabezado aparte y lo deja sin tocar. Razones frecuentes:
+
+- Un enlace roto cuya página o título de destino no existe en ningún sitio, así que no hay nada a lo que apuntar.
+- Una entrada de navegación sin archivo fuente correspondiente.
+- Una página para la que el agente no pudo generar una descripción automáticamente.
+
+Estos casos necesitan una edición manual. Abre la página en el [editor](/es/development/local-preview) o en tu editor de código, corrige el enlace o añade la descripción, y luego haz push para volver a generar el build.
+
+## Fix with AI frente a la CLI
+
+Ambas herramientas corrigen anclas de enlaces rotos. Se diferencian en dónde se ejecutan y en cómo se aplica el cambio.
+
+| | Fix with AI (dashboard) | [`jamdesk fix`](/es/cli/fix-broken-links) (CLI) |
+|---|---|---|
+| Ejecución | En el dashboard, sobre un build | En tu terminal, sobre archivos locales |
+| Corrige | Enlaces rotos y descripciones faltantes | Anclas de enlaces rotos |
+| Commit | Confirma en tu rama por ti | Escribe archivos locales; tú haces el commit |
+| Disparador | Un clic en el banner del build | `jamdesk fix` |
+
+Usa el flujo del dashboard para una corrección rápida sin salir de Jamdesk. Usa la CLI cuando quieras primero los cambios en tu copia de trabajo, por ejemplo para agruparlos con otras ediciones.
+
+## ¿Qué sigue?
+
+<Columns cols={2}>
+  <Card title="Seguimiento de builds" icon="chart-line" href="/es/builds/monitoring">
+    Sigue el estado de los builds y lee los avisos y sugerencias
+  </Card>
+  <Card title="Corregir enlaces rotos (CLI)" icon="terminal" href="/es/cli/fix-broken-links">
+    Corrige enlaces rotos automáticamente desde tu terminal
+  </Card>
+</Columns>

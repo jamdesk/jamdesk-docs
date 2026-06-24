@@ -1,0 +1,97 @@
+---
+title: Fix with AI
+sidebarTitle: Fix with AI
+description: Review and apply AI-suggested fixes for broken links and missing page descriptions from your Jamdesk build dashboard, committed to GitHub for you.
+---
+
+When a build finishes with broken links or pages that have no description, Jamdesk can repair many of them for you. The **Fix with AI** button reads those build warnings, proposes a concrete edit for each one, and commits the fixes you approve to your connected GitHub repository, which starts a fresh build. This page is for anyone maintaining a Jamdesk site who wants to clear build warnings without editing MDX by hand.
+
+For a local, terminal-based version of the same idea, see the [`jamdesk fix` CLI command](/cli/fix-broken-links). The dashboard flow below commits for you; the CLI writes to your working copy and leaves the commit to you.
+
+## What it fixes
+
+Fix with AI works on two kinds of build warning:
+
+- **Broken internal links.** A link fragment that points at a heading which no longer exists on the target page, such as a typo (`#instalation` → `#installation`), or a translated page whose heading was renamed.
+- **Missing page descriptions.** A page with no `description` in its frontmatter. Jamdesk writes a short summary from the page content for you to review.
+
+It only proposes a change when it can resolve the target with confidence. Anything ambiguous is left untouched and listed separately so you can fix it by hand.
+
+<Note>
+  The fixable count is not the same as the warning count. A build can show five warnings while Fix with AI offers to repair three of them, because the other two have no unambiguous fix. The banner always reflects what can actually be fixed.
+</Note>
+
+## Prerequisites
+
+- A [connected GitHub repository](/integrations/github) for the project.
+- Write access for the Jamdesk GitHub App, so it can commit the fixes. If access is missing, the modal shows a **Grant access** link that takes you to GitHub to add it.
+- A completed build that carries broken-link or missing-description warnings.
+
+## Find the banner
+
+Open your project and scroll to **Build History** on the Project Home page. When your latest build has fixable issues, a banner appears above the build list with a count and a **Fix with AI** button.
+
+<Frame>
+  <img src="/images/fix-with-ai/banner.webp" alt="A build history panel with a highlighted banner reading 3 issues on this build can be fixed with AI next to a Fix with AI button. The newest build row shows a successful status with a warning badge of 5." />
+</Frame>
+
+The banner only appears on your newest completed build. Older builds in the history don't show it, because fixes always apply to the current state of your docs.
+
+## Review and apply the fixes
+
+<Steps>
+  <Step title="Open the preview">
+    Click **Fix with AI**. The modal opens and the AI agent reviews your docs to build a fix plan. This takes a few seconds.
+  </Step>
+  <Step title="Read each proposed change">
+    Fixes are grouped by type. **Broken links** shows each rewritten anchor, and **Missing descriptions** shows the suggested summary for each page. Clear the checkbox on anything you would rather skip. Issues with no clear fix appear under **Can't be fixed automatically** and are left for you to handle by hand.
+
+    <Frame>
+      <img src="/images/fix-with-ai/modal.webp" alt="The Fix with AI modal. A Broken links section lists three checked fixes, each showing the old anchor struck through and the corrected anchor. A Can't be fixed automatically section lists two issues to fix by hand, above Cancel and Apply 3 fixes buttons." />
+    </Frame>
+  </Step>
+  <Step title="Apply">
+    Click **Apply fixes**. Jamdesk commits the selected changes to your connected branch with the message `docs: apply AI-suggested fixes (via Jamdesk)` and starts a new build.
+  </Step>
+  <Step title="Confirm the rebuild">
+    Watch the new build in [Build History](/builds/monitoring). When it goes live, the fixed warnings are gone. Anything left is either a warning Fix with AI could not resolve or a new issue from the latest content.
+  </Step>
+</Steps>
+
+<Note>
+  Applying writes a real commit to your repository, so the change is tracked in your Git history and you can review or revert it on GitHub like any other commit.
+</Note>
+
+## When some issues can't be fixed
+
+If a warning has no clear fix, the modal lists it under a separate heading and leaves it alone. Common reasons:
+
+- A broken link whose target page or heading doesn't exist anywhere, so there's nothing to point it at.
+- A navigation entry with no matching source file.
+- A page where the agent could not generate a description automatically.
+
+These need a manual edit. Open the page in the [editor](/development/local-preview) or your code editor, correct the link or add the description, then push to rebuild.
+
+## Fix with AI vs. the CLI
+
+Both tools fix broken-link anchors. They differ in where they run and how the change lands.
+
+| | Fix with AI (dashboard) | [`jamdesk fix`](/cli/fix-broken-links) (CLI) |
+|---|---|---|
+| Runs | In the dashboard, on a build | In your terminal, against local files |
+| Fixes | Broken links and missing descriptions | Broken-link anchors |
+| Commit | Commits to your branch for you | Writes local files; you commit |
+| Trigger | One click on the build banner | `jamdesk fix` |
+
+Use the dashboard flow for a quick repair without leaving Jamdesk. Use the CLI when you want the changes in your working copy first, for example to bundle them with other edits.
+
+## What's Next?
+
+<Columns cols={2}>
+  <Card title="Monitoring Builds" icon="chart-line" href="/builds/monitoring">
+    Track build status and read warnings and suggestions
+  </Card>
+  <Card title="Fix Broken Links (CLI)" icon="terminal" href="/cli/fix-broken-links">
+    Auto-fix broken links from your terminal
+  </Card>
+</Columns>
