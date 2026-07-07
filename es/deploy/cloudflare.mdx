@@ -3,7 +3,7 @@ title: Cloudflare Workers
 description: "Enruta solicitudes a /docs a través de un Cloudflare Worker hacia tu sitio de docs de Jamdesk. Cubre configuración del Worker, patrones de ruta y caché."
 ---
 
-Un [Cloudflare Worker](https://workers.cloudflare.com/) intercepta solicitudes en `/docs` de tu dominio, las reescribe hacia tu subdominio de Jamdesk y devuelve la respuesta — todo en el edge sin necesidad de servidor de origen. Puedes crear el Worker automáticamente con `npx jamdesk deploy cloudflare` o configurarlo manualmente siguiendo los pasos a continuación.
+Un [Cloudflare Worker](https://workers.cloudflare.com/) intercepta solicitudes en `/docs` de tu dominio, las reescribe hacia tu subdominio de Jamdesk y devuelve la respuesta — todo en el edge sin necesidad de servidor de origen. Puedes crear el Worker automáticamente con `npx jamdesk deploy-proxy cloudflare` o configurarlo manualmente siguiendo los pasos a continuación.
 
 ## Cómo funciona
 
@@ -19,13 +19,14 @@ Esto significa que el Worker es una **configuración de una sola vez**. Si más 
 - Una cuenta de Cloudflare con tu dominio configurado
 - [Wrangler CLI](https://developers.cloudflare.com/workers/wrangler/install-and-update/) v3.0+ instalado
 - Tu subdominio de Jamdesk (que se encuentra en la configuración del dashboard)
+- Tu dominio personalizado añadido a tu proyecto en el dashboard de Jamdesk (el Worker devuelve un error 403 hasta que el dominio esté registrado y verificado)
 
 ## Configuración rápida con CLI
 
 La forma más rápida de configurar tu Cloudflare Worker:
 
 ```bash
-npx jamdesk deploy cloudflare
+npx jamdesk deploy-proxy cloudflare
 ```
 
 Este comando interactivo hará lo siguiente:
@@ -65,7 +66,7 @@ Asegúrate de seleccionar la cuenta de Cloudflare que tiene el dominio al que qu
 Para CI o scripts, usa flags para omitir los prompts:
 
 ```bash
-jamdesk deploy cloudflare --slug myproject --domain example.com --skip-deploy --yes
+jamdesk deploy-proxy cloudflare --slug myproject --domain example.com --skip-deploy --yes
 ```
 
 | Opción | Descripción |
@@ -100,24 +101,29 @@ Crea `index.js` con el siguiente código:
 ```javascript index.js
 const JAMDESK_HOST = "YOUR_SLUG.jamdesk.app";
 
-// Paths to proxy to Jamdesk
+// Paths that should be proxied to Jamdesk
 const PROXY_PATHS = [
   "/docs",    // Documentation pages
-  "/_next/",  // Next.js static assets
-  "/_jd/",    // Jamdesk assets (fonts, images, branding, analytics)
+  "/_next/",  // Next.js static assets (JS, CSS)
+  "/_jd/",    // All Jamdesk assets (images, fonts, branding, analytics)
 ];
+
+function shouldProxy(pathname) {
+  return PROXY_PATHS.some(prefix => {
+    // For the docs path, require exact match or prefix with slash (not /docs.json)
+    if (prefix === "/docs") {
+      return pathname === "/docs" || pathname.startsWith("/docs/");
+    }
+    return pathname.startsWith(prefix);
+  });
+}
 
 export default {
   async fetch(request) {
     const url = new URL(request.url);
-    const path = url.pathname;
 
-    // Check if this path should be proxied
-    const shouldProxy = PROXY_PATHS.some(prefix =>
-      path === prefix || path.startsWith(prefix.endsWith("/") ? prefix : prefix + "/")
-    );
-
-    if (!shouldProxy) {
+    // Only proxy docs-related paths
+    if (!shouldProxy(url.pathname)) {
       return fetch(request);
     }
 
@@ -130,7 +136,7 @@ export default {
     headers.set("Host", JAMDESK_HOST);
     headers.set("X-Forwarded-Host", url.hostname);
     headers.set("X-Forwarded-Proto", "https");
-    // Required for domain verification
+    // Custom header for domain verification (Vercel strips standard forwarding headers)
     headers.set("X-Jamdesk-Forwarded-Host", url.hostname);
 
     // Don't follow redirects; let the browser handle them so the URL updates.
@@ -214,12 +220,21 @@ Si prefieres la sintaxis más antigua de Service Worker (compatible con Workers 
 ```javascript index.js
 const JAMDESK_HOST = "YOUR_SLUG.jamdesk.app";
 
-// Paths to proxy to Jamdesk
+// Paths that should be proxied to Jamdesk
 const PROXY_PATHS = [
   "/docs",    // Documentation pages
-  "/_next/",  // Next.js static assets
-  "/_jd/",    // Jamdesk assets (fonts, images, branding, analytics)
+  "/_next/",  // Next.js static assets (JS, CSS)
+  "/_jd/",    // All Jamdesk assets (images, fonts, branding, analytics)
 ];
+
+function shouldProxy(pathname) {
+  return PROXY_PATHS.some(prefix => {
+    if (prefix === "/docs") {
+      return pathname === "/docs" || pathname.startsWith("/docs/");
+    }
+    return pathname.startsWith(prefix);
+  });
+}
 
 addEventListener("fetch", (event) => {
   event.respondWith(handleRequest(event.request));
@@ -227,14 +242,8 @@ addEventListener("fetch", (event) => {
 
 async function handleRequest(request) {
   const url = new URL(request.url);
-  const path = url.pathname;
 
-  // Check if this path should be proxied
-  const shouldProxy = PROXY_PATHS.some(prefix =>
-    path === prefix || path.startsWith(prefix.endsWith("/") ? prefix : prefix + "/")
-  );
-
-  if (!shouldProxy) {
+  if (!shouldProxy(url.pathname)) {
     return fetch(request);
   }
 
@@ -274,7 +283,7 @@ La CLI muestra tus dominios disponibles antes de la selección de zona. Si ves "
 
 <Accordion title="Cuenta de Cloudflare incorrecta">
 Si tienes múltiples cuentas de Cloudflare:
-1. Ejecuta `jamdesk deploy cloudflare`
+1. Ejecuta `jamdesk deploy-proxy cloudflare`
 2. Cuando se te pida seleccionar una cuenta, elige la que tiene tu dominio
 3. Si necesitas un inicio de sesión completamente diferente, selecciona **"Switch to different login"**
 4. La CLI cerrará tu sesión y te pedirá que inicies sesión con las credenciales correctas
@@ -328,9 +337,11 @@ Resumen: **nube gris** para verificar → **nube naranja** para servir.
 </Accordion>
 
 <Accordion title="Cómo funciona el caché">
-El Worker habilita el caché en el edge de Cloudflare para todos los tipos de contenido, incluido HTML. La duración del caché está controlada por los encabezados de respuesta del origen: el HTML se almacena en caché por 5 minutos, mientras que los recursos estáticos como imágenes y fuentes se almacenan en caché por mucho más tiempo.
+Jamdesk sirve el HTML de la documentación con `Cache-Control: no-store`, por lo que Cloudflare no almacena las páginas en el edge (`cf-cache-status: BYPASS`). Cada solicitud renderiza la versión actual, y los cambios publicados aparecen de inmediato, sin retraso de caché.
 
-Después de un despliegue, el contenido actualizado aparecerá en un máximo de 5 minutos sin necesidad de ninguna acción. Si necesitas forzar una actualización inmediata, usa la función **Purge Cache** de Cloudflare en tu dashboard (Caching → Configuration → Purge Everything).
+Los recursos estáticos bajo `/_next/` y `/_jd/` (JavaScript, CSS, fuentes, imágenes) se sirven con encabezados de caché `immutable` de larga duración, así que Cloudflare los almacena en el edge. Sus nombres de archivo incluyen un hash del contenido: cada build produce nuevas URL y los recursos actualizados se recogen automáticamente. Sin necesidad de purga.
+
+`cacheEverything: true` permite a Cloudflare almacenar esos recursos estáticos en la ruta proxificada; no anula el `no-store` del HTML. Para vaciar el caché del edge manualmente, usa la función **Purge Cache** de Cloudflare (Caching → Configuration → Purge Everything).
 </Accordion>
 
 <Accordion title="Versión de Wrangler demasiado antigua">
