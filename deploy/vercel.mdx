@@ -1,18 +1,125 @@
 ---
 title: Vercel
-description: Use Vercel rewrites to proxy documentation requests to Jamdesk. Rewrites happen at the edge and don't change the URL in the browser.
+description: Serve Jamdesk docs at /docs on your Vercel-hosted site using Edge Middleware. Rewrites happen at the edge and don't change the URL in the browser.
 ---
 
-If your site is already deployed on Vercel, two rewrite rules in `vercel.json` (or `next.config.js`) are enough to serve Jamdesk docs at `/docs` -- no separate proxy or DNS changes needed. For custom domain verification, an Edge Middleware approach is also covered below.
+If your site is deployed on Vercel, you can serve your Jamdesk documentation at `/docs` on your own domain.
+
+Use **Edge Middleware**. It is the only Vercel primitive that can set the `X-Jamdesk-Forwarded-Host` request header, which is how Jamdesk knows a request arrived through your proxy rather than directly on your `*.jamdesk.app` subdomain. A `vercel.json` rewrite cannot set request headers on the upstream request — see [Rewrites only](#alternative-rewrites-only) for what you give up if you skip the middleware.
 
 ## Prerequisites
 
 - A project deployed on Vercel
 - Your Jamdesk subdomain (found in dashboard settings)
+- **Host at /docs** enabled for your project in the dashboard
+- Your custom domain registered and DNS-verified in the dashboard
 
-## Step 1: Update vercel.json
+## Step 1: Add Edge Middleware
 
-Add a `rewrites` configuration to your `vercel.json` file. If the file doesn't exist, create it in your project root:
+Create a `middleware.ts` file in your project root:
+
+```typescript middleware.ts
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+
+const JAMDESK_HOST = 'YOUR_SLUG.jamdesk.app';
+
+export function middleware(request: NextRequest) {
+  const url = request.nextUrl;
+  const destination = new URL(url.pathname + url.search, `https://${JAMDESK_HOST}`);
+
+  // Clone headers and tell Jamdesk which domain the visitor actually used.
+  const headers = new Headers(request.headers);
+  headers.set('X-Jamdesk-Forwarded-Host', url.hostname);
+
+  return NextResponse.rewrite(destination, {
+    request: { headers },
+  });
+}
+
+export const config = {
+  matcher: ['/docs', '/docs/:path*', '/_jd/:path*'],
+};
+```
+
+<Note>
+Replace `YOUR_SLUG` with your actual Jamdesk subdomain (e.g., `acme` if your docs are at `acme.jamdesk.app`).
+</Note>
+
+<Warning>
+**Do not add `/_next/:path*` to the matcher.** Middleware runs *before* Vercel's filesystem check, so matching `/_next/` sends your own application's JavaScript, CSS, and optimized images to Jamdesk, which doesn't have them. Your site's styles and scripts will break. Step 2 handles `/_next/` the safe way.
+</Warning>
+
+<Note>
+The file must be named `middleware.ts` and export a function named `middleware`. Next.js 16 emits a deprecation warning suggesting `proxy.ts`, but Vercel production does not yet invoke `proxy.ts` — renaming the file silently disables it.
+</Note>
+
+## Step 2: Route Jamdesk's assets in vercel.json
+
+Jamdesk's documentation pages load their own Next.js bundles from `/_next/`. Route those with a `vercel.json` rewrite rather than middleware:
+
+```json vercel.json
+{
+  "rewrites": [
+    {
+      "source": "/_next/:path*",
+      "destination": "https://YOUR_SLUG.jamdesk.app/_next/:path*"
+    }
+  ]
+}
+```
+
+Rewrites are evaluated *after* the filesystem check, so your own build output always wins. Only asset requests your site can't serve — Jamdesk's content-hashed chunks — fall through to Jamdesk. Filenames never collide between the two apps.
+
+<Tip>
+If your site isn't a Next.js app it has no `/_next/` files of its own, so every request under that path falls through to Jamdesk. The rewrite is still correct.
+</Tip>
+
+## Step 3: Deploy
+
+```bash
+vercel --prod
+```
+
+Or push to your connected Git repository to trigger an automatic deployment.
+
+## Step 4: Verify
+
+Visit `https://yoursite.com/docs` and confirm the page renders with correct styling.
+
+Then view the page source and check two things:
+
+1. `<link rel="canonical">` points at **your** domain, not `YOUR_SLUG.jamdesk.app`
+2. There is **no** `<meta name="robots" content="noindex">`
+
+If either is wrong, the `X-Jamdesk-Forwarded-Host` header isn't reaching Jamdesk. See [Why the header matters](#why-the-header-matters).
+
+## Why the Header Matters
+
+The middleware forwards requests to your Jamdesk subdomain while passing the original domain in the `X-Jamdesk-Forwarded-Host` header. Jamdesk uses it to:
+
+1. **Verify your domain** — only registered, verified domains may serve your docs
+2. **Generate correct URLs** — canonical, Open Graph, and sitemap links use your domain
+3. **Distinguish proxy traffic** from direct hits on your `*.jamdesk.app` subdomain
+
+<Warning>
+The `X-Jamdesk-Forwarded-Host` header is **required**, and a missing header fails quietly.
+
+Requests still succeed without it — nothing errors, which is exactly what makes it easy to miss. What breaks is subtler:
+
+- **If you haven't registered a custom domain in the dashboard**, your documentation pages are served with `<meta name="robots" content="noindex">`, and canonical, Open Graph, and sitemap URLs all point at `YOUR_SLUG.jamdesk.app` instead of your domain. Search engines will never index your documentation.
+- **If you have registered a custom domain**, Jamdesk falls back to the domain on file, so your URLs stay correct — but it still can't tell proxy traffic apart from direct traffic to your `*.jamdesk.app` subdomain.
+
+A **403** is the opposite problem: the header *is* present, but names a domain that isn't registered and active for this project.
+</Warning>
+
+<Tip>
+The middleware is a **one-time setup**. If you later change your custom domain or configuration in the Jamdesk dashboard, the middleware doesn't need updating — all routing decisions are made server-side.
+</Tip>
+
+## Alternative: Rewrites Only
+
+If you are **not** using a custom domain and don't need your documentation indexed by search engines, `vercel.json` rewrites alone will serve the pages:
 
 ```json vercel.json
 {
@@ -37,84 +144,17 @@ Add a `rewrites` configuration to your `vercel.json` file. If the file doesn't e
 }
 ```
 
-<Note>
-Replace `YOUR_SLUG` with your actual Jamdesk subdomain (e.g., `acme` if your docs are at `acme.jamdesk.app`).
-</Note>
-
-The `/_next/` and `/_jd/` rewrites are required for Next.js assets (JS, CSS) and Jamdesk resources (fonts, images, branding) to load correctly.
-
-## Step 2: Deploy
-
-Deploy your changes to Vercel:
-
-```bash
-vercel --prod
-```
-
-Or push to your connected Git repository to trigger an automatic deployment.
-
-## Step 3: Verify
-
-Visit `https://yoursite.com/docs` to confirm your documentation is being served correctly.
-
-## Understanding the Configuration
-
-| Property | Description |
-|----------|-------------|
-| `source` | The path pattern on your domain that triggers the rewrite |
-| `destination` | The URL to proxy the request to |
-| `:path*` | A wildcard that captures all path segments after `/docs/` |
-
-The rewrite rules handle:
-1. The base `/docs` path (e.g., `yoursite.com/docs`)
-2. All nested paths (e.g., `yoursite.com/docs/getting-started`)
-3. Next.js static assets (`/_next/`) and Jamdesk resources (`/_jd/`)
-
-## Adding to Existing Rewrites
-
-If you already have rewrites configured, add the Jamdesk rules to your existing array:
-
-```json vercel.json
-{
-  "rewrites": [
-    { "source": "/api/:path*", "destination": "/api/:path*" },
-    { "source": "/docs", "destination": "https://YOUR_SLUG.jamdesk.app/docs" },
-    { "source": "/docs/:path*", "destination": "https://YOUR_SLUG.jamdesk.app/docs/:path*" },
-    { "source": "/_next/:path*", "destination": "https://YOUR_SLUG.jamdesk.app/_next/:path*" },
-    { "source": "/_jd/:path*", "destination": "https://YOUR_SLUG.jamdesk.app/_jd/:path*" }
-  ]
-}
-```
-
-<Warning>
-Rewrite order matters. Place more specific rules before general ones.
-</Warning>
-
-## Using next.config.js (Next.js Projects)
-
-For Next.js projects, you can alternatively configure rewrites in `next.config.js`:
+The same rules work in `next.config.js` for Next.js projects:
 
 ```javascript next.config.js
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   async rewrites() {
     return [
-      {
-        source: "/docs",
-        destination: "https://YOUR_SLUG.jamdesk.app/docs",
-      },
-      {
-        source: "/docs/:path*",
-        destination: "https://YOUR_SLUG.jamdesk.app/docs/:path*",
-      },
-      {
-        source: "/_next/:path*",
-        destination: "https://YOUR_SLUG.jamdesk.app/_next/:path*",
-      },
-      {
-        source: "/_jd/:path*",
-        destination: "https://YOUR_SLUG.jamdesk.app/_jd/:path*",
-      },
+      { source: "/docs", destination: "https://YOUR_SLUG.jamdesk.app/docs" },
+      { source: "/docs/:path*", destination: "https://YOUR_SLUG.jamdesk.app/docs/:path*" },
+      { source: "/_next/:path*", destination: "https://YOUR_SLUG.jamdesk.app/_next/:path*" },
+      { source: "/_jd/:path*", destination: "https://YOUR_SLUG.jamdesk.app/_jd/:path*" },
     ];
   },
 };
@@ -122,108 +162,55 @@ const nextConfig = {
 export default nextConfig;
 ```
 
+<Warning>
+Rewrites cannot set request headers on the upstream request. Without `X-Jamdesk-Forwarded-Host`, your documentation pages are served with `noindex` and their canonical URLs point at `YOUR_SLUG.jamdesk.app`. This is the right approach only for internal documentation you don't want indexed. For anything public-facing, use the middleware.
+</Warning>
+
+<Note>
+Rewrite order matters. If you already have rewrites configured, place more specific rules before general ones.
+</Note>
+
+## When to Use Which
+
+| Approach | Use when |
+|----------|----------|
+| **Edge Middleware** | Any public-facing documentation, and any setup with a custom domain. This is the default. |
+| **Rewrites only** | Internal docs on a Vercel preview or bare subdomain, where indexing and canonical URLs don't matter. |
+
 ## Troubleshooting
 
-<Accordion title="Rewrites not working">
-Ensure `vercel.json` is in your project root and properly formatted. Check the Vercel deployment logs for configuration errors.
+<Accordion title="My site's CSS and JavaScript broke after adding middleware">
+Your matcher almost certainly includes `/_next/:path*`. Middleware runs before the filesystem check, so this routes your own application's assets to Jamdesk. Remove `/_next/` from the matcher and route it through `vercel.json` instead — see Step 2.
 </Accordion>
 
-<Accordion title="404 on nested pages">
-Verify you have both rewrite rules - one for `/docs` and one for `/docs/:path*`. Missing the wildcard rule causes nested pages to fail.
-</Accordion>
-
-<Accordion title="Infinite redirect loops">
-Check that your destination URL uses `https://` and points to `jamdesk.app`, not your own domain.
-</Accordion>
-
-<Accordion title="Assets not loading (broken styles, missing fonts)">
-Check that you have rewrite rules for both `/_next/:path*` and `/_jd/:path*`. These serve Next.js assets (JS, CSS) and Jamdesk resources (fonts, images). Missing either breaks the layout.
+<Accordion title="Docs pages aren't being indexed by Google">
+View the page source at `https://yoursite.com/docs`. If you see `<meta name="robots" content="noindex">`, the `X-Jamdesk-Forwarded-Host` header isn't reaching Jamdesk. Confirm you're using Edge Middleware — `vercel.json` rewrites cannot set this header — and that `/docs` is in the matcher.
 </Accordion>
 
 <Accordion title="403 Domain not authorized error">
-When using Edge Middleware with a custom domain:
+The header is reaching Jamdesk, but names a domain Jamdesk won't serve for this project:
 
 1. Verify your domain is registered in the Jamdesk dashboard
 2. Complete DNS verification (TXT record)
-3. Confirm the `X-Jamdesk-Forwarded-Host` header is set in your middleware
-4. Check the domain maps to the correct project
-
-Simple rewrites (no custom domain) don't need this header.
+3. Check the domain maps to the correct project and is marked active
+4. Confirm the middleware sets the header to your visitor-facing domain, not a preview URL
 </Accordion>
 
-## Custom Domain Verification
+<Accordion title="404 on nested pages">
+Verify the matcher covers both `/docs` and `/docs/:path*`. Missing the wildcard causes nested pages to fail.
+</Accordion>
 
-Vercel rewrites work by proxying requests to your Jamdesk subdomain (`YOUR_SLUG.jamdesk.app`). This basic setup doesn't require domain verification.
+<Accordion title="Assets not loading (broken styles, missing fonts)">
+Confirm `/_jd/:path*` is in the middleware matcher and `/_next/:path*` is rewritten in `vercel.json`. `/_jd/` serves Jamdesk fonts, images, and branding; `/_next/` serves the documentation bundles. Missing either breaks the layout.
+</Accordion>
 
-If you've configured a custom domain in the Jamdesk dashboard with the "Host at /docs" option, you'll need to use Edge Middleware instead of simple rewrites to set the required verification header.
+<Accordion title="Middleware isn't running at all">
+Check the file is named `middleware.ts` (not `proxy.ts`) at your project root, and that it exports a function named `middleware`. Next.js 16's deprecation warning recommends `proxy.ts`, but Vercel production does not invoke it.
+</Accordion>
 
-### How It Works
-
-The middleware forwards requests to your Jamdesk subdomain while passing along the original domain in the `X-Jamdesk-Forwarded-Host` header. Jamdesk uses this header to:
-
-1. **Verify your domain** - Ensures only authorized domains can serve your docs
-2. **Apply correct configuration** - Uses your domain's settings from the dashboard
-
-This means the middleware is a **one-time setup**. If you later change your custom domain or configuration in the Jamdesk dashboard, the middleware doesn't need to be updated - all routing decisions are made server-side.
-
-### Using Edge Middleware
-
-Create a `middleware.ts` file in your project root:
-
-```typescript middleware.ts
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
-
-const JAMDESK_HOST = 'YOUR_SLUG.jamdesk.app';
-
-export function middleware(request: NextRequest) {
-  const url = request.nextUrl;
-
-  // Only proxy /docs and asset paths
-  if (!url.pathname.startsWith('/docs') &&
-      !url.pathname.startsWith('/_next') &&
-      !url.pathname.startsWith('/_jd')) {
-    return NextResponse.next();
-  }
-
-  // Rewrite to Jamdesk with forwarded host header
-  const destination = new URL(url.pathname + url.search, `https://${JAMDESK_HOST}`);
-
-  // Clone headers and add the forwarded host
-  const headers = new Headers(request.headers);
-  headers.set('X-Jamdesk-Forwarded-Host', url.hostname);
-
-  return NextResponse.rewrite(destination, {
-    request: { headers },
-  });
-}
-
-export const config = {
-  matcher: ['/docs', '/docs/:path*', '/_next/:path*', '/_jd/:path*'],
-};
-```
-
-<Note>
-Replace `YOUR_SLUG` with your actual Jamdesk subdomain.
-</Note>
-
-<Warning>
-The `X-Jamdesk-Forwarded-Host` header is **required**. It enables:
-- Domain verification (your domain must be registered in the dashboard)
-- Correct URL generation for links and assets
-- Proper configuration from your dashboard settings
-
-Without this header, requests will be rejected with a 403 error.
-</Warning>
-
-### When to Use Middleware vs Rewrites
-
-| Approach | Use When |
-|----------|----------|
-| **Rewrites** | Basic setup without custom domain verification |
-| **Edge Middleware** | Custom domain with "Host at /docs" option enabled |
-
-If you don't need custom domain verification, the simpler rewrites approach is sufficient.
+<Accordion title="Infinite redirect loops">
+Check that the destination URL uses `https://` and points to `jamdesk.app`, not back at your own domain.
+</Accordion>
 
 ## What's Next?
 
