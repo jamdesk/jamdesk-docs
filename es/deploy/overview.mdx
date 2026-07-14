@@ -1,36 +1,36 @@
 ---
-title: Descripción general del despliegue
-description: "Opciones de alojamiento para tu documentación -- subdominio de Jamdesk, dominio personalizado con SSL, o subpath /docs con un proxy inverso."
+title: Resumen del despliegue
+description: "Opciones de hosting para tu documentación: subdominio de Jamdesk, dominio personalizado con SSL, o una subruta /docs detrás de tu sitio existente mediante un proxy inverso."
 ---
 
-Jamdesk despliega tu documentación automáticamente en un subdominio `*.jamdesk.app`. Cuando estés listo para publicar en tu propio dominio, puedes elegir un subdominio personalizado (como `docs.example.com`) o alojarla en un subpath `/docs` en tu sitio principal.
+Jamdesk despliega tu documentación automáticamente en un subdominio `*.jamdesk.app`. Cuando estés listo para publicarla en tu propio dominio, puedes elegir un subdominio personalizado (como `docs.example.com`) o alojarla en una subruta `/docs` en tu sitio principal.
 
 ## Opciones de despliegue
 
 | Opción | Ideal para | Complejidad de configuración |
-|--------|-----------|------------------------------|
-| **Subdominio de Jamdesk** (`your-project.jamdesk.app`) | Lanzamiento rápido, sin trabajo de DNS | Baja |
+|--------|----------|------------------|
+| **Subdominio de Jamdesk** (`your-project.jamdesk.app`) | Lanzamiento más rápido, sin trabajo de DNS | Baja |
 | **Subdominio personalizado** (`docs.example.com`) | Documentación de producción con tu marca | Media |
-| **Alojamiento en subpath** (`example.com/docs`) | Mantener la documentación en el dominio principal | Alta |
+| **Hosting en subruta** (`example.com/docs`) | Mantener la documentación en el dominio principal | Alta |
 
-## Alojamiento predeterminado (sin configuración)
+## Hosting predeterminado (sin configuración)
 
-Cada proyecto se publica en un subdominio de Jamdesk en cuanto conectas un repositorio. Esta es la opción más sencilla para documentación interna, previews o lanzamientos tempranos.
+Cada proyecto se publica en vivo en un subdominio de Jamdesk en cuanto conectas un repo. Esta es la opción más simple para documentación interna, previews o lanzamientos tempranos.
 
 ## Dominio personalizado (subdominio)
 
-Usa tu propio subdominio (por ejemplo, `docs.example.com`) para una URL pública con tu marca. Añadirás registros DNS y verificarás la propiedad en el dashboard de Jamdesk.
+Usa tu propio subdominio (por ejemplo, `docs.example.com`) para obtener una URL de marca y de cara al público. Añadirás registros DNS y verificarás la propiedad en el dashboard de Jamdesk.
 
 <Note>
-La verificación DNS y el SSL se gestionan automáticamente una vez que los registros estén configurados. Consulta [Dominios personalizados](/es/deploy/custom-domains) para la configuración.
+La verificación DNS y el SSL se gestionan automáticamente una vez que los registros están en su lugar. Consulta [Dominios personalizados](/es/deploy/custom-domains) para la configuración.
 </Note>
 
-## Alojamiento en subpath (/docs)
+## Hosting en subruta (/docs)
 
-Aloja la documentación en `example.com/docs` redirigiendo el tráfico a Jamdesk. Es ideal cuando quieres que la documentación esté en tu dominio de marketing principal.
+Aloja la documentación en `example.com/docs` mediante un proxy del tráfico hacia Jamdesk. Esto es ideal cuando quieres que la documentación viva bajo tu dominio de marketing principal.
 
 <Info>
-El alojamiento en subpath requiere un proxy o una capa CDN para reenviar las solicitudes y establecer el encabezado `X-Jamdesk-Forwarded-Host`. Consulta [Alojamiento en subpath](/es/deploy/subpath-hosting).
+El hosting en subruta requiere una capa de proxy o CDN para reenviar las solicitudes y establecer el encabezado `X-Jamdesk-Forwarded-Host`. Consulta [Hosting en subruta](/es/deploy/subpath-hosting).
 </Info>
 
 ### Ejemplo de fragmento de proxy (nginx)
@@ -40,17 +40,25 @@ location /docs {
     proxy_pass https://YOUR_SLUG.jamdesk.app;
     proxy_set_header X-Jamdesk-Forwarded-Host $host;
 }
+
+location /_next/ {
+    proxy_pass https://YOUR_SLUG.jamdesk.app;
+}
+
+location /_jd/ {
+    proxy_pass https://YOUR_SLUG.jamdesk.app;
+}
 ```
 
-Para una configuración completa con SSL, encabezados y guías específicas por proveedor, consulta la guía de [Alojamiento en subpath](/es/deploy/subpath-hosting).
+Para una configuración completa con SSL, encabezados y guías específicas de cada proveedor, consulta la guía de [Hosting en subruta](/es/deploy/subpath-hosting).
 
 ## Guías por proveedor
 
-Elige tu infraestructura para implementar el alojamiento en subpath:
+Elige tu infraestructura para implementar el hosting en subruta:
 
 <Columns cols={2}>
   <Card title="Cloudflare" icon="cloud" href="/es/deploy/cloudflare">
-    Usa Cloudflare Workers para redirigir el tráfico de /docs
+    Usa Cloudflare Workers para hacer proxy del tráfico de /docs
   </Card>
   <Card title="AWS" icon="aws" href="/es/deploy/aws">
     Configura CloudFront con Route 53
@@ -69,13 +77,13 @@ Elige tu infraestructura para implementar el alojamiento en subpath:
   <Card title="Ciclo de vida de build y despliegue" icon="rotate" href="/es/deploy/lifecycle">
     Cómo se activan y despliegan los builds
   </Card>
-  <Card title="Alojamiento en subpath" icon="folder-tree" href="/es/deploy/subpath-hosting">
+  <Card title="Hosting en subruta" icon="folder-tree" href="/es/deploy/subpath-hosting">
     Aloja la documentación en /docs en tu dominio principal
   </Card>
   <Card title="Dominios personalizados" icon="globe" href="/es/deploy/custom-domains">
     Configura docs.tudominio.com
   </Card>
   <Card title="Solución de problemas de DNS" icon="server" href="/es/help/troubleshooting/dns-issues">
-    Corrige problemas de propagación y verificación de DNS
+    Soluciona problemas de propagación y verificación de DNS
   </Card>
 </Columns>

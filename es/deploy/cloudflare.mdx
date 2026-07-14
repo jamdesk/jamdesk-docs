@@ -1,25 +1,25 @@
 ---
 title: Cloudflare Workers
-description: "Enruta /docs a través de un Cloudflare Worker hacia tu sitio de documentación de Jamdesk. Cubre configuración del Worker, patrones de rutas y caché."
+description: "Enruta solicitudes /docs mediante un Cloudflare Worker a tu sitio de documentación Jamdesk. Configuración, patrones de rutas y caché."
 ---
 
-Un [Cloudflare Worker](https://workers.cloudflare.com/) intercepta las solicitudes a `/docs` en tu dominio, las reescribe hacia tu subdominio de Jamdesk y devuelve la respuesta, todo en el edge sin necesidad de un servidor de origen. Puedes generar el Worker automáticamente con `npx jamdesk deploy-proxy cloudflare` o configurarlo manualmente a continuación.
+Un [Cloudflare Worker](https://workers.cloudflare.com/) intercepta las solicitudes en `/docs` de tu dominio, las reescribe a tu subdominio de Jamdesk y devuelve la respuesta, todo en el edge sin necesidad de un servidor de origen. Puedes generar el Worker automáticamente con `npx jamdesk deploy-proxy cloudflare` o configurarlo manualmente a continuación.
 
 ## Cómo funciona
 
-El Worker reenvía las solicitudes a tu subdominio de Jamdesk y transmite el dominio original en el encabezado `X-Jamdesk-Forwarded-Host`. Jamdesk usa este encabezado para:
+El Worker reenvía las solicitudes a tu subdominio de Jamdesk mientras transmite el dominio original en el header `X-Jamdesk-Forwarded-Host`. Jamdesk usa este header para:
 
 1. **Verificar tu dominio** - Garantiza que solo los dominios autorizados puedan servir tu documentación
 2. **Aplicar la configuración correcta** - Usa la configuración de tu dominio desde el dashboard
 
-Esto significa que el Worker es una **configuración única**. Si más adelante cambias tu dominio personalizado o la configuración en el dashboard de Jamdesk, no es necesario actualizar el Worker: todas las decisiones de enrutamiento se toman del lado del servidor.
+Esto significa que el Worker es una **configuración única**. Si más adelante cambias tu dominio personalizado o la configuración en el dashboard de Jamdesk, no es necesario actualizar el Worker; todas las decisiones de enrutamiento se toman en el servidor.
 
 ## Requisitos previos
 
 - Una cuenta de Cloudflare con tu dominio configurado
-- [Wrangler CLI](https://developers.cloudflare.com/workers/wrangler/install-and-update/) v3.0 o superior instalado
-- Tu subdominio de Jamdesk (se encuentra en la configuración del dashboard)
-- Tu dominio personalizado agregado a tu proyecto en el dashboard de Jamdesk (el Worker devuelve un error 403 hasta que el dominio esté registrado y verificado)
+- [Wrangler CLI](https://developers.cloudflare.com/workers/wrangler/install-and-update/) v3.0+ instalado
+- Tu subdominio de Jamdesk (disponible en la configuración del dashboard)
+- Tu dominio personalizado añadido a tu proyecto en el dashboard de Jamdesk (el Worker devuelve un 403 hasta que el dominio esté registrado y verificado)
 
 ## Configuración rápida con la CLI
 
@@ -29,17 +29,17 @@ La forma más rápida de configurar tu Cloudflare Worker:
 npx jamdesk deploy-proxy cloudflare
 ```
 
-Este comando interactivo hará lo siguiente:
-1. Comprobar que wrangler 3.0 o superior esté instalado
-2. Verificar tu cuenta de Cloudflare y mostrar los dominios disponibles
-3. Resolver tu subdominio de Jamdesk a partir del proyecto vinculado en `docs.json`
-4. Permitirte seleccionar tu dominio de destino entre tus zonas de Cloudflare
-5. Generar todos los archivos necesarios
-6. Desplegar en Cloudflare de forma opcional
+Este comando interactivo:
+1. Comprueba que wrangler 3.0+ esté instalado
+2. Verifica tu cuenta de Cloudflare y muestra los dominios disponibles
+3. Resuelve tu subdominio de Jamdesk a partir del proyecto vinculado en `docs.json`
+4. Te permite seleccionar el dominio de destino entre tus zonas de Cloudflare
+5. Genera todos los archivos necesarios
+6. Opcionalmente, despliega en Cloudflare
 
 ### Selección de cuenta
 
-La CLI verifica que hayas iniciado sesión en la cuenta de Cloudflare correcta antes de continuar. Si tienes acceso a varias cuentas de Cloudflare (algo común en agencias o equipos), se te pedirá que elijas una:
+La CLI verifica que hayas iniciado sesión en la cuenta de Cloudflare correcta antes de continuar. Si tienes acceso a varias cuentas de Cloudflare (algo común en agencias o equipos), se te pedirá elegir:
 
 ``` text
 Step 2: Verifying Cloudflare account...
@@ -61,27 +61,27 @@ Después de seleccionar una cuenta, solo estarán disponibles para la selección
 Asegúrate de seleccionar la cuenta de Cloudflare que tiene el dominio al que quieres desplegar. Cada cuenta tiene su propio conjunto de dominios, y solo puedes crear rutas de Workers para dominios de la cuenta seleccionada.
 </Note>
 
-### Despliegue por CI o mediante scripts
+### Despliegue en CI/scripts
 
-Para CI o scripts, usa opciones para omitir las preguntas:
+Para CI/scripts, usa flags para omitir las preguntas:
 
 ```bash
 jamdesk deploy-proxy cloudflare --slug myproject --domain example.com --skip-deploy --yes
 ```
 
-Con `--yes` la CLI no puede preguntar, así que necesita saber tu subdominio. Lo obtiene del proyecto vinculado en `docs.json`; si falta ese vínculo (ejecuta `jamdesk deploy` una vez para agregarlo), pasa `--slug` explícitamente, o el comando se detiene en lugar de adivinar.
+Con `--yes` la CLI no puede preguntar, así que necesita conocer tu subdominio. Lo obtiene del proyecto vinculado en `docs.json`; si falta ese vínculo (ejecuta `jamdesk deploy` una vez para añadirlo), pasa `--slug` explícitamente, o el comando se detiene en lugar de adivinar.
 
 | Opción | Descripción |
 |--------|-------------|
 | `--slug` | Tu subdominio de Jamdesk, la `X` en `X.jamdesk.app` (omite la detección automática) |
-| `--domain` | Dominio de destino (por ejemplo, yoursite.com) |
-| `--path` | Prefijo de ruta (por defecto: /docs) |
-| `--output-dir` | Directorio de salida (por defecto: cloudflare-worker/) |
+| `--domain` | Dominio de destino (p. ej., yoursite.com) |
+| `--path` | Prefijo de ruta (predeterminado: /docs) |
+| `--output-dir` | Directorio de salida (predeterminado: cloudflare-worker/) |
 | `--skip-deploy` | Genera solo los archivos, sin desplegar |
 | `--force` | Sobrescribe el directorio existente |
 | `--yes` | Omite todas las preguntas (modo CI) |
 
-Si prefieres una configuración manual, continúa con los pasos a continuación.
+Si prefieres una configuración manual, continúa con los pasos siguientes.
 
 ---
 
@@ -96,7 +96,7 @@ mkdir docs-proxy && cd docs-proxy
 npm init -y
 ```
 
-### Paso 2: Agregar el código del Worker
+### Paso 2: Añadir el código del Worker
 
 Crea `index.js` con el siguiente código:
 
@@ -165,16 +165,16 @@ export default {
 ```
 
 <Note>
-Reemplaza `YOUR_SLUG` por tu subdominio real de Jamdesk (por ejemplo, `acme` si tu documentación está en `acme.jamdesk.app`).
+Reemplaza `YOUR_SLUG` con tu subdominio real de Jamdesk (p. ej., `acme` si tu documentación está en `acme.jamdesk.app`).
 </Note>
 
 <Warning>
-El encabezado `X-Jamdesk-Forwarded-Host` es **obligatorio**. Permite:
+El header `X-Jamdesk-Forwarded-Host` es **obligatorio**. Permite:
 - La verificación del dominio (tu dominio debe estar registrado en el dashboard)
-- La generación correcta de URL para enlaces y recursos
-- La configuración correcta a partir de los ajustes de tu dashboard
+- La generación correcta de URL para enlaces y assets
+- La configuración adecuada según los ajustes de tu dashboard
 
-Sin este encabezado, las solicitudes se rechazarán con un error 403.
+Sin este header, las solicitudes se rechazarán con un error 403.
 </Warning>
 
 ### Paso 3: Configurar wrangler.toml
@@ -193,7 +193,7 @@ routes = [
 ```
 
 <Tip>
-Si tu sitio también recibe tráfico en `www.yoursite.com`, agrega una segunda ruta para que el Worker gestione ambos casos:
+Si tu sitio también recibe tráfico en `www.yoursite.com`, añade una segunda ruta para que el Worker gestione ambos:
 
 ```toml
 routes = [
@@ -217,7 +217,7 @@ Visita `https://yoursite.com/docs` para confirmar que tu documentación se está
 
 ## Alternativa: sintaxis de Service Worker
 
-Si prefieres la sintaxis anterior de Service Worker (compatible con Workers más antiguos):
+Si prefieres la sintaxis clásica de Service Worker (compatible con Workers más antiguos):
 
 ```javascript index.js
 const JAMDESK_HOST = "YOUR_SLUG.jamdesk.app";
@@ -276,11 +276,11 @@ async function handleRequest(request) {
 
 ## Solución de problemas
 
-<Accordion title="No se encontraron dominios en esta cuenta">
+<Accordion title="No se encuentran dominios en esta cuenta">
 La CLI muestra tus dominios disponibles antes de la selección de zona. Si ves "No domains found":
 1. Verifica que hayas iniciado sesión en la cuenta de Cloudflare correcta
-2. Comprueba que tu dominio esté agregado y activo en el dashboard de Cloudflare
-3. Vuelve a ejecutar la CLI y selecciona "No" cuando se te pregunte si deseas continuar con la cuenta actual para cambiar de cuenta
+2. Comprueba que tu dominio esté añadido y activo en el dashboard de Cloudflare
+3. Vuelve a ejecutar la CLI y selecciona "No" cuando se te pregunte si continuar con la cuenta actual para cambiar de cuenta
 </Accordion>
 
 <Accordion title="Cuenta de Cloudflare incorrecta">
@@ -292,9 +292,9 @@ Si tienes varias cuentas de Cloudflare:
 </Accordion>
 
 <Accordion title="Zona no encontrada durante el despliegue">
-Este error significa que la zona seleccionada no coincide con tu cuenta de Cloudflare. Puede deberse a:
+Este error significa que la zona seleccionada no coincide con tu cuenta de Cloudflare. Puede deberse a que:
 - Seleccionaste una zona que pertenece a otra cuenta
-- La zona fue eliminada de Cloudflare
+- La zona se eliminó de Cloudflare
 
 Solución: Vuelve a ejecutar la CLI y selecciona la zona correcta de la lista, o cambia a la cuenta propietaria de la zona.
 </Accordion>
@@ -303,51 +303,51 @@ Solución: Vuelve a ejecutar la CLI y selecciona la zona correcta de la lista, o
 Asegúrate de que tu patrón de ruta use un catch-all: `yoursite.com/*` (no solo `yoursite.com/docs*`). La función interna `shouldProxy()` del Worker se encarga del filtrado de rutas.
 </Accordion>
 
-<Accordion title="Los recursos no se cargan correctamente">
+<Accordion title="Los assets no cargan correctamente">
 Dos causas comunes:
 
 1. **El Worker no se está ejecutando.** Asegúrate de que tu registro DNS esté configurado como **Proxied** (nube naranja) en Cloudflare. Los Workers solo se ejecutan en registros con proxy.
-2. **Falta el encabezado `X-Forwarded-Host`.** El Worker debe establecer este encabezado para que Jamdesk genere correctamente las URLs de los recursos.
+2. **Falta el header `X-Forwarded-Host`.** El Worker debe establecer este header para que Jamdesk genere URLs de assets correctas.
 </Accordion>
 
-<Accordion title="Error 403: dominio no autorizado">
+<Accordion title="Error 403 de dominio no autorizado">
 Si ves "Domain is not authorized to serve this content":
 
 1. Verifica que tu dominio esté registrado en el dashboard de Jamdesk
 2. Completa la verificación DNS (registro TXT) de tu dominio
-3. Asegúrate de que el encabezado `X-Jamdesk-Forwarded-Host` esté configurado en el código de tu Worker
+3. Asegúrate de que el header `X-Jamdesk-Forwarded-Host` esté configurado en el código de tu Worker
 4. Comprueba que tu dominio esté vinculado al proyecto correcto
 
 El dominio debe estar verificado antes de que el Worker pueda servir la documentación.
 </Accordion>
 
 <Accordion title="El Worker no se activa en el dominio raíz (apex)">
-Los Workers solo se ejecutan en registros DNS con el estado **Proxied** (nube naranja). Si tu registro A está configurado como "DNS only" (nube gris), las solicitudes van directo al origen y omiten el Worker por completo.
+Los Workers solo se ejecutan en registros DNS **proxied** (nube naranja). Si tu registro A está configurado como "DNS only" (nube gris), las solicitudes van directamente al origen y omiten por completo el Worker.
 
-**Solución:** Cambia el registro A a Proxied (nube naranja) en el DNS de Cloudflare. Lo mismo aplica para subdominios: cualquier registro con una ruta de Worker debe estar en modo Proxied.
+**Solución:** Cambia el registro A a proxied (nube naranja) en el DNS de Cloudflare. Lo mismo aplica a subdominios: cualquier registro con una ruta de Worker debe estar proxied.
 </Accordion>
 
-<Accordion title="La verificación del dominio se queda en Pending">
-Jamdesk verifica la propiedad leyendo directamente los valores de tu registro DNS. El proxy de Cloudflare (nube naranja) enmascara estos valores, por lo que la verificación no puede completarse.
+<Accordion title="La verificación del dominio se queda en Pendiente">
+Jamdesk verifica la propiedad leyendo directamente los valores de tu registro DNS. El proxy de Cloudflare (nube naranja) oculta estos valores, por lo que la verificación no puede completarse.
 
 **Solución:**
 1. Configura el registro DNS como **DNS only** (nube gris)
 2. Espera a que se complete la verificación (el estado cambia a **active** en el dashboard)
 3. Vuelve a **Proxied** (nube naranja) para que el Worker funcione
 
-Versión corta: **nube gris** para verificar → **nube naranja** para servir.
+Resumen: **nube gris** para verificar → **nube naranja** para servir.
 </Accordion>
 
 <Accordion title="Cómo funciona el caché">
 Jamdesk sirve el HTML de la documentación con `Cache-Control: no-store`, por lo que Cloudflare no almacena en caché las páginas en el edge (`cf-cache-status: BYPASS`). Cada solicitud renderiza la versión actual, y los cambios publicados aparecen de inmediato sin demora de caché.
 
-Los recursos estáticos bajo `/_next/` y `/_jd/` (JavaScript, CSS, fuentes, imágenes) se sirven con encabezados de caché `immutable` de larga duración, por lo que Cloudflare los almacena en caché en el edge. Sus nombres de archivo tienen un hash de contenido, así que cada build produce nuevas URLs y los recursos actualizados se detectan automáticamente. No se requiere purga.
+Los assets estáticos bajo `/_next/` y `/_jd/` (JavaScript, CSS, fuentes, imágenes) se sirven con headers de caché `immutable` de larga duración, por lo que Cloudflare sí los almacena en caché en el edge. Sus nombres de archivo tienen hash de contenido, así que cada build genera URLs nuevas y los assets actualizados se recogen automáticamente. No se requiere purga.
 
-`cacheEverything: true` permite que Cloudflare almacene en caché esos recursos estáticos en la ruta con proxy; no anula el `no-store` del HTML. Para limpiar la caché del edge manualmente, usa **Purge Cache** de Cloudflare (Caching → Configuration → Purge Everything).
+`cacheEverything: true` permite que Cloudflare almacene en caché esos assets estáticos en la ruta con proxy; no anula el `no-store` del HTML. Para limpiar manualmente el caché del edge, usa **Purge Cache** de Cloudflare (Caching → Configuration → Purge Everything).
 </Accordion>
 
 <Accordion title="Versión de Wrangler demasiado antigua">
-La CLI requiere wrangler 3.0 o superior. Actualiza con:
+La CLI requiere wrangler 3.0+. Actualiza con:
 
 ```bash
 npm install -g wrangler@latest
@@ -357,10 +357,10 @@ npm install -g wrangler@latest
 ## ¿Qué sigue?
 
 <Columns cols={3}>
-  <Card title="Resumen del despliegue" icon="cloud-arrow-up" href="/es/deploy/overview">
-    Compara las opciones de alojamiento
+  <Card title="Resumen de despliegue" icon="cloud-arrow-up" href="/es/deploy/overview">
+    Compara las opciones de hosting
   </Card>
-  <Card title="Alojamiento en subruta" icon="folder-tree" href="/es/deploy/subpath-hosting">
+  <Card title="Hosting en subruta" icon="folder-tree" href="/es/deploy/subpath-hosting">
     Sirve la documentación en /docs
   </Card>
   <Card title="Dominios personalizados" icon="globe" href="/es/deploy/custom-domains">

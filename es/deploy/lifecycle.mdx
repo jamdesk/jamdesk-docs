@@ -1,11 +1,9 @@
 ---
 title: Ciclo de vida de build y despliegue
-description: "El pipeline de build completo desde el git push hasta el sitio en producción: clonado, validación, subida a R2, revalidación ISR, monitoreo y estrategias de rollback."
+description: "El pipeline de build completo, de git push a sitio en vivo: clone, validación, subida a R2, revalidación ISR, monitoreo y estrategias de rollback."
 ---
 
-Jamdesk gestiona el ciclo de vida completo de build y despliegue de forma automática. Haz push a GitHub y tu documentación quedará en línea en minutos.
-
-Las capturas de pantalla muestran la interfaz en inglés.
+Jamdesk gestiona automáticamente todo el ciclo de vida de build y despliegue. Haz push a GitHub y tu documentación estará en vivo en minutos.
 
 ## Ciclo de vida del build
 
@@ -25,71 +23,71 @@ flowchart TD
     G -->|"fix & retry"| A
 ```
 
-## Disparadores del build
+## Disparadores de build
 
 | Disparador | Cómo funciona | Caso de uso |
-|-----------|---------------|-------------|
-| **Git Push** | Webhook se activa al hacer push a la rama conectada | Desarrollo normal |
+|---------|--------------|----------|
+| **Git Push** | El Webhook se dispara al hacer push a la rama conectada | Desarrollo normal |
 | **Dashboard** | Haz clic en "Rebuild" en la configuración del proyecto | Forzar actualización tras cambios de configuración |
 
 <Note>
-Los builds tienen debounce. Varios commits realizados en menos de 10 segundos se agrupan en un único build.
+Los builds tienen debounce. Varios commits dentro de 10 segundos se agrupan en un único build.
 </Note>
 
 ## Qué ocurre durante un build
 
 Jamdesk clona tu repositorio, valida `docs.json` y la sintaxis MDX, compila a HTML optimizado con indexación de búsqueda y luego despliega en Cloudflare R2. La mayoría de los sitios se compilan en 30-90 segundos.
 
-Para el desglose completo del pipeline con diagrama de arquitectura, consulta [Cómo funciona Jamdesk](/es/how-jamdesk-works).
+Para ver el desglose completo del pipeline con diagrama de arquitectura, consulta [Cómo funciona Jamdesk](/es/how-jamdesk-works).
 
 ## Estado del despliegue
 
 Consulta el estado del build en el dashboard:
 
 | Estado | Significado |
-|--------|-------------|
+|--------|---------|
 | **Building** | Build en progreso |
-| **Deployed** | En línea en tu dominio |
-| **Failed** | Error de build — revisa los logs |
+| **Deployed** | En vivo en tu dominio |
+| **Failed** | Error de build - revisa los logs |
 | **Queued** | Esperando el build anterior |
 
-La sección Build History muestra los despliegues recientes con su estado y la posibilidad de lanzar builds manuales:
+La sección Build History muestra los despliegues recientes con su estado y la posibilidad de activar rebuilds manuales:
 
 <SizedImage src="/images/dashboard/build-history.webp" alt="Build History showing recent deployments with Successful status badges, commit info, and Rebuild button" />
 
 ## Rebuild manual
 
-Lanza un build sin necesidad de hacer push de cambios:
+Activa un rebuild sin hacer push de cambios:
 
 1. Ve a tu proyecto en el dashboard
 2. Abre **Settings**
 3. Haz clic en **Rebuild**
 
-Úsalo cuando:
+Usa esto cuando:
 - Actualices variables de entorno
-- Necesites corregir un build atascado
-- Quieras actualizar tras cambios en la plataforma
+- Soluciones un build atascado
+- Actualices después de mejoras de la plataforma
 
 ## Variables de entorno
 
-Define variables en tiempo de build en **Settings** → **Environment**:
+Configura variables de tiempo de build en **Settings** → **Environment**:
 
 ```bash
 ANALYTICS_ID=G-XXXXXXXXXX
 API_BASE_URL=https://api.example.com
 ```
 
-Las variables están disponibles durante el proceso de build y se pueden referenciar en tus archivos docs.json o MDX.
+Las variables están disponibles durante el proceso de build y pueden referenciarse en tu docs.json o archivos MDX.
 
-## Logs del build
+## Logs de build
 
 Consulta los logs detallados del build para depuración:
 
 1. Ve a **Deployments** en tu proyecto
 2. Haz clic en un despliegue específico
-3. Visualiza el log completo del build
+3. Consulta el log completo del build
 
-Los problemas más comunes aparecen en los logs:
+Los problemas comunes aparecen en los logs:
 - Sintaxis MDX inválida
 - Imágenes o assets faltantes
 - Enlaces internos rotos
@@ -100,30 +98,30 @@ Los problemas más comunes aparecen en los logs:
 Revierte a una versión anterior:
 
 1. Ve a **Deployments**
-2. Encuentra el despliegue que quieres restaurar
+2. Encuentra el despliegue que deseas restaurar
 3. Haz clic en **Rollback**
 
-La versión anterior queda en línea de inmediato mientras comienza un nuevo build.
+La versión anterior se despliega de inmediato mientras se inicia un nuevo build.
 
-## Despliegues por rama
+## Despliegues de rama
 
 <Note>
-Los despliegues por rama están disponibles en los planes Pro.
+Los despliegues de rama están disponibles en los planes Pro.
 </Note>
 
-Previsualiza los cambios antes de hacer merge:
+Previsualiza cambios antes de fusionarlos:
 
-1. Haz push a una rama de funcionalidad
-2. Jamdesk crea un preview en `branch-name.your-project.jamdesk.app`
-3. Revisa y haz merge cuando estés listo
+1. Haz push a una rama de feature
+2. Jamdesk crea una preview en `branch-name.your-project.jamdesk.app`
+3. Revisa y fusiona cuando esté listo
 
 ## ¿Qué sigue?
 
 <Columns cols={2}>
   <Card title="Descripción general del despliegue" icon="cloud-arrow-up" href="/es/deploy/overview">
-    Elige entre subdominio, dominio personalizado u hosting en subruta
+    Elige entre alojamiento por subdominio, dominio personalizado o subruta
   </Card>
-  <Card title="Hosting en subruta" icon="route" href="/es/deploy/subpath-hosting">
+  <Card title="Alojamiento en subruta" icon="route" href="/es/deploy/subpath-hosting">
     Aloja la documentación en example.com/docs
   </Card>
 </Columns>

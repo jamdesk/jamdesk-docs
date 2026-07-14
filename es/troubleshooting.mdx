@@ -1,31 +1,31 @@
 ---
 title: Solución de problemas
-description: Soluciones rápidas para problemas comunes de Jamdesk, como fallos de build, verificación de DNS, conexiones a GitHub y datos de analítica faltantes.
+description: Soluciones rápidas para problemas comunes de Jamdesk, incluidos fallos de build, verificación de DNS, conexiones de GitHub y datos de analítica faltantes.
 ---
 
-Empieza aquí cuando algo no funcione. Cada sección incluye una solución rápida y un enlace a la guía completa en el Centro de ayuda.
+Empieza aquí cuando algo no funcione. Cada sección tiene una solución rápida y un enlace a la guía completa en el Centro de ayuda.
 
 <Note>
-  Para preguntas sobre tu cuenta, facturación o el producto que no están cubiertas aquí, ve directamente al [Centro de ayuda](/es/help/faq).
+  Para preguntas sobre la cuenta, la facturación o el producto que no se cubren aquí, ve directamente al [Centro de ayuda](/es/help/faq).
 </Note>
 
 ## Fallos de build
 
-El dashboard muestra un build como "Failed". La mayoría de los fallos provienen de una de estas tres causas: una página MDX con una importación o un componente inválido, una edición incorrecta de `docs.json` (corchetes sin cerrar, comas al final del último elemento de un array) o una página incluida en la navegación de `docs.json` que no existe como archivo `.mdx`. Los dos primeros aparecen localmente con `jamdesk dev` antes de llegar a un build desplegado. Ejecutarlo una vez antes de hacer push suele ahorrar un ciclo innecesario.
+Tu dashboard muestra un build como "Failed". La mayoría de los fallos provienen de una de tres causas: una página MDX con una importación o componente roto, una edición no válida de `docs.json` (corchetes sin cerrar, comas finales después del último elemento de un array) o una página listada en la navegación de `docs.json` que no existe como archivo `.mdx`. Las dos primeras salen a la luz localmente con `jamdesk dev` antes de llegar a un build desplegado. Ejecutarlo una vez antes de hacer push suele ahorrar una vuelta innecesaria.
 
 <Tip>
-El registro de build en tu dashboard muestra el archivo exacto y la línea donde ocurrió el error. Empieza por ahí: casi siempre apunta al problema real, no solo al síntoma.
+El log de build en tu dashboard muestra el archivo y la línea exactos donde ocurrió el error. Empieza por ahí. Casi siempre señala el problema real, no solo el síntoma.
 </Tip>
 
 Para códigos de error específicos, consulta [Fallos de build](/es/help/troubleshooting/build-failures) y la [Referencia de errores](/es/help/troubleshooting/error-reference).
 
-## Dominio personalizado sin verificar
+## El dominio personalizado no se verifica
 
-¿El dominio se queda en "Pending" después de añadir los registros DNS? Revisa estos pasos en orden:
+¿El dominio se queda en "Pending" después de añadir los registros DNS? Repasa esto en orden:
 
-1. Confirma que añadiste el registro **TXT** `_jamdesk.<hostname>`. El enrutamiento no se activa sin él, y la falta del TXT es la causa más habitual de un dominio en Pending. El hostname es el dominio completo que estás verificando (para `docs.example.com`, el nombre del registro TXT es `_jamdesk.docs.example.com`).
-2. Confirma que añadiste un registro **CNAME** (no un registro A) para los subdominios.
-3. Si usas Cloudflare, configura el proxy en modo **DNS only** (nube gris) para ambos registros.
+1. Confirma que añadiste el registro **TXT** `_jamdesk.<hostname>`. El enrutamiento no se activa sin él, y la ausencia del TXT es la causa más común de un dominio en Pending. El hostname es el dominio completo que estás verificando (para `docs.example.com`, el nombre del registro TXT es `_jamdesk.docs.example.com`).
+2. Confirma que añadiste un registro **CNAME** (no un registro A) para subdominios.
+3. Si usas Cloudflare, configura el proxy como **DNS only** (nube gris) para ambos registros.
 4. Comprueba la propagación en [whatsmydns.net](https://www.whatsmydns.net/).
 
 ```bash
@@ -36,35 +36,35 @@ dig TXT _jamdesk.docs.yourdomain.com
 dig CNAME docs.yourdomain.com
 ```
 
-Hay algo que conviene saber y no es evidente: incluso después de que `dig` muestre tus registros resolviendo, el dashboard puede seguir mostrando "Pending" hasta 30 minutos. El verificador se encuentra detrás de resolvers upstream que cachean respuestas DNS negativas, y esa ventana de caché debe expirar antes de que una nueva verificación tenga éxito. Si todo resuelve localmente pero el dashboard no se ha actualizado, espera media hora antes de asumir un problema más profundo.
+Algo no obvio que vale la pena saber: incluso después de que `dig` muestre que tus registros se resuelven, el dashboard puede seguir mostrando "Pending" hasta 30 minutos. El verificador está detrás de resolvedores upstream que almacenan en caché las respuestas DNS negativas, y esa ventana de caché tiene que expirar antes de que la revalidación tenga éxito. Si todo se resuelve localmente pero el dashboard no se ha actualizado, dale media hora antes de asumir un problema más profundo.
 
-[Solución de problemas de DNS](/es/help/troubleshooting/dns-issues) cubre los casos particulares de cada proveedor.
+[Solución de problemas de DNS](/es/help/troubleshooting/dns-issues) cubre particularidades específicas de cada proveedor.
 
-## Repositorio de GitHub no aparece
+## El repositorio de GitHub no aparece
 
-Si tu repositorio no aparece en la lista al crear un proyecto, es probable que la aplicación GitHub de Jamdesk no esté instalada en la organización del repositorio, o que el acceso esté configurado como "Selected repositories" sin incluir el tuyo. Vuelve a autorizar en [github.com/settings/installations](https://github.com/settings/installations) y concede acceso a "All repositories" o al repositorio específico que necesitas.
+Si tu repositorio no está en la lista al crear un proyecto, probablemente la GitHub App de Jamdesk no está instalada en la organización del repositorio, o el acceso a repositorios está configurado como "Selected repositories" sin incluir el tuyo. Vuelve a autorizar en [github.com/settings/installations](https://github.com/settings/installations) y concede acceso a "All repositories" o al repositorio específico que necesitas.
 
-Consulta [Problemas con GitHub](/es/help/troubleshooting/github-issues) para problemas de Webhook y permisos.
+Consulta [Problemas de GitHub](/es/help/troubleshooting/github-issues) para problemas de webhooks y permisos.
 
-## Datos de analítica faltantes
+## Faltan datos de analítica
 
-Algunas razones habituales por las que el dashboard muestra cero visitantes. La analítica puede tardar hasta 24 horas en aparecer tras el primer despliegue de un sitio, por lo que los proyectos nuevos parecen vacíos durante un tiempo. Los bloqueadores de anuncios y la opción "Do Not Track" impiden que una parte de las visitas se contabilice; tus cifras siempre serán menores que las de tus logs del servidor. Si ninguna de estas causas aplica, confirma que tu sitio esté efectivamente desplegado y sea accesible públicamente.
+Hay algunas razones comunes por las que tu dashboard muestra cero visitantes. La analítica tarda hasta 24 horas en aparecer tras el primer deploy de un sitio, así que los proyectos recién creados se ven vacíos durante un tiempo. Los bloqueadores de anuncios y Do Not Track impiden contar una parte de las visitas, así que tus cifras siempre irán por detrás de tus logs de servidor. Si ninguno de estos casos aplica, confirma que tu sitio esté realmente desplegado y accesible públicamente.
 
-[Problemas de analítica](/es/help/troubleshooting/analytics-issues) profundiza en los datos retrasados o faltantes.
+[Problemas de analítica](/es/help/troubleshooting/analytics-issues) profundiza en datos retrasados o faltantes.
 
 ## Problemas de inicio de sesión
 
-¿No puedes iniciar sesión o te redirige de vuelta a la pantalla de login? Borra la caché y las cookies de `dashboard.jamdesk.com` y prueba en una ventana de incógnito. Si inicias sesión con GitHub, tu correo de GitHub debe coincidir con el correo de tu cuenta de Jamdesk.
+¿No puedes iniciar sesión, o te devuelve a la pantalla de login? Borra la caché y las cookies de `dashboard.jamdesk.com`, luego prueba en una ventana de incógnito. Si inicias sesión con GitHub, tu email de GitHub debe coincidir con el email de tu cuenta de Jamdesk.
 
-Consulta [Problemas de inicio de sesión](/es/help/troubleshooting/login-issues) para los pasos de recuperación de cuenta.
+Consulta [Problemas de inicio de sesión](/es/help/troubleshooting/login-issues) para conocer los pasos de recuperación de cuenta.
 
-## ¿Sigues sin poder resolverlo?
+## ¿Sigues atascado?
 
 <Columns cols={2}>
   <Card title="Centro de ayuda" icon="life-ring" href="/es/help/faq">
     Explora todas las guías de solución de problemas
   </Card>
-  <Card title="Contactar soporte" icon="headset" href="/es/help/support/contact">
+  <Card title="Contactar con soporte" icon="headset" href="/es/help/support/contact">
     Contacta directamente con el equipo de Jamdesk
   </Card>
 </Columns>
