@@ -43,7 +43,7 @@ Replace `YOUR_SLUG` with your actual Jamdesk subdomain (e.g., `acme` if your doc
 </Tip>
 
 <Note>
-Vercel merges your visitor's own query string with the one already on the rewrite destination, so a reader's `?q=` (from search, or anywhere else) survives alongside the marker — nothing is dropped.
+The rewrite destination already carries `?jd_proxy=1`. The intent is for your visitor's own query string — a reader's `?q=` from search, or anything else — to merge with it rather than get overwritten. After you deploy, run a search from a docs page and confirm results still load; if they don't, your query string isn't reaching Jamdesk alongside the marker.
 </Note>
 
 The same four rules work in `next.config.js` for Next.js projects:
@@ -158,15 +158,19 @@ Jamdesk's documentation pages load their own Next.js bundles from `/_next/`, and
 {
   "rewrites": [
     { "source": "/_next/:path*", "destination": "https://YOUR_SLUG.jamdesk.app/_next/:path*" },
-    { "source": "/robots.txt", "destination": "https://YOUR_SLUG.jamdesk.app/robots.txt" },
-    { "source": "/sitemap.xml", "destination": "https://YOUR_SLUG.jamdesk.app/sitemap.xml" },
-    { "source": "/llms.txt", "destination": "https://YOUR_SLUG.jamdesk.app/llms.txt" },
-    { "source": "/llms-full.txt", "destination": "https://YOUR_SLUG.jamdesk.app/llms-full.txt" }
+    { "source": "/robots.txt", "destination": "https://YOUR_SLUG.jamdesk.app/robots.txt?jd_proxy=1" },
+    { "source": "/sitemap.xml", "destination": "https://YOUR_SLUG.jamdesk.app/sitemap.xml?jd_proxy=1" },
+    { "source": "/llms.txt", "destination": "https://YOUR_SLUG.jamdesk.app/llms.txt?jd_proxy=1" },
+    { "source": "/llms-full.txt", "destination": "https://YOUR_SLUG.jamdesk.app/llms-full.txt?jd_proxy=1" }
   ]
 }
 ```
 
 Rewrites are evaluated *after* the filesystem check, so your own build output always wins. Only asset requests your site can't serve — Jamdesk's content-hashed chunks — fall through to Jamdesk. Filenames never collide between the two apps.
+
+<Warning>
+`robots.txt`, `sitemap.xml`, `llms.txt`, and `llms-full.txt` need `?jd_proxy=1` even here — Edge Middleware only runs on the paths in its `matcher` (Step 1), and root files aren't in it. A `vercel.json` rewrite can't set the `X-Jamdesk-Forwarded-Host` header the middleware normally sends, so these four rules carry the query marker instead, exactly like Option A. `/_next/:path*` is the only exception — it's a static-asset path Jamdesk never gates, so it needs no signal at all.
+</Warning>
 
 <Tip>
 If your site isn't a Next.js app it has no `/_next/` files of its own, so every request under that path falls through to Jamdesk. The rewrite is still correct.

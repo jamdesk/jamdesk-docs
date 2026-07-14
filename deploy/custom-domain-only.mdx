@@ -42,7 +42,18 @@ Two endpoints are unauthenticated readers of your *entire* documentation corpus 
 - `/api/mcp/YOUR_SLUG` — the MCP server
 - `/api/chat/YOUR_SLUG` — the RAG chat backend
 
-The problem: a proxy that only forwards `/docs`, `/_next`, and `/_jd` — the minimum for the docs pages themselves — never touches these paths, so they become unreachable **anywhere**, not just on the subdomain. If you use [MCP](/ai/mcp-server) or the [chat widget](/ai/chat), also forward `/api/mcp/:path*` and `/api/chat/:path*` to `YOUR_SLUG.jamdesk.app`, the same way you forward `/docs`.
+The problem: a proxy that only forwards `/docs`, `/_next`, and `/_jd` — the minimum for the docs pages themselves — never touches these paths, so they become unreachable **anywhere**, not just on the subdomain. If you use [MCP](/ai/mcp-server) or the [chat widget](/ai/chat), also forward `/api/mcp/:path*` and `/api/chat/:path*` to `YOUR_SLUG.jamdesk.app`, the same way you forward `/docs`. On Vercel, that means two more `vercel.json` rewrites carrying the same `?jd_proxy=1` marker as your `/docs` rules:
+
+```json vercel.json
+{
+  "rewrites": [
+    { "source": "/api/mcp/:path*", "destination": "https://YOUR_SLUG.jamdesk.app/api/mcp/:path*?jd_proxy=1" },
+    { "source": "/api/chat/:path*", "destination": "https://YOUR_SLUG.jamdesk.app/api/chat/:path*?jd_proxy=1" }
+  ]
+}
+```
+
+A bare rewrite with no marker reaches Jamdesk but gets gated the same as a direct hit on the subdomain — see [Vercel](/deploy/vercel) for why the marker is required.
 
 <Note>
 **The Search API is not affected.** `/_api/search` (the [Docs Search API](/jamdesk-api/docs-search-api)) is authenticated by API key and deliberately left ungated — Jamdesk can't tell it apart from a legitimate integration request, and doesn't try to. It keeps working on the bare subdomain whether this flag is on or off.
@@ -54,8 +65,9 @@ Open **Project Settings → Custom Domain** and toggle **Custom domain only**. J
 
 | Message | What it means |
 |---------|----------------|
-| *"We couldn't reach your docs through your domain. Your proxy needs to forward `/_jd/*` to Jamdesk — add a rewrite for `/_jd/:path*` and try again."* | Your domain either isn't proxying at all, or its proxy doesn't forward `/_jd/*`. Preflight lives there specifically so it stays reachable through every proxy template Jamdesk generates. |
+| *"We couldn't reach your docs at your domain. Either the domain isn't resolving to Jamdesk right now, or — if you run a reverse proxy — it isn't forwarding `/_jd/*`. Add a rewrite for `/_jd/:path*` and try again."* | Covers two different cohorts with one message: the plain-CNAME majority (the domain itself isn't resolving — DNS, TLS, or downtime, not a missing rewrite) and the reverse-proxy minority whose proxy doesn't forward `/_jd/*`. Preflight lives there specifically so it stays reachable through every proxy template Jamdesk generates. |
 | *"Your proxy reaches Jamdesk, but doesn't identify itself. Add `?jd_proxy=1` to the end of each rewrite destination in your vercel.json (or set the X-Jamdesk-Forwarded-Host header), redeploy, then try again."* | Your proxy forwards traffic correctly but sends neither the marker nor the header. This is the single most common failure — it's exactly what an older, unmarked `vercel.json` rewrite produces. |
+| *"Your proxy reaches Jamdesk and identifies itself correctly, but it strips query strings, so we couldn't verify this check against your exact project. This is usually a one-off — try again, and contact support if it keeps failing."* | Your proxy sets the header (or marker) correctly, but rebuilds the destination URL in a way that drops query strings — common with a Cloudflare Worker or nginx rewrite. The live gate itself never depends on this probe's query string, so service isn't affected once the toggle is on; this only blocks preflight from verifying the exact project. |
 | *"Your proxy is pointing at a different Jamdesk project."* | Your proxy reaches Jamdesk and identifies itself, but the domain is mapped to a different project's slug than the one you're trying to enable this on. |
 
 Once preflight passes, changes take **up to a minute** to reach every edge instance — projectConfig is cached for 60 seconds, so don't panic if the bare subdomain still answers for a moment after you flip the toggle.
