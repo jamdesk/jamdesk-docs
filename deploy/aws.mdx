@@ -39,8 +39,16 @@ In the origin settings, add custom headers to identify your domain:
 These headers tell Jamdesk which domain is making the request. The `X-Jamdesk-Forwarded-Host` header is required for domain verification.
 
 <Warning>
+`AllViewerExceptHostHeader` (configured in the next step) forwards the headers your visitor's browser sent — it does not add new ones. `X-Jamdesk-Forwarded-Host` isn't a viewer header, so it only reaches Jamdesk if you add it here, as an **origin custom header**. Skip this step and requests still succeed (nothing errors), but your documentation pages serve `noindex` with a canonical pointing at `YOUR_SLUG.jamdesk.app` instead of your domain, and the [Custom domain only](/deploy/custom-domain-only) preflight check will fail.
+</Warning>
+
+<Warning>
 Your domain must be verified in the Jamdesk dashboard before CloudFront will serve content. Complete the DNS verification process after adding your domain.
 </Warning>
+
+<Tip>
+Origin custom headers are static — fine for a distribution mapped to one domain, which is the common case here. If you need the header's value to vary per request (multiple alternate domain names on one distribution), use a [CloudFront Function](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/cloudfront-functions.html) on **viewer request** instead, and set `request.headers['x-jamdesk-forwarded-host'] = { value: request.headers.host.value }` before the request reaches the origin.
+</Tip>
 
 ## Step 3: Create Cache Behaviors
 
@@ -63,7 +71,7 @@ The `/_next/*` and `/_jd/*` behaviors are required for Next.js static assets (JS
 </Note>
 
 <Warning>
-The `AllViewerExceptHostHeader` policy is required. It forwards all headers except `Host`, allowing Jamdesk to receive the necessary request information.
+The `AllViewerExceptHostHeader` policy is required on all three behaviors. It forwards the rest of the viewer's request headers (everything except `Host`, which CloudFront needs to reserve for the origin) — separate from the origin custom headers in Step 2, which is what actually delivers `X-Jamdesk-Forwarded-Host`.
 </Warning>
 
 ## Step 4: Add Alternate Domain Name
@@ -137,16 +145,20 @@ If you see "Domain is not authorized to serve this content":
 The domain must be verified before CloudFront can serve documentation.
 </Accordion>
 
+<Accordion title="The Custom domain only preflight check keeps failing">
+Preflight fetches `/_jd/preflight` on your live domain and checks what actually reached Jamdesk. If it reports your proxy "doesn't identify itself," CloudFront is reaching Jamdesk but without `X-Jamdesk-Forwarded-Host` — recheck the origin custom header in Step 2. See [Custom domain only](/deploy/custom-domain-only) for what each preflight message means.
+</Accordion>
+
 ## What's Next?
 
 <Columns cols={3}>
-  <Card title="Deployment Overview" icon="cloud-arrow-up" href="/deploy/overview">
-    Compare hosting options
-  </Card>
-  <Card title="Subpath Hosting" icon="folder-tree" href="/deploy/subpath-hosting">
-    Serve docs at /docs
+  <Card title="Custom Domain Only" icon="eye-slash" href="/deploy/custom-domain-only">
+    Stop your subdomain from answering directly
   </Card>
   <Card title="Custom Domains" icon="globe" href="/deploy/custom-domains">
     Verify DNS and troubleshoot
+  </Card>
+  <Card title="Subpath Hosting" icon="folder-tree" href="/deploy/subpath-hosting">
+    Serve docs at /docs
   </Card>
 </Columns>

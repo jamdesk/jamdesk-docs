@@ -161,7 +161,16 @@ http:
     docs-router:
       rule: "Host(`yoursite.com`) && (PathPrefix(`/docs`) || PathPrefix(`/_next`) || PathPrefix(`/_jd`))"
       service: jamdesk-docs
+      middlewares:
+        - jamdesk-headers
       tls: {}
+
+  middlewares:
+    jamdesk-headers:
+      headers:
+        customRequestHeaders:
+          # Required for domain verification
+          X-Jamdesk-Forwarded-Host: "yoursite.com"
 
   services:
     jamdesk-docs:
@@ -196,6 +205,48 @@ backend jamdesk_docs
     http-request set-header X-Jamdesk-Forwarded-Host %[req.hdr(host)]
 ```
 
+## Forward Your Root Files Too
+
+`robots.txt`, `sitemap.xml`, `llms.txt`, and `llms-full.txt` are served from the domain root, not from under `/docs` — a proxy that only forwards `/docs`, `/_next`, and `/_jd` leaves these served by your own site (or not served at all), which breaks AI-agent discovery and costs you SEO regardless of anything else on this page.
+
+Add the same location/route pattern you used for `/docs` above, for each of these four paths. For nginx:
+
+```nginx nginx.conf
+    location = /robots.txt {
+        proxy_pass https://YOUR_SLUG.jamdesk.app;
+        proxy_ssl_server_name on;
+        proxy_set_header Host YOUR_SLUG.jamdesk.app;
+        proxy_set_header X-Jamdesk-Forwarded-Host $host;
+    }
+
+    location = /sitemap.xml {
+        proxy_pass https://YOUR_SLUG.jamdesk.app;
+        proxy_ssl_server_name on;
+        proxy_set_header Host YOUR_SLUG.jamdesk.app;
+        proxy_set_header X-Jamdesk-Forwarded-Host $host;
+    }
+
+    location = /llms.txt {
+        proxy_pass https://YOUR_SLUG.jamdesk.app;
+        proxy_ssl_server_name on;
+        proxy_set_header Host YOUR_SLUG.jamdesk.app;
+        proxy_set_header X-Jamdesk-Forwarded-Host $host;
+    }
+
+    location = /llms-full.txt {
+        proxy_pass https://YOUR_SLUG.jamdesk.app;
+        proxy_ssl_server_name on;
+        proxy_set_header Host YOUR_SLUG.jamdesk.app;
+        proxy_set_header X-Jamdesk-Forwarded-Host $host;
+    }
+```
+
+The same four blocks — same headers, same upstream — apply to Apache, Caddy, Traefik, and HAProxy: copy whichever `/docs` block you're using above and repeat it once per path.
+
+<Warning>
+Only forward these if Jamdesk owns your domain root. If your main site already serves its own `robots.txt` or `sitemap.xml`, merge the two instead of overwriting one with the other.
+</Warning>
+
 ## Required Headers
 
 Regardless of which proxy you use, ensure these headers are set:
@@ -206,14 +257,15 @@ Regardless of which proxy you use, ensure these headers are set:
 | `X-Forwarded-Host` | Your domain | Tells Jamdesk which domain to use in URLs |
 | `X-Forwarded-Proto` | `https` | Ensures secure URL generation |
 | `X-Jamdesk-Forwarded-Host` | Your domain | Required for domain verification |
+| `?jd_proxy=1` query marker | Appended to the upstream URL | Alternative to the header, for tools that can only rewrite a URL and can't set request headers — see [Custom domain only](/deploy/custom-domain-only) |
 
 <Warning>
-The `X-Jamdesk-Forwarded-Host` header is **required**, and a missing header fails quietly.
+The `X-Jamdesk-Forwarded-Host` header (or the `?jd_proxy=1` marker) is **required**, and going without either fails quietly.
 
-Requests still succeed without it — nothing errors, which is exactly what makes it easy to miss. What breaks is subtler:
+Requests still succeed — nothing errors, which is exactly what makes it easy to miss. What breaks is subtler:
 
 - **If you haven't registered a custom domain in the dashboard**, your documentation pages are served with `<meta name="robots" content="noindex">`, and canonical, Open Graph, and sitemap URLs all point at `YOUR_SLUG.jamdesk.app` instead of your domain. Search engines will never index your documentation.
-- **If you have registered a custom domain**, Jamdesk falls back to the domain on file, so your URLs stay correct — but it still can't tell proxy traffic apart from direct traffic to your `*.jamdesk.app` subdomain.
+- **If you have registered a custom domain**, Jamdesk falls back to the domain on file, so your URLs stay correct — but it still can't tell proxy traffic apart from direct traffic to your `*.jamdesk.app` subdomain, and the [Custom domain only](/deploy/custom-domain-only) preflight check will fail.
 
 A **403** is the opposite problem: the header *is* present, but names a domain that isn't registered and active for this project.
 </Warning>
@@ -251,16 +303,20 @@ If you see "Domain is not authorized to serve this content":
 The domain must be verified before the proxy can serve documentation.
 </Accordion>
 
+<Accordion title="The Custom domain only preflight check keeps failing">
+Preflight fetches `/_jd/preflight` on your live domain and checks what actually reached Jamdesk. If it reports your proxy "doesn't identify itself," a request reached Jamdesk but without the header or the marker — recheck the `X-Jamdesk-Forwarded-Host` line in every location/route block above. See [Custom domain only](/deploy/custom-domain-only) for what each preflight message means.
+</Accordion>
+
 ## What's Next?
 
 <Columns cols={3}>
-  <Card title="Deployment Overview" icon="cloud-arrow-up" href="/deploy/overview">
-    Compare hosting options
-  </Card>
-  <Card title="Subpath Hosting" icon="folder-tree" href="/deploy/subpath-hosting">
-    Serve docs at /docs
+  <Card title="Custom Domain Only" icon="eye-slash" href="/deploy/custom-domain-only">
+    Stop your subdomain from answering directly
   </Card>
   <Card title="Custom Domains" icon="globe" href="/deploy/custom-domains">
     Verify DNS and troubleshoot
+  </Card>
+  <Card title="Subpath Hosting" icon="folder-tree" href="/deploy/subpath-hosting">
+    Serve docs at /docs
   </Card>
 </Columns>
