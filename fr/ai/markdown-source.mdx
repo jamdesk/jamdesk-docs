@@ -1,13 +1,13 @@
 ---
 title: Source Markdown
-description: Accédez à la source Markdown brute de n'importe quelle page en ajoutant .md à l'URL. Texte structuré pour les outils IA, scripts et pipelines de contenu.
+description: Accédez au source Markdown brut de toute page de documentation en ajoutant .md à l'URL. Texte structuré pour outils IA, scripts et pipelines.
 ---
 
-Les outils IA traitent le Markdown plus efficacement que le HTML rendu. Jamdesk rend la source Markdown brute de chaque page accessible en ajoutant `.md` à n'importe quelle URL. Aucune authentification requise.
+Les outils IA traitent le Markdown plus efficacement que le HTML rendu. Jamdesk rend le source Markdown brut de chaque page disponible en ajoutant `.md` à n'importe quelle URL. Aucune authentification requise.
 
 ## Extension d'URL `.md`
 
-Ajoutez `.md` à l'URL de n'importe quelle page de documentation pour obtenir la source brute au lieu du HTML rendu :
+Ajoutez `.md` à l'URL de n'importe quelle page de documentation pour obtenir le source brut au lieu du HTML rendu :
 
 ```bash
 # Rendered page
@@ -40,7 +40,7 @@ La réponse est le fichier source exact de votre dépôt, y compris le frontmatt
 
 ### Domaines personnalisés
 
-Le contenu brut fonctionne également sur les domaines personnalisés. Utilisez la même URL que celle de vos lecteurs, avec `.md` ajouté à la fin :
+Le contenu brut fonctionne aussi sur les domaines personnalisés. Utilisez la même URL que voient vos lecteurs, avec `.md` ajouté :
 
 ```bash
 # Docs served at root
@@ -52,11 +52,11 @@ curl https://docs.example.com/docs/getting-started.md
 
 ## Format du contenu
 
-Le contenu brut est du Markdown étendu avec des balises de composants comme `<Note>`, `<Steps>` et `<Tabs>`. Les parseurs Markdown standard traiteront les balises de composants comme du HTML brut. Consultez les [bases de Markdown](/fr/content/mdx-basics) pour la référence complète de la syntaxe.
+Le contenu brut est du Markdown étendu avec des balises de composants comme `<Note>`, `<Steps>` et `<Tabs>`. Les analyseurs Markdown standard traiteront les balises de composants comme du HTML brut. Consultez les [bases du Markdown](/fr/content/mdx-basics) pour la référence de syntaxe complète.
 
 ## Spécifications OpenAPI sur les pages de référence API
 
-Lorsque vous récupérez le Markdown d'une page de référence API — dont le frontmatter déclare une spécification `api:` ou `openapi:` — Jamdesk ajoute un court pied de page qui indique aux agents IA chaque spécification OpenAPI de votre projet, regroupée en un seul téléchargement :
+Lorsque vous récupérez le Markdown d'une page de référence API (dont le frontmatter déclare une spécification `api:` ou `openapi:`), Jamdesk ajoute un court pied de page qui indique aux agents IA où trouver chaque spécification OpenAPI de votre projet, regroupée en un seul téléchargement :
 
 ```markdown
 ---
@@ -64,35 +64,35 @@ Lorsque vous récupérez le Markdown d'une page de référence API — dont le f
 📦 **OpenAPI specs:** Every OpenAPI specification referenced by this documentation is available as a single download — https://acme.jamdesk.app/api-specs.zip
 ```
 
-C'est le même `api-specs.zip` proposé par l'action [Télécharger la spécification API](/fr/ai/ai-actions#télécharger-la-spec-api), assemblé à chaque requête. L'objectif est la portée : un agent qui lit une page d'endpoint apprend qu'il peut récupérer l'intégralité du contrat lisible par machine en une seule requête, plutôt que de scraper chaque endpoint. Le pied de page n'apparaît que sur les pages de référence API des projets ayant au moins une spécification — les guides classiques ne sont pas concernés.
+C'est le même `api-specs.zip` proposé par l'action [Télécharger la spécification API](/fr/ai/ai-actions#download-api-spec), assemblé à nouveau à chaque requête. L'objectif est la portée : un agent qui lit une page d'endpoint apprend qu'il peut récupérer le contrat complet lisible par machine en une seule requête, au lieu de parcourir chaque endpoint. Le pied de page n'apparaît que sur les pages de référence API des projets ayant au moins une spécification ; les guides classiques restent inchangés.
 
 ## Détails de la réponse
 
 ### En-têtes
 
-| En-tête | Valeur | Rôle |
+| En-tête | Valeur | Objectif |
 |--------|-------|---------|
-| `Content-Type` | `text/markdown; charset=utf-8` | Identifie le contenu comme Markdown |
-| `Cache-Control` | `public, max-age=3600, s-maxage=86400` | Mis en cache navigateur 1 heure, CDN 1 jour (URL `.md`) |
+| `Content-Type` | `text/markdown; charset=utf-8` | Identifie le contenu comme du Markdown |
+| `Cache-Control` | `public, max-age=3600, s-maxage=86400` | Mis en cache navigateur 1 heure, mis en cache CDN 1 jour (URLs `.md`) |
 | `Vary` | `Accept` | La même URL sert du HTML ou du Markdown selon l'en-tête `Accept` de la requête |
 | `X-Robots-Tag` | `noindex, nofollow` | Empêche l'indexation par les moteurs de recherche |
 | `Content-Disposition` | `inline` | Affiche dans le navigateur au lieu de télécharger |
 | `X-Frame-Options` | `DENY` | Empêche l'intégration dans des iframes |
 | `Content-Security-Policy` | `default-src 'none'` | Bloque l'exécution de scripts |
 
-Requêter l'URL canonique d'une page (sans `.md`) avec l'en-tête `Accept: text/markdown` retourne le même Markdown, mais avec `Cache-Control: private, no-store` — cette URL partage une clé de cache avec la page HTML, donc cette réponse n'est jamais mise en cache.
+Demander l'URL canonique d'une page (sans `.md`) avec l'en-tête `Accept: text/markdown` renvoie le même Markdown, mais avec `Cache-Control: private, no-store`. Elle partage une clé de cache avec la page HTML, donc cette réponse n'est jamais mise en cache.
 
 ### Réponses d'erreur
 
 | Statut | Signification |
-|--------|---------|
+|--------|-------------|
 | `308` | Redirection de barre oblique finale (ex. `/intro.md/` redirige vers `/intro.md`) |
-| `404` | La page n'existe pas (retourne une courte erreur en texte brut, pas en Markdown) |
-| `500` | Erreur serveur (retourne une page d'erreur HTML) |
+| `404` | La page n'existe pas (renvoie une courte erreur en texte brut, pas du Markdown) |
+| `500` | Erreur serveur (renvoie une page d'erreur HTML) |
 
 ## Utilisation avec les outils IA
 
-Les URL de source Markdown se combinent bien avec le [serveur MCP](/fr/ai/mcp-server). Utilisez `searchDocs` pour trouver des pages par mot-clé, puis récupérez la source brute de la page correspondante :
+Les URLs de source Markdown se combinent bien avec le [serveur MCP](/fr/ai/mcp-server). Utilisez `searchDocs` pour trouver des pages par mot-clé, puis récupérez le source brut de la page correspondante :
 
 ```bash
 # 1. Search for a topic via MCP
@@ -104,7 +104,7 @@ curl -X POST https://acme.jamdesk.app/_mcp \
 curl https://acme.jamdesk.app/guides/authentication.md
 ```
 
-Cela offre aux outils IA à la fois la recherche et l'accès à la source complète de votre documentation.
+Cela donne aux outils IA à la fois la recherche et l'accès complet au source de votre documentation.
 
 ## Et ensuite ?
 
@@ -112,7 +112,7 @@ Cela offre aux outils IA à la fois la recherche et l'accès à la source compl�
   <Card title="Serveur MCP" icon="robot" href="/fr/ai/mcp-server">
     Connectez des assistants IA directement à vos docs
   </Card>
-  <Card title="Bases de Markdown" icon="pen-nib" href="/fr/content/mdx-basics">
+  <Card title="Bases du Markdown" icon="pen-nib" href="/fr/content/mdx-basics">
     Référence de syntaxe MDX pour les pages de documentation
   </Card>
 </Columns>

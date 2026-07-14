@@ -1,28 +1,28 @@
 ---
 title: Contrôle d'accès
-description: "Choisissez comment vos lecteurs accèdent à vos docs : entièrement public, protégé par mot de passe, mixte ou SSO. Comparez les options et choisissez celle qui convient."
+description: "Choisissez comment vos lecteurs accèdent à vos docs : public, protégé par mot de passe, mixte, ou SSO. Comparez les options selon votre audience."
 ---
 
-Jamdesk vous offre quatre façons de contrôler qui peut lire vos docs. La plupart des équipes en choisissent une et s'y tiennent ; certaines combinent les approches.
+Jamdesk propose quatre façons de contrôler qui peut lire vos docs. La plupart des équipes en choisissent une et s'y tiennent ; certaines combinent plusieurs approches.
 
 ## Choisir la bonne approche
 
 | Approche | À utiliser quand | Configuration |
 |---|---|---|
-| **Entièrement public** | Docs produit externe, projets open source, tout ce que vous souhaitez indexer et partager. | Par défaut — aucune configuration. |
-| **Mot de passe sur tout le site** | Tout est interne : runbooks d'ingénierie, docs partenaires, produit non encore lancé. Une phrase secrète commune protège l'ensemble du site. | `auth.password.enabled: true` dans `docs.json` + définir le mot de passe dans le dashboard. Voir [Protection par mot de passe](/fr/setup/password-protection). |
-| **Mixte (certaines pages privées)** | La plupart des docs sont publiques ; quelques-unes sont internes (un runbook, une fonctionnalité bêta, une référence API interne). | Ajoutez `private: true` dans le frontmatter des pages internes, ou listez-les sous `auth.password.private[]`. Voir [Protection par mot de passe](/fr/setup/password-protection). |
-| **SSO (Enterprise)** | Les lecteurs doivent se connecter avec votre fournisseur d'identité existant — pas de mot de passe partagé, piste d'audit, révocation par suppression de l'utilisateur. | Plan Enterprise. Voir [SSO](/fr/setup/sso). |
+| **Entièrement public** | Documentation produit destinée à l'externe, projets open source, tout ce que vous voulez indexer et partager. | Par défaut ; aucune configuration nécessaire. |
+| **Mot de passe pour tout le site** | Tout est interne : runbooks d'ingénierie, docs réservées aux partenaires, produit non publié. Une phrase de passe partagée protège l'ensemble du site. | `auth.password.enabled: true` dans `docs.json` + définir le mot de passe dans le dashboard. Voir [Protection par mot de passe](/fr/setup/password-protection). |
+| **Mixte (certaines pages privées)** | La majorité des docs sont publiques ; quelques-unes sont internes (un runbook, une fonctionnalité bêta, une référence API interne). | Ajoutez `private: true` au frontmatter des pages internes, ou listez-les sous `auth.password.private[]`. Voir [Protection par mot de passe](/fr/setup/password-protection). |
+| **SSO (Enterprise)** | Les lecteurs doivent se connecter avec votre fournisseur d'identité existant : pas de mots de passe partagés, une piste d'audit, et un déprovisionnement en supprimant l'utilisateur. | Plan Enterprise. Voir [SSO](/fr/setup/sso). |
 
 <Tip>
-  Vous pouvez passer d'une approche à l'autre à tout moment en modifiant `docs.json` et en poussant vos modifications. Passer du mode site entier au mode mixte (ou inversement) nécessite un seul build.
+  Vous pouvez changer d'approche à tout moment en modifiant `docs.json` et en poussant vos changements. Passer du mode site entier au mode mixte (ou inversement) prend un seul build.
 </Tip>
 
-## Cas d'usage courants
+## Modèles courants
 
 ### Docs internes et externes dans un seul projet
 
-La plupart des équipes veulent des docs internes étendues protégées par une connexion, en parallèle d'un site public plus restreint pour les clients. Vous n'avez pas besoin de deux projets. Utilisez le **mode mixte** dans un seul projet Jamdesk :
+La plupart des équipes veulent une documentation interne étendue derrière une connexion, aux côtés d'un site public plus restreint pour les clients. Vous n'avez pas besoin de deux projets. Utilisez le **mode mixte** dans un seul projet Jamdesk :
 
 ```yaml
 ---
@@ -31,9 +31,9 @@ private: true
 ---
 ```
 
-Les pages avec `private: true` sont protégées ; tout le reste reste public. Un seul dépôt, un seul build, un seul dashboard. L'écran de déverrouillage n'apparaît que lorsqu'un lecteur accède à une page protégée.
+Les pages avec `private: true` sont protégées ; tout le reste reste public. Tout vit dans un seul repo avec un seul build et un seul dashboard. L'écran de déverrouillage n'apparaît que lorsqu'un lecteur atteint une page protégée.
 
-Pour les sections internes plus importantes, listez les chemins dans `docs.json` plutôt que de marquer chaque fichier. Remarque : `auth.password.private[]` active automatiquement le mode pages spécifiques — vous n'ajoutez pas `enabled: true` (c'est le mode site entier, soit l'opposé de ce que vous souhaitez ici).
+Pour des sections internes plus vastes, listez les chemins dans `docs.json` plutôt que de marquer chaque fichier. Remarque : `auth.password.private[]` active automatiquement le mode pages spécifiques. N'ajoutez pas `enabled: true` en même temps (c'est le mode site entier, l'inverse de ce que vous voulez ici).
 
 ```json docs.json
 {
@@ -48,29 +48,29 @@ Pour les sections internes plus importantes, listez les chemins dans `docs.json`
 
 ### Deux projets séparés
 
-Utilisez deux projets uniquement lorsque les audiences nécessitent des identités visuelles entièrement distinctes, des domaines personnalisés séparés, des analytics séparées ou des niveaux de plan différents. Par exemple : un site de docs public sur `docs.acme.com` et un wiki interne séparé sur `internal.acme.com`. Le coût de maintenance est plus élevé : deux builds, deux dashboards, deux domaines.
+N'utilisez deux projets que lorsque les audiences ont besoin d'un branding entièrement différent, de domaines personnalisés séparés, d'une analytique séparée, ou de niveaux de plan différents. Exemples : un site de docs public sur `docs.acme.com` et un wiki interne séparé sur `internal.acme.com`. Le coût de maintenance est plus élevé : deux builds, deux dashboards, deux domaines.
 
-### SSO pour le site de docs
+### SSO pour le site de documentation
 
-Sur les plans Enterprise, les lecteurs se connectent avec votre fournisseur d'identité (Okta, Google Workspace, Azure AD, etc.) plutôt que de saisir un mot de passe partagé. Cette approche convient mieux lorsque vous avez besoin d'une piste d'audit de qui a lu quoi, ou lorsque le retrait d'un utilisateur doit révoquer immédiatement son accès aux docs. Voir [SSO](/fr/setup/sso) pour la vue d'ensemble et pour initier une conversation avec l'équipe commerciale.
+Sur les plans Enterprise, les lecteurs se connectent avec votre fournisseur d'identité (Okta, Google Workspace, Azure AD, etc.) au lieu de saisir un mot de passe partagé. Idéal quand vous avez besoin d'une piste d'audit de qui a lu quoi, ou quand le offboarding d'un utilisateur doit révoquer immédiatement son accès aux docs. Voir [SSO](/fr/setup/sso) pour une vue d'ensemble et savoir comment démarrer une conversation avec l'équipe commerciale.
 
-## Éditeurs et lecteurs
+## Éditeurs vs lecteurs
 
-On confond parfois trois concepts d'accès distincts :
+Les gens confondent parfois trois concepts d'accès différents :
 
 | Rôle | Ce qu'ils font | Comment l'accès est accordé |
 |---|---|---|
-| **Éditeurs** | Rédigent et mettent à jour le contenu MDX. | Les docs sont modifiées en committant du MDX dans votre dépôt GitHub connecté, donc **les permissions de votre dépôt GitHub sont les permissions des éditeurs**. Il n'existe pas de rôle éditeur Jamdesk distinct en plus — toute personne pouvant pousser vers votre branche docs peut publier une modification. |
-| **Lecteurs** | Consultent le site de docs publié. | Tout le monde (public), toute personne connaissant le mot de passe (mode mot de passe), ou toute personne authentifiée via votre IdP (SSO). |
-| **Membres de l'équipe dashboard** | Gèrent les builds, les analytics et les paramètres du projet dans le dashboard Jamdesk. | Invités via **Paramètres → Équipe** dans le dashboard. Ils ne rédigent pas de contenu directement. Voir [Membres de l'équipe](/fr/help/projects/team-members). |
+| **Éditeurs** | Rédigent et mettent à jour le contenu MDX. | Les docs sont modifiées en committant du MDX dans votre repo GitHub connecté, donc **les permissions de votre repo GitHub sont les permissions d'éditeur**. Il n'existe pas de rôle d'éditeur Jamdesk séparé superposé : quiconque peut pousser sur votre branche de docs peut publier un changement. |
+| **Lecteurs** | Consultent le site de documentation publié. | Tout le monde (public), quiconque possède le mot de passe (mode mot de passe), ou quiconque authentifié via votre IdP (SSO). |
+| **Membres de l'équipe du dashboard** | Gèrent les builds, l'analytique et les paramètres du projet dans le dashboard Jamdesk. | Invités via **Settings → Team** dans le dashboard. Ils ne rédigent pas de contenu directement. Voir [Membres de l'équipe](/fr/help/projects/team-members). |
 
-Un membre de l'équipe peut cumuler n'importe quelle combinaison des trois rôles. Ce sont des axes indépendants.
+Un coéquipier peut cumuler n'importe quelle combinaison des trois. Ce sont des axes indépendants.
 
-## Prochaines étapes
+## Et ensuite ?
 
 <Columns cols={2}>
   <Card title="Protection par mot de passe" icon="lock" href="/fr/setup/password-protection">
-    Protection par mot de passe sur tout le site et par page, indices, rotation et contrôles de session.
+    Protection par mot de passe pour tout le site et par page, indices, rotation, et contrôles de session.
   </Card>
   <Card title="SSO (Enterprise)" icon="key" href="/fr/setup/sso">
     Connexion avec votre fournisseur d'identité pour le dashboard et les docs.

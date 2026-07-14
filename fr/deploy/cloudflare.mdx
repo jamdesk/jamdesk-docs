@@ -1,29 +1,29 @@
 ---
 title: Cloudflare Workers
-description: "Redirigez les requêtes /docs vers votre documentation Jamdesk via un Cloudflare Worker. Configuration du Worker, patterns de routes et cache."
+description: "Redirigez les requêtes /docs via un Cloudflare Worker vers votre site de documentation Jamdesk. Configuration du Worker, routes et mise en cache."
 ---
 
-Un [Cloudflare Worker](https://workers.cloudflare.com/) intercepte les requêtes à `/docs` sur votre domaine, les réécrit vers votre sous-domaine Jamdesk, et retourne la réponse -- entièrement en edge, sans serveur d'origine requis. Vous pouvez générer le Worker automatiquement avec `npx jamdesk deploy-proxy cloudflare` ou le configurer manuellement ci-dessous.
+Un [Cloudflare Worker](https://workers.cloudflare.com/) intercepte les requêtes sur `/docs` de votre domaine, les réécrit vers votre sous-domaine Jamdesk, puis retourne la réponse, le tout en périphérie (edge) sans serveur d'origine requis. Vous pouvez générer le Worker automatiquement avec `npx jamdesk deploy-proxy cloudflare` ou le configurer manuellement ci-dessous.
 
 ## Fonctionnement
 
-Le Worker transfère les requêtes vers votre sous-domaine Jamdesk en transmettant le domaine original dans l'en-tête `X-Jamdesk-Forwarded-Host`. Jamdesk utilise cet en-tête pour :
+Le Worker transmet les requêtes à votre sous-domaine Jamdesk en transmettant le domaine d'origine dans l'en-tête `X-Jamdesk-Forwarded-Host`. Jamdesk utilise cet en-tête pour :
 
-1. **Vérifier votre domaine** - S'assure que seuls les domaines autorisés peuvent servir vos docs
+1. **Vérifier votre domaine** - Garantit que seuls les domaines autorisés peuvent servir votre documentation
 2. **Appliquer la configuration correcte** - Utilise les paramètres de votre domaine depuis le dashboard
 
-Cela signifie que le Worker est une **configuration unique**. Si vous changez ultérieurement votre domaine personnalisé ou votre configuration dans le dashboard Jamdesk, le Worker n'a pas besoin d'être mis à jour — toutes les décisions de routage sont prises côté serveur.
+Cela signifie que le Worker nécessite une **configuration unique**. Si vous modifiez ultérieurement votre domaine personnalisé ou votre configuration dans le dashboard Jamdesk, le Worker n'a pas besoin d'être mis à jour ; toutes les décisions de routage sont prises côté serveur.
 
 ## Prérequis
 
 - Un compte Cloudflare avec votre domaine configuré
 - [Wrangler CLI](https://developers.cloudflare.com/workers/wrangler/install-and-update/) v3.0+ installé
-- Votre sous-domaine Jamdesk (accessible dans les paramètres du dashboard)
-- Votre domaine personnalisé ajouté à votre projet dans le dashboard Jamdesk (le Worker renvoie une erreur 403 tant que le domaine n'est pas enregistré et vérifié)
+- Votre sous-domaine Jamdesk (disponible dans les paramètres du dashboard)
+- Votre domaine personnalisé ajouté à votre projet dans le dashboard Jamdesk (le Worker retourne une erreur 403 tant que le domaine n'est pas enregistré et vérifié)
 
 ## Configuration rapide avec le CLI
 
-La méthode la plus rapide pour configurer votre Cloudflare Worker :
+Le moyen le plus rapide de configurer votre Cloudflare Worker :
 
 ```bash
 npx jamdesk deploy-proxy cloudflare
@@ -33,13 +33,13 @@ Cette commande interactive va :
 1. Vérifier que wrangler 3.0+ est installé
 2. Vérifier votre compte Cloudflare et afficher les domaines disponibles
 3. Résoudre votre sous-domaine Jamdesk à partir du projet lié dans `docs.json`
-4. Vous permettre de sélectionner votre domaine cible parmi vos zones Cloudflare
+4. Vous laisser sélectionner votre domaine cible parmi vos zones Cloudflare
 5. Générer tous les fichiers requis
 6. Optionnellement déployer sur Cloudflare
 
 ### Sélection du compte
 
-Le CLI vérifie que vous êtes connecté au bon compte Cloudflare avant de continuer. Si vous avez accès à plusieurs comptes Cloudflare (courant pour les agences ou équipes), vous serez invité à choisir :
+Le CLI vérifie que vous êtes connecté au bon compte Cloudflare avant de continuer. Si vous avez accès à plusieurs comptes Cloudflare (fréquent pour les agences ou les équipes), il vous sera demandé de choisir :
 
 ``` text
 Step 2: Verifying Cloudflare account...
@@ -63,23 +63,23 @@ Assurez-vous de sélectionner le compte Cloudflare qui possède le domaine vers 
 
 ### Déploiement CI/scripté
 
-Pour un déploiement CI ou scripté, utilisez des flags pour ignorer les invites :
+Pour le CI/scripting, utilisez des flags pour ignorer les invites :
 
 ```bash
 jamdesk deploy-proxy cloudflare --slug myproject --domain example.com --skip-deploy --yes
 ```
 
-Avec `--yes`, le CLI ne peut pas afficher d'invite : elle doit donc connaître votre sous-domaine. Elle le lit depuis le projet lié dans `docs.json` ; si ce lien est absent (lancez `jamdesk deploy` une fois pour l'ajouter), passez `--slug` explicitement, sinon la commande s'arrête au lieu de deviner.
+Avec `--yes`, le CLI ne peut pas afficher d'invite, il doit donc connaître votre sous-domaine. Il le lit depuis le projet lié dans `docs.json` ; si ce lien est absent (exécutez `jamdesk deploy` une fois pour l'ajouter), passez `--slug` explicitement, sinon la commande s'arrête plutôt que de deviner.
 
 | Option | Description |
 |--------|-------------|
 | `--slug` | Votre sous-domaine Jamdesk, le `X` dans `X.jamdesk.app` (ignore la détection automatique) |
-| `--domain` | Domaine cible (ex. : yoursite.com) |
-| `--path` | Préfixe de chemin (défaut : /docs) |
-| `--output-dir` | Répertoire de sortie (défaut : cloudflare-worker/) |
-| `--skip-deploy` | Génère les fichiers uniquement, sans déployer |
-| `--force` | Écrase le répertoire existant |
-| `--yes` | Ignore toutes les invites (mode CI) |
+| `--domain` | Domaine cible (ex. yoursite.com) |
+| `--path` | Préfixe de chemin (par défaut : /docs) |
+| `--output-dir` | Répertoire de sortie (par défaut : cloudflare-worker/) |
+| `--skip-deploy` | Générer les fichiers uniquement, sans déployer |
+| `--force` | Écraser le répertoire existant |
+| `--yes` | Ignorer toutes les invites (mode CI) |
 
 Si vous préférez une configuration manuelle, continuez avec les étapes ci-dessous.
 
@@ -165,14 +165,14 @@ export default {
 ```
 
 <Note>
-Remplacez `YOUR_SLUG` par votre sous-domaine Jamdesk réel (ex. : `acme` si vos docs sont à `acme.jamdesk.app`).
+Remplacez `YOUR_SLUG` par votre sous-domaine Jamdesk réel (ex. `acme` si votre documentation se trouve sur `acme.jamdesk.app`).
 </Note>
 
 <Warning>
 L'en-tête `X-Jamdesk-Forwarded-Host` est **obligatoire**. Il permet :
 - La vérification du domaine (votre domaine doit être enregistré dans le dashboard)
-- La génération correcte des URL pour les liens et les ressources
-- La configuration adéquate depuis les paramètres de votre dashboard
+- La génération correcte des URL pour les liens et les assets
+- La configuration correcte depuis les paramètres de votre dashboard
 
 Sans cet en-tête, les requêtes seront rejetées avec une erreur 403.
 </Warning>
@@ -193,7 +193,7 @@ routes = [
 ```
 
 <Tip>
-Si votre site sert également du trafic sur `www.yoursite.com`, ajoutez une seconde route afin que le Worker gère les deux :
+Si votre site sert également du trafic sur `www.yoursite.com`, ajoutez une seconde route pour que le Worker gère les deux :
 
 ```toml
 routes = [
@@ -217,7 +217,7 @@ Visitez `https://yoursite.com/docs` pour confirmer que votre documentation est c
 
 ## Alternative : syntaxe Service Worker
 
-Si vous préférez l'ancienne syntaxe Service Worker (compatible avec les Workers plus anciens) :
+Si vous préférez l'ancienne syntaxe Service Worker (compatible avec les anciens Workers) :
 
 ```javascript index.js
 const JAMDESK_HOST = "YOUR_SLUG.jamdesk.app";
@@ -280,90 +280,90 @@ async function handleRequest(request) {
 Le CLI affiche vos domaines disponibles avant la sélection de zone. Si vous voyez "No domains found" :
 1. Vérifiez que vous êtes connecté au bon compte Cloudflare
 2. Vérifiez que votre domaine est ajouté et actif dans le dashboard Cloudflare
-3. Relancez le CLI et sélectionnez "No" lorsqu'on vous demande de continuer avec le compte actuel pour changer de compte
+3. Relancez le CLI et sélectionnez "No" lorsqu'il vous est demandé de continuer avec le compte actuel pour changer de compte
 </Accordion>
 
 <Accordion title="Mauvais compte Cloudflare">
 Si vous avez plusieurs comptes Cloudflare :
 1. Exécutez `jamdesk deploy-proxy cloudflare`
-2. Lorsqu'on vous invite à sélectionner un compte, choisissez celui qui possède votre domaine
-3. Si vous avez besoin d'une connexion entièrement différente, sélectionnez **"Switch to different login"**
+2. Lorsqu'on vous demande de sélectionner un compte, choisissez celui qui possède votre domaine
+3. Si vous avez besoin d'une connexion complètement différente, sélectionnez **"Switch to different login"**
 4. Le CLI vous déconnectera et vous invitera à vous connecter avec les identifiants corrects
 </Accordion>
 
-<Accordion title="Zone introuvable lors du déploiement">
+<Accordion title="Zone introuvable pendant le déploiement">
 Cette erreur signifie que la zone sélectionnée ne correspond pas à votre compte Cloudflare. Soit :
 - Vous avez sélectionné une zone appartenant à un autre compte
 - La zone a été supprimée de Cloudflare
 
-Correction : Relancez le CLI et sélectionnez la zone correcte dans la liste, ou basculez vers le compte propriétaire de la zone.
+Solution : relancez le CLI et sélectionnez la bonne zone dans la liste, ou passez au compte propriétaire de la zone.
 </Accordion>
 
 <Accordion title="Erreurs 404 sur les pages de documentation">
-Assurez-vous que votre pattern de route utilise un catch-all : `yoursite.com/*` (et non pas seulement `yoursite.com/docs*`). La fonction interne `shouldProxy()` du Worker gère le filtrage des chemins.
+Assurez-vous que votre route utilise un caractère générique : `yoursite.com/*` (pas seulement `yoursite.com/docs*`). La fonction interne `shouldProxy()` du Worker gère le filtrage des chemins.
 </Accordion>
 
-<Accordion title="Les ressources ne se chargent pas correctement">
+<Accordion title="Les assets ne se chargent pas correctement">
 Deux causes courantes :
 
-1. **Worker non actif.** Assurez-vous que votre enregistrement DNS est défini sur **Proxied** (nuage orange) dans Cloudflare. Les Workers ne s'exécutent que sur les enregistrements proxifiés.
-2. **En-tête `X-Forwarded-Host` manquant.** Le Worker doit définir cet en-tête pour que Jamdesk génère des URL de ressources correctes.
+1. **Le Worker ne s'exécute pas.** Assurez-vous que votre enregistrement DNS est défini sur **Proxied** (nuage orange) dans Cloudflare. Les Workers ne s'exécutent que sur les enregistrements proxifiés.
+2. **En-tête `X-Forwarded-Host` manquant.** Le Worker doit définir cet en-tête pour que Jamdesk génère les URLs d'assets correctes.
 </Accordion>
 
-<Accordion title="Erreur 403 : domaine non autorisé">
+<Accordion title="Erreur 403 domaine non autorisé">
 Si vous voyez "Domain is not authorized to serve this content" :
 
 1. Vérifiez que votre domaine est enregistré dans le dashboard Jamdesk
 2. Complétez la vérification DNS (enregistrement TXT) pour votre domaine
 3. Assurez-vous que l'en-tête `X-Jamdesk-Forwarded-Host` est défini dans le code de votre Worker
-4. Vérifiez que votre domaine est associé au bon projet
+4. Vérifiez que votre domaine correspond au bon projet
 
 Le domaine doit être vérifié avant que le Worker puisse servir la documentation.
 </Accordion>
 
 <Accordion title="Le Worker ne se déclenche pas sur le domaine racine (apex)">
-Les Workers ne s'exécutent que sur les enregistrements DNS **proxifiés** (nuage orange). Si votre enregistrement A est défini sur "DNS only" (nuage gris), les requêtes vont directement à l'origine et contournent entièrement le Worker.
+Les Workers ne s'exécutent que sur les enregistrements DNS **proxifiés** (nuage orange). Si votre enregistrement A est défini sur "DNS only" (nuage gris), les requêtes vont directement à l'origine et contournent complètement le Worker.
 
-**Correction :** Basculez l'enregistrement A en proxifié (nuage orange) dans Cloudflare DNS. Même chose pour les sous-domaines : tout enregistrement avec une route Worker doit être proxifié.
+**Solution :** Basculez l'enregistrement A vers proxifié (nuage orange) dans Cloudflare DNS. La même règle s'applique aux sous-domaines : tout enregistrement avec une route Worker doit être proxifié.
 </Accordion>
 
-<Accordion title="La vérification du domaine est bloquée sur Pending">
-Jamdesk vérifie la propriété en lisant directement les valeurs de vos enregistrements DNS. Le proxy Cloudflare (nuage orange) masque ces valeurs, ce qui empêche la vérification de se terminer.
+<Accordion title="Vérification du domaine bloquée sur Pending">
+Jamdesk vérifie la propriété en lisant directement les valeurs de votre enregistrement DNS. Le proxy Cloudflare (nuage orange) masque ces valeurs, ce qui empêche la vérification de se terminer.
 
-**Correction :**
+**Solution :**
 1. Définissez l'enregistrement DNS sur **DNS only** (nuage gris)
-2. Attendez que la vérification soit complète (le statut passe à **active** dans le dashboard)
-3. Rebasculez sur **Proxied** (nuage orange) pour que le Worker s'exécute
+2. Attendez que la vérification se termine (le statut passe à **active** dans le dashboard)
+3. Repassez sur **Proxied** (nuage orange) pour que le Worker s'exécute
 
-En résumé : **nuage gris** pour vérifier → **nuage orange** pour servir.
+En bref : **nuage gris** pour vérifier → **nuage orange** pour servir.
 </Accordion>
 
-<Accordion title="Fonctionnement du cache">
-Jamdesk sert le HTML de la documentation avec `Cache-Control: no-store`, donc Cloudflare ne met pas les pages en cache à l'edge (`cf-cache-status: BYPASS`). Chaque requête rend la version actuelle, et les changements publiés apparaissent immédiatement, sans délai de cache.
+<Accordion title="Fonctionnement de la mise en cache">
+Jamdesk sert le HTML de la documentation avec `Cache-Control: no-store`, donc Cloudflare ne met pas les pages en cache en périphérie (`cf-cache-status: BYPASS`). Chaque requête affiche la version actuelle, et les modifications publiées apparaissent immédiatement sans délai de cache.
 
-Les ressources statiques sous `/_next/` et `/_jd/` (JavaScript, CSS, polices, images) sont servies avec des en-têtes de cache `immutable` de longue durée, donc Cloudflare les met en cache à l'edge. Leurs noms de fichiers sont hachés selon leur contenu : chaque build produit de nouvelles URL et les ressources mises à jour sont prises en compte automatiquement. Aucune purge requise.
+Les assets statiques sous `/_next/` et `/_jd/` (JavaScript, CSS, polices, images) sont servis avec des en-têtes de cache `immutable` longue durée, donc Cloudflare les met en cache en périphérie. Leurs noms de fichiers sont hachés selon leur contenu, donc chaque build produit de nouvelles URLs et les assets mis à jour sont récupérés automatiquement. Aucune purge requise.
 
-`cacheEverything: true` permet à Cloudflare de mettre en cache ces ressources statiques sur la route proxifiée ; cela n'annule pas le `no-store` du HTML. Pour vider le cache edge manuellement, utilisez la fonctionnalité **Purge Cache** de Cloudflare (Caching → Configuration → Purge Everything).
+`cacheEverything: true` permet à Cloudflare de mettre en cache ces assets statiques sur la route proxifiée ; cela ne remplace pas le `no-store` sur le HTML. Pour vider manuellement le cache en périphérie, utilisez **Purge Cache** de Cloudflare (Caching → Configuration → Purge Everything).
 </Accordion>
 
 <Accordion title="Version de Wrangler trop ancienne">
-Le CLI requiert wrangler 3.0+. Mettez à jour avec :
+Le CLI nécessite wrangler 3.0+. Mettez à jour avec :
 
 ```bash
 npm install -g wrangler@latest
 ```
 </Accordion>
 
-## Et ensuite ?
+## Suite
 
 <Columns cols={3}>
-  <Card title="Vue d'ensemble du déploiement" icon="cloud-arrow-up" href="/fr/deploy/overview">
+  <Card title="Aperçu du déploiement" icon="cloud-arrow-up" href="/fr/deploy/overview">
     Comparer les options d'hébergement
   </Card>
-  <Card title="Hébergement en sous-chemin" icon="folder-tree" href="/fr/deploy/subpath-hosting">
-    Servir les docs à /docs
+  <Card title="Hébergement sous-chemin" icon="folder-tree" href="/fr/deploy/subpath-hosting">
+    Servir la documentation sur /docs
   </Card>
   <Card title="Domaines personnalisés" icon="globe" href="/fr/deploy/custom-domains">
-    Vérifier DNS et résoudre les problèmes
+    Vérifier le DNS et dépanner
   </Card>
 </Columns>
