@@ -1,0 +1,212 @@
+---
+title: Prompt
+description: Utilisez Prompt pour présenter des instructions d’IA réutilisables avec copie, actions d’ouverture intégrées, destinations, icônes et affichage compact.
+---
+
+Le composant `<Prompt>` transforme un ensemble d’instructions réutilisables en une carte que les lecteurs peuvent copier ou ouvrir dans un outil d’IA compatible. Les actions de copie et d’ouverture utilisent exactement le contenu rédigé que voient les humains entre les balises.
+
+## Utilisation de base
+
+Chaque Prompt inclut une action Copier. La version la plus simple ne nécessite donc aucune prop :
+
+<Prompt>
+Expliquez le fonctionnement de la rotation des clés API à un développeur qui utilise notre API REST pour la première fois.
+</Prompt>
+
+```mdx
+<Prompt>
+Explain how API key rotation works for a developer using our REST API for the first time.
+</Prompt>
+```
+
+## Titre et description
+
+Utilisez `title` pour nommer la tâche. La prop `description`, compatible avec Mintlify, remplace l’aperçu visible par un résumé plus court, tandis que le contenu rédigé que voient les humains entre les balises reste le prompt complet utilisé par les actions Copier et d’ouverture.
+
+<Prompt
+  title="Rédiger une note de version"
+  description="Rédigez une note de version concise pour un public de développeurs."
+  actions={["copy", "cursor"]}
+>
+Rédigez une note de version pour le nouveau point de terminaison de rotation des clés API.
+
+- Adressez-vous aux développeurs backend.
+- Commencez par l’avantage pour l’utilisateur.
+- Incluez un exemple de requête.
+</Prompt>
+
+```mdx
+<Prompt
+  title="Draft a release note"
+  description="Write a concise release note for a developer audience."
+  actions={["copy", "cursor"]}
+>
+Write a release note for the new API key rotation endpoint.
+
+- Address backend developers.
+- Lead with the user benefit.
+- Include one request example.
+</Prompt>
+```
+
+L’action explicite `"copy"` est acceptée à des fins de compatibilité, mais Copier est toujours présent et n’a jamais besoin d’être indiqué.
+
+<Note>
+  Prompt copie exactement le contenu rédigé que voient les humains. Lorsqu’un prompt contient [Visibility](/components/visibility), les balises d’enveloppe réservées aux humains sont omises du texte copié, mais leur contenu est conservé. Les sous-arborescences réservées aux agents ou dont le public n’est pas résolu sont exclues. Un Prompt masqué dans un composant Visibility réservé aux agents ou dont le public n’est pas résolu ne possède aucune source copiable.
+</Note>
+
+## Actions d’ouverture
+
+Ajoutez `cursor`, `claude` ou `chatgpt` pour permettre aux lecteurs d’ouvrir le prompt dans ces outils. La première action d’ouverture valide apparaît à côté de Copier ; les actions supplémentaires figurent dans le menu Plus.
+
+<Prompt
+  title="Comparer les flux d’authentification"
+  actions={["cursor", "claude", "chatgpt"]}
+>
+Comparez les flux d’authentification par jeton de session et par clé API dans ce dépôt. Énumérez leurs compromis de sécurité et recommandez le flux que chaque type de client doit utiliser.
+</Prompt>
+
+```mdx
+<Prompt
+  title="Compare authentication flows"
+  actions={["cursor", "claude", "chatgpt"]}
+>
+Compare the session-token and API-key authentication flows in this repository.
+List their security tradeoffs and recommend which flow each client type should use.
+</Prompt>
+```
+
+<Warning>
+  Cliquer sur une action d’ouverture envoie l’intégralité du prompt copiable au tiers sélectionné. N’incluez pas de secrets, de données personnelles ni de contenu propriétaire, sauf si vous souhaitez les partager conformément à la politique de confidentialité de ce fournisseur. Copier n’ouvre aucun service tiers.
+</Warning>
+
+## Actions avec URL personnalisée
+
+Les actions personnalisées acceptent un `label`, une `url` HTTPS ou HTTP et une icône facultative. Placez `{prompt}` dans un segment de chemin, une valeur de requête ou un fragment pour définir l’emplacement du prompt encodé dans l’URL. Si vous omettez cet espace réservé, Jamdesk ajoute un paramètre de requête `prompt`.
+
+<Prompt
+  title="Étudier cette migration"
+  actions={[
+    {
+      label: "Ouvrir dans Perplexity",
+      url: "https://www.perplexity.ai/search?q={prompt}",
+      icon: "magnifying-glass",
+    },
+    "claude",
+  ]}
+>
+Comparez ce plan de migration au contrat actuel de l’API publique. Identifiez les changements incompatibles, les étapes de restauration manquantes et les tests nécessaires avant la mise en production.
+</Prompt>
+
+```mdx
+<Prompt
+  title="Research this migration"
+  actions={[
+    {
+      label: "Open in Perplexity",
+      url: "https://www.perplexity.ai/search?q={prompt}",
+      icon: "magnifying-glass",
+    },
+    "claude",
+  ]}
+>
+Compare this migration plan with the current public API contract. Identify
+breaking changes, missing rollback steps, and tests needed before release.
+</Prompt>
+```
+
+Les URL des actions personnalisées doivent être des URL `http:` ou `https:` sans identifiants. Jamdesk rejette les autres protocoles, les espaces réservés dans les origines ou les clés de requête, ainsi que les URL d’action finales de plus de 8 000 caractères. Copier reste disponible lorsqu’une action d’ouverture est rejetée.
+
+## Icône personnalisée
+
+Définissez `icon` sur un nom Font Awesome, une URL ou un chemin d’image, ou un SVG intégré. Utilisez `iconType` pour sélectionner le style d’un nom Font Awesome sans préfixe.
+
+<Prompt title="Planifier un tutoriel" icon="pen-nib" iconType="duotone">
+Élaborez le plan d’un tutoriel pratique qui mène un nouvel utilisateur de l’installation à une requête API réussie en moins de dix minutes.
+</Prompt>
+
+```mdx
+<Prompt title="Plan a tutorial" icon="pen-nib" iconType="duotone">
+  Outline a hands-on tutorial that gets a new user from installation to a
+  successful API request in under ten minutes.
+</Prompt>
+```
+
+Consultez [Icônes](/content/icons) pour connaître les noms et les styles disponibles.
+
+## Affichages compacts
+
+Utilisez `singleLine` pour limiter l’aperçu à une seule ligne. Le prompt complet visible par les humains est toujours copié ou envoyé par une action d’ouverture.
+
+<Prompt title="Résumer l’API" singleLine>
+Résumez l’API publique en cinq points. Présentez l’authentification, la pagination, les limites de débit, les erreurs et le versionnage. Reliez chaque point à la page de documentation correspondante.
+</Prompt>
+
+Utilisez `hidePrompt` avec un titre lorsque le libellé suffit à donner le contexte aux lecteurs :
+
+<Prompt title="Générer une liste de contrôle de migration" hidePrompt actions={["claude"]}>
+Créez une liste de contrôle pour migrer de l’API v1 vers la v2. Incluez les prérequis, les modifications du code, les étapes de validation, les critères de restauration et l’approbation du responsable.
+</Prompt>
+
+```mdx
+<Prompt title="Summarize the API" singleLine>
+  Summarize the public API in five bullets. Cover authentication, pagination,
+  rate limits, errors, and versioning.
+</Prompt>
+
+<Prompt title="Generate a migration checklist" hidePrompt actions={["claude"]}>
+  Create a migration checklist for moving from API v1 to v2. Include
+  prerequisites, code changes, validation steps, and rollback criteria.
+</Prompt>
+```
+
+`hidePrompt` masque l’aperçu uniquement lorsque `title` est présent. Sans titre, Jamdesk maintient le prompt visible pour que la carte reste compréhensible.
+
+## Props
+
+<ParamField name="children" type="ReactNode">
+  Le contenu du prompt entre les balises d’ouverture et de fermeture. Jamdesk conserve exactement le Markdown rédigé que voient les humains pour les actions Copier et d’ouverture ; il affiche également ce contenu comme aperçu, sauf si `description` remplace l’aperçu ou si `hidePrompt` le masque. Le filtrage par Visibility suit les règles décrites ci-dessus.
+</ParamField>
+
+<ParamField name="title" type="string">
+  Libellé affiché dans l’en-tête de la carte. Aucun titre n’est affiché par défaut.
+</ParamField>
+
+<ParamField name="description" type="string">
+  Aperçu compact en Markdown intégré, accepté à des fins de compatibilité avec Mintlify. Il modifie uniquement l’aperçu visible ; le contenu rédigé que voient les humains reste le prompt copié ou envoyé.
+</ParamField>
+
+<ParamField name="icon" type="string | ReactElement" default="sparkles">
+  Icône d’en-tête. Accepte un nom Font Awesome, une URL ou un chemin d’image, ou un élément SVG intégré.
+</ParamField>
+
+<ParamField name="iconType" type="regular | solid | light | thin | sharp-solid | duotone | brands">
+  Style Font Awesome appliqué à une icône de type chaîne sans préfixe. Il ne modifie pas les URL et chemins d’image, les noms déjà préfixés ni les éléments SVG intégrés.
+</ParamField>
+
+<ParamField name="actions" type="('copy' | 'cursor' | 'claude' | 'chatgpt' | CustomAction)[]" default="[]">
+  Actions d’ouverture dans l’ordre d’affichage. `CustomAction` correspond à `{ label: string; url: string; icon?: string }`. Copier est toujours affiché ; une entrée `copy` explicite est acceptée et dédupliquée. Les actions d’ouverture non valides, dupliquées ou trop volumineuses sont omises.
+</ParamField>
+
+<ParamField name="singleLine" type="boolean | string" default="false">
+  Limite l’aperçu visible à une ligne lorsque la valeur est le booléen `true` ou la chaîne `"true"`. La chaîne `"false"` reste désactivée et le prompt complet est toujours utilisé par chaque action.
+</ParamField>
+
+<ParamField name="hidePrompt" type="boolean | string" default="false">
+  Masque l’aperçu visible lorsqu’un titre est présent et que la valeur est le booléen `true` ou la chaîne `"true"`. Sans titre, l’aperçu reste visible. La chaîne `"false"` reste désactivée.
+</ParamField>
+
+<ParamField name="className" type="string">
+  Noms de classes CSS supplémentaires appliqués à l’élément racine de la carte Prompt.
+</ParamField>
+
+## Et ensuite ?
+
+<Columns cols={2}>
+  <Card title="Rédiger avec l’IA" icon="wand-magic-sparkles" href="/ai/writing-with-ai">
+    Transformez les exigences d’une page en prompts ciblés
+  </Card>
+  <Card title="Vue d’ensemble des composants" icon="puzzle-piece" href="/components/overview">
+    Parcourez le reste de la bibliothèque de composants MDX
+  </Card>
+</Columns>

@@ -1,0 +1,212 @@
+---
+title: Prompt
+description: Usa Prompt para presentar instrucciones de IA reutilizables con copia, acciones de apertura integradas, destinos, iconos y opciones de vista compacta.
+---
+
+El componente `<Prompt>` convierte un conjunto reutilizable de instrucciones en una tarjeta que los lectores pueden copiar o abrir en una herramienta de IA compatible. Las acciones de copia y apertura usan exactamente el contenido redactado que ven los humanos entre las etiquetas.
+
+## Uso básico
+
+Cada Prompt incluye una acción Copiar, así que la versión más sencilla no necesita props:
+
+<Prompt>
+Explica cómo funciona la rotación de claves de API a un desarrollador que usa nuestra API REST por primera vez.
+</Prompt>
+
+```mdx
+<Prompt>
+Explain how API key rotation works for a developer using our REST API for the first time.
+</Prompt>
+```
+
+## Título y descripción
+
+Usa `title` para nombrar la tarea. La prop `description`, compatible con Mintlify, reemplaza la vista previa visible por un resumen más corto, mientras que el contenido redactado que ven los humanos entre las etiquetas sigue siendo el prompt completo que usan las acciones Copiar y de apertura.
+
+<Prompt
+  title="Redactar una nota de versión"
+  description="Escribe una nota de versión concisa para desarrolladores."
+  actions={["copy", "cursor"]}
+>
+Escribe una nota de versión para el nuevo endpoint de rotación de claves de API.
+
+- Dirígete a desarrolladores backend.
+- Comienza con el beneficio para el usuario.
+- Incluye un ejemplo de solicitud.
+</Prompt>
+
+```mdx
+<Prompt
+  title="Draft a release note"
+  description="Write a concise release note for a developer audience."
+  actions={["copy", "cursor"]}
+>
+Write a release note for the new API key rotation endpoint.
+
+- Address backend developers.
+- Lead with the user benefit.
+- Include one request example.
+</Prompt>
+```
+
+La acción explícita `"copy"` se acepta por compatibilidad, pero Copiar siempre está presente y nunca es necesario indicarla.
+
+<Note>
+  Prompt copia exactamente el contenido redactado que ven los humanos. Cuando un prompt contiene [Visibility](/components/visibility), las etiquetas contenedoras exclusivas para humanos se omiten del texto copiado, pero su contenido se conserva. Se excluyen los subárboles exclusivos para agentes o cuya audiencia no se ha resuelto. Un Prompt oculto dentro de un componente Visibility exclusivo para agentes o con una audiencia sin resolver no tiene una fuente que pueda copiarse.
+</Note>
+
+## Acciones de apertura
+
+Añade `cursor`, `claude` o `chatgpt` para que los lectores puedan abrir el prompt en esas herramientas. La primera acción de apertura válida aparece junto a Copiar; las acciones adicionales aparecen en el menú Más.
+
+<Prompt
+  title="Comparar flujos de autenticación"
+  actions={["cursor", "claude", "chatgpt"]}
+>
+Compara los flujos de autenticación mediante token de sesión y clave de API en este repositorio. Enumera sus implicaciones de seguridad y recomienda qué flujo debe usar cada tipo de cliente.
+</Prompt>
+
+```mdx
+<Prompt
+  title="Compare authentication flows"
+  actions={["cursor", "claude", "chatgpt"]}
+>
+Compare the session-token and API-key authentication flows in this repository.
+List their security tradeoffs and recommend which flow each client type should use.
+</Prompt>
+```
+
+<Warning>
+  Al hacer clic en una acción de apertura, se envía el prompt copiable completo al tercero seleccionado. No incluyas secretos, datos personales ni contenido propietario, salvo que quieras compartirlos de acuerdo con la política de privacidad de ese proveedor. Copiar no abre ningún servicio de terceros.
+</Warning>
+
+## Acciones con URL personalizada
+
+Las acciones personalizadas requieren un `label`, una `url` HTTPS o HTTP y un icono opcional. Coloca `{prompt}` en un segmento de ruta, un valor de consulta o un fragmento para controlar dónde se introduce el prompt codificado para URL. Si omites el marcador de posición, Jamdesk añade un parámetro de consulta `prompt`.
+
+<Prompt
+  title="Investigar esta migración"
+  actions={[
+    {
+      label: "Abrir en Perplexity",
+      url: "https://www.perplexity.ai/search?q={prompt}",
+      icon: "magnifying-glass",
+    },
+    "claude",
+  ]}
+>
+Compara este plan de migración con el contrato actual de la API pública. Identifica cambios incompatibles, pasos de reversión que faltan y las pruebas necesarias antes del lanzamiento.
+</Prompt>
+
+```mdx
+<Prompt
+  title="Research this migration"
+  actions={[
+    {
+      label: "Open in Perplexity",
+      url: "https://www.perplexity.ai/search?q={prompt}",
+      icon: "magnifying-glass",
+    },
+    "claude",
+  ]}
+>
+Compare this migration plan with the current public API contract. Identify
+breaking changes, missing rollback steps, and tests needed before release.
+</Prompt>
+```
+
+Las URL de las acciones personalizadas deben ser URL `http:` o `https:` sin credenciales. Jamdesk rechaza otros esquemas, marcadores de posición en orígenes o claves de consulta y URL de acción finales de más de 8000 caracteres. Copiar sigue disponible cuando se rechaza una acción de apertura.
+
+## Icono personalizado
+
+Define `icon` como un nombre de Font Awesome, una URL o ruta de imagen, o un SVG inline. Usa `iconType` para seleccionar el estilo de un nombre de Font Awesome sin prefijo.
+
+<Prompt title="Planificar un tutorial" icon="pen-nib" iconType="duotone">
+Esboza un tutorial práctico que lleve a un usuario nuevo desde la instalación hasta una solicitud de API correcta en menos de diez minutos.
+</Prompt>
+
+```mdx
+<Prompt title="Plan a tutorial" icon="pen-nib" iconType="duotone">
+  Outline a hands-on tutorial that gets a new user from installation to a
+  successful API request in under ten minutes.
+</Prompt>
+```
+
+Consulta [Iconos](/content/icons) para ver los nombres y estilos disponibles.
+
+## Vistas compactas
+
+Usa `singleLine` para limitar la vista previa a una sola línea. El prompt completo visible para humanos se sigue copiando o enviando mediante una acción de apertura.
+
+<Prompt title="Resumir la API" singleLine>
+Resume la API pública en cinco puntos. Incluye autenticación, paginación, límites de uso, errores y control de versiones. Enlaza cada punto con la página de documentación correspondiente.
+</Prompt>
+
+Usa `hidePrompt` con un título cuando la etiqueta por sí sola dé suficiente contexto a los lectores:
+
+<Prompt title="Generar una lista de migración" hidePrompt actions={["claude"]}>
+Crea una lista para migrar de la API v1 a la v2. Incluye requisitos previos, cambios de código, pasos de validación, criterios de reversión y aprobación del responsable.
+</Prompt>
+
+```mdx
+<Prompt title="Summarize the API" singleLine>
+  Summarize the public API in five bullets. Cover authentication, pagination,
+  rate limits, errors, and versioning.
+</Prompt>
+
+<Prompt title="Generate a migration checklist" hidePrompt actions={["claude"]}>
+  Create a migration checklist for moving from API v1 to v2. Include
+  prerequisites, code changes, validation steps, and rollback criteria.
+</Prompt>
+```
+
+`hidePrompt` solo oculta la vista previa cuando `title` está presente. Sin un título, Jamdesk mantiene el prompt visible para que la tarjeta siga siendo comprensible.
+
+## Props
+
+<ParamField name="children" type="ReactNode">
+  El contenido del prompt entre las etiquetas de apertura y cierre. Jamdesk conserva exactamente el Markdown redactado que ven los humanos para las acciones Copiar y de apertura; también renderiza este contenido como vista previa, salvo que `description` la reemplace o `hidePrompt` la oculte. El filtrado de Visibility sigue las reglas descritas anteriormente.
+</ParamField>
+
+<ParamField name="title" type="string">
+  Etiqueta que se muestra en el encabezado de la tarjeta. No se muestra ningún título de forma predeterminada.
+</ParamField>
+
+<ParamField name="description" type="string">
+  Vista previa compacta con Markdown inline que se acepta por compatibilidad con Mintlify. Solo cambia la vista previa visible; el contenido redactado que ven los humanos sigue siendo el prompt que se copia o envía.
+</ParamField>
+
+<ParamField name="icon" type="string | ReactElement" default="sparkles">
+  Icono del encabezado. Acepta un nombre de Font Awesome, una URL o ruta de imagen, o un elemento SVG inline.
+</ParamField>
+
+<ParamField name="iconType" type="regular | solid | light | thin | sharp-solid | duotone | brands">
+  Estilo de Font Awesome aplicado a un icono de cadena sin prefijo. No modifica las URL ni las rutas de imágenes, los nombres que ya incluyen un prefijo ni los elementos SVG inline.
+</ParamField>
+
+<ParamField name="actions" type="('copy' | 'cursor' | 'claude' | 'chatgpt' | CustomAction)[]" default="[]">
+  Acciones de apertura en orden de presentación. `CustomAction` es `{ label: string; url: string; icon?: string }`. Copiar siempre aparece; se acepta una entrada `copy` explícita y se eliminan sus duplicados. Se omiten las acciones de apertura no válidas, duplicadas o demasiado grandes.
+</ParamField>
+
+<ParamField name="singleLine" type="boolean | string" default="false">
+  Limita la vista previa visible a una línea cuando se establece en el booleano `true` o en la cadena `"true"`. La cadena `"false"` permanece desactivada y todas las acciones siguen usando el prompt completo.
+</ParamField>
+
+<ParamField name="hidePrompt" type="boolean | string" default="false">
+  Oculta la vista previa visible cuando hay un título y el valor es el booleano `true` o la cadena `"true"`. Sin un título, la vista previa permanece visible. La cadena `"false"` permanece desactivada.
+</ParamField>
+
+<ParamField name="className" type="string">
+  Nombres de clases CSS adicionales aplicados al elemento raíz de la tarjeta Prompt.
+</ParamField>
+
+## ¿Qué sigue?
+
+<Columns cols={2}>
+  <Card title="Escribir con IA" icon="wand-magic-sparkles" href="/ai/writing-with-ai">
+    Convierte los requisitos de la página en prompts específicos
+  </Card>
+  <Card title="Descripción general de componentes" icon="puzzle-piece" href="/components/overview">
+    Explora el resto de la biblioteca de componentes MDX
+  </Card>
+</Columns>
