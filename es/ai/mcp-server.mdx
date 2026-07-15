@@ -15,6 +15,19 @@ El [Model Context Protocol](https://modelcontextprotocol.io) es un estándar abi
 | `searchDocs` | Busca en la documentación por palabra clave, devuelve resultados ordenados |
 | `getPage` | Recupera el contenido completo de una página específica |
 
+## Tu URL de endpoint
+
+Tu endpoint MCP es la URL de tu documentación con `/_mcp` añadido. Si tienes un [dominio personalizado](/es/deploy/custom-domains) activo, úsalo:
+
+| Configuración | Endpoint |
+|-------|----------|
+| Dominio personalizado en `docs.acme.com` | `https://docs.acme.com/_mcp` |
+| Sin dominio personalizado | `https://my-project.jamdesk.app/_mcp` |
+
+<Note>
+  Prefiere el endpoint del dominio personalizado siempre que haya uno conectado — tu marca aparece en cada URL que ven las herramientas de IA, y el endpoint sigue funcionando aunque más adelante ocultes tu subdominio `.jamdesk.app` con el modo «solo dominio personalizado».
+</Note>
+
 ## Configuración rápida
 
 <Tabs>
@@ -22,10 +35,10 @@ El [Model Context Protocol](https://modelcontextprotocol.io) es un estándar abi
     Añade tu documentación como servidor MCP:
 
     ```bash
-    claude mcp add --transport http my-docs https://my-project.jamdesk.app/_mcp
+    claude mcp add --transport http my-docs https://docs.acme.com/_mcp
     ```
 
-    Reemplaza `my-project` con tu subdominio de Jamdesk.
+    Reemplaza `docs.acme.com` con el dominio de tu documentación — o con `my-project.jamdesk.app` si no has conectado un dominio personalizado.
 
     Ahora cuando le preguntes a Claude sobre tu proyecto, puede buscar y leer tu documentación directamente.
   </Tab>
@@ -36,7 +49,7 @@ El [Model Context Protocol](https://modelcontextprotocol.io) es un estándar abi
     {
       "mcpServers": {
         "my-docs": {
-          "url": "https://my-project.jamdesk.app/_mcp"
+          "url": "https://docs.acme.com/_mcp"
         }
       }
     }
@@ -45,10 +58,6 @@ El [Model Context Protocol](https://modelcontextprotocol.io) es un estándar abi
     Cursor se conectará automáticamente a tu documentación cuando abras el proyecto.
   </Tab>
 </Tabs>
-
-<Note>
-  Los dominios personalizados también funcionan. Si tu documentación está en `docs.example.com`, usa `https://docs.example.com/_mcp` como endpoint.
-</Note>
 
 ## Herramientas disponibles
 
@@ -143,12 +152,12 @@ Puedes probar tu endpoint MCP directamente con curl:
 
 ```bash
 # List available tools
-curl -X POST https://my-project.jamdesk.app/_mcp \
+curl -X POST https://docs.acme.com/_mcp \
   -H "Content-Type: application/json" \
   -d '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}'
 
 # Search for content
-curl -X POST https://my-project.jamdesk.app/_mcp \
+curl -X POST https://docs.acme.com/_mcp \
   -H "Content-Type: application/json" \
   -d '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"searchDocs","arguments":{"query":"getting started"}}}'
 ```
@@ -174,7 +183,7 @@ El endpoint MCP tiene un límite de velocidad de **60 solicitudes por minuto** p
   Verifica que la URL de tu endpoint sea correcta y accesible:
 
   ```bash
-  curl https://my-project.jamdesk.app/_mcp
+  curl https://docs.acme.com/_mcp
   ```
 
   Deberías ver una respuesta JSON con información del servidor. Si no es así, comprueba que tu documentación haya sido compilada al menos una vez.

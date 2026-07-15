@@ -15,6 +15,19 @@ Le [Model Context Protocol](https://modelcontextprotocol.io) est un standard ouv
 | `searchDocs` | Recherche dans la documentation par mot-clé, retourne des résultats classés |
 | `getPage` | Récupère le contenu complet d'une page spécifique |
 
+## Votre URL d'endpoint
+
+Votre endpoint MCP est l'URL de votre documentation suivie de `/_mcp`. Si vous avez un [domaine personnalisé](/fr/deploy/custom-domains) actif, utilisez-le :
+
+| Configuration | Endpoint |
+|-------|----------|
+| Domaine personnalisé sur `docs.acme.com` | `https://docs.acme.com/_mcp` |
+| Sans domaine personnalisé | `https://my-project.jamdesk.app/_mcp` |
+
+<Note>
+  Privilégiez l'endpoint du domaine personnalisé dès qu'un domaine est connecté — votre marque apparaît dans chaque URL vue par les outils IA, et l'endpoint continue de fonctionner même si vous masquez plus tard votre sous-domaine `.jamdesk.app` avec le mode « domaine personnalisé uniquement ».
+</Note>
+
 ## Configuration rapide
 
 <Tabs>
@@ -22,10 +35,10 @@ Le [Model Context Protocol](https://modelcontextprotocol.io) est un standard ouv
     Ajoutez votre documentation en tant que serveur MCP :
 
     ```bash
-    claude mcp add --transport http my-docs https://my-project.jamdesk.app/_mcp
+    claude mcp add --transport http my-docs https://docs.acme.com/_mcp
     ```
 
-    Remplacez `my-project` par votre sous-domaine Jamdesk.
+    Remplacez `docs.acme.com` par le domaine de votre documentation — ou par `my-project.jamdesk.app` si vous n'avez pas connecté de domaine personnalisé.
 
     Désormais, lorsque vous interrogez Claude sur votre projet, il peut rechercher et lire votre documentation directement.
   </Tab>
@@ -36,7 +49,7 @@ Le [Model Context Protocol](https://modelcontextprotocol.io) est un standard ouv
     {
       "mcpServers": {
         "my-docs": {
-          "url": "https://my-project.jamdesk.app/_mcp"
+          "url": "https://docs.acme.com/_mcp"
         }
       }
     }
@@ -45,10 +58,6 @@ Le [Model Context Protocol](https://modelcontextprotocol.io) est un standard ouv
     Cursor se connectera automatiquement à votre documentation lorsque vous ouvrirez le projet.
   </Tab>
 </Tabs>
-
-<Note>
-  Les domaines personnalisés fonctionnent également. Si votre documentation est disponible sur `docs.example.com`, utilisez `https://docs.example.com/_mcp` comme endpoint.
-</Note>
 
 ## Outils disponibles
 
@@ -143,12 +152,12 @@ Vous pouvez tester votre endpoint MCP directement avec curl :
 
 ```bash
 # List available tools
-curl -X POST https://my-project.jamdesk.app/_mcp \
+curl -X POST https://docs.acme.com/_mcp \
   -H "Content-Type: application/json" \
   -d '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}'
 
 # Search for content
-curl -X POST https://my-project.jamdesk.app/_mcp \
+curl -X POST https://docs.acme.com/_mcp \
   -H "Content-Type: application/json" \
   -d '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"searchDocs","arguments":{"query":"getting started"}}}'
 ```
@@ -174,7 +183,7 @@ L'endpoint MCP a une limite de débit de **60 requêtes par minute** par adresse
   Vérifiez que l'URL de votre endpoint est correcte et accessible :
 
   ```bash
-  curl https://my-project.jamdesk.app/_mcp
+  curl https://docs.acme.com/_mcp
   ```
 
   Vous devriez voir une réponse JSON avec les informations du serveur. Sinon, vérifiez que votre documentation a été buildée au moins une fois.

@@ -15,6 +15,19 @@ The [Model Context Protocol](https://modelcontextprotocol.io) is an open standar
 | `searchDocs` | Search documentation by keyword, returns ranked results |
 | `getPage` | Retrieve full content of a specific page |
 
+## Your Endpoint URL
+
+Your MCP endpoint is your docs URL with `/_mcp` appended. If you have a [custom domain](/deploy/custom-domains) live, use it:
+
+| Setup | Endpoint |
+|-------|----------|
+| Custom domain at `docs.acme.com` | `https://docs.acme.com/_mcp` |
+| No custom domain | `https://my-project.jamdesk.app/_mcp` |
+
+<Note>
+  Prefer the custom domain endpoint whenever one is connected — it keeps your branding in every URL AI tools see, and it keeps working even if you later hide your `.jamdesk.app` subdomain with [Custom domain only](/deploy/custom-domain-only).
+</Note>
+
 ## Quick Setup
 
 <Tabs>
@@ -22,10 +35,10 @@ The [Model Context Protocol](https://modelcontextprotocol.io) is an open standar
     Add your docs as an MCP server:
 
     ```bash
-    claude mcp add --transport http my-docs https://my-project.jamdesk.app/_mcp
+    claude mcp add --transport http my-docs https://docs.acme.com/_mcp
     ```
 
-    Replace `my-project` with your Jamdesk subdomain.
+    Replace `docs.acme.com` with your docs domain — or with `my-project.jamdesk.app` if you haven't connected a custom domain.
 
     Now when you ask Claude about your project, it can search and read your documentation directly.
   </Tab>
@@ -36,7 +49,7 @@ The [Model Context Protocol](https://modelcontextprotocol.io) is an open standar
     {
       "mcpServers": {
         "my-docs": {
-          "url": "https://my-project.jamdesk.app/_mcp"
+          "url": "https://docs.acme.com/_mcp"
         }
       }
     }
@@ -45,10 +58,6 @@ The [Model Context Protocol](https://modelcontextprotocol.io) is an open standar
     Cursor will automatically connect to your docs when you open the project.
   </Tab>
 </Tabs>
-
-<Note>
-  Custom domains work too. If your docs are at `docs.example.com`, use `https://docs.example.com/_mcp` as the endpoint.
-</Note>
 
 ## Available Tools
 
@@ -143,12 +152,12 @@ You can test your MCP endpoint directly with curl:
 
 ```bash
 # List available tools
-curl -X POST https://my-project.jamdesk.app/_mcp \
+curl -X POST https://docs.acme.com/_mcp \
   -H "Content-Type: application/json" \
   -d '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}'
 
 # Search for content
-curl -X POST https://my-project.jamdesk.app/_mcp \
+curl -X POST https://docs.acme.com/_mcp \
   -H "Content-Type: application/json" \
   -d '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"searchDocs","arguments":{"query":"getting started"}}}'
 ```
@@ -174,7 +183,7 @@ The MCP endpoint has a rate limit of **60 requests per minute** per IP address. 
   Verify your endpoint URL is correct and accessible:
 
   ```bash
-  curl https://my-project.jamdesk.app/_mcp
+  curl https://docs.acme.com/_mcp
   ```
 
   You should see a JSON response with server info. If not, check that your docs have been built at least once.
