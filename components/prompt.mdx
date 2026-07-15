@@ -1,0 +1,208 @@
+---
+title: Prompt
+description: Use Prompt to present reusable AI instructions with copy, built-in open-in actions, custom destinations, icons, and compact display options.
+---
+
+The `<Prompt>` component turns a reusable set of instructions into a card readers can copy or open in a supported AI tool. The authored content between the tags is always the prompt that gets copied.
+
+## Basic Usage
+
+Every Prompt includes a Copy action, so the simplest version needs no props:
+
+<Prompt>
+Explain how API key rotation works for a developer using our REST API for the first time.
+</Prompt>
+
+```mdx
+<Prompt>
+Explain how API key rotation works for a developer using our REST API for the first time.
+</Prompt>
+```
+
+## Title and Description
+
+Use `title` to label the task. The Mintlify-compatible `description` prop replaces the visible preview with a shorter summary, while the content between the tags remains the full prompt that Copy and open-in actions use.
+
+<Prompt
+  title="Draft a release note"
+  description="Write a concise release note for a developer audience."
+  actions={["copy", "cursor"]}
+>
+Write a release note for the new API key rotation endpoint.
+
+- Address backend developers.
+- Lead with the user benefit.
+- Include one request example.
+</Prompt>
+
+```mdx
+<Prompt
+  title="Draft a release note"
+  description="Write a concise release note for a developer audience."
+  actions={["copy", "cursor"]}
+>
+Write a release note for the new API key rotation endpoint.
+
+- Address backend developers.
+- Lead with the user benefit.
+- Include one request example.
+</Prompt>
+```
+
+The explicit `"copy"` action is accepted for compatibility, but Copy is always present and never needs to be listed.
+
+## Open-in Actions
+
+Add `cursor`, `claude`, or `chatgpt` to let readers open the prompt in those tools. The first valid open-in action appears beside Copy; additional actions appear in the More menu.
+
+<Prompt
+  title="Compare authentication flows"
+  actions={["cursor", "claude", "chatgpt"]}
+>
+Compare the session-token and API-key authentication flows in this repository. List their security tradeoffs and recommend which flow each client type should use.
+</Prompt>
+
+```mdx
+<Prompt
+  title="Compare authentication flows"
+  actions={["cursor", "claude", "chatgpt"]}
+>
+Compare the session-token and API-key authentication flows in this repository.
+List their security tradeoffs and recommend which flow each client type should use.
+</Prompt>
+```
+
+<Warning>
+  Clicking an open-in action sends the full prompt to the selected third party. Do not include secrets, personal data, or proprietary content unless you intend to share it under that provider's privacy policy. Copy does not open a third-party service.
+</Warning>
+
+## Custom URL Actions
+
+Custom actions take a `label`, an HTTPS or HTTP `url`, and an optional icon. Put `{prompt}` in a path segment, query value, or fragment to control where the URL-encoded prompt goes. If you omit the placeholder, Jamdesk adds a `prompt` query parameter.
+
+<Prompt
+  title="Research this migration"
+  actions={[
+    {
+      label: "Open in Perplexity",
+      url: "https://www.perplexity.ai/search?q={prompt}",
+      icon: "magnifying-glass",
+    },
+    "claude",
+  ]}
+>
+Compare this migration plan with the current public API contract. Identify breaking changes, missing rollback steps, and tests needed before release.
+</Prompt>
+
+```mdx
+<Prompt
+  title="Research this migration"
+  actions={[
+    {
+      label: "Open in Perplexity",
+      url: "https://www.perplexity.ai/search?q={prompt}",
+      icon: "magnifying-glass",
+    },
+    "claude",
+  ]}
+>
+Compare this migration plan with the current public API contract. Identify
+breaking changes, missing rollback steps, and tests needed before release.
+</Prompt>
+```
+
+Custom action URLs must use credential-free `http:` or `https:` URLs. Jamdesk rejects other schemes, placeholders in origins or query keys, and final action URLs longer than 8,000 characters. Copy remains available when an open-in action is rejected.
+
+## Custom Icon
+
+Set `icon` to a Font Awesome name, image URL or path, or inline SVG. Use `iconType` to select the style for an unprefixed Font Awesome name.
+
+<Prompt title="Plan a tutorial" icon="pen-nib" iconType="duotone">
+Outline a hands-on tutorial that gets a new user from installation to a successful API request in under ten minutes.
+</Prompt>
+
+```mdx
+<Prompt title="Plan a tutorial" icon="pen-nib" iconType="duotone">
+  Outline a hands-on tutorial that gets a new user from installation to a
+  successful API request in under ten minutes.
+</Prompt>
+```
+
+See [Icons](/content/icons) for available names and styles.
+
+## Compact Displays
+
+Use `singleLine` to clip the preview to one line. The full prompt is still copied or sent by an open-in action.
+
+<Prompt title="Summarize the API" singleLine>
+Summarize the public API in five bullets. Cover authentication, pagination, rate limits, errors, and versioning. Link each bullet to the relevant documentation page.
+</Prompt>
+
+Use `hidePrompt` with a title when the label alone gives readers enough context:
+
+<Prompt title="Generate a migration checklist" hidePrompt actions={["claude"]}>
+Create a migration checklist for moving from API v1 to v2. Include prerequisites, code changes, validation steps, rollback criteria, and owner sign-off.
+</Prompt>
+
+```mdx
+<Prompt title="Summarize the API" singleLine>
+  Summarize the public API in five bullets. Cover authentication, pagination,
+  rate limits, errors, and versioning.
+</Prompt>
+
+<Prompt title="Generate a migration checklist" hidePrompt actions={["claude"]}>
+  Create a migration checklist for moving from API v1 to v2. Include
+  prerequisites, code changes, validation steps, and rollback criteria.
+</Prompt>
+```
+
+`hidePrompt` only hides the preview when `title` is present. Without a title, Jamdesk keeps the prompt visible so the card is still understandable.
+
+## Props
+
+<ParamField name="children" type="ReactNode">
+  The prompt content between the opening and closing tags. Jamdesk preserves the authored Markdown for Copy and open-in actions; it also renders this content as the preview unless `description` replaces the preview or `hidePrompt` hides it.
+</ParamField>
+
+<ParamField name="title" type="string">
+  Label displayed in the card header. No title is shown by default.
+</ParamField>
+
+<ParamField name="description" type="string">
+  Compact, inline-Markdown preview accepted for Mintlify compatibility. It changes only the visible preview; the authored children remain the prompt that is copied or sent.
+</ParamField>
+
+<ParamField name="icon" type="string | ReactElement" default="sparkles">
+  Header icon. Accepts a Font Awesome name, image URL or path, or inline SVG element.
+</ParamField>
+
+<ParamField name="iconType" type="regular | solid | light | thin | sharp-solid | duotone | brands">
+  Font Awesome style applied to an unprefixed string icon. It does not alter image URLs, paths, already-prefixed names, or inline SVG elements.
+</ParamField>
+
+<ParamField name="actions" type="('copy' | 'cursor' | 'claude' | 'chatgpt' | CustomAction)[]" default="[]">
+  Open-in actions in display order. `CustomAction` is `{ label: string; url: string; icon?: string }`. Copy is always shown; an explicit `copy` entry is accepted and de-duplicated. Invalid, duplicate, or oversized open-in actions are omitted.
+</ParamField>
+
+<ParamField name="singleLine" type="boolean | string" default="false">
+  Clips the visible preview to one line when set to boolean `true` or the string `"true"`. The string `"false"` remains disabled and the complete prompt is still used by every action.
+</ParamField>
+
+<ParamField name="hidePrompt" type="boolean | string" default="false">
+  Hides the visible preview when a title is present and the value is boolean `true` or the string `"true"`. Without a title, the preview stays visible. The string `"false"` remains disabled.
+</ParamField>
+
+<ParamField name="className" type="string">
+  Additional CSS class names applied to the Prompt card's root element.
+</ParamField>
+
+## What's Next?
+
+<Columns cols={2}>
+  <Card title="Writing with AI" icon="wand-magic-sparkles" href="/ai/writing-with-ai">
+    Turn page requirements into focused prompts
+  </Card>
+  <Card title="Components Overview" icon="puzzle-piece" href="/components/overview">
+    Browse the rest of the MDX component library
+  </Card>
+</Columns>
