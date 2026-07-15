@@ -10,6 +10,7 @@ Set up a CloudFront distribution to forward `/docs/*` to your Jamdesk site, with
 - An AWS account with CloudFront and Route 53 access
 - Your domain managed in Route 53 (or ability to update DNS elsewhere)
 - Your Jamdesk subdomain (found in dashboard settings)
+- Your custom domain registered and DNS-verified in the Jamdesk dashboard
 
 ## Step 1: Create a CloudFront Distribution
 
@@ -36,19 +37,13 @@ In the origin settings, add custom headers to identify your domain:
 | `X-Forwarded-Host` | `yoursite.com` |
 | `X-Jamdesk-Forwarded-Host` | `yoursite.com` |
 
-These headers tell Jamdesk which domain is making the request. The `X-Jamdesk-Forwarded-Host` header is required for domain verification.
+These headers tell Jamdesk which domain is making the request.
 
 <Warning>
-`AllViewerExceptHostHeader` (configured in the next step) forwards the headers your visitor's browser sent — it does not add new ones. `X-Jamdesk-Forwarded-Host` isn't a viewer header, so it only reaches Jamdesk if you add it here, as an **origin custom header**. Skip this step and requests still succeed (nothing errors), but your documentation pages serve `noindex` with a canonical pointing at `YOUR_SLUG.jamdesk.app` instead of your domain, and the [Custom domain only](/deploy/custom-domain-only) preflight check will fail.
+This step is required, and skipping it fails quietly. The `AllViewerExceptHostHeader` policy (next step) only forwards headers your visitor's browser sent — it does not add new ones — so `X-Jamdesk-Forwarded-Host` only reaches Jamdesk as an **origin custom header**. Without it, requests still succeed, but pages serve `noindex` with canonical links pointing at `YOUR_SLUG.jamdesk.app` instead of your domain.
 </Warning>
 
-<Warning>
-Your domain must be verified in the Jamdesk dashboard before CloudFront will serve content. Complete the DNS verification process after adding your domain.
-</Warning>
-
-<Tip>
-Origin custom headers are static — fine for a distribution mapped to one domain, which is the common case here. If you need the header's value to vary per request (multiple alternate domain names on one distribution), use a [CloudFront Function](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/cloudfront-functions.html) on **viewer request** instead, and set `request.headers['x-jamdesk-forwarded-host'] = { value: request.headers.host.value }` before the request reaches the origin.
-</Tip>
+If you serve multiple alternate domain names from one distribution, static origin headers can't vary per request — use a [CloudFront Function](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/cloudfront-functions.html) on **viewer request** instead, setting `request.headers['x-jamdesk-forwarded-host'] = { value: request.headers.host.value }`.
 
 ## Step 3: Create Cache Behaviors
 
@@ -66,13 +61,7 @@ Add behaviors to route `/docs/*` and asset requests to your Jamdesk origin:
 
 Set **Viewer protocol policy** to **Redirect HTTP to HTTPS** for all three.
 
-<Note>
-The `/_next/*` and `/_jd/*` behaviors are required for Next.js static assets (JS, CSS) and Jamdesk resources (fonts, images, branding) to load correctly.
-</Note>
-
-<Warning>
-The `AllViewerExceptHostHeader` policy is required on all three behaviors. It forwards the rest of the viewer's request headers (everything except `Host`, which CloudFront needs to reserve for the origin) — separate from the origin custom headers in Step 2, which is what actually delivers `X-Jamdesk-Forwarded-Host`.
-</Warning>
+All three behaviors are required: `/_next/*` and `/_jd/*` serve the JavaScript, CSS, fonts, and images your docs pages load. The `AllViewerExceptHostHeader` policy forwards the viewer's request headers (everything except `Host`, which CloudFront reserves for the origin) and must be set on all three.
 
 ## Step 4: Add Alternate Domain Name
 

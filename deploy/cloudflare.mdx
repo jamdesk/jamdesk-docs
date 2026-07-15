@@ -7,12 +7,7 @@ A [Cloudflare Worker](https://workers.cloudflare.com/) intercepts requests at `/
 
 ## How It Works
 
-The Worker forwards requests to your Jamdesk subdomain while passing along the original domain in the `X-Jamdesk-Forwarded-Host` header. Jamdesk uses this header to:
-
-1. **Verify your domain** - Ensures only authorized domains can serve your docs
-2. **Apply correct configuration** - Uses your domain's settings from the dashboard
-
-This means the Worker is a **one-time setup**. If you later change your custom domain or configuration in the Jamdesk dashboard, the Worker doesn't need to be updated; all routing decisions are made server-side.
+The Worker forwards requests to your Jamdesk subdomain and passes along your domain in the `X-Jamdesk-Forwarded-Host` header, which Jamdesk uses to verify the domain and apply its settings. It's a **one-time setup** — if you later change your domain or configuration in the dashboard, the Worker doesn't need updating.
 
 ## Prerequisites
 
@@ -37,29 +32,7 @@ This interactive command will:
 5. Generate all required files
 6. Optionally deploy to Cloudflare
 
-### Account Selection
-
-The CLI verifies you're logged into the correct Cloudflare account before proceeding. If you have access to multiple Cloudflare accounts (common for agencies or teams), you'll be prompted to choose:
-
-``` text
-Step 2: Verifying Cloudflare account...
-✓ Logged in as: you@example.com
-? Select the Cloudflare account to use:
-❯ Your Personal Account
-  Company Team Account
-  [ Switch to different login ]
-```
-
-After selecting an account, only domains from that account will be available for zone selection:
-
-``` text
-✓ Using account: Company Team Account
-✓ Domains: 3 available for Workers routing
-```
-
-<Note>
-Make sure you select the Cloudflare account that has the domain you want to deploy to. Each account has its own set of domains, and you can only create Workers routes for domains in the selected account.
-</Note>
+If you have access to multiple Cloudflare accounts (common for agencies or teams), the CLI prompts you to choose one before zone selection. Pick the account that owns the domain you're deploying to — Workers routes can only be created for domains in the selected account.
 
 ### CI/Scripted Deployment
 
@@ -169,14 +142,7 @@ Replace `YOUR_SLUG` with your actual Jamdesk subdomain (e.g., `acme` if your doc
 </Note>
 
 <Warning>
-The `X-Jamdesk-Forwarded-Host` header is **required**, and a missing header fails quietly.
-
-Requests still succeed without it — nothing errors, which is exactly what makes it easy to miss. What breaks is subtler:
-
-- **If you haven't registered a custom domain in the dashboard**, your documentation pages are served with `<meta name="robots" content="noindex">`, and canonical, Open Graph, and sitemap URLs all point at `YOUR_SLUG.jamdesk.app` instead of your domain. Search engines will never index your documentation.
-- **If you have registered a custom domain**, Jamdesk falls back to the domain on file, so your URLs stay correct — but it still can't tell proxy traffic apart from direct traffic to your `*.jamdesk.app` subdomain.
-
-A **403** is the opposite problem: the header *is* present, but names a domain that isn't registered and active for this project.
+The `X-Jamdesk-Forwarded-Host` header is **required**, and a missing header fails quietly — requests still succeed, but pages serve `noindex` with canonical links pointing at `YOUR_SLUG.jamdesk.app` instead of your domain, so search engines never index your docs. A **403** is the opposite problem: the header *is* present, but names a domain that isn't registered and active for this project.
 </Warning>
 
 ### Step 3: Configure wrangler.toml
@@ -216,65 +182,6 @@ npx wrangler deploy
 ### Step 5: Verify
 
 Visit `https://yoursite.com/docs` to confirm your documentation is being served correctly.
-
-## Alternative: Service Worker Syntax
-
-If you prefer the older Service Worker syntax (compatible with older Workers):
-
-```javascript index.js
-const JAMDESK_HOST = "YOUR_SLUG.jamdesk.app";
-
-// Paths that should be proxied to Jamdesk
-const PROXY_PATHS = [
-  "/docs",    // Documentation pages
-  "/_next/",  // Next.js static assets (JS, CSS)
-  "/_jd/",    // All Jamdesk assets (images, fonts, branding, analytics)
-];
-
-function shouldProxy(pathname) {
-  return PROXY_PATHS.some(prefix => {
-    if (prefix === "/docs") {
-      return pathname === "/docs" || pathname.startsWith("/docs/");
-    }
-    return pathname.startsWith(prefix);
-  });
-}
-
-addEventListener("fetch", (event) => {
-  event.respondWith(handleRequest(event.request));
-});
-
-async function handleRequest(request) {
-  const url = new URL(request.url);
-
-  if (!shouldProxy(url.pathname)) {
-    return fetch(request);
-  }
-
-  const proxyUrl = new URL(request.url);
-  proxyUrl.hostname = JAMDESK_HOST;
-
-  const headers = new Headers(request.headers);
-  headers.set("Host", JAMDESK_HOST);
-  headers.set("X-Forwarded-Host", url.hostname);
-  headers.set("X-Forwarded-Proto", "https");
-  // Required for domain verification
-  headers.set("X-Jamdesk-Forwarded-Host", url.hostname);
-
-  // Don't follow redirects — let the browser handle them so the URL updates
-  return fetch(new Request(proxyUrl, {
-    method: request.method,
-    headers,
-    body: request.body,
-    redirect: "manual",
-  }), {
-    cf: {
-      cacheEverything: true,
-      cacheTtlByStatus: { "300-399": 0, "500-599": 0 },
-    },
-  });
-}
-```
 
 ## Troubleshooting
 
