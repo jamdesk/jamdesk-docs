@@ -4,20 +4,20 @@ sidebarTitle: Serveur MCP
 description: Chaque site Jamdesk inclut un serveur MCP intégré. Les assistants IA comme Claude et Cursor peuvent rechercher et lire votre documentation directement.
 ---
 
-Chaque site Jamdesk inclut un serveur MCP (Model Context Protocol) intégré. Tandis que `llms.txt` fournit aux outils IA un instantané statique de votre documentation, MCP leur permet d'effectuer des recherches et des requêtes de manière interactive — utile lorsque les agents IA ont besoin de trouver des réponses précises plutôt que de tout lire.
+Chaque site Jamdesk inclut un serveur MCP (Model Context Protocol) intégré. Alors que `llms.txt` donne aux outils IA un instantané statique de votre documentation, MCP leur permet de rechercher et d'interroger de façon interactive — utile lorsque les agents IA doivent trouver des réponses précises plutôt que de tout lire.
 
 ## Qu'est-ce que MCP ?
 
-Le [Model Context Protocol](https://modelcontextprotocol.io) est un standard ouvert permettant aux outils IA d'accéder à des sources de données externes. Votre documentation Jamdesk expose deux outils via MCP :
+Le [Model Context Protocol](https://modelcontextprotocol.io) est une norme ouverte qui permet aux outils IA d'accéder à des sources de données externes. Votre documentation Jamdesk expose deux outils via MCP :
 
 | Outil | Objectif |
 |------|---------|
-| `searchDocs` | Recherche dans la documentation par mot-clé, retourne des résultats classés |
+| `searchDocs` | Recherche dans la documentation par mot-clé, renvoie des résultats classés |
 | `getPage` | Récupère le contenu complet d'une page spécifique |
 
-## Votre URL d'endpoint
+## URL de votre endpoint
 
-Votre endpoint MCP est l'URL de votre documentation suivie de `/_mcp`. Si vous avez un [domaine personnalisé](/fr/deploy/custom-domains) actif, utilisez-le :
+Votre endpoint MCP est l'URL de votre documentation à laquelle `/_mcp` est ajouté. Si vous avez un [domaine personnalisé](/fr/deploy/custom-domains) actif, utilisez-le :
 
 | Configuration | Endpoint |
 |-------|----------|
@@ -25,14 +25,14 @@ Votre endpoint MCP est l'URL de votre documentation suivie de `/_mcp`. Si vous a
 | Sans domaine personnalisé | `https://my-project.jamdesk.app/_mcp` |
 
 <Note>
-  Privilégiez l'endpoint du domaine personnalisé dès qu'un domaine est connecté — votre marque apparaît dans chaque URL vue par les outils IA, et l'endpoint continue de fonctionner même si vous masquez plus tard votre sous-domaine `.jamdesk.app` avec le mode « domaine personnalisé uniquement ».
+  Privilégiez l'endpoint du domaine personnalisé dès qu'il est connecté — il conserve votre image de marque dans chaque URL que voient les outils IA, et il continue de fonctionner même si vous masquez ensuite votre sous-domaine `.jamdesk.app` avec [Domaine personnalisé uniquement](/fr/deploy/custom-domain-only).
 </Note>
 
 ## Configuration rapide
 
 <Tabs>
   <Tab title="Claude Code">
-    Ajoutez votre documentation en tant que serveur MCP :
+    Ajoutez votre documentation comme serveur MCP :
 
     ```bash
     claude mcp add --transport http my-docs https://docs.acme.com/_mcp
@@ -40,10 +40,10 @@ Votre endpoint MCP est l'URL de votre documentation suivie de `/_mcp`. Si vous a
 
     Remplacez `docs.acme.com` par le domaine de votre documentation — ou par `my-project.jamdesk.app` si vous n'avez pas connecté de domaine personnalisé.
 
-    Désormais, lorsque vous interrogez Claude sur votre projet, il peut rechercher et lire votre documentation directement.
+    Désormais, lorsque vous interrogez Claude à propos de votre projet, il peut rechercher et lire votre documentation directement.
   </Tab>
   <Tab title="Cursor">
-    Ajoutez ce contenu au fichier `.cursor/mcp.json` de votre projet :
+    Ajoutez ceci au fichier `.cursor/mcp.json` de votre projet :
 
     ```json
     {
@@ -55,7 +55,7 @@ Votre endpoint MCP est l'URL de votre documentation suivie de `/_mcp`. Si vous a
     }
     ```
 
-    Cursor se connectera automatiquement à votre documentation lorsque vous ouvrirez le projet.
+    Cursor se connectera automatiquement à votre documentation à l'ouverture du projet.
   </Tab>
 </Tabs>
 
@@ -69,9 +69,9 @@ Recherchez dans votre documentation et obtenez des résultats classés.
 
 | Paramètre | Type | Requis | Description |
 |-----------|------|----------|-------------|
-| `query` | string | Oui | Termes de recherche (ex. : "authentication", "getting started") |
-| `limit` | number | Non | Nombre maximum de résultats (défaut : 10, max : 50) |
-| `type` | string | Non | Filtrer par type de contenu : `all`, `api`, `guide`, `quickstart`, `help`, `component` |
+| `query` | string | Oui | Termes de recherche (par ex. « authentification », « premiers pas ») |
+| `limit` | number | Non | Nombre maximum de résultats (par défaut : 10, max : 50) |
+| `type` | string | Non | Filtre par type de contenu : `all`, `api`, `guide`, `quickstart`, `help`, `component` |
 
 **Exemple de requête :**
 
@@ -113,7 +113,7 @@ Récupère le contenu complet d'une page de documentation spécifique.
 
 | Paramètre | Type | Requis | Description |
 |-----------|------|----------|-------------|
-| `slug` | string | Oui | Chemin de la page sans le préfixe `/docs` (ex. : `api/authentication`) |
+| `slug` | string | Oui | Chemin de la page sans le préfixe `/docs` (par ex. `api/authentication`) |
 
 **Exemple de requête :**
 
@@ -164,18 +164,18 @@ curl -X POST https://docs.acme.com/_mcp \
 
 ## Fonctionnement
 
-L'endpoint MCP utilise un index de recherche construit parallèlement à votre documentation :
+L'endpoint MCP utilise un index de recherche construit en même temps que votre documentation :
 
-- **Classement BM25** — Classe les résultats par pertinence
-- **Correspondance approximative** — Gère les fautes de frappe (tolérance d'1 caractère)
-- **Pondération des champs** — Les titres et en-têtes de section ont un poids supérieur au contenu du corps
-- **Filtrage par type** — Filtrez les résultats par type de contenu (API, guide, etc.)
+- **Classement BM25** - Classe les résultats par pertinence
+- **Correspondance floue** - Gère les fautes de frappe (tolérance de 1 caractère)
+- **Pondération des champs** - Les titres et les en-têtes de section sont pondérés plus fortement que le contenu du corps
+- **Filtrage par type** - Filtre les résultats par type de contenu (API, guide, etc.)
 
 L'index est reconstruit à chaque déploiement.
 
 ## Limites de débit
 
-L'endpoint MCP a une limite de débit de **60 requêtes par minute** par adresse IP. C'est suffisant pour une utilisation normale avec un assistant IA. Si vous dépassez cette limite, vous recevrez une réponse 429.
+L'endpoint MCP applique une limite de débit de **60 requêtes par minute** par adresse IP. Cela suffit pour un usage normal par un assistant IA. Si vous dépassez la limite, vous recevrez une réponse 429.
 
 ## Dépannage
 
@@ -186,14 +186,14 @@ L'endpoint MCP a une limite de débit de **60 requêtes par minute** par adresse
   curl https://docs.acme.com/_mcp
   ```
 
-  Vous devriez voir une réponse JSON avec les informations du serveur. Sinon, vérifiez que votre documentation a été buildée au moins une fois.
+  Vous devriez voir une réponse JSON contenant les informations du serveur. Si ce n'est pas le cas, vérifiez que votre documentation a été buildée au moins une fois.
 </Accordion>
 
-<Accordion title="La recherche ne retourne aucun résultat">
-  L'index de recherche est généré au moment du build. Si vous avez récemment ajouté du contenu, déclenchez un rebuild depuis votre dashboard Jamdesk pour mettre à jour l'index.
+<Accordion title="La recherche ne renvoie aucun résultat">
+  L'index de recherche est généré au moment du build. Si vous avez récemment ajouté du contenu, déclenchez un nouveau build depuis votre dashboard Jamdesk pour mettre à jour l'index.
 </Accordion>
 
-<Accordion title="getPage retourne null">
+<Accordion title="getPage renvoie null">
   Assurez-vous que le slug correspond exactement au chemin de votre page (sans l'extension `.mdx`). Par exemple, si votre page se trouve à `api/authentication.mdx`, utilisez `api/authentication` comme slug.
 </Accordion>
 
@@ -201,9 +201,9 @@ L'endpoint MCP a une limite de débit de **60 requêtes par minute** par adresse
 
 <Columns cols={2}>
   <Card title="Rédiger avec l'IA" icon="wand-magic-sparkles" href="/fr/ai/writing-with-ai">
-    Conseils pour utiliser les outils IA afin de rédiger de la documentation
+    Conseils pour utiliser des outils IA afin de rédiger la documentation
   </Card>
   <Card title="llms.txt" icon="file-lines" href="/fr/ai/llms-txt">
-    Index de pages auto-généré pour les outils IA
+    Index de pages généré automatiquement pour les outils IA
   </Card>
 </Columns>

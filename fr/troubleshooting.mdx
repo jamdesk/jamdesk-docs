@@ -1,6 +1,6 @@
 ---
 title: Dépannage
-description: Solutions rapides aux problèmes courants de Jamdesk : échecs de build, vérification DNS, connexions GitHub et données d'analytique manquantes.
+description: Solutions rapides aux problèmes Jamdesk courants : échecs de build, vérification DNS, connexions GitHub et données analytiques manquantes.
 ---
 
 Commencez ici lorsque quelque chose ne fonctionne pas. Chaque section propose une solution rapide et un lien vers le guide détaillé du Centre d'aide.
@@ -11,21 +11,21 @@ Commencez ici lorsque quelque chose ne fonctionne pas. Chaque section propose un
 
 ## Échecs de build
 
-Votre dashboard affiche un build comme « Échoué ». La plupart des échecs proviennent de l'une de ces trois causes : une page MDX avec un import ou un composant cassé, une modification invalide de `docs.json` (crochets non fermés, virgules finales après le dernier élément d'un tableau), ou une page listée dans la navigation `docs.json` qui n'existe pas en tant que fichier `.mdx`. Les deux premiers cas se manifestent localement avec `jamdesk dev` avant même d'atteindre un build déployé. Le lancer une fois avant de pousser permet souvent d'économiser un aller-retour.
+Votre dashboard affiche un build comme « Failed ». La plupart des échecs proviennent de l'une de ces trois causes : une page MDX avec un import ou un composant cassé, une modification invalide de `docs.json` (crochets non fermés, virgules superflues après le dernier élément d'un tableau), ou une page listée dans la navigation de `docs.json` qui n'existe pas en tant que fichier `.mdx`. Les deux premières apparaissent localement avec `jamdesk dev` avant même d'atteindre un build déployé. L'exécuter une fois avant de pousser permet souvent d'éviter un aller-retour.
 
 <Tip>
-Le journal de build dans votre dashboard indique le fichier et la ligne exacts où l'erreur s'est produite. Commencez par là. Cela pointe presque toujours vers le vrai problème, pas seulement le symptôme.
+Le journal de build de votre dashboard indique le fichier et la ligne exacts où l'erreur s'est produite. Commencez par là. Il pointe presque toujours vers le vrai problème, pas seulement le symptôme.
 </Tip>
 
 Pour des codes d'erreur spécifiques, consultez [Échecs de build](/fr/help/troubleshooting/build-failures) et la [Référence des erreurs](/fr/help/troubleshooting/error-reference).
 
 ## Le domaine personnalisé ne se vérifie pas
 
-Le domaine reste bloqué sur « En attente » après l'ajout des enregistrements DNS ? Suivez ces étapes dans l'ordre :
+Le domaine reste bloqué sur « Pending » après l'ajout des enregistrements DNS ? Suivez ces étapes dans l'ordre :
 
-1. Vérifiez que vous avez ajouté l'enregistrement **TXT** `_jamdesk.<hostname>`. Le routage ne s'active pas sans lui, et l'absence de cet enregistrement TXT est la cause la plus fréquente d'un domaine en attente. Le hostname est le domaine complet que vous vérifiez (pour `docs.example.com`, le nom de l'enregistrement TXT est `_jamdesk.docs.example.com`).
+1. Vérifiez que vous avez ajouté l'enregistrement **TXT** `_jamdesk.<hostname>`. Le routage ne s'active pas sans lui, et l'absence de l'enregistrement TXT est la cause la plus courante d'un domaine « Pending ». Le nom d'hôte est le domaine complet que vous vérifiez (pour `docs.example.com`, le nom de l'enregistrement TXT est `_jamdesk.docs.example.com`).
 2. Vérifiez que vous avez ajouté un enregistrement **CNAME** (et non un enregistrement A) pour les sous-domaines.
-3. Si vous utilisez Cloudflare, réglez le proxy sur **DNS uniquement** (nuage gris) pour les deux enregistrements.
+3. Si vous utilisez Cloudflare, réglez le proxy sur **DNS only** (nuage gris) pour les deux enregistrements.
 4. Vérifiez la propagation sur [whatsmydns.net](https://www.whatsmydns.net/).
 
 ```bash
@@ -36,25 +36,37 @@ dig TXT _jamdesk.docs.yourdomain.com
 dig CNAME docs.yourdomain.com
 ```
 
-Un point non évident à connaître : même après que `dig` montre que vos enregistrements se résolvent, le dashboard peut continuer à afficher « En attente » pendant jusqu'à 30 minutes. Le vérificateur se trouve derrière des résolveurs en amont qui mettent en cache les réponses DNS négatives, et cette fenêtre de cache doit expirer avant que la nouvelle vérification réussisse. Si tout se résout localement mais que le dashboard n'a pas été mis à jour, laissez passer une demi-heure avant de supposer un problème plus profond.
+Un détail non évident à connaître : même après que `dig` montre que vos enregistrements se résolvent, le dashboard peut encore afficher « Pending » pendant jusqu'à 30 minutes. Le vérificateur se trouve derrière des résolveurs en amont qui mettent en cache les réponses DNS négatives, et cette fenêtre de cache doit s'écouler avant que la nouvelle vérification réussisse. Si tout se résout localement mais que le dashboard n'a pas été mis à jour, laissez passer une demi-heure avant de soupçonner un problème plus profond.
 
-[Dépannage DNS](/fr/help/troubleshooting/dns-issues) couvre les particularités propres à chaque fournisseur.
+[Dépannage DNS](/fr/help/troubleshooting/dns-issues) couvre les subtilités propres à chaque fournisseur.
+
+## Une spécification OpenAPI valide échoue à la validation
+
+`jamdesk dev` rejette une spécification que vous savez valide, avec des erreurs comme `#/servers/0/variables/host must NOT have unevaluated properties` — généralement sur des variables de serveur qui comportent une `description`, ou sur une licence qui n'a qu'un `name`. La spécification est correcte ; c'est la copie du CLI du méta-schéma OpenAPI 3.1 qui pose problème. npm 12 bloque par défaut les scripts d'installation des packages, ce qui a fait sauter l'étape corrigeant deux défauts connus de ce schéma.
+
+Mettez à jour le CLI — la version 1.1.167 et les suivantes corrigent le schéma au moment de la validation, ce qui rend l'étape d'installation sans importance :
+
+```bash
+npm install -g jamdesk@latest
+```
+
+Si vous êtes bloqué sur une version plus ancienne, `npm install -g --allow-scripts=jamdesk jamdesk` permet à l'étape d'installation de s'exécuter à la place.
 
 ## Le dépôt GitHub n'apparaît pas
 
-Si votre dépôt n'est pas dans la liste lors de la création d'un projet, l'application GitHub de Jamdesk n'est probablement pas installée sur l'organisation du dépôt, ou l'accès aux dépôts est réglé sur « Selected repositories » sans le vôtre inclus. Réautorisez sur [github.com/settings/installations](https://github.com/settings/installations) et accordez l'accès à « All repositories » ou au dépôt spécifique dont vous avez besoin.
+Si votre dépôt n'apparaît pas dans la liste lors de la création d'un projet, il est probable que l'app GitHub de Jamdesk ne soit pas installée sur l'organisation du dépôt, ou que l'accès aux dépôts soit réglé sur « Selected repositories » sans que le vôtre soit inclus. Réautorisez sur [github.com/settings/installations](https://github.com/settings/installations) et accordez l'accès à « All repositories » ou au dépôt spécifique dont vous avez besoin.
 
 Consultez [Problèmes GitHub](/fr/help/troubleshooting/github-issues) pour les problèmes de webhook et de permissions.
 
-## Données d'analytique manquantes
+## Données analytiques manquantes
 
-Plusieurs raisons courantes expliquent pourquoi votre dashboard affiche zéro visiteur. L'analytique peut prendre jusqu'à 24 heures pour apparaître après le premier déploiement d'un site, donc les projets tout neufs paraissent vides pendant un moment. Les bloqueurs de publicités et le Do Not Track empêchent la comptabilisation d'une partie des visites, donc vos chiffres seront toujours en retrait par rapport à vos journaux serveur. Si aucun de ces cas ne s'applique, vérifiez que votre site est bien déployé et accessible publiquement.
+Quelques raisons courantes pour lesquelles votre dashboard affiche zéro visiteur. Les données analytiques peuvent prendre jusqu'à 24 heures pour apparaître après le premier déploiement d'un site, donc les tout nouveaux projets paraissent vides pendant un moment. Les bloqueurs de publicités et le Do Not Track empêchent la comptabilisation d'une partie des visites, donc vos chiffres seront toujours inférieurs à ceux de vos journaux serveur. Si aucun de ces cas ne s'applique, vérifiez que votre site est réellement déployé et accessible publiquement.
 
-[Problèmes d'analytique](/fr/help/troubleshooting/analytics-issues) approfondit le sujet des données retardées ou manquantes.
+[Problèmes d'analytique](/fr/help/troubleshooting/analytics-issues) approfondit les données manquantes ou retardées.
 
 ## Problèmes de connexion
 
-Impossible de vous connecter, ou vous êtes renvoyé vers l'écran de connexion ? Videz le cache et les cookies pour `dashboard.jamdesk.com`, puis essayez une fenêtre de navigation privée. Si vous vous connectez avec GitHub, votre email GitHub doit correspondre à l'email de votre compte Jamdesk.
+Vous n'arrivez pas à vous connecter, ou vous êtes systématiquement renvoyé à l'écran de connexion ? Videz le cache et les cookies pour `dashboard.jamdesk.com`, puis essayez une fenêtre de navigation privée. Si vous vous connectez avec GitHub, votre adresse e-mail GitHub doit correspondre à celle de votre compte Jamdesk.
 
 Consultez [Problèmes de connexion](/fr/help/troubleshooting/login-issues) pour les étapes de récupération de compte.
 
@@ -65,6 +77,6 @@ Consultez [Problèmes de connexion](/fr/help/troubleshooting/login-issues) pour 
     Parcourir tous les guides de dépannage
   </Card>
   <Card title="Contacter le support" icon="headset" href="/fr/help/support/contact">
-    Contacter directement l'équipe Jamdesk
+    Contactez directement l'équipe Jamdesk
   </Card>
 </Columns>

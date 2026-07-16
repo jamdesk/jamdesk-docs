@@ -2,24 +2,24 @@
 title: Codex
 description: >-
   Codex est l'agent de codage cloud d'OpenAI pour les tâches de documentation
-  asynchrones et multi-fichiers directement sur les dépôts GitHub.
+  asynchrones et multi-fichiers directement sur des dépôts GitHub.
 ---
 
-[Codex](https://openai.com/index/introducing-codex/) est l'agent de codage cloud d'OpenAI. Il fonctionne directement avec les dépôts GitHub, vous pouvez donc effectuer des tâches de documentation sur votre projet sans configurer d'environnement local au préalable.
+[Codex](https://openai.com/index/introducing-codex/) est l'agent de codage cloud d'OpenAI. Il fonctionne directement avec les dépôts GitHub, ce qui vous permet d'effectuer des tâches de documentation sur votre projet sans configurer d'abord un environnement local.
 
-Le compromis entre Codex et [Claude Code](/fr/ai/claude-code) tient surtout à la forme du workflow. Codex s'exécute dans le cloud et fonctionne de manière asynchrone : vous décrivez une portion de travail, vous vous éloignez, puis vous examinez une PR une fois terminée. Cela convient bien aux tâches par lots (diviser un README de 500 lignes en une dizaine de pages, ou générer une page de dépannage à partir de vos six derniers mois d'issues GitHub) mais n'est pas idéal pour les allers-retours nécessaires au peaufinage d'une seule page. Si votre tâche est un travail par lots sur plusieurs fichiers que vous préférez ne pas superviser, Codex est le bon choix. Pour un travail interactif sur une seule page, utilisez plutôt [Claude Code](/fr/ai/claude-code).
+Le compromis entre Codex et [Claude Code](/fr/ai/claude-code) porte surtout sur la forme du workflow. Codex s'exécute dans le cloud et fonctionne de manière asynchrone : vous décrivez une portion de travail, vous vous éloignez, puis vous examinez une PR une fois le travail terminé. Cela convient bien aux tâches par lots (diviser un README de 500 lignes en une douzaine de pages, ou générer une page de dépannage à partir de vos six derniers mois d'issues GitHub), mais ce n'est pas idéal pour les allers-retours nécessaires à l'affinage d'une seule page. Si votre tâche est un travail par lots sur plusieurs fichiers que vous préférez ne pas surveiller, Codex est le bon choix. Pour un travail interactif sur une seule page, utilisez plutôt [Claude Code](/fr/ai/claude-code).
 
 ## Configuration rapide
 
 <Steps>
-  <Step title="Ouvrez votre dépôt">
+  <Step title="Ouvrir votre dépôt">
     Accédez à votre dépôt de documentation Jamdesk dans Codex. Codex fonctionne directement avec les dépôts GitHub.
   </Step>
-  <Step title="Ajoutez des instructions pour l'agent">
-    Créez un fichier `AGENTS.md` à la racine de votre projet avec les standards de documentation afin que Codex respecte vos conventions.
+  <Step title="Ajouter des instructions pour l'agent">
+    Créez un fichier `AGENTS.md` à la racine de votre projet avec vos standards de documentation afin que Codex respecte vos conventions.
   </Step>
-  <Step title="Connectez le serveur MCP">
-    Ajoutez l'endpoint MCP de vos docs à `.codex/config.toml` pour que Codex puisse rechercher dans votre documentation publiée.
+  <Step title="Connecter le serveur MCP">
+    Ajoutez votre endpoint MCP de documentation à `.codex/config.toml` afin que Codex puisse rechercher dans votre documentation publiée.
   </Step>
 </Steps>
 
@@ -121,31 +121,45 @@ If you skip step 2, the page won't show up in the sidebar. Read `docs.json` befo
 ```
 
 <Tip>
-  Ajoutez votre terminologie produit, vos conventions de nommage d'API et toute règle de style propre à votre documentation.
+  Ajoutez la terminologie de votre produit, les conventions de nommage de votre API, ainsi que les règles de style propres à votre documentation.
 </Tip>
 
 ## Configuration MCP
 
-Ajoutez l'endpoint de vos docs à `.codex/config.toml` :
+Ajoutez votre endpoint de documentation à `.codex/config.toml` :
 
 ```toml .codex/config.toml
 [mcp_servers.my-docs]
 url = "https://your-project.jamdesk.app/_mcp"
 ```
 
-Remplacez `your-project` par votre sous-domaine Jamdesk — ou, si vous avez un domaine personnalisé actif, utilisez-le à la place : `url = "https://docs.acme.com/_mcp"`. Consultez [Serveur MCP](/fr/ai/mcp-server) pour les détails sur l'endpoint.
+Remplacez `your-project` par votre sous-domaine Jamdesk — ou, si vous avez un domaine personnalisé actif, utilisez-le à la place : `url = "https://docs.acme.com/_mcp"`. Consultez [Serveur MCP](/fr/ai/mcp-server) pour plus de détails sur l'endpoint.
 
 ## Exemples de prompts
 
-Codex exécute les tâches de manière asynchrone. Cela change la façon dont vous le prompt : au lieu d'un aller-retour interactif, vous lancez une tâche longue et revenez vérifier plus tard, donc les prompts qui portent leurs fruits sont ceux qui demandent une portion de travail complète.
+Codex exécute les tâches de manière asynchrone. Cela change la façon de le prompter : au lieu d'un dialogue interactif, vous lancez une tâche longue puis revenez vérifier plus tard le résultat. Les prompts efficaces sont donc ceux qui demandent une portion de travail conséquente.
 
-Un bon premier essai : *« Écris la documentation de l'API d'authentification à partir du code source dans /src/auth »*. Codex lit votre codebase, trouve les fichiers pertinents et génère les pages correspondantes. Pour quelque chose de plus complexe, pointez-le vers votre historique de bugs réel : *« Crée une page de dépannage couvrant les 5 erreurs les plus courantes dans nos issues GitHub »* tend à produire une page plus honnête que tout ce que vous écririez de mémoire.
+Un bon premier essai : *« Rédige la documentation de l'API d'authentification à partir de la source dans /src/auth »*. Codex lit votre base de code, trouve les fichiers pertinents et génère les pages correspondantes. Pour quelque chose de plus complexe, orientez-le vers votre historique réel de bugs : *« Crée une page de dépannage couvrant les 5 erreurs les plus courantes dans nos issues GitHub »* a tendance à produire une page plus honnête que tout ce que vous écririez de mémoire.
 
-Les restructurations multi-fichiers fonctionnent particulièrement bien dans ce mode. Confiez à Codex un README de 500 lignes et demandez-lui de le diviser en pages de documentation distinctes avec une navigation appropriée ; il reviendra avec une arborescence que vous pourrez examiner en une seule PR.
+Les restructurations multi-fichiers fonctionnent particulièrement bien dans ce mode. Copiez ce prompt dans Codex pour une tâche avec des critères de révision clairs :
+
+<Prompt title="Restructurer un grand README">
+Restructurez le `README.md` de 500 lignes en pages de documentation Jamdesk ciblées.
+
+Critères d'acceptation :
+
+- Conservez chaque détail technique, commande, avertissement et exemple de code unique du README.
+- Regroupez le contenu en pages `.mdx` centrées sur des tâches, avec des noms de fichiers explicites.
+- Donnez à chaque page un frontmatter `title` et `description`, un paragraphe d'introduction, et des cartes « Et ensuite ? ».
+- Ajoutez chaque nouvelle page au groupe approprié dans `docs.json` et conservez un ordre de pages logique.
+- Utilisez uniquement les composants Jamdesk déjà répertoriés dans `components/overview.mdx` ; n'inventez pas de composants.
+- Corrigez les liens internes pour la nouvelle structure de fichiers et signalez tout lien source que vous ne parvenez pas à résoudre.
+- Ne supprimez pas le README d'origine tant que tout le contenu n'est pas représenté et que les nouvelles pages ne passent pas les contrôles de validation et de liens brisés du projet.
+</Prompt>
 
 ## Le skill /update-jamdesk
 
-Pour des mises à jour automatisées de la documentation lorsque le code change, installez le skill `/update-jamdesk` :
+Pour des mises à jour automatisées de la documentation lors de changements de code, installez le skill `/update-jamdesk` :
 
 ```bash
 npx skills add jamdesk/skills --skill update-jamdesk -a codex
@@ -157,9 +171,9 @@ Consultez [Mises à jour automatisées](/fr/ai/automated-updates) pour le guide 
 
 <Columns cols={2}>
   <Card title="Rédiger avec l'IA" icon="wand-magic-sparkles" href="/fr/ai/writing-with-ai">
-    Stratégies de prompt qui fonctionnent avec tous les outils
+    Des stratégies de prompt qui fonctionnent avec tous les outils
   </Card>
   <Card title="Claude Code" icon="terminal" href="/fr/ai/claude-code">
-    Modèle CLAUDE.md et workflows de contexte projet complet
+    Modèle CLAUDE.md et workflows de contexte complet du projet
   </Card>
 </Columns>
