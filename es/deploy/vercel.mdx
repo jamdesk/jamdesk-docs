@@ -1,120 +1,49 @@
 ---
 title: Vercel
-description: "Usa las reescrituras de Vercel para hacer proxy de solicitudes de docs a Jamdesk. Las reescrituras ocurren en el edge sin cambiar la URL en el navegador."
+description: Sirve la documentación de Jamdesk en /docs en tu sitio de Vercel con reescrituras de vercel.json o Edge Middleware.
 ---
 
-Si tu sitio ya está desplegado en Vercel, dos reglas de reescritura en `vercel.json` (o `next.config.js`) son suficientes para servir la documentación de Jamdesk en `/docs` -- sin necesidad de un proxy separado ni cambios de DNS. Para la verificación de dominio personalizado, también se cubre a continuación un enfoque con Edge Middleware.
+Si tu sitio está desplegado en Vercel, puedes servir tu documentación de Jamdesk en `/docs` en tu propio dominio. Hay dos formas de configurarlo, y ambas producen el mismo resultado:
+
+- **[Opción A: reescrituras de vercel.json](#opción-a-reescrituras-de-verceljson)** — sin código, funciona con cualquier framework. La mayoría de los proyectos deberían empezar aquí.
+- **[Opción B: Edge Middleware](#opción-b-edge-middleware)** — para sitios que ya usan Edge Middleware y quieren tener Jamdesk en el mismo archivo.
 
 ## Requisitos previos
 
 - Un proyecto desplegado en Vercel
-- Tu subdominio de Jamdesk (que se encuentra en la configuración del dashboard)
+- Tu subdominio de Jamdesk (que se encuentra en la configuración del dashboard), con **Host at /docs** habilitado
+- Tu dominio personalizado registrado y verificado en el dashboard
 
-## Paso 1: Actualizar vercel.json
+## Opción A: reescrituras de vercel.json
 
-Agrega una configuración de `rewrites` a tu archivo `vercel.json`. Si el archivo no existe, créalo en la raíz de tu proyecto:
+Una reescritura puede cambiar el destino de una solicitud, pero no puede añadir un encabezado de solicitud — por eso cada destino lleva en su lugar un marcador público, `?jd_proxy=1`, que le indica a Jamdesk que la solicitud llegó a través de tu proxy. Jamdesk lo elimina antes de renderizar; tus visitantes nunca lo ven.
 
-```json vercel.json
-{
-  "rewrites": [
-    {
-      "source": "/docs",
-      "destination": "https://YOUR_SLUG.jamdesk.app/docs"
-    },
-    {
-      "source": "/docs/:path*",
-      "destination": "https://YOUR_SLUG.jamdesk.app/docs/:path*"
-    },
-    {
-      "source": "/_next/:path*",
-      "destination": "https://YOUR_SLUG.jamdesk.app/_next/:path*"
-    },
-    {
-      "source": "/_jd/:path*",
-      "destination": "https://YOUR_SLUG.jamdesk.app/_jd/:path*"
-    }
-  ]
-}
-```
-
-<Note>
-Reemplaza `YOUR_SLUG` con tu subdominio real de Jamdesk (p. ej., `acme` si tu documentación está en `acme.jamdesk.app`).
-</Note>
-
-Las reescrituras de `/_next/` y `/_jd/` son necesarias para que los assets de Next.js (JS, CSS) y los recursos de Jamdesk (fuentes, imágenes, branding) se carguen correctamente.
-
-## Paso 2: Desplegar
-
-Para desplegar tus cambios en Vercel, ejecuta:
-
-```bash
-vercel --prod
-```
-
-O haz push a tu repositorio Git conectado para activar un despliegue automático.
-
-## Paso 3: Verificar
-
-Visita `https://yoursite.com/docs` para confirmar que tu documentación se está sirviendo correctamente.
-
-## Entendiendo la configuración
-
-| Propiedad | Descripción |
-|----------|-------------|
-| `source` | El patrón de ruta en tu dominio que activa la reescritura |
-| `destination` | La URL a la que se hace proxy de la solicitud |
-| `:path*` | Un comodín que captura todos los segmentos de ruta después de `/docs/` |
-
-Las reglas de reescritura manejan:
-1. La ruta base `/docs` (p. ej., `yoursite.com/docs`)
-2. Todas las rutas anidadas (p. ej., `yoursite.com/docs/getting-started`)
-3. Los assets estáticos de Next.js (`/_next/`) y los recursos de Jamdesk (`/_jd/`)
-
-## Agregar a reescrituras existentes
-
-Si ya tienes reescrituras configuradas, agrega las reglas de Jamdesk a tu array existente:
+Crea o edita `vercel.json` en la raíz de tu proyecto, reemplazando `YOUR_SLUG` por tu subdominio de Jamdesk:
 
 ```json vercel.json
 {
   "rewrites": [
-    { "source": "/api/:path*", "destination": "/api/:path*" },
-    { "source": "/docs", "destination": "https://YOUR_SLUG.jamdesk.app/docs" },
-    { "source": "/docs/:path*", "destination": "https://YOUR_SLUG.jamdesk.app/docs/:path*" },
+    { "source": "/docs", "destination": "https://YOUR_SLUG.jamdesk.app/docs?jd_proxy=1" },
+    { "source": "/docs/:path*", "destination": "https://YOUR_SLUG.jamdesk.app/docs/:path*?jd_proxy=1" },
     { "source": "/_next/:path*", "destination": "https://YOUR_SLUG.jamdesk.app/_next/:path*" },
-    { "source": "/_jd/:path*", "destination": "https://YOUR_SLUG.jamdesk.app/_jd/:path*" }
+    { "source": "/_jd/:path*", "destination": "https://YOUR_SLUG.jamdesk.app/_jd/:path*?jd_proxy=1" }
   ]
 }
 ```
 
-<Warning>
-El orden de las reescrituras importa. Coloca las reglas más específicas antes que las generales.
-</Warning>
+`/_next/:path*` no necesita marcador — es una ruta de assets estáticos que Jamdesk nunca restringe. Si tu sitio no es una aplicación Next.js, no tiene archivos `/_next/` propios, así que la reescritura sigue siendo correcta: cada solicitud bajo esa ruta simplemente pasa directamente a Jamdesk.
 
-## Usar next.config.js (proyectos Next.js)
-
-Para proyectos Next.js, también puedes configurar las reescrituras en `next.config.js`:
+Las mismas cuatro reglas funcionan en `next.config.js` para proyectos Next.js:
 
 ```javascript next.config.js
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   async rewrites() {
     return [
-      {
-        source: "/docs",
-        destination: "https://YOUR_SLUG.jamdesk.app/docs",
-      },
-      {
-        source: "/docs/:path*",
-        destination: "https://YOUR_SLUG.jamdesk.app/docs/:path*",
-      },
-      {
-        source: "/_next/:path*",
-        destination: "https://YOUR_SLUG.jamdesk.app/_next/:path*",
-      },
-      {
-        source: "/_jd/:path*",
-        destination: "https://YOUR_SLUG.jamdesk.app/_jd/:path*",
-      },
+      { source: "/docs", destination: "https://YOUR_SLUG.jamdesk.app/docs?jd_proxy=1" },
+      { source: "/docs/:path*", destination: "https://YOUR_SLUG.jamdesk.app/docs/:path*?jd_proxy=1" },
+      { source: "/_next/:path*", destination: "https://YOUR_SLUG.jamdesk.app/_next/:path*" },
+      { source: "/_jd/:path*", destination: "https://YOUR_SLUG.jamdesk.app/_jd/:path*?jd_proxy=1" },
     ];
   },
 };
@@ -122,53 +51,39 @@ const nextConfig = {
 export default nextConfig;
 ```
 
-## Solución de problemas
+### Reenvía también tus archivos raíz
 
-<Accordion title="Las reescrituras no funcionan">
-Asegúrate de que `vercel.json` esté en la raíz de tu proyecto y tenga el formato correcto. Revisa los registros de despliegue de Vercel para detectar errores de configuración.
-</Accordion>
+`robots.txt`, `sitemap.xml`, `llms.txt` y `llms-full.txt` se encuentran en la raíz del dominio, fuera de `/docs` — sin ellos, los motores de búsqueda y los agentes de IA no pueden descubrir tu documentación. Si Jamdesk controla la raíz de tu dominio, añade cuatro reglas más:
 
-<Accordion title="Error 404 en páginas anidadas">
-Verifica que tengas ambas reglas de reescritura: una para `/docs` y otra para `/docs/:path*`. Si falta la regla con comodín, las páginas anidadas fallarán.
-</Accordion>
+```json vercel.json
+{
+  "rewrites": [
+    { "source": "/robots.txt", "destination": "https://YOUR_SLUG.jamdesk.app/robots.txt?jd_proxy=1" },
+    { "source": "/sitemap.xml", "destination": "https://YOUR_SLUG.jamdesk.app/sitemap.xml?jd_proxy=1" },
+    { "source": "/llms.txt", "destination": "https://YOUR_SLUG.jamdesk.app/llms.txt?jd_proxy=1" },
+    { "source": "/llms-full.txt", "destination": "https://YOUR_SLUG.jamdesk.app/llms-full.txt?jd_proxy=1" }
+  ]
+}
+```
 
-<Accordion title="Bucles de redireccionamiento infinitos">
-Comprueba que tu URL de destino use `https://` y apunte a `jamdesk.app`, no a tu propio dominio.
-</Accordion>
+<Warning>
+Si tu sitio de marketing ya sirve su propio `robots.txt` o `sitemap.xml` en la raíz, combina ambos en lugar de sobrescribir uno con el otro.
+</Warning>
 
-<Accordion title="Los assets no cargan (estilos rotos, fuentes faltantes)">
-Comprueba que tengas reglas de reescritura para `/_next/:path*` y `/_jd/:path*`. Estas sirven los assets de Next.js (JS, CSS) y los recursos de Jamdesk (fuentes, imágenes). Si falta alguna, el diseño se rompe.
-</Accordion>
+### Despliega y verifica
 
-<Accordion title="Error 403: dominio no autorizado">
-Al usar Edge Middleware con un dominio personalizado:
+Despliega con `vercel --prod` (o haz push a tu repositorio Git conectado), luego abre `https://yoursite.com/docs` y revisa el código fuente de la página. Comprueba dos cosas:
 
-1. Verifica que tu dominio esté registrado en el dashboard de Jamdesk
-2. Completa la verificación DNS (registro TXT)
-3. Confirma que el encabezado `X-Jamdesk-Forwarded-Host` esté configurado en tu middleware
-4. Comprueba que el dominio esté mapeado al proyecto correcto
+1. `<link rel="canonical">` apunta a **tu** dominio, no a `YOUR_SLUG.jamdesk.app`
+2. **No** hay ninguna etiqueta `<meta name="robots" content="noindex">`
 
-Las reescrituras simples (sin dominio personalizado) no necesitan este encabezado.
-</Accordion>
+Si alguno de los dos no es correcto, a alguna reescritura le falta el marcador `?jd_proxy=1` — consulta [Por qué importa el marcador](#por-qué-importa-el-marcador).
 
-## Verificación de dominio personalizado
+## Opción B: Edge Middleware
 
-Las reescrituras de Vercel funcionan haciendo proxy de las solicitudes a tu subdominio de Jamdesk (`YOUR_SLUG.jamdesk.app`). Esta configuración básica no requiere verificación de dominio.
+Si ya usas Edge Middleware, configura ahí el encabezado de solicitud `X-Jamdesk-Forwarded-Host` en lugar de usar el marcador. Las dos señales son equivalentes — elige esta opción solo si prefieres mantener la lógica de enrutamiento en código que ya mantienes.
 
-Si configuraste un dominio personalizado en el dashboard de Jamdesk con la opción "Host at /docs", necesitarás usar Edge Middleware en lugar de reescrituras simples para establecer el encabezado de verificación requerido.
-
-### Cómo funciona
-
-El middleware reenvía las solicitudes a tu subdominio de Jamdesk mientras pasa el dominio original en el encabezado `X-Jamdesk-Forwarded-Host`. Jamdesk usa este encabezado para:
-
-1. **Verificar tu dominio** — Asegura que solo los dominios autorizados puedan servir tu documentación
-2. **Aplicar la configuración correcta** — Usa la configuración de tu dominio desde el dashboard
-
-Esto significa que el middleware es una **configuración única**. Si luego cambias tu dominio personalizado o la configuración en el dashboard de Jamdesk, el middleware no necesita actualizarse — todas las decisiones de enrutamiento se toman en el servidor.
-
-### Usar Edge Middleware
-
-Crea un archivo `middleware.ts` en la raíz de tu proyecto:
+Crea un archivo `middleware.ts` en la raíz de tu proyecto, reemplazando `YOUR_SLUG` por tu subdominio de Jamdesk:
 
 ```typescript middleware.ts
 import { NextResponse } from 'next/server';
@@ -178,18 +93,9 @@ const JAMDESK_HOST = 'YOUR_SLUG.jamdesk.app';
 
 export function middleware(request: NextRequest) {
   const url = request.nextUrl;
-
-  // Only proxy /docs and asset paths
-  if (!url.pathname.startsWith('/docs') &&
-      !url.pathname.startsWith('/_next') &&
-      !url.pathname.startsWith('/_jd')) {
-    return NextResponse.next();
-  }
-
-  // Rewrite to Jamdesk with forwarded host header
   const destination = new URL(url.pathname + url.search, `https://${JAMDESK_HOST}`);
 
-  // Clone headers and add the forwarded host
+  // Clone headers and tell Jamdesk which domain the visitor actually used.
   const headers = new Headers(request.headers);
   headers.set('X-Jamdesk-Forwarded-Host', url.hostname);
 
@@ -199,42 +105,98 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/docs', '/docs/:path*', '/_next/:path*', '/_jd/:path*'],
+  matcher: ['/docs', '/docs/:path*', '/_jd/:path*'],
 };
 ```
 
-<Note>
-Reemplaza `YOUR_SLUG` con tu subdominio real de Jamdesk.
-</Note>
-
 <Warning>
-El encabezado `X-Jamdesk-Forwarded-Host` es **obligatorio**. Permite:
-- La verificación del dominio (tu dominio debe estar registrado en el dashboard)
-- La generación correcta de URL para enlaces y assets
-- La configuración adecuada desde la configuración de tu dashboard
-
-Sin este encabezado, las solicitudes serán rechazadas con un error 403.
+**No añadas `/_next/:path*` al matcher.** El middleware se ejecuta *antes* de la comprobación del sistema de archivos de Vercel, así que hacer coincidir `/_next/` envía el JavaScript y el CSS de tu propio sitio a Jamdesk y rompe tus estilos. El siguiente paso enruta `/_next/` de forma segura.
 </Warning>
 
-### Cuándo usar Middleware frente a reescrituras
+El archivo debe llamarse `middleware.ts` y exportar una función llamada `middleware`. Next.js 16 sugiere renombrarlo a `proxy.ts`, pero la producción de Vercel todavía no invoca `proxy.ts` — renombrarlo lo desactiva silenciosamente.
 
-| Enfoque | Usar cuando |
-|----------|----------|
-| **Reescrituras** | Configuración básica sin verificación de dominio personalizado |
-| **Edge Middleware** | Dominio personalizado con la opción "Host at /docs" habilitada |
+### Enruta los assets y los archivos raíz en vercel.json
 
-Si no necesitas verificación de dominio personalizado, el enfoque más simple con reescrituras es suficiente.
+Las páginas de Jamdesk cargan sus bundles desde `/_next/`, y los archivos raíz como `robots.txt` quedan fuera del matcher anterior. Enruta ambos con reescrituras — las reescrituras se ejecutan *después* de la comprobación del sistema de archivos, así que la salida de tu propio build siempre gana y solo las solicitudes que tu sitio no puede servir pasan a Jamdesk:
+
+```json vercel.json
+{
+  "rewrites": [
+    { "source": "/_next/:path*", "destination": "https://YOUR_SLUG.jamdesk.app/_next/:path*" },
+    { "source": "/robots.txt", "destination": "https://YOUR_SLUG.jamdesk.app/robots.txt?jd_proxy=1" },
+    { "source": "/sitemap.xml", "destination": "https://YOUR_SLUG.jamdesk.app/sitemap.xml?jd_proxy=1" },
+    { "source": "/llms.txt", "destination": "https://YOUR_SLUG.jamdesk.app/llms.txt?jd_proxy=1" },
+    { "source": "/llms-full.txt", "destination": "https://YOUR_SLUG.jamdesk.app/llms-full.txt?jd_proxy=1" }
+  ]
+}
+```
+
+Los archivos raíz llevan `?jd_proxy=1` porque el middleware no se ejecuta sobre ellos y una reescritura no puede establecer el encabezado. Añádelos solo si Jamdesk controla la raíz de tu dominio — si tu sitio sirve su propio `robots.txt` o `sitemap.xml`, combínalos en su lugar.
+
+### Despliega y verifica
+
+Despliega con `vercel --prod` (o haz push a tu repositorio Git conectado), luego abre `https://yoursite.com/docs` y revisa el código fuente de la página. Comprueba dos cosas:
+
+1. `<link rel="canonical">` apunta a **tu** dominio, no a `YOUR_SLUG.jamdesk.app`
+2. **No** hay ninguna etiqueta `<meta name="robots" content="noindex">`
+
+Si alguno de los dos no es correcto, el encabezado `X-Jamdesk-Forwarded-Host` no está llegando a Jamdesk — confirma que `/docs` está en el matcher.
+
+## Por qué importa el marcador
+
+Jamdesk necesita una señal de que una solicitud llegó a través de tu proxy y no como un acceso directo a tu subdominio `*.jamdesk.app`. El marcador `?jd_proxy=1` y el encabezado `X-Jamdesk-Forwarded-Host` transmiten ambos esa señal, y Jamdesk los trata como equivalentes. Cualquiera de los dos confirma tu dominio registrado y apunta los enlaces canónicos, de Open Graph y del sitemap hacia él, y permite que [Custom domain only](/es/deploy/custom-domain-only) distinga el tráfico del proxy de los accesos directos.
+
+Cuando falta la señal, el fallo es silencioso — las páginas se siguen renderizando, pero con `noindex` y canónicos de subdominio si no hay ningún dominio personalizado registrado, o con una verificación de Custom domain only fallida si sí lo hay. Un **403** es el problema opuesto: la señal está presente, pero indica un dominio que no está registrado y activo para este proyecto.
+
+## Solución de problemas
+
+<Accordion title="El CSS y el JavaScript de mi sitio se rompieron después de añadir el middleware">
+Es casi seguro que tu matcher incluye `/_next/:path*`. El middleware se ejecuta antes de la comprobación del sistema de archivos, así que esto enruta los assets de tu propia aplicación hacia Jamdesk. Elimina `/_next/` del matcher y enrútalo a través de `vercel.json` en su lugar — consulta la Opción B.
+</Accordion>
+
+<Accordion title="Las páginas de documentación no se están indexando en Google">
+Revisa el código fuente de la página en `https://yoursite.com/docs`. Si ves `<meta name="robots" content="noindex">`, ni el marcador ni el encabezado están llegando a Jamdesk. En la Opción A, confirma que cada destino de reescritura termina en `?jd_proxy=1` (excepto `/_next/:path*`). En la Opción B, confirma que `/docs` está en el matcher del middleware — una reescritura de `vercel.json` por sí sola no puede establecer el encabezado.
+</Accordion>
+
+<Accordion title="Error 403: dominio no autorizado">
+El marcador o el encabezado está llegando a Jamdesk, pero indica un dominio que Jamdesk no va a servir para este proyecto:
+
+1. Verifica que tu dominio esté registrado en el dashboard de Jamdesk
+2. Completa la verificación de DNS (registro TXT)
+3. Comprueba que el dominio esté asociado al proyecto correcto y marcado como activo
+4. En la Opción B, confirma que el middleware establece el encabezado con tu dominio de cara al visitante, no con una URL de preview
+</Accordion>
+
+<Accordion title="Error 404 en páginas anidadas">
+Verifica que tus reescrituras (o el matcher) cubran tanto `/docs` como `/docs/:path*`. Si falta el comodín, las páginas anidadas fallarán.
+</Accordion>
+
+<Accordion title="Los assets no cargan (estilos rotos, fuentes faltantes)">
+Confirma que tanto `/_jd/:path*` como `/_next/:path*` estén enrutados. `/_jd/` sirve las fuentes, imágenes y branding de Jamdesk; `/_next/` sirve los bundles de la documentación. Si falta alguno, el diseño se rompe.
+</Accordion>
+
+<Accordion title="El middleware no se está ejecutando">
+Comprueba que el archivo se llame `middleware.ts` (no `proxy.ts`) en la raíz de tu proyecto, y que exporte una función llamada `middleware`. La advertencia de obsolescencia de Next.js 16 recomienda `proxy.ts`, pero la producción de Vercel no lo invoca.
+</Accordion>
+
+<Accordion title="Bucles de redireccionamiento infinitos">
+Comprueba que la URL de destino use `https://` y apunte a `jamdesk.app`, no de vuelta a tu propio dominio.
+</Accordion>
+
+<Accordion title="La verificación de Custom domain only sigue fallando">
+La verificación obtiene `/_jd/preflight` en tu dominio activo e inspecciona qué llegó realmente a Jamdesk. Si informa que tu proxy «no se identifica», una reescritura llegó a Jamdesk sin el marcador o el encabezado — revisa de nuevo cada destino de reescritura (Opción A) o los encabezados de tu middleware (Opción B). Consulta [Custom domain only](/es/deploy/custom-domain-only).
+</Accordion>
 
 ## ¿Qué sigue?
 
 <Columns cols={3}>
-  <Card title="Resumen del despliegue" icon="cloud-arrow-up" href="/es/deploy/overview">
-    Compara opciones de alojamiento
+  <Card title="Custom Domain Only" icon="eye-slash" href="/es/deploy/custom-domain-only">
+    Evita que tu subdominio responda directamente
+  </Card>
+  <Card title="Dominios personalizados" icon="globe" href="/es/deploy/custom-domains">
+    Verifica el DNS y soluciona problemas
   </Card>
   <Card title="Alojamiento en subruta" icon="folder-tree" href="/es/deploy/subpath-hosting">
     Sirve la documentación en /docs
-  </Card>
-  <Card title="Dominios personalizados" icon="globe" href="/es/deploy/custom-domains">
-    Verifica DNS y soluciona problemas
   </Card>
 </Columns>

@@ -2,12 +2,13 @@
 title: Codex
 description: >-
   Codex es el agente de programación en la nube de OpenAI para tareas de
-  documentación por lotes, multiarchivo y asíncronas contra repos de GitHub.
+  documentación asíncronas y multiarchivo directamente en repositorios de
+  GitHub.
 ---
 
-[Codex](https://openai.com/index/introducing-codex/) es el agente de programación en la nube de OpenAI. Funciona directamente con repos de GitHub, así que puedes ejecutar trabajo de documentación contra tu proyecto sin configurar antes un entorno local.
+[Codex](https://openai.com/index/introducing-codex/) es el agente de programación en la nube de OpenAI. Funciona directamente con repositorios de GitHub, así que puedes ejecutar tareas de documentación en tu proyecto sin configurar antes un entorno local.
 
-La diferencia entre Codex y [Claude Code](/es/ai/claude-code) tiene que ver sobre todo con la forma del flujo de trabajo. Codex se ejecuta en la nube y trabaja de forma asíncrona: describes un bloque de trabajo, te alejas y revisas un PR cuando está listo. Eso encaja bien con tareas por lotes (dividir un README de 500 líneas en una docena de páginas, o generar una página de solución de problemas a partir de tus últimos seis meses de issues de GitHub), pero no es ideal para el ida y vuelta de refinar una sola página. Si tu trabajo es una tarea por lotes multiarchivo que prefieres no supervisar de cerca, Codex es la opción correcta. Para trabajo interactivo en una sola página, usa [Claude Code](/es/ai/claude-code) en su lugar.
+La diferencia entre Codex y [Claude Code](/es/ai/claude-code) tiene que ver sobre todo con la forma del flujo de trabajo. Codex se ejecuta en la nube y funciona de forma asíncrona: describes un bloque de trabajo, te alejas y revisas un PR cuando está listo. Esto encaja bien con tareas por lotes (dividir un README de 500 líneas en una docena de páginas, o generar una página de solución de problemas a partir de tus últimos seis meses de issues de GitHub), pero no es ideal para el ir y venir de refinar una sola página. Si tu trabajo es una tarea por lotes de varios archivos que prefieres no supervisar de cerca, Codex es la opción adecuada. Para trabajo interactivo en una sola página, usa [Claude Code](/es/ai/claude-code) en su lugar.
 
 ## Configuración rápida
 
@@ -15,11 +16,11 @@ La diferencia entre Codex y [Claude Code](/es/ai/claude-code) tiene que ver sobr
   <Step title="Abre tu repositorio">
     Navega a tu repositorio de documentación de Jamdesk en Codex. Codex funciona directamente con repositorios de GitHub.
   </Step>
-  <Step title="Agrega instrucciones para el agente">
+  <Step title="Añade instrucciones para el agente">
     Crea un archivo `AGENTS.md` en la raíz de tu proyecto con los estándares de documentación para que Codex siga tus convenciones.
   </Step>
   <Step title="Conecta el servidor MCP">
-    Agrega el endpoint MCP de tu documentación a `.codex/config.toml` para que Codex pueda buscar en tu documentación publicada.
+    Añade tu endpoint MCP de documentación a `.codex/config.toml` para que Codex pueda buscar en tu documentación publicada.
   </Step>
 </Steps>
 
@@ -121,27 +122,41 @@ If you skip step 2, the page won't show up in the sidebar. Read `docs.json` befo
 ```
 
 <Tip>
-  Agrega tu terminología de producto, tus convenciones de nomenclatura de API y cualquier regla de estilo específica de tu documentación.
+  Añade la terminología de tu producto, las convenciones de nomenclatura de tu API y cualquier regla de estilo específica de tu documentación.
 </Tip>
 
 ## Configuración de MCP
 
-Agrega el endpoint de tu documentación a `.codex/config.toml`:
+Añade el endpoint de tu documentación a `.codex/config.toml`:
 
 ```toml .codex/config.toml
 [mcp_servers.my-docs]
 url = "https://your-project.jamdesk.app/_mcp"
 ```
 
-Reemplaza `your-project` con tu subdominio de Jamdesk — o, si tienes un dominio personalizado activo, úsalo en su lugar: `url = "https://docs.acme.com/_mcp"`. Consulta [MCP Server](/es/ai/mcp-server) para conocer los detalles del endpoint.
+Sustituye `your-project` por tu subdominio de Jamdesk — o, si tienes un dominio personalizado activo, úsalo en su lugar: `url = "https://docs.acme.com/_mcp"`. Consulta [Servidor MCP](/es/ai/mcp-server) para más detalles sobre el endpoint.
 
-## Ejemplos de prompts
+## Prompts de ejemplo
 
-Codex ejecuta tareas de forma asíncrona. Eso cambia cómo lo prompteas: en lugar de un ida y vuelta interactivo, lanzas una tarea larga y revisas después, así que los prompts que valen la pena son los que piden un bloque de trabajo.
+Codex ejecuta tareas de forma asíncrona. Eso cambia la forma de escribir los prompts: en lugar de un ir y venir interactivo, lanzas una tarea larga y revisas el resultado más tarde, así que los prompts que mejor funcionan son los que piden un bloque de trabajo completo.
 
-Un buen primer intento: *"Escribe la documentación de la API de autenticación basándote en el código fuente de /src/auth"*. Codex lee tu código, encuentra los archivos relevantes y genera páginas coherentes. Para algo más desordenado, apúntalo a tu historial real de bugs: *"Crea una página de solución de problemas que cubra los 5 errores más comunes en nuestros issues de GitHub"* suele producir una página más honesta que cualquier cosa que escribirías de memoria.
+Un buen primer intento: *"Escribe documentación para la API de autenticación basándote en el código fuente de /src/auth"*. Codex lee tu código base, encuentra los archivos relevantes y genera páginas equivalentes. Para algo más complicado, apúntalo a tu historial real de errores: *"Crea una página de solución de problemas que cubra los 5 errores más comunes en nuestros issues de GitHub"* suele producir una página más honesta que cualquier cosa que escribirías de memoria.
 
-Las reestructuraciones multiarchivo funcionan especialmente bien en este modo. Entrégale a Codex un README de 500 líneas y pídele que divida el archivo en páginas de documentación separadas con la navegación correspondiente; volverá con un árbol que puedes revisar en un solo PR.
+Las reestructuraciones de varios archivos funcionan especialmente bien en este modo. Copia este prompt en Codex para una tarea con criterios de revisión claros:
+
+<Prompt title="Reestructura un README grande">
+Reestructura el `README.md` de 500 líneas en páginas de documentación de Jamdesk enfocadas en tareas concretas.
+
+Criterios de aceptación:
+
+- Preserva cada detalle técnico único, comando, advertencia y ejemplo de código del README.
+- Agrupa el contenido en páginas `.mdx` enfocadas en tareas con nombres de archivo descriptivos.
+- Dale a cada página el frontmatter `title` y `description`, un párrafo de apertura y tarjetas de "¿Qué sigue?".
+- Añade cada página nueva al grupo correspondiente en `docs.json` y mantén el orden de las páginas de forma lógica.
+- Usa solo componentes de Jamdesk ya incluidos en `components/overview.mdx`; no inventes componentes.
+- Corrige los enlaces internos para la nueva estructura de archivos e informa de cualquier enlace de origen que no puedas resolver.
+- No elimines el README original hasta que todo el contenido esté representado y las páginas nuevas pasen las comprobaciones de validación y enlaces rotos del proyecto.
+</Prompt>
 
 ## La skill /update-jamdesk
 
@@ -151,7 +166,7 @@ Para actualizaciones automáticas de documentación cuando cambia el código, in
 npx skills add jamdesk/skills --skill update-jamdesk -a codex
 ```
 
-Consulta [Automated Updates](/es/ai/automated-updates) para la guía completa.
+Consulta [Actualizaciones automáticas](/es/ai/automated-updates) para la guía completa.
 
 ## ¿Qué sigue?
 
@@ -160,6 +175,6 @@ Consulta [Automated Updates](/es/ai/automated-updates) para la guía completa.
     Estrategias de prompting que funcionan en todas las herramientas
   </Card>
   <Card title="Claude Code" icon="terminal" href="/es/ai/claude-code">
-    Plantilla de CLAUDE.md y flujos de trabajo con contexto de proyecto completo
+    Plantilla de CLAUDE.md y flujos de trabajo de contexto de todo el proyecto
   </Card>
 </Columns>
