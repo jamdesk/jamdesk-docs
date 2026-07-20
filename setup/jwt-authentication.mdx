@@ -1,0 +1,309 @@
+---
+title: "JWT authentication"
+description: Grant docs access from your own login system using signed JWTs.
+---
+
+<Note>
+  JWT authentication requires a paid plan and a Jamdesk project [connected to a Git repository](/setup/connecting-github). Configuration lives in `docs.json`, so it piggybacks on your normal build-and-deploy flow.
+</Note>
+
+If your product already has its own login system, JWT authentication lets you gate your docs behind it instead of handing out a shared passphrase. Your backend signs a short-lived token when a signed-in user clicks through to the docs; Jamdesk verifies it once, mints a session, and the visitor browses normally from then on — no separate Jamdesk account, no password to distribute.
+
+## How this differs from password protection
+
+[Password protection](/setup/password-protection) gives every visitor the same shared passphrase — good for internal docs, staging previews, or a single partner audience. JWT authentication is per-user: each visitor's identity, session length, and page access come from a token *your* backend signs, so you can tie docs access to your existing customer accounts, plans, or roles instead of one shared secret.
+
+The two modes are mutually exclusive — `auth.password` and `auth.jwt` cannot both be enabled at once. See [Migrating from password protection](#migrating-from-password-protection) below if you're switching from one to the other.
+
+## Setup steps
+
+<Steps>
+  <Step title="Enable auth.jwt in docs.json">
+    ```json docs.json
+    {
+      "$schema": "https://jamdesk.com/docs.json",
+      "name": "Acme Docs",
+      "theme": "jam",
+      "auth": {
+        "jwt": {
+          "enabled": true,
+          "loginUrl": "https://app.example.com/docs-login",
+          "public": ["/changelog/*"]
+        }
+      }
+    }
+    ```
+
+    `loginUrl` is required whenever `enabled: true` — it must be an absolute `https://` URL. Unauthenticated visitors are redirected here with `?redirect=<path>` so your login flow knows where to send them back. `public` is optional: paths or globs (`*` for one segment, `**` for any depth) that stay reachable without signing in.
+  </Step>
+
+  <Step title="Generate the signing key">
+    Open **Project Settings** in the dashboard and find the **JWT authentication** card. Click **Generate signing key**.
+
+    Jamdesk creates an Ed25519 keypair, keeps only the *public* key, and shows you the *private* key exactly once. Copy it into your secret manager immediately — Jamdesk never stores it, never emails it, and can't recover it if you lose it. If that happens, generate a new key (this invalidates the old one, so update your backend's signing key at the same time).
+  </Step>
+
+  <Step title="Commit and rebuild">
+    ```bash
+    git add docs.json
+    git commit -m "Turn on JWT authentication"
+    git push
+    ```
+
+    Once the build publishes, the site gates every page. Requests without a valid session redirect to your `loginUrl`.
+  </Step>
+</Steps>
+
+## Integrate your login flow
+
+When a signed-in user clicks through to your docs, your backend signs a JWT and redirects the browser to the docs site's callback URL with the token in the URL **fragment** (after the `#`) — fragments never reach your server logs or any reverse proxy, since browsers don't send them in the request.
+
+The token must be signed with **EdDSA** (Ed25519, matching the key you generated in the dashboard), and its `exp` claim should be **no more than about 10 seconds** in the future. This isn't a session length — it's a handshake window. The actual session length is controlled separately by the `expiresAt` field in the payload (see the [payload reference](#payload-reference) below).
+
+<CodeGroup>
+```typescript TypeScript (jose)
+import { SignJWT, importPKCS8 } from "jose";
+
+// Store this in your secret manager — it's the private key Jamdesk showed
+// you once when you generated it in Project Settings.
+const privateKey = await importPKCS8(process.env.JAMDESK_JWT_PRIVATE_KEY!, "EdDSA");
+
+async function signDocsToken(user: { groups: string[] }) {
+  return new SignJWT({
+    host: "acme.jamdesk.app", // or your custom domain, e.g. "docs.example.com"
+    expiresAt: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7, // 7-day session
+    groups: user.groups,
+    apiPlaygroundInputs: {
+      header: { Authorization: `Bearer ${user.apiToken}` },
+    },
+  })
+    .setProtectedHeader({ alg: "EdDSA" })
+    .setExpirationTime("10s") // handshake window, not session length
+    .sign(privateKey);
+}
+
+// In your "open docs" route/button handler:
+app.get("/docs-login", requireAuth, async (req, res) => {
+  const token = await signDocsToken(req.user);
+  const redirect = req.query.redirect ?? "/";
+  res.redirect(
+    `https://acme.jamdesk.app/_jd/auth/callback?redirect=${encodeURIComponent(
+      String(redirect)
+    )}#${token}`
+  );
+});
+```
+
+```python Python (pyjwt)
+import time
+import jwt  # PyJWT >= 2.4, with the cryptography extra installed
+
+with open("jamdesk_jwt_private_key.pem", "rb") as f:
+    PRIVATE_KEY = f.read()
+
+def sign_docs_token(user):
+    payload = {
+        "host": "acme.jamdesk.app",  # or your custom domain
+        "exp": int(time.time()) + 10,  # handshake window, not session length
+        "expiresAt": int(time.time()) + 60 * 60 * 24 * 7,  # 7-day session
+        "groups": user.groups,
+        "apiPlaygroundInputs": {
+            "header": {"Authorization": f"Bearer {user.api_token}"},
+        },
+    }
+    return jwt.encode(payload, PRIVATE_KEY, algorithm="EdDSA")
+
+@app.route("/docs-login")
+def docs_login():
+    token = sign_docs_token(current_user)
+    redirect_path = request.args.get("redirect", "/")
+    return redirect(
+        f"https://acme.jamdesk.app/_jd/auth/callback"
+        f"?redirect={quote(redirect_path)}#{token}"
+    )
+```
+</CodeGroup>
+
+<Warning>
+  Sign the token server-side only. The private key must never reach a browser or a public repo — anyone holding it can mint sessions for your docs site.
+</Warning>
+
+## Redirect flow
+
+1. A visitor requests a protected page (say, `/quickstart`) without a valid session. Jamdesk responds with a redirect to `{loginUrl}?redirect=%2Fquickstart`.
+2. Your login flow authenticates the visitor (however you normally do that), signs a JWT, and redirects them to `https://<your-docs-host>/_jd/auth/callback?redirect=%2Fquickstart#<jwt>`.
+3. The callback page reads the token out of the fragment client-side and posts it to Jamdesk's token-exchange endpoint. Jamdesk verifies the signature and claims, and on success sets a signed session cookie.
+4. The browser is redirected to the original destination — `/quickstart` — now with a valid session. The `redirect` value is preserved end-to-end so visitors land exactly where they started.
+
+If your backend can't determine a `redirect` value (someone bookmarked your login page directly, for example), just omit it — Jamdesk falls back to `/`.
+
+## Public pages
+
+Some pages should stay reachable without signing in — a status page, a public changelog, a marketing-adjacent landing page. Three ways to mark a page public, and they all merge into one allow-list:
+
+**Frontmatter**, for one page at a time:
+
+```yaml
+---
+title: Changelog
+public: true
+---
+```
+
+**Navigation groups**, for a whole section:
+
+```json docs.json
+{
+  "navigation": {
+    "groups": [
+      { "group": "Changelog", "public": true, "pages": ["changelog"] }
+    ]
+  }
+}
+```
+
+**Explicit globs**, under `auth.jwt.public[]`:
+
+```json docs.json
+{
+  "auth": {
+    "jwt": {
+      "enabled": true,
+      "loginUrl": "https://app.example.com/docs-login",
+      "public": ["/changelog/*", "/status"]
+    }
+  }
+}
+```
+
+## Group-based access
+
+Some pages should only be visible to certain authenticated users — an admin runbook, an enterprise-only reference. Add `groups` to a page's frontmatter:
+
+```yaml
+---
+title: Admin API Keys
+groups: ["admin"]
+---
+```
+
+A visitor's session carries the `groups` array your backend put in the JWT payload. If a page declares `groups` and the visitor's session doesn't intersect with that list, they get a **404** — not a 401 or an unlock screen. This is deliberate: a group-restricted page doesn't reveal its own existence to users outside the group.
+
+A few precision points worth knowing:
+
+- **Group pages are excluded from the sitemap, search, AI chat, and MCP — even for users who ARE in the group.** Exclusion from these discovery surfaces is a blanket build-time decision, not a per-visitor one. A member of the `admin` group can still open `/admin/api-keys` directly (by URL or internal link), but it won't turn up in search results, chat answers, or `llms.txt`. If you need a restricted page to be *findable* by its own audience, link to it explicitly from another page that audience can already reach.
+- **An empty `groups: []` means no restriction at all** — not "nobody can see this." If you want to remove a page's group restriction, delete the `groups` field entirely rather than setting it to an empty array.
+- **To restrict a page to nobody**, unpublish it. There's no `groups` value that means "nobody" — group membership is additive (any overlap grants access), so an empty or nonsense group list is equivalent to no restriction.
+- **Localized copies inherit the base page's `groups`** automatically, unless the translation declares its own `groups` in its frontmatter — so translating a restricted page doesn't accidentally make the translation public.
+- **Keep group names short.** Groups travel inside the session cookie: up to 32 groups per session, 64 characters each. Extra groups beyond 32, or names over 64 characters, are dropped during verification.
+
+## API playground pre-fill
+
+If your docs have an [API playground](/api-reference/overview), you can pre-fill it for signed-in visitors so they don't have to paste in their own API key. Include `apiPlaygroundInputs` in your JWT payload:
+
+```json
+{
+  "host": "acme.jamdesk.app",
+  "apiPlaygroundInputs": {
+    "header": { "Authorization": "Bearer sk_live_user_specific_token" },
+    "query": { "org_id": "acme-corp" },
+    "path": { "workspace_id": "ws_123" }
+  }
+}
+```
+
+- `header.Authorization` pre-fills the playground's auth field. A `Bearer ` prefix is stripped automatically if present.
+- `query` and `path` pre-fill any matching parameter names on the current endpoint.
+- `server` and `cookie` sections are **not supported** in this release — only `header`, `query`, and `path` are applied.
+- Pre-fill never overwrites a value the visitor has already typed into the playground.
+
+## Payload reference
+
+| Field | Required | Description |
+|---|---|---|
+| `host` | Yes | Must exactly match the request host (case-insensitive) — your `*.jamdesk.app` subdomain or your custom domain. A token signed for one host is rejected on any other. |
+| `expiresAt` | No | Unix timestamp (seconds) for how long the resulting *session* should last. Capped at 30 days; defaults to 7 days if omitted. This is independent of the token's own short-lived `exp` claim. |
+| `groups` | No | Array of group names the session should carry, up to 32 entries of 64 characters each. Extra entries or oversized names are dropped. |
+| `apiPlaygroundInputs` | No | Pre-fill values for the API playground. Serialized size is capped at 2KB — if it doesn't fit, it's silently dropped and the session is still granted. |
+
+## Logout
+
+Signed-in visitors get a **Log out** link in the docs header. It sends them to `/_jd/auth/logout`, which clears the session cookie and redirects to your `loginUrl`. Link to it directly from your own app if you want a "sign out of docs" affordance elsewhere too — it's a plain `GET` request, no body or headers required.
+
+## Feature behavior under auth
+
+| Feature | Behavior |
+|---|---|
+| `llms.txt` / `llms-full.txt` / sitemap | Gated with the rest of the site — unreachable without a valid session, same as any other page. |
+| Group-restricted pages | Excluded from all of the above artifacts, plus search and AI chat, regardless of the requesting session's groups (see [Group-based access](#group-based-access)). |
+| `robots.txt` | Always public. Search engines can see that a docs site exists and is gated; they can't see its content. |
+
+## Troubleshooting
+
+<Accordion title="I rotated the signing key but old sessions still seem to work">
+  Rotation and revocation take effect within about 15 seconds, not instantly — the edge gate caches auth config briefly to keep every page request fast. If you need every existing session invalidated the moment you click, that's exactly what **Rotate** does in the dashboard; give it up to 15 seconds before treating a still-valid old session as a bug.
+</Accordion>
+
+<Accordion title="The dashboard shows a &quot;Runtime out of sync&quot; banner">
+  This means the signing-key version stored in the dashboard doesn't match the version the live site is currently serving — usually because a key rotation happened but a rebuild hasn't run since, or a build partially failed. Click **Rebuild now** on the banner to force a full rebuild and re-sync the two.
+</Accordion>
+
+<Accordion title="Visitors get a 401 even with a token I know is valid">
+  Check the `host` claim against the exact host being requested. If your docs are reachable at both a custom domain (`docs.example.com`) and the underlying `*.jamdesk.app` subdomain, a token signed for one will be rejected on the other — `host` binding is exact and case-insensitive but not alias-aware. Sign tokens for whichever host you actually link to, or sign two variants if you link to both.
+</Accordion>
+
+<Accordion title="I'm stuck in a redirect loop between my login page and the docs site">
+  Jamdesk's callback route refuses to redirect back into itself — a `redirect` value pointing at `/_jd/auth/callback` (or the unlock-style page underneath it) is rewritten to `/` instead of being honored. If you're still seeing a loop, check that your login flow isn't itself redirecting to the docs `loginUrl` in a cycle (for example, a login page that immediately bounces back to `/docs-login` when it can't find a docs session). The docs side of the loop is guarded; the loop is almost always in the login flow.
+</Accordion>
+
+<Accordion title="Both auth.password and auth.jwt are in my docs.json">
+  This is a `config_error` and blocks the build. Pick one — see [Migrating from password protection](#migrating-from-password-protection) for the safe order of operations if you're switching.
+</Accordion>
+
+## Security note
+
+`apiPlaygroundInputs` — including any Authorization value you put in it — is readable by JavaScript running on your docs site, via the session-info endpoint that powers the playground pre-fill. This is the same trade-off Mintlify's playground pre-fill makes: convenient, but not a place for high-privilege secrets.
+
+Send **per-user, least-privilege credentials** scoped to what that visitor is allowed to do — never an org-wide admin key. Treat anything you put in `apiPlaygroundInputs` as visible to the person browsing the docs, because it is.
+
+## Migrating from password protection
+
+Switching from a shared password to JWT authentication doesn't require any downtime, and the site is never public at any point. Do it in this order:
+
+<Steps>
+  <Step title="Generate the JWT signing key">
+    Do this first, while password protection is still active. Generating a key doesn't change what's gated — it just gets you ready. The password stays in force the whole time.
+  </Step>
+  <Step title="Flip docs.json and rebuild">
+    ```json docs.json
+    {
+      "auth": {
+        "password": { "enabled": false },
+        "jwt": { "enabled": true, "loginUrl": "https://app.example.com/docs-login" }
+      }
+    }
+    ```
+
+    Commit and push. The moment this build publishes, the gate flips atomically from password to JWT — there's no window where the site is unprotected. Any existing password-unlocked sessions end at the flip; visitors authenticate through your login flow from then on.
+  </Step>
+  <Step title="Clear the password">
+    Once you've confirmed the JWT flow works end-to-end, go back to **Project Settings** and clear the stored password. It's inert at this point (password mode is off in `docs.json`), but clearing it removes the stored hash entirely.
+  </Step>
+</Steps>
+
+## What's Next?
+
+<Columns cols={2}>
+  <Card title="Access Control overview" icon="shield" href="/setup/access-control">
+    Compare JWT authentication against password protection, SSO, and the multi-project pattern.
+  </Card>
+  <Card title="Password Protection" icon="lock" href="/setup/password-protection">
+    The shared-passphrase alternative — simpler to set up, no backend integration required.
+  </Card>
+  <Card title="SSO (Enterprise)" icon="key" href="/setup/sso">
+    Identity-provider-driven sign-in for enterprise customers.
+  </Card>
+  <Card title="Custom Domains" icon="globe" href="/deploy/custom-domains">
+    Put your docs on your own domain before wiring up your login flow.
+  </Card>
+</Columns>
