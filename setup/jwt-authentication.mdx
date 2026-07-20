@@ -195,7 +195,7 @@ A few precision points worth knowing:
 - **An empty `groups: []` means no restriction at all** — not "nobody can see this." If you want to remove a page's group restriction, delete the `groups` field entirely rather than setting it to an empty array.
 - **To restrict a page to nobody**, unpublish it. There's no `groups` value that means "nobody" — group membership is additive (any overlap grants access), so an empty or nonsense group list is equivalent to no restriction.
 - **Localized copies inherit the base page's `groups`** automatically, unless the translation declares its own `groups` in its frontmatter — so translating a restricted page doesn't accidentally make the translation public.
-- **Keep group names short.** Groups travel inside the session cookie: up to 32 groups per session, 64 characters each. Extra groups beyond 32, or names over 64 characters, are dropped during verification.
+- **Keep group names short.** Groups travel inside the session cookie: up to 32 groups per session, 64 characters each. Exceeding either limit — more than 32 groups, or any single name over 64 characters — doesn't trim the list; it rejects the **entire token** (401, no session granted). Keep your backend's group list within the cap rather than relying on truncation.
 
 ## API playground pre-fill
 
@@ -223,7 +223,7 @@ If your docs have an [API playground](/api-reference/overview), you can pre-fill
 |---|---|---|
 | `host` | Yes | Must exactly match the request host (case-insensitive) — your `*.jamdesk.app` subdomain or your custom domain. A token signed for one host is rejected on any other. |
 | `expiresAt` | No | Unix timestamp (seconds) for how long the resulting *session* should last. Capped at 30 days; defaults to 7 days if omitted. This is independent of the token's own short-lived `exp` claim. |
-| `groups` | No | Array of group names the session should carry, up to 32 entries of 64 characters each. Extra entries or oversized names are dropped. |
+| `groups` | No | Array of group names the session should carry, up to 32 entries of 64 characters each. Exceeding either limit rejects the whole token (401, no session) rather than truncating the list. |
 | `apiPlaygroundInputs` | No | Pre-fill values for the API playground. Serialized size is capped at 2KB — if it doesn't fit, it's silently dropped and the session is still granted. |
 
 ## Logout
@@ -256,7 +256,7 @@ Signed-in visitors get a **Log out** link in the docs header. It sends them to `
   Jamdesk's callback route refuses to redirect back into itself — a `redirect` value pointing at `/_jd/auth/callback` (or the unlock-style page underneath it) is rewritten to `/` instead of being honored. If you're still seeing a loop, check that your login flow isn't itself redirecting to the docs `loginUrl` in a cycle (for example, a login page that immediately bounces back to `/docs-login` when it can't find a docs session). The docs side of the loop is guarded; the loop is almost always in the login flow.
 </Accordion>
 
-<Accordion title="Both auth.password and auth.jwt are in my docs.json">
+<Accordion title="Both auth.password and auth.jwt are enabled">
   This is a `config_error` and blocks the build. Pick one — see [Migrating from password protection](#migrating-from-password-protection) for the safe order of operations if you're switching.
 </Accordion>
 
