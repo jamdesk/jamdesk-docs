@@ -222,21 +222,21 @@ Set `JAMDESK_API_KEY` in your Slack app's environment variables. Never hardcode 
 
 ---
 
-## hostAtDocs (Cloudflare Worker)
+## Subpath Hosting (Cloudflare Worker)
 
-If you're using [hostAtDocs](/deploy/subpath-hosting) to serve your docs at a subpath (e.g. `yoursite.com/docs`), the `/_api` route needs to be proxied through your Cloudflare Worker.
+If you're using [subpath hosting](/deploy/subpath-hosting) to serve your docs at a path on your domain — `/docs` by default, or a custom subpath like `/help` — the `/_api` route needs to be proxied through your Cloudflare Worker too, alongside your docs path.
 
-Add `/_api` to the `PROXY_PATHS` array in your worker:
+Add `/_api` to the `PROXY_PATHS` array in your worker, using whichever path prefix you configured in the dashboard:
 
 ```javascript
 const PROXY_PATHS = [
-  "/docs",
+  "/docs",  // or your custom subpath, e.g. "/help"
   "/_jd",
   "/_api",  // Add this line
 ];
 ```
 
-This ensures search requests to `yoursite.com/_api/search` are forwarded to your Jamdesk docs site.
+This ensures search requests to `yoursite.com/_api/search` (or `yoursite.com/help/_api/search`, if you're on a custom subpath) are forwarded to your Jamdesk docs site.
 
 <Warning>
 The `/_api` route requires authentication via your `jd_live_` API key regardless of how the request is routed. Proxying through Cloudflare does not bypass authentication.

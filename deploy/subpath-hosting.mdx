@@ -1,13 +1,13 @@
 ---
 title: Subpath Hosting
-description: Host your docs at yoursite.com/docs instead of a separate subdomain. Includes Vercel, CloudFront, Cloudflare, and reverse proxy setups.
+description: Host your docs at a subpath on your domain — yoursite.com/docs by default, or any custom segment you choose. Includes Vercel, CloudFront, Cloudflare, and reverse proxy setups.
 ---
 
-Host your docs at `yoursite.com/docs` instead of a separate subdomain. For all deployment options, see [Deployment Overview](/deploy/overview).
+Host your docs at a subpath on your domain — `yoursite.com/docs` by default, or a custom segment like `yoursite.com/help` — instead of a separate subdomain. For all deployment options, see [Deployment Overview](/deploy/overview).
 
 ## Why Use a Subpath?
 
-Hosting docs at `yoursite.com/docs` instead of a subdomain like `docs.yoursite.com` provides:
+Hosting docs at a subpath on your domain (`yoursite.com/docs`, or any custom segment you choose) instead of a subdomain like `docs.yoursite.com` provides:
 
 - **Better SEO** - Documentation pages contribute to your main domain's authority
 - **Unified experience** - Users stay on your primary domain
@@ -59,17 +59,37 @@ Choose your hosting provider to get started:
 
 Before configuring your proxy:
 
-1. **Enable subpath hosting** in your [Jamdesk dashboard](https://dashboard.jamdesk.com) under Settings → Custom Domain
-2. **Toggle "Host at /docs"** to on
-3. **Add your domain** (e.g., `yoursite.com`)
+1. **Add your domain** in your [Jamdesk dashboard](https://dashboard.jamdesk.com) under Settings → Custom Domain
+2. **Toggle "Host at /docs"** on
+3. **Choose your subpath** (optional — see [Choosing Your Subpath](#choosing-your-subpath) below) and click **Save**
 
 Your Jamdesk subdomain (e.g., `acme.jamdesk.app`) will be displayed in the dashboard - you'll need this for your proxy configuration.
 
 <Note>
-Toggling "Host at /docs" on or off triggers an automatic rebuild of your documentation. This is required because the URL structure changes between `/introduction` and `/docs/introduction`.
+Saving a change to subpath hosting — turning it on or off, or changing the subpath itself — triggers a full rebuild of your documentation. This is required because the URL structure changes (for example, between `/introduction` and `/docs/introduction`).
 </Note>
 
-Once you've configured your proxy, test by visiting `https://yoursite.com/docs`. Your documentation should load with all assets and links working correctly.
+## Choosing Your Subpath
+
+By default, your docs are served at `/docs`. To use something else instead — `/help`, `/support`, `/guide` — enter it in the subpath field next to the toggle; the toggle label updates live to show the path you're about to enable (`Host at /help`, and so on).
+
+The field accepts a single lowercase segment: letters, digits, and inner hyphens only, no leading or trailing hyphen, 63 characters maximum. A handful of segments are reserved and rejected outright, including `api`, `jd`, common admin paths like `wp-admin`, and any locale code your docs might use (`fr`, `es`, `de`, and similar) — these are reserved so your subpath can never collide with a route Jamdesk already serves.
+
+Leave the field blank to keep the default `/docs`.
+
+## Renaming or Removing Your Subpath
+
+Changing your subpath — or clearing it to go back to the default — is safe to do without breaking links that are already indexed or bookmarked:
+
+- **`/docs` never stops serving.** Even after you switch to a custom subpath like `/help`, the original `/docs/*` paths keep responding on your `[slug].jamdesk.app` subdomain and through any proxy still pointed at them. Canonical links move to your new subpath immediately, so search engines re-index there — but nothing that already points at `/docs` breaks, so you can update your own proxy configuration at your own pace rather than under time pressure.
+- **Renaming a custom subpath forwards the old one — for one rename.** If you rename `/help` to `/guide`, requests to `/help/*` 308-redirect to the matching `/guide/*` path. This history is one level deep: rename again from `/guide` to `/support` and `/guide/*` now redirects to `/support/*`, but `/help/*` — the segment from two renames ago — is no longer tracked and 404s. Don't chain renames if you're relying on the redirect to carry old links forward; update external links to the current subpath instead.
+- **Rolling back to `/docs`** works the same way: your previous custom subpath (one level of history) redirects to `/docs/*`.
+
+<Warning>
+This does **not** mean `/docs` redirects to whatever subpath you choose — it doesn't need to, because `/docs` keeps serving directly, permanently. The one-level redirect only applies to a *custom* subpath you're moving away from.
+</Warning>
+
+Once you've configured your proxy, test by visiting `https://yoursite.com/docs` (or your configured subpath). Your documentation should load with all assets and links working correctly.
 
 ## Do I need to hide the jamdesk.app subdomain?
 
