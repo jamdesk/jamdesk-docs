@@ -1,8 +1,8 @@
 ---
 title: JWT authentication
 description: >-
-  Learn how to enable JWT authentication in docs.json to gate documentation with
-  your own login system and signed tokens.
+  Gate your docs behind your own login system. Enable JWT authentication in
+  docs.json and sign short-lived tokens for per-user sessions.
 ---
 
 <Note>
@@ -13,7 +13,7 @@ If your product already has its own login system, JWT authentication lets you ga
 
 ## How this differs from password protection
 
-[Password protection](/setup/password-protection) gives every visitor the same shared passphrase, which works well for internal docs, staging previews, or a single partner audience. JWT authentication is per-user: each visitor's identity, session length, and page access come from a token *your* backend signs, so you can tie docs access to your existing customer accounts, plans, or roles instead of one shared secret.
+[Password protection](/setup/password-protection) gives every visitor the same shared passphrase, which works well for internal docs, staging previews, or a single partner audience. JWT authentication is per-user: each visitor's identity, session length, and page access come from a token *your* backend signs. Docs access can follow your existing customer accounts, plans, or roles instead of one shared secret.
 
 The two modes are mutually exclusive: `auth.password` and `auth.jwt` cannot both be enabled at once. See [Migrating from password protection](#migrating-from-password-protection) below if you're switching from one to the other.
 
@@ -195,9 +195,9 @@ Details that affect how you use `groups`:
 
 - Group pages are excluded from the sitemap, search, AI chat, and MCP, even for users who are in the group. Exclusion from these discovery surfaces is a build-time decision, not a per-visitor one. A member of the `admin` group can still open `/admin/api-keys` directly (by URL or internal link), but it won't turn up in search results, chat answers, or `llms.txt`. If you need a restricted page to be findable by its own audience, link to it from another page that audience can already reach.
 - An empty `groups: []` means no restriction at all, not "nobody can see this." To remove a page's group restriction, delete the `groups` field entirely rather than setting it to an empty array.
-- To restrict a page to nobody, unpublish it. There's no `groups` value that means "nobody": group membership is additive (any overlap grants access), so an empty or unknown group list is equivalent to no restriction.
+- To restrict a page to nobody, unpublish it. There's no `groups` value that means "nobody": group membership is additive, and any overlap grants access.
 - Localized copies inherit the base page's `groups` automatically, unless the translation declares its own `groups` in its frontmatter. Translating a restricted page doesn't accidentally make the translation public.
-- Keep group names short. Groups travel inside the session cookie: up to 32 groups per session, 64 characters each. Exceeding either limit doesn't trim the list; Jamdesk rejects the entire token with a 401 and grants no session. Keep your backend's group list within both caps, because there is no truncation fallback.
+- Keep group names short. Groups travel inside the session cookie: up to 32 groups per session, 64 characters each. Exceeding either limit doesn't trim the list; Jamdesk rejects the entire token with a 401 and grants no session.
 
 ## API playground pre-fill
 
@@ -270,7 +270,7 @@ Send per-user, least-privilege credentials scoped to what that visitor is allowe
 
 ## Migrating from password protection
 
-Switching from a shared password to JWT authentication doesn't require any downtime, and the site is never public at any point. Do it in this order:
+Switching from a shared password to JWT authentication requires no downtime, and the site stays gated throughout. Do it in this order:
 
 <Steps>
   <Step title="Generate the JWT signing key">
