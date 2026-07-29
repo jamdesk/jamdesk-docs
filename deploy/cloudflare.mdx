@@ -48,7 +48,7 @@ With `--yes` the CLI can't prompt, so it needs to know your subdomain. It reads 
 |--------|-------------|
 | `--slug` | Your Jamdesk subdomain, the `X` in `X.jamdesk.app` (skips auto-detection) |
 | `--domain` | Target domain (e.g., yoursite.com) |
-| `--path` | Path prefix — must match your dashboard subpath exactly (default: /docs) |
+| `--path` | Path prefix; must match your dashboard subpath exactly (default: /docs) |
 | `--output-dir` | Output directory (default: cloudflare-worker/) |
 | `--skip-deploy` | Generate files only, don't deploy |
 | `--force` | Overwrite existing directory |
@@ -142,7 +142,7 @@ Replace `YOUR_SLUG` with your actual Jamdesk subdomain (e.g., `acme` if your doc
 </Note>
 
 <Note>
-Using a custom subpath from the dashboard instead of the default `/docs`? Replace `"/docs"` in `PROXY_PATHS` — and in the exact-match check inside `shouldProxy()` — with your configured subpath. The CLI's `--path` flag does this for you when it generates the file, but only against an **unmodified** template; regenerating overwrites any custom entries you've added to `PROXY_PATHS` by hand. If you've customized this Worker, edit the `/docs` entries in place instead.
+If you use a custom subpath from the dashboard instead of the default `/docs`, replace `"/docs"` with your subpath in `PROXY_PATHS` and in the exact-match check inside `shouldProxy()`. The CLI's `--path` flag does this for you when it generates the file, but only against an **unmodified** template; regenerating overwrites any custom entries you've added to `PROXY_PATHS` by hand. If you've customized this Worker, edit the `/docs` entries in place instead.
 </Note>
 
 <Warning>
@@ -190,9 +190,9 @@ Visit `https://yoursite.com/docs` to confirm your documentation is being served 
 ## Troubleshooting
 
 <Accordion title="New subpath 404s after renaming in the dashboard">
-If you renamed your subpath in the dashboard (say, `/docs` → `/help`) but your Worker's `PROXY_PATHS` still only lists `/docs`, requests to `/help/*` never reach Jamdesk — they fall through to `fetch(request)` and 404 at your own origin. `/docs/*` keeps working in the meantime (Jamdesk serves both prefixes), which is exactly why this is easy to miss.
+If you renamed your subpath in the dashboard (say, `/docs` → `/help`) but your Worker's `PROXY_PATHS` still only lists `/docs`, requests to `/help/*` never reach Jamdesk: they fall through to `fetch(request)` and 404 at your own origin. `/docs/*` keeps working in the meantime (Jamdesk serves both prefixes), which is exactly why this is easy to miss.
 
-**Fix:** add your new subpath to `PROXY_PATHS` — re-run `jamdesk deploy-proxy cloudflare --path <subpath>` if the Worker is still an unmodified template, or edit the array by hand if you've customized it.
+**Fix:** add your new subpath to `PROXY_PATHS`. Re-run `jamdesk deploy-proxy cloudflare --path <subpath>` if the Worker is still an unmodified template, or edit the array by hand if you've customized it.
 </Accordion>
 
 <Accordion title="No domains found in this account">
