@@ -34,15 +34,24 @@ This interactive command will:
 
 If you have access to multiple Cloudflare accounts (common for agencies or teams), the CLI prompts you to choose one before zone selection. Pick the account that owns the domain you're deploying to — Workers routes can only be created for domains in the selected account.
 
-### CI/Scripted Deployment
+### Non-interactive setup
 
-For CI/scripting, use flags to skip prompts:
+To run without prompts — in CI, or from a script — pass the answers as flags:
 
 ```bash
-jamdesk deploy-proxy cloudflare --slug myproject --domain example.com --skip-deploy --yes
+jamdesk deploy-proxy cloudflare --slug myproject --domain example.com --yes
+```
+
+`--yes` generates the Worker files and stops. It never deploys: the zone is assumed from your domain rather than confirmed against your Cloudflare account, so pushing that config live stays an explicit step. Finish with:
+
+```bash
+cd cloudflare-worker
+npx wrangler deploy
 ```
 
 With `--yes` the CLI can't prompt, so it needs to know your subdomain. It reads it from the project linked in `docs.json`; if that link is missing (run `jamdesk deploy` once to add it) pass `--slug` explicitly, or the command stops rather than guess.
+
+If the output directory already exists, `--yes` stops rather than replace it. Add `--force` to overwrite, or `--output-dir` to write somewhere else.
 
 | Option | Description |
 |--------|-------------|
@@ -50,9 +59,9 @@ With `--yes` the CLI can't prompt, so it needs to know your subdomain. It reads 
 | `--domain` | Target domain (e.g., yoursite.com) |
 | `--path` | Path prefix; must match your dashboard subpath exactly (default: /docs) |
 | `--output-dir` | Output directory (default: cloudflare-worker/) |
-| `--skip-deploy` | Generate files only, don't deploy |
-| `--force` | Overwrite existing directory |
-| `--yes` | Skip all prompts (CI mode) |
+| `--skip-deploy` | Skip the "deploy now?" prompt in an interactive run (`--yes` never deploys) |
+| `--force` | Overwrite the output directory if it already exists |
+| `--yes` | Answer every prompt with its default (CI mode). Never deploys, and never overwrites an existing directory — combine with `--force` for that |
 
 If you prefer manual setup, continue with the steps below.
 
@@ -158,11 +167,19 @@ name = "docs-proxy"
 main = "index.js"
 compatibility_date = "2024-01-01"
 
+# Serve only via the routes below, not on the public <name>.workers.dev URL —
+# that URL is a second way into the same proxy and is worth closing.
+workers_dev = false
+
 # Single catch-all route; the worker handles path filtering internally
 routes = [
   { pattern = "yoursite.com/*", zone_name = "yoursite.com" },
 ]
 ```
+
+<Note>
+If your Cloudflare login has access to more than one account, add `account_id = "<your account id>"` as well — otherwise `wrangler deploy` stops rather than guess which account to deploy into. `npx wrangler whoami` lists your account IDs.
+</Note>
 
 <Tip>
 If your site also serves traffic on `www.yoursite.com`, add a second route so the Worker handles both:
@@ -193,6 +210,20 @@ Visit `https://yoursite.com/docs` to confirm your documentation is being served 
 If you renamed your subpath in the dashboard (say, `/docs` → `/help`) but your Worker's `PROXY_PATHS` still only lists `/docs`, requests to `/help/*` never reach Jamdesk: they fall through to `fetch(request)` and 404 at your own origin. `/docs/*` keeps working in the meantime (Jamdesk serves both prefixes), which is exactly why this is easy to miss.
 
 **Fix:** add your new subpath to `PROXY_PATHS`. Re-run `jamdesk deploy-proxy cloudflare --path <subpath>` if the Worker is still an unmodified template, or edit the array by hand if you've customized it.
+</Accordion>
+
+<Accordion title="“You are logged in with an API Token. Unset the CLOUDFLARE_API_TOKEN…”">
+Wrangler prefers `CLOUDFLARE_API_TOKEN` over its OAuth login, and it can't start an OAuth login while that token is set. This command needs OAuth to list the zones in your account, so it stops with the token's location instead of failing inside wrangler.
+
+Wrangler also reads `.env` from the directory you run in, so the token can be set for wrangler without being in your shell — `echo $CLOUDFLARE_API_TOKEN` printing nothing doesn't rule it out. Check for a `.env` in the current directory too.
+
+**Fix:** either grant the token `account:read` and `zone:read` and re-run, or run without it:
+
+```bash
+env -u CLOUDFLARE_API_TOKEN jamdesk deploy-proxy cloudflare
+```
+
+If the token comes from a `.env`, `env -u` won't help — run the command from a directory that has no such `.env`, or move the file aside for the run.
 </Accordion>
 
 <Accordion title="No domains found in this account">

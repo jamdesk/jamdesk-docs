@@ -34,25 +34,34 @@ Cette commande interactive va :
 
 Si vous avez accès à plusieurs comptes Cloudflare (cas fréquent pour les agences ou les équipes), la CLI vous invite à en choisir un avant la sélection de la zone. Choisissez le compte propriétaire du domaine sur lequel vous déployez — les routes Workers ne peuvent être créées que pour des domaines appartenant au compte sélectionné.
 
-### Déploiement CI/scripté
+### Configuration non interactive
 
-Pour un déploiement CI/scripté, utilisez des options pour ignorer les invites :
+Pour une exécution sans invites — en CI ou depuis un script — passez les réponses en options :
 
 ```bash
-jamdesk deploy-proxy cloudflare --slug myproject --domain example.com --skip-deploy --yes
+jamdesk deploy-proxy cloudflare --slug myproject --domain example.com --yes
+```
+
+`--yes` génère les fichiers du Worker puis s'arrête. Il ne déploie jamais : la zone est déduite de votre domaine au lieu d'être confirmée auprès de votre compte Cloudflare, la mise en ligne reste donc une étape explicite. Terminez avec :
+
+```bash
+cd cloudflare-worker
+npx wrangler deploy
 ```
 
 Avec `--yes`, la CLI ne peut pas afficher d'invites, elle doit donc connaître votre sous-domaine à l'avance. Elle le lit à partir du projet lié dans `docs.json` ; si ce lien est absent (exécutez `jamdesk deploy` une fois pour l'ajouter), passez `--slug` explicitement, sinon la commande s'arrête plutôt que de deviner.
+
+Si le répertoire de sortie existe déjà, `--yes` s'arrête au lieu de le remplacer. Ajoutez `--force` pour l'écraser, ou `--output-dir` pour générer ailleurs.
 
 | Option | Description |
 |--------|-------------|
 | `--slug` | Votre sous-domaine Jamdesk, le `X` dans `X.jamdesk.app` (ignore la détection automatique) |
 | `--domain` | Domaine cible (ex. : yoursite.com) |
-| `--path` | Préfixe de chemin (par défaut : /docs) |
+| `--path` | Préfixe de chemin ; doit correspondre exactement au sous-chemin défini dans votre tableau de bord (par défaut : /docs) |
 | `--output-dir` | Répertoire de sortie (par défaut : cloudflare-worker/) |
-| `--skip-deploy` | Génère uniquement les fichiers, sans déployer |
-| `--force` | Écrase le répertoire existant |
-| `--yes` | Ignore toutes les invites (mode CI) |
+| `--skip-deploy` | Ignore l'invite « déployer maintenant ? » lors d'une exécution interactive (`--yes` ne déploie jamais) |
+| `--force` | Écrase le répertoire de sortie s'il existe déjà |
+| `--yes` | Répond à chaque invite par sa valeur par défaut (mode CI). Ne déploie jamais et n'écrase jamais un répertoire existant — combinez avec `--force` pour cela |
 
 Si vous préférez une configuration manuelle, poursuivez avec les étapes ci-dessous.
 
@@ -154,11 +163,19 @@ name = "docs-proxy"
 main = "index.js"
 compatibility_date = "2024-01-01"
 
+# Serve only via the routes below, not on the public <name>.workers.dev URL —
+# that URL is a second way into the same proxy and is worth closing.
+workers_dev = false
+
 # Single catch-all route; the worker handles path filtering internally
 routes = [
   { pattern = "yoursite.com/*", zone_name = "yoursite.com" },
 ]
 ```
+
+<Note>
+Si votre compte Cloudflare vous donne accès à plusieurs comptes, ajoutez également `account_id = "<votre identifiant de compte>"` — sinon `wrangler deploy` s'arrête plutôt que de deviner dans quel compte déployer. `npx wrangler whoami` liste vos identifiants de compte.
+</Note>
 
 <Tip>
 Si votre site sert également du trafic sur `www.yoursite.com`, ajoutez une seconde route pour que le Worker gère les deux :
@@ -184,6 +201,26 @@ npx wrangler deploy
 Visitez `https://yoursite.com/docs` pour vérifier que votre documentation est correctement servie.
 
 ## Dépannage
+
+<Accordion title="Le nouveau sous-chemin renvoie 404 après un renommage dans le tableau de bord">
+Si vous avez renommé votre sous-chemin dans le tableau de bord (par exemple `/docs` → `/help`) mais que le tableau `PROXY_PATHS` de votre Worker ne liste toujours que `/docs`, les requêtes vers `/help/*` n'atteignent jamais Jamdesk : elles passent par `fetch(request)` et renvoient une 404 depuis votre propre origine. Entre-temps, `/docs/*` continue de fonctionner (Jamdesk sert les deux préfixes), et c'est précisément ce qui rend le problème facile à manquer.
+
+**Solution :** ajoutez votre nouveau sous-chemin à `PROXY_PATHS`. Relancez `jamdesk deploy-proxy cloudflare --path <sous-chemin>` si le Worker est toujours un modèle non modifié, ou modifiez le tableau à la main si vous l'avez personnalisé.
+</Accordion>
+
+<Accordion title="« You are logged in with an API Token. Unset the CLOUDFLARE_API_TOKEN… »">
+Wrangler privilégie `CLOUDFLARE_API_TOKEN` sur sa connexion OAuth, et il ne peut pas démarrer une connexion OAuth tant que ce jeton est défini. Cette commande a besoin d'OAuth pour lister les zones de votre compte : elle s'arrête donc en indiquant d'où vient le jeton, au lieu d'échouer à l'intérieur de wrangler.
+
+Wrangler lit aussi le fichier `.env` du répertoire courant : le jeton peut donc être défini pour wrangler sans être présent dans votre shell — si `echo $CLOUDFLARE_API_TOKEN` n'affiche rien, cela ne l'exclut pas. Vérifiez également la présence d'un `.env` dans le répertoire courant.
+
+**Solution :** accordez au jeton les permissions `account:read` et `zone:read` puis relancez, ou exécutez la commande sans lui :
+
+```bash
+env -u CLOUDFLARE_API_TOKEN jamdesk deploy-proxy cloudflare
+```
+
+Si le jeton provient d'un `.env`, `env -u` ne changera rien — exécutez la commande depuis un répertoire dépourvu d'un tel `.env`, ou déplacez temporairement le fichier.
+</Accordion>
 
 <Accordion title="Aucun domaine trouvé dans ce compte">
 La CLI affiche vos domaines disponibles avant la sélection de la zone. Si vous voyez « Aucun domaine trouvé » :
