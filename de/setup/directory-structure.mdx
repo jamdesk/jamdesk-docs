@@ -1,0 +1,242 @@
+---
+title: Verzeichnisstruktur
+description: "Dateien in einem Jamdesk-Dokumentations-Repository organisieren: erforderliche Dateien, Seitenverzeichnisse, Bilder, Snippets und OpenAPI-Spezifikationen."
+---
+
+Diese Seite zeigt, wie Sie die Dateien in einem Jamdesk-Dokumentations-Repository organisieren – von der minimalen Struktur mit zwei Dateien bis zu einem vollständigen Layout mit mehreren Verzeichnissen.
+
+## Minimale Struktur
+
+Ein einfaches Jamdesk-Projekt benötigt nur zwei Dateien:
+
+```bash
+my-docs/
+├── docs.json           # Configuration
+└── introduction.mdx    # Your first page
+```
+
+## Empfohlene Struktur
+
+Bei größeren Dokumentationswebsites organisieren Sie Seiten in Verzeichnissen:
+
+```bash
+my-docs/
+├── docs.json
+├── introduction.mdx
+├── quickstart.mdx
+│
+├── guides/
+│   ├── getting-started.mdx
+│   ├── authentication.mdx
+│   └── deployment.mdx
+│
+├── api-reference/
+│   ├── overview.mdx
+│   ├── endpoints/
+│   │   ├── users.mdx
+│   │   └── projects.mdx
+│   └── webhooks.mdx
+│
+├── images/
+│   ├── logo.svg
+│   ├── favicon.svg
+│   └── screenshots/
+│       └── dashboard.png
+│
+└── snippets/
+    └── api-base-url.mdx
+```
+
+<Tip>
+Das [Jamdesk-Dokumentations-Repository](https://github.com/jamdesk/jamdesk-docs) ist ein Produktionsbeispiel für diese Struktur: zwei Tabs, mehr als 120 Seiten, OpenAPI-Spezifikationen und benutzerdefinierte Skripte.
+</Tip>
+
+## Erforderliche Dateien
+
+### docs.json
+
+Die Konfigurationsdatei, die Ihre Website definiert. Sie muss sich im Stammverzeichnis Ihres Dokumentationsverzeichnisses befinden (oder am in den Projekteinstellungen angegebenen Pfad).
+
+```json docs.json
+{
+  "$schema": "https://jamdesk.com/docs.json",
+  "name": "My Documentation",
+  "theme": "jam",
+  "colors": {
+    "primary": "#635BFF"
+  },
+  "navigation": {
+    "groups": [
+      {
+        "group": "Getting Started",
+        "pages": ["introduction", "quickstart"]
+      }
+    ]
+  }
+}
+```
+
+Eine Übersicht über alle Optionen finden Sie in der [Referenz zu docs.json](/de/config/docs-json-reference).
+
+## Seitenorganisation
+
+### Flach oder verschachtelt
+
+Wählen Sie abhängig vom Umfang Ihrer Dokumentation:
+
+<Tabs>
+  <Tab title="Flach (< 20 Seiten)">
+    Bewahren Sie alle Seiten im Stammverzeichnis auf:
+
+    ```bash
+    docs/
+    ├── docs.json
+    ├── introduction.mdx
+    ├── installation.mdx
+    ├── configuration.mdx
+    └── troubleshooting.mdx
+    ```
+
+    Verweisen Sie in der Navigation direkt auf die Seiten:
+
+    ```json
+    "pages": ["introduction", "installation"]
+    ```
+  </Tab>
+  <Tab title="Verschachtelt (20+ Seiten)">
+    Gruppieren Sie verwandte Seiten in Verzeichnissen:
+
+    ```bash
+    docs/
+    ├── docs.json
+    ├── introduction.mdx
+    ├── guides/
+    │   ├── quickstart.mdx
+    │   └── advanced.mdx
+    └── reference/
+        ├── api.mdx
+        └── cli.mdx
+    ```
+
+    Fügen Sie das Verzeichnis in den Pfad ein:
+
+    ```json
+    "pages": ["introduction", "guides/quickstart", "reference/api"]
+    ```
+  </Tab>
+</Tabs>
+
+### Namenskonventionen
+
+| Konvention | Beispiel | URL |
+|------------|---------|-----|
+| Kleinbuchstaben | `getting-started.mdx` | `/getting-started` |
+| Kebab-Schreibweise | `api-reference.mdx` | `/api-reference` |
+| Verzeichnisse | `guides/auth.mdx` | `/guides/auth` |
+
+<Warning>
+Vermeiden Sie Leerzeichen und Sonderzeichen in Dateinamen. Verwenden Sie Bindestriche, um Wörter zu trennen.
+</Warning>
+
+## Besondere Verzeichnisse
+
+### images/
+
+Speichern Sie Bilder, Logos und Favicons:
+
+```bash
+images/
+├── logo-light.webp     # Light mode logo
+├── logo-dark.webp      # Dark mode logo
+├── favicon.svg         # Browser favicon
+└── screenshots/        # Documentation screenshots
+    └── dashboard.png
+```
+
+Verweisen Sie in docs.json darauf:
+
+```json docs.json
+{
+  "logo": {
+    "light": "/images/logo-light.webp",
+    "dark": "/images/logo-dark.webp"
+  },
+  "favicon": "/images/favicon.svg"
+}
+```
+
+### snippets/
+
+Wiederverwendbare Inhaltsblöcke:
+
+```bash
+snippets/
+├── api-base-url.mdx
+└── auth-header.mdx
+```
+
+Binden Sie sie in Seiten ein:
+
+```mdx
+<Snippet file="api-base-url.mdx" />
+```
+
+### openapi/
+
+OpenAPI-Spezifikationsdateien für API-Dokumentation:
+
+```bash
+openapi/
+├── api.yaml
+└── webhooks.yaml
+```
+
+Verweisen Sie in docs.json darauf:
+
+```json docs.json
+{
+  "api": {
+    "openapi": ["/openapi/api.yaml"]
+  }
+}
+```
+
+Ein Live-Beispiel finden Sie unter [OpenAPI-Beispiel](/de/api-reference/openapi-example).
+
+#### Sprachspezifische Spezifikationsdateien
+
+Fügen Sie bei mehrsprachigen Dokumentationswebsites übersetzte Spezifikationsdateien neben der Quelldatei mit einem Sprachcode-Infix hinzu:
+
+```bash
+openapi/
+├── api.yaml
+├── api.fr.yaml
+├── api.es.yaml
+└── api.zh.yaml
+```
+
+Jamdesk stellt automatisch die richtige Spezifikation bereit, wenn eine Seite unter einem Sprachpräfix (`/fr/…`, `/es/…` usw.) gerendert wird. Die vollständigen Regeln dazu, was übersetzt werden muss und was identisch bleiben soll, finden Sie unter [Mehrsprachige Unterstützung → OpenAPI-Spezifikationen übersetzen](/de/setup/languages#übersetzen-von-openapi-spezifikationen).
+
+## Zu ignorierende Dateien
+
+Erstellen Sie eine `.gitignore`, um Build-Artefakte auszuschließen:
+
+```bash
+.jamdesk/
+node_modules/
+.DS_Store
+*.log
+```
+
+Das Verzeichnis `.jamdesk/` enthält den lokalen Entwicklungs-Cache und sollte nicht in das Repository übernommen werden.
+
+## Wie geht es weiter?
+
+<Columns cols={2}>
+  <Card title="Monorepo-Unterstützung" icon="folders" href="/de/setup/monorepo-support">
+    Dokumentationspfad für Monorepos konfigurieren
+  </Card>
+  <Card title="Referenz zu docs.json" icon="gear" href="/de/config/docs-json-reference">
+    Alle Konfigurationsoptionen
+  </Card>
+</Columns>

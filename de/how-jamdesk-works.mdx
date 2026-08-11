@@ -1,0 +1,130 @@
+---
+title: Wie Jamdesk funktioniert
+description: Von Git-Push zu Live-Dokumentation in unter 60 Sekunden. Erfahren Sie, wie Jamdesk Ihre Dokumentationsseite ohne Infrastruktur erstellt, bereitstellt und optimiert.
+---
+
+Jamdesk erstellt Dokumentationsseiten aus MDX-Dateien in Ihrem GitHub-Repository. Sie schreiben Markdown mit React-Komponenten, pushen zu GitHub, und Ihre Website ist in unter 60 Sekunden in einem globalen CDN live. Ihre Inhalte bleiben als reine MDX-Dateien in Ihrem Repository, sodass Sie sie jederzeit in ein anderes Tool übertragen können.
+
+## Architekturüberblick
+
+Ihr Repository ist die maßgebliche Quelle. Jamdesk verbindet sich damit, erstellt Ihre Website und stellt sie in einem globalen Edge-Netzwerk bereit. Sie müssen keine Infrastruktur verwalten.
+
+<Frame caption="So gelangen Inhalte von Ihrem Repository zu Ihren Benutzern">
+  <Mermaid minWidth="700px">
+{`%%{init: {'theme': 'neutral', 'themeVariables': {'background': 'transparent'}, 'flowchart': {'nodeSpacing': 25, 'rankSpacing': 40, 'curve': 'basis', 'useMaxWidth': false}}}%%
+flowchart LR
+    subgraph Source["Your Repository"]
+        A[("MDX Files")]
+        B[("docs.json")]
+    end
+
+    subgraph Build["Build Phase"]
+        C["Validate"]
+        D["Process"]
+    end
+
+    E[("CDN Storage")]
+
+    subgraph Serve["Serve Phase"]
+        F["Render on Request"]
+        G["Edge Cache"]
+    end
+
+    Source -->|"git push"| C
+    C --> D
+    D -->|"Upload"| E
+    E --> F
+    F --> G
+    G -->|"< 50ms"| H["Your Users"]`}
+  </Mermaid>
+</Frame>
+
+## Die Build-Pipeline
+
+Vom Anfang bis zum Ende dauert dies normalerweise 30–60 Sekunden. Builds sind schnell, weil Jamdesk Seiten nicht vorab rendert. Ihre unverarbeiteten Inhalte gelangen an den Edge, und Seiten werden bei Bedarf gerendert, wenn Besucher sie anfordern.
+
+<Steps>
+  <Step title="Quellabruf">
+    Sie pushen in Ihren verbundenen GitHub-Branch (oder klicken im Dashboard auf Rebuild). Jamdesk klont Ihr Repository und findet Ihr Dokumentationsverzeichnis.
+  </Step>
+  <Step title="Validierung">
+    Ihre `docs.json`-Konfiguration wird anhand des Schemas validiert, und interne Links werden auf fehlerhafte Seiten und ungültige Anker geprüft.
+  </Step>
+  <Step title="Inhaltsverarbeitung">
+    Jamdesk erstellt aus Ihren Inhalten den Suchindex, Einbettungen für den [KI-Chat](/de/ai/chat), die Sitemap, [`llms.txt`](/de/ai/llms-txt) und Weiterleitungsregeln.
+  </Step>
+  <Step title="Am Edge bereitstellen">
+    Inhalte werden in das CDN hochgeladen und an mehr als 300 Edge-Standorte verteilt. Da nur geänderte Dateien übertragen werden, sind erneute Bereitstellungen schnell.
+  </Step>
+</Steps>
+
+## In jeder Website enthalten
+
+Jede Website enthält diese Funktionen standardmäßig. Es ist keine Konfiguration erforderlich.
+
+<Columns cols={2}>
+  <Card title="KI-Suche" icon="magnifying-glass" href="/de/ai/chat">
+    Eine Suche in natürlicher Sprache, die die Absicht versteht, nicht nur Schlüsselwörter. Unterstützt durch Vektor-Einbettungen, die beim Build aus Ihren Inhalten erstellt werden.
+  </Card>
+  <Card title="llms.txt" icon="robot" href="/de/ai/llms-txt">
+    Ein KI-lesbarer Index gemäß der Spezifikation von llmstxt.org. Programmierassistenten und KI-Agenten können Ihre Dokumentation direkt verwenden.
+  </Card>
+  <Card title="SEO-Grundlagen" icon="chart-line">
+    Sitemap, robots.txt, Open-Graph-Bilder und Meta-Tags. Ihre Dokumentation kann ab dem ersten Bereitstellen indexiert werden.
+  </Card>
+  <Card title="Integrierte Analysen" icon="chart-bar" href="/de/setup/analytics-overview">
+    Datenschutzorientiertes Analytics-Dashboard, das keine Cookies benötigt. Oder verwenden Sie Ihre eigene Lösung: Jamdesk unterstützt Google Analytics, Plausible, PostHog und weitere.
+  </Card>
+</Columns>
+
+## Was einen Build auslöst
+
+Ein Git-Push in Ihren verbundenen Branch, die Schaltfläche Rebuild im Dashboard oder [`jamdesk deploy`](/de/cli/deploy) über die CLI. Wenn Sie mehrere Commits in kurzer Folge pushen, fasst Jamdesk sie zu einem Build zusammen, damit keine Ressourcen verschwendet werden.
+
+Operative Details zu Statusüberwachung, Rollbacks, Umgebungsvariablen und Branch-Bereitstellungen finden Sie unter [Build- und Bereitstellungslebenszyklus](/de/deploy/lifecycle).
+
+## Sicherheit und Infrastruktur
+
+Sie müssen sich normalerweise nicht darum kümmern. Falls Ihr Sicherheitsteam jedoch nachfragt: Builds laufen in isolierten Containern, und Ihre GitHub-App-Verbindung ist schreibgeschützt.
+
+<Columns cols={2}>
+  <Card title="Minimale Berechtigungen" icon="shield-check">
+    Die GitHub-App fordert nur Lesezugriff auf die von Ihnen ausgewählten Repositorys an. Die App hat keinen Schreibzugriff und fordert keine organisationsweiten Bereiche an.
+  </Card>
+  <Card title="Isolierte Builds" icon="box">
+    Jeder Build erhält einen eigenen Container, der nach der Bereitstellung zerstört wird. Zwischen Builds oder Kunden bleibt nichts erhalten.
+  </Card>
+  <Card title="HTTPS überall" icon="lock">
+    Automatische SSL-Zertifikate für benutzerdefinierte Domains und Subdomains. Zertifikate werden automatisch ausgestellt und erneuert.
+  </Card>
+  <Card title="Globales CDN" icon="globe">
+    Bereitstellung über das Netzwerk von Cloudflare mit mehr als 300 Edge-Standorten und 99.9 % Verfügbarkeit.
+  </Card>
+</Columns>
+
+## Leistung
+
+Ob Ihre Dokumentation gefunden wird, hängt teilweise davon ab, wie schnell sie geladen wird. Google verwendet [Core Web Vitals](https://jamdesk.com/blog/why-google-pagespeed-matters) als Ranking-Signal, und KI-Crawler wie GPTBot und ClaudeBot geben sich 1–5 Sekunden pro Seite. Wenn Ihre Dokumentation in diesem Zeitfenster nicht geladen wird, wird sie nicht zitiert.
+
+Jede Jamdesk-Website wird vom Edge mit einer Zeit bis zum ersten Byte von unter 50 ms ausgeliefert. Das ist schnell genug für Googles Ranking-Schwellenwerte und damit KI-Crawler die Inhalte abrufen und zitieren können.
+
+| Metrik | Typischer Wert |
+|--------|----------------|
+| Build-Zeit | 30–60 Sekunden |
+| Verteilung der Bereitstellung | < 30 Sekunden |
+| Erstes Byte (Edge) | < 50 ms |
+| Vollständiger Seitenaufbau | < 500 ms |
+
+## Nächste Schritte
+
+<Columns cols={3}>
+  <Card title="Projekt erstellen" icon="plus" href="/de/setup/creating-projects">
+    Richten Sie im Dashboard eine neue Dokumentationswebsite ein
+  </Card>
+  <Card title="GitHub verbinden" icon="github" href="/de/setup/connecting-github">
+    Verknüpfen Sie Ihr Repository, um automatische Builds zu aktivieren
+  </Card>
+  <Card title="Lokal in der Vorschau anzeigen" icon="terminal" href="/de/cli/overview">
+    Verwenden Sie die Jamdesk CLI, um Ihre Dokumentation vor dem Push zu prüfen und in der Vorschau anzuzeigen
+  </Card>
+</Columns>

@@ -1,0 +1,124 @@
+---
+title: YouTube-Einbettungen
+sidebarTitle: YouTube
+description: YouTube-Videos und Shorts in deine Dokumentation einbetten – mit Lazy-Loading, individuellen Startzeiten und vertikalen 9:16-Shorts.
+---
+
+Die Komponente `<YouTube>` bettet Videos mit Lazy-Loading, abgerundeten Ecken und ohne störende verwandte Videos ein. Beim Laden der Seite zeigt sie ein Vorschaubild und eine Wiedergabeschaltfläche an und ersetzt diese erst nach einem Klick durch den vollständigen YouTube-Player.
+
+## YouTube-Video einbetten
+
+Übergib die Video-ID als `id`-Prop:
+
+```mdx
+<YouTube id="dQw4w9WgXcQ" />
+```
+
+<YouTube id="dQw4w9WgXcQ" />
+
+Es wird kein iframe geladen, bevor die zuschauende Person auf „Wiedergabe“ klickt. Die Seite bleibt schnell, weil die Komponente im Hintergrund [lite-youtube-embed](https://github.com/nicolegoesdigital/lite-youtube-embed) verwendet: ein Vorschaubild und wenige Kilobyte CSS statt des über 800 KB großen YouTube-iframe-Bundles.
+
+## Props
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `id` | `string` | none | **Erforderlich.** Die YouTube-Video-ID. |
+| `title` | `string` | `"Play"` / `"YouTube Short"` | Barrierefreiheitsbezeichnung für die Einbettung. Screenreader verwenden diesen Text. |
+| `start` | `number` | `0` | Startet die Wiedergabe an dieser Sekundenzahl im Video. |
+| `short` | `boolean` | `false` | Rendert statt eines 16:9-Videos einen vertikalen YouTube Short im Format 9:16. |
+
+## Zu einer bestimmten Zeit starten
+
+Die `start`-Prop springt beim Start der Wiedergabe zu einem Zeitstempel (in Sekunden):
+
+```mdx
+<YouTube id="dQw4w9WgXcQ" start={60} />
+```
+
+<YouTube id="dQw4w9WgXcQ" start={60} />
+
+Die Wiedergabe beginnt bei der 1-Minuten-Marke. Dezimalwerte werden auf ganze Sekunden abgerundet.
+
+## Video-ID finden
+
+<Tip>
+Die Video-ID ist die Zeichenfolge nach `v=` in einer YouTube-URL.
+
+- `youtube.com/watch?v=dQw4w9WgXcQ` → ID ist `dQw4w9WgXcQ`
+- `youtu.be/dQw4w9WgXcQ` → ID ist `dQw4w9WgXcQ`
+
+Kopiere die ID, nicht die vollständige URL.
+</Tip>
+
+## YouTube Shorts
+
+YouTube Shorts sind vertikale Videos mit einem Seitenverhältnis von 9:16. Wenn ein Short in einem standardmäßigen 16:9-Player eingebettet wird, entstehen auf beiden Seiten breite schwarze Balken: Das Video wird in einen für Landschaftsinhalte vorgesehenen Letterbox-Rahmen gedrängt.
+
+Die `short`-Prop behebt dieses Problem. Sie rendert die Einbettung im Format 9:16, zentriert auf der Seite mit einer Breite von 360 px und abgerundeten Ecken. Das Ergebnis entspricht der Darstellung von Shorts auf Mobilgeräten.
+
+### Short einbetten
+
+```mdx
+<YouTube id="_6HzLIJPH2A" short />
+```
+
+<YouTube id="_6HzLIJPH2A" short />
+
+### Short-ID finden
+
+Die Short-ID ist das Pfadsegment nach `/shorts/` in der URL:
+
+- `youtube.com/shorts/_6HzLIJPH2A` → ID ist `_6HzLIJPH2A`
+
+Diese IDs verwenden dasselbe 11 Zeichen lange Format wie reguläre YouTube-Videos. Du kannst jede Short-ID auch mit der standardmäßigen `<YouTube>`-Komponente testen. Ohne `short` wird sie jedoch im Format 16:9 mit schwarzen Balken gerendert.
+
+### Rendering-Details
+
+| Detail | Rendering |
+|--------|-----------|
+| Breite | Auf 360 px begrenzt und zentriert (entspricht der Breite des mobilen Shorts-Players von YouTube) |
+| Seitenverhältnis | 9:16 über CSS `aspect-ratio`, sodass der Container auf kleineren Bildschirmen sauber skaliert |
+| Ecken | Mit `border-radius` abgerundet, damit sie dem Stil anderer Jamdesk-Medieneinbettungen entsprechen |
+| Verwandte Videos | Über `rel=0` deaktiviert, wie bei standardmäßigen Einbettungen |
+
+### Leistungsunterschied
+
+Standardmäßige YouTube-Einbettungen verwenden `lite-youtube-embed`, das zunächst kein YouTube-JavaScript lädt. Die Seite zeigt ein Vorschaubild an; der vollständige Player-iframe wird erst geladen, wenn eine zuschauende Person auf „Wiedergabe“ klickt.
+
+Shorts funktionieren anders. Da `lite-youtube-embed` keine vertikalen Seitenverhältnisse unterstützt, verwenden Shorts einen direkten `<iframe>` mit `loading="lazy"`. Der Browser verzögert das Laden, bis sich der iframe dem sichtbaren Bereich nähert. Sobald er sichtbar ist, wird der vollständige YouTube-Player initialisiert – einschließlich Skripten, Styles und aller weiteren Bestandteile.
+
+<Note>
+Auf einer Seite mit einem oder zwei Shorts ist der Unterschied vernachlässigbar. Auf einer Seite mit vielen Shorts erhöhen die zusätzlichen iframes das Gewicht spürbar. Wenn du mehr als drei oder vier Shorts auf einer Seite einbettest, solltest du stattdessen auf sie verlinken oder sie hinter einem Tab platzieren, damit der anfängliche Ladevorgang schlank bleibt.
+</Note>
+
+## iFrames direkt verwenden
+
+Wenn du die vollständige Kontrolle über die Parameter der Einbettung benötigst, kannst du einen unveränderten iframe verwenden:
+
+```html
+<iframe
+  className="w-full aspect-video rounded-xl"
+  src="https://www.youtube.com/embed/VIDEO_ID"
+  title="YouTube video player"
+  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+  allowFullScreen
+/>
+```
+
+<Note>
+Die Komponente `<YouTube>` ist standardmäßig die bessere Wahl. Sie lädt den Player verzögert, entfernt verwandte Videos und verarbeitet die Seitenverhältnisse von Shorts. Verwende unveränderte iframes nur, wenn du Einbettungsparameter benötigst, die die Komponente nicht bereitstellt.
+</Note>
+
+## Wie geht es weiter?
+
+<Columns cols={3}>
+  <Card title="Bilder" icon="image" href="/de/content/images">
+    Markdown-Bilder, Abmessungen und Bildunterschriften
+  </Card>
+  <Card title="Videos" icon="video" href="/de/content/videos">
+    Lokale MP4- und WebM-Dateien
+  </Card>
+  <Card title="iFrames" icon="code" href="/de/content/iframes">
+    Vimeo, CodePen, Figma und mehr
+  </Card>
+</Columns>

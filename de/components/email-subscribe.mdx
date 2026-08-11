@@ -1,0 +1,121 @@
+---
+title: EmailSubscribe
+description: Füge mit EmailSubscribe ein Newsletter- oder Changelog-Anmeldeformular in jede Dokumentationsseite ein – mit nativer Erfassung für sieben Anbieter und Einbettungen für alle anderen.
+---
+
+`<EmailSubscribe>` fügt mit einem einzigen MDX-Tag ein E-Mail-Anmeldeformular direkt in eine Dokumentationsseite ein. Wenn du im Dashboard einen [Anbieter verbunden hast](/de/integrations/email-signups), rendert die Komponente ein von Jamdesk gehostetes Formular, das neue Abonnenten direkt zu deiner Zielgruppe hinzufügt. Ohne verbundenen Anbieter kann sie stattdessen die Einbettung eines anderen Dienstes hosten. Die Komponente eignet sich für Changelog- und Release-Notes-Seiten, auf denen Leser über Neuigkeiten informiert werden möchten.
+
+## Schnellstart
+
+Verbinde zuerst einen Anbieter im Dashboard und füge dann das Tag mit der ID dieses Anbieters hinzu:
+
+```mdx
+<EmailSubscribe provider="resend" />
+```
+
+Dadurch werden ein beschriftetes E-Mail-Feld und eine Subscribe-Schaltfläche angezeigt. Beim Absenden wird die Adresse zur verbundenen Zielgruppe hinzugefügt. Dasselbe Tag funktioniert für jeden nativen Anbieter (`mailchimp`, `kit`, `loops`, `beehiiv`, `brevo` oder `sendgrid`), sobald dieser Anbieter verbunden ist.
+
+Füge optional eine Überschrift und eine unterstützende Zeile hinzu:
+
+```mdx
+<EmailSubscribe
+  provider="resend"
+  title="Get release notes"
+  description="One email when we ship something new. No spam."
+/>
+```
+
+## Props
+
+| Prop | Typ | Zweck |
+|------|------|---------|
+| `provider` | string | Anbieter-ID: `resend`, `mailchimp`, `kit`, `loops`, `beehiiv`, `brevo`, `sendgrid`, `buttondown` oder `substack`. |
+| `title` | string | Optionale Überschrift, die über dem Formular angezeigt wird. |
+| `description` | string | Optionale unterstützende Zeile unter der Überschrift. |
+| `collapsed` | boolean | Nur für native Anbieter. Startet als kompakte Subscribe-Schaltfläche, die sich beim Klicken zum vollständigen Formular erweitert. |
+| `username` | string | Benutzername des Buttondown- oder Substack-Kontos (Anbieter, die ausschließlich Einbettungen unterstützen). |
+| `snippet` | string | Rohes Einbettungs-Markup eines beliebigen Anbieters. Die Ausweichoption (siehe unten). |
+| `className` | string | Zusätzliche CSS-Klasse für den Wrapper. |
+
+## Native Anbieter und Einbettungen
+
+Der übergebene `provider` bestimmt, wie sich das Formular verhält:
+
+- **Native Anbieter** (`resend`, `mailchimp`, `kit`, `loops`, `beehiiv`, `brevo`, `sendgrid`) rendern ein von Jamdesk gehostetes Formular. Jamdesk erfasst die Adresse und fügt sie über deinen verbundenen Schlüssel hinzu. Dafür muss ein Anbieter [im Dashboard verbunden sein](/de/integrations/email-signups).
+- **Anbieter, die ausschließlich Einbettungen unterstützen** (`buttondown`, `substack`) rendern das eigene Formular oder den Iframe des jeweiligen Dienstes. Du musst keinen Schlüssel verbinden, sondern gibst deinen `username` an, und der Besucher sendet seine Daten direkt an den Anbieter.
+
+<Note>
+Wenn du einen nativen Anbieter angibst, den du noch nicht im Dashboard verbunden hast, erfasst das Formular keine Daten. Verbinde den Anbieter zuerst, damit die Einsendungen ein Ziel haben.
+</Note>
+
+### Anbieter, die ausschließlich Einbettungen unterstützen
+
+Buttondown und Substack funktionieren ohne Verbindung im Dashboard. Übergib deinen Kontonamen:
+
+```mdx
+<EmailSubscribe provider="buttondown" username="acme" />
+<EmailSubscribe provider="substack" username="acme" />
+```
+
+### Ausweichoption: beliebige Einbettung einfügen
+
+Wenn Jamdesk für einen Anbieter keine Kurzform anbietet, füge dessen Einbettungs-Markup in `snippet` ein. Es wird auf der veröffentlichten Seite unverändert gerendert:
+
+```mdx
+<EmailSubscribe snippet={`<form action="https://example.com/subscribe">...</form>`} />
+```
+
+<Warning>
+Ein `snippet` führt den eigenen Code des Anbieters auf deiner Seite aus. Einige Anbieter liefern ein einmaliges Skript aus, das nicht erneut ausgeführt wird, wenn ein Leser ohne vollständiges Neuladen zwischen Seiten navigiert. Platziere skriptbasierte Einbettungen auf einer eigenen, direkt geladenen Seite (z. B. deinem Changelog) und nicht tief in einem Navigationsablauf.
+</Warning>
+
+## Kompakter Modus
+
+Ein vollständiges E-Mail-Feld mit Subscribe-Schaltfläche nimmt in der Mitte einer Seite viel Platz ein. Setze `collapsed`, damit das native Formular zunächst nur als einzelne Subscribe-Schaltfläche angezeigt wird. Wenn ein Leser darauf klickt, wird das vollständige Feld direkt auf der Seite eingeblendet, ohne dass die Seite neu geladen wird:
+
+```mdx
+<EmailSubscribe provider="resend" collapsed title="Subscribe to updates" />
+```
+
+Die Beschriftung der Schaltfläche stammt aus `title` (wenn du keinen Wert festlegst, wird „Subscribe to updates“ verwendet). Dies funktioniert nur mit nativen Anbietern. Anbieter für Einbettungen rendern ihr eigenes Markup, daher kann Jamdesk dort nichts einklappen.
+
+## Bereits abonnierte Leser
+
+Sobald ein Leser über ein natives Formular abonniert, merkt sich der Browser dies. Beim nächsten Besuch wird statt des vollständigen Formulars eine kurze Zeile angezeigt: *You're subscribed to the newsletter.* Niemand wird aufgefordert, etwas zu abonnieren, dem er bereits beigetreten ist.
+
+Wenn ein Leser eine zweite Adresse hinzufügen möchte, enthält die Zeile ein Steuerelement „Use a different email?“, das sofort das vollständige Formular erneut öffnet. Die Information wird pro Browser gespeichert (in `localStorage`, nicht in deiner Zielgruppe). Durch das Löschen von Websitedaten oder den Wechsel des Browsers wird das Formular wieder angezeigt. Es ist keine Konfiguration erforderlich: Jedes native Formular verhält sich so.
+
+## Automatisch auf Changelog-Seiten platzieren
+
+Statt das Tag manuell zu jeder Release-Seite hinzuzufügen, kannst du das Formular automatisch auf Changelog-Seiten einbinden. Setze dazu in `docs.json` die `placement`-Einstellung der Newsletter-Integration auf `changelog`:
+
+```json
+{
+  "integrations": {
+    "newsletter": {
+      "provider": "resend",
+      "title": "Get release notes",
+      "placement": "changelog"
+    }
+  }
+}
+```
+
+Mit `placement: "changelog"` wird das Formular auf jeder Changelog-Seite eingebunden (also auf jeder Seite mit `rss: true`). Um es auf einer solchen Seite zu überspringen, setze `newsletter: false` im Frontmatter dieser Seite. Wenn eine Seite bereits ein manuell platziertes `<EmailSubscribe>` enthält, wird die automatische Platzierung übersprungen, damit nicht zwei Formulare angezeigt werden.
+
+Der vollständige Block `integrations.newsletter` akzeptiert dieselben Felder wie die Komponente (`provider`, `title`, `description`, `collapsed`, `username`, `snippet`, `height`) sowie `placement` (`none`, der Standardwert, oder `changelog`).
+
+<Tip>
+Du musst die Überschrift und die unterstützende Zeile nicht in `docs.json` festlegen. Die Karte **Email Signups** im Dashboard enthält die Eingabefelder Form title und Form subtitle, und ein automatisch platziertes Formular verwendet diese Werte, wenn sie in `docs.json` fehlen. Setze `title`/`description` hier nur, wenn die Angaben in der `docs.json` dieser Website die Texte aus dem Dashboard überschreiben sollen.
+</Tip>
+
+## Wie geht es weiter?
+
+<Columns cols={2}>
+  <Card title="Connect a provider" icon="envelope" href="/de/integrations/email-signups">
+    Set up Resend, Mailchimp, Kit, Loops, beehiiv, Brevo, or SendGrid
+  </Card>
+  <Card title="Update Component" icon="timeline" href="/de/components/update">
+    Write the changelog entries your subscribers hear about
+  </Card>
+</Columns>

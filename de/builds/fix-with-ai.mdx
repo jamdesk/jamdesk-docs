@@ -1,0 +1,112 @@
+---
+title: Mit KI beheben
+sidebarTitle: Mit KI beheben
+description: Prüfe und übernehme KI-Änderungen für defekte Links und fehlende Seitenbeschreibungen aus deinem Jamdesk-Build-Dashboard per Commit in GitHub.
+---
+
+Wenn ein Build mit defekten Links oder Seiten ohne Beschreibung abgeschlossen wird, kann Jamdesk viele dieser Probleme für dich beheben. Die Schaltfläche **Fix with AI** liest die Build-Warnungen, schlägt für jede eine konkrete Änderung vor und committet die von dir genehmigten Fixes in dein verbundenes GitHub-Repository, wodurch ein neuer Build gestartet wird. Diese Seite richtet sich an alle, die eine Jamdesk-Website pflegen und Build-Warnungen beseitigen möchten, ohne MDX manuell zu bearbeiten.
+
+Die lokale, terminalbasierte Variante derselben Funktion findest du im [`jamdesk fix` CLI command](/de/cli/fix-broken-links). Der Dashboard-Ablauf erstellt den Commit für dich; die CLI schreibt in deine Arbeitskopie, und du erstellst den Commit selbst.
+
+Die Screenshots zeigen die Benutzeroberfläche auf Englisch.
+
+## Was wird behoben?
+
+Fix with AI funktioniert bei drei Arten von Build-Warnungen:
+
+- **Broken internal links.** Ein Linkfragment verweist auf eine Überschrift, die auf der Zielseite nicht mehr existiert, etwa wegen eines Tippfehlers (`#instalation` → `#installation`) oder weil die Überschrift einer übersetzten Seite umbenannt wurde.
+- **Missing page descriptions.** Eine Seite enthält in ihrem Frontmatter keine `description`. Jamdesk erstellt aus dem Seiteninhalt eine kurze Zusammenfassung, die du prüfen kannst.
+- **Missing page titles.** Für eine Seite ohne Titel wird ein Vorschlag aus dem Seiteninhalt erstellt, den du prüfen kannst.
+
+Eine Änderung wird nur vorgeschlagen, wenn das Ziel zuverlässig ermittelt werden kann. Alles Uneindeutige bleibt unverändert und wird separat aufgelistet, damit du es manuell beheben kannst.
+
+<Note>
+  Die Anzahl der behebbaren Probleme entspricht nicht der Anzahl der Warnungen. Ein Build kann fünf Warnungen anzeigen, während Fix with AI nur drei davon beheben kann, weil für die anderen beiden keine eindeutige Lösung existiert. Das Banner zeigt immer an, was tatsächlich behoben werden kann.
+</Note>
+
+## Voraussetzungen
+
+- Ein [verbundenes GitHub-Repository](/de/integrations/github) für das Projekt.
+- Schreibzugriff für die Jamdesk GitHub App, damit sie die Fixes committen kann. Fehlt der Zugriff, zeigt das Modal einen Link **Grant access**, über den du zu GitHub gelangst und den Zugriff hinzufügen kannst.
+- Ein abgeschlossener Build mit Warnungen zu defekten Links oder fehlenden Beschreibungen.
+
+## Banner finden
+
+Öffne dein Projekt und scrolle auf der Projektstartseite zu **Build History**. Wenn dein neuester Build behebbare Probleme enthält, erscheint oberhalb der Build-Liste ein Banner mit der Anzahl und einer Schaltfläche **Fix with AI**.
+
+<Frame>
+  <img src="/images/fix-with-ai/banner.webp" alt="Ein Build-History-Bereich mit einem hervorgehobenen Banner mit dem Text 3 issues on this build can be fixed with AI neben einer Schaltfläche Fix with AI. Die neueste Build-Zeile zeigt einen erfolgreichen Status mit einem Warnsymbol und der Zahl 5." />
+</Frame>
+
+Das Banner erscheint nur bei deinem neuesten abgeschlossenen Build. Ältere Builds im Verlauf zeigen es nicht, da Fixes immer auf den aktuellen Stand deiner Dokumentation angewendet werden.
+
+## Fixes prüfen und anwenden
+
+<Steps>
+  <Step title="Vorschau öffnen">
+    Klicke auf **Fix with AI**. Das Modal wird geöffnet, und der KI-Agent prüft deine Dokumentation, um einen Fix-Plan zu erstellen. Dies dauert einige Sekunden.
+  </Step>
+  <Step title="Jede vorgeschlagene Änderung lesen">
+    Die Fixes sind nach Typ gruppiert. **Broken links** zeigt jeden neu geschriebenen Anker, **Missing descriptions** die vorgeschlagene Zusammenfassung für jede Seite und **Missing titles** den vorgeschlagenen Titel. Deaktiviere das Kontrollkästchen für alles, was du diesmal überspringen möchtest, oder verwende die Ignorieren-Schaltfläche, um [eine Empfehlung dauerhaft auszublenden](#empfehlungen-ignorieren). Probleme ohne eindeutige Lösung erscheinen unter **Can't be fixed automatically** und müssen von dir manuell bearbeitet werden.
+
+    <Frame>
+      <img src="/images/fix-with-ai/modal.webp" alt="Das Modal Fix with AI. Ein Bereich Broken links listet drei aktivierte Fixes auf, jeweils mit dem durchgestrichenen alten und dem korrigierten Anker. Ein Bereich Can't be fixed automatically listet zwei Probleme auf, die oberhalb der Schaltflächen Cancel und Apply 3 fixes manuell behoben werden müssen." />
+    </Frame>
+  </Step>
+  <Step title="Anwenden">
+    Klicke auf **Apply fixes**. Jamdesk committet die ausgewählten Änderungen in deinen verbundenen Branch mit der Nachricht `docs: apply AI-suggested fixes (via Jamdesk)` und startet einen neuen Build.
+  </Step>
+  <Step title="Neuen Build bestätigen">
+    Beobachte den neuen Build in [Build History](/de/builds/monitoring). Sobald er live ist, sind die behobenen Warnungen verschwunden. Alles, was verbleibt, ist entweder eine Warnung, die Fix with AI nicht beheben konnte, oder ein neues Problem aus dem aktuellen Inhalt.
+  </Step>
+</Steps>
+
+<Note>
+  Beim Anwenden wird ein echter Commit in deinem Repository erstellt. Die Änderung wird daher in deiner Git-Historie erfasst und du kannst sie auf GitHub wie jeden anderen Commit prüfen oder zurücksetzen.
+</Note>
+
+## Wenn manche Probleme nicht behoben werden können
+
+Wenn eine Warnung keine eindeutige Lösung hat, listet das Modal sie unter einer separaten Überschrift auf und lässt sie unverändert. Häufige Gründe:
+
+- Ein defekter Link, dessen Zielseite oder Zielüberschrift nirgendwo existiert und auf den daher nicht verwiesen werden kann.
+- Ein Navigationseintrag ohne passende Quelldatei.
+- Eine Seite, für die der Agent nicht automatisch eine Beschreibung erstellen konnte.
+
+Diese Probleme müssen manuell bearbeitet werden. Öffne die Seite im [Editor](/de/development/local-preview) oder in deinem Code-Editor, korrigiere den Link oder füge die Beschreibung hinzu und pushe die Änderung, um einen neuen Build zu starten.
+
+## Empfehlungen ignorieren
+
+Manche Warnungen müssen nicht bearbeitet werden, etwa ein absichtlich defekter Link oder eine Stub-Seite, die keine Beschreibung benötigt. Wenn du einen Fix deaktivierst, wird er nur einmal übersprungen. Durch das Ignorieren wird er aus der Anzahl entfernt, bis du ihn wiederherstellst.
+
+Jede Zeile im Modal, unabhängig davon, ob sie behebbar ist, verfügt über eine Ignorieren-Schaltfläche. Klicke darauf, und das Element wird in den eingeklappten Bereich **Ignored** am unteren Rand verschoben. Sobald du das Modal schließt, sinkt die Anzahl im Banner auf der Projektstartseite entsprechend. Die zugehörigen Warnungen verschwinden aus **Build History**, sowohl im aktuellen Build als auch in allen folgenden Builds. **Ignore all** führt dies für alle weiterhin aufgelisteten Elemente aus.
+
+So funktionieren ignorierte Empfehlungen:
+
+- **Gemeinsam und dauerhaft.** Ignorierte Elemente gelten für das gesamte Projekt, sodass jedes Mitglied dieselbe Liste sieht, und bleiben über mehrere Builds hinweg bestehen. Jamdesk ordnet jede Warnung anhand ihres Inhalts statt anhand ihrer Zeilennummer zu. Wenn du andere Teile der Seite bearbeitest, wird ein ignoriertes Element daher nicht erneut angezeigt.
+- **Wiederherstellen.** Klappe den Bereich **Ignored** auf und klicke bei einem Element auf **Restore**. Wenn du alle Elemente eines Builds ignorierst, verschwindet das Banner. Ein kleiner Link „N ignored recommendations“ unter **Build History** öffnet das Modal wieder.
+- **Geänderte Warnungen werden erneut angezeigt.** Wenn sich das zugrunde liegende Problem ändert, etwa weil der defekte Link nun auf ein anderes Ziel verweist, stimmt es nicht mehr mit dem ignorierten Eintrag überein und wird als neue Empfehlung angezeigt.
+
+## Mit KI beheben vs. CLI
+
+Beide Tools beheben Anker defekter Links. Sie unterscheiden sich darin, wo sie ausgeführt werden und wie die Änderung übernommen wird.
+
+| | Fix with AI (Dashboard) | [`jamdesk fix`](/de/cli/fix-broken-links) (CLI) |
+|---|---|---|
+| Ausführung | Im Dashboard für einen Build | Im Terminal für lokale Dateien |
+| Fixes | Defekte Links und fehlende Beschreibungen | Anker defekter Links |
+| Commit | Erstellt den Commit für dich in deinem Branch | Schreibt lokale Dateien; du erstellst den Commit |
+| Auslöser | Ein Klick auf das Build-Banner | `jamdesk fix` |
+
+Verwende den Dashboard-Ablauf für eine schnelle Reparatur, ohne Jamdesk zu verlassen. Verwende die CLI, wenn du die Änderungen zuerst in deiner Arbeitskopie haben möchtest, etwa um sie mit anderen Bearbeitungen zu bündeln.
+
+## Wie geht es weiter?
+
+<Columns cols={2}>
+  <Card title="Builds überwachen" icon="chart-line" href="/de/builds/monitoring">
+    Build-Status verfolgen sowie Warnungen und Vorschläge lesen
+  </Card>
+  <Card title="Defekte Links beheben (CLI)" icon="terminal" href="/de/cli/fix-broken-links">
+    Defekte Links im Terminal automatisch beheben
+  </Card>
+</Columns>

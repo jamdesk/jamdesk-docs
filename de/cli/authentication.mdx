@@ -1,0 +1,142 @@
+---
+title: Authentifizierung
+description: "Anmeldung, Sitzungen und Authentifizierung der Jamdesk CLI – mit Token-Speicherung, Sitzungsaktualisierung, Teamkonten und CI/CD."
+---
+
+Die CLI verwendet eine browserbasierte Authentifizierung, um eine Verbindung zu Ihrem Jamdesk-Konto herzustellen. Sie müssen sich vor dem Bereitstellen anmelden.
+
+## Anmeldung
+
+```bash
+jamdesk login
+```
+
+Dadurch wird das Jamdesk Dashboard in Ihrem Browser zur Authentifizierung geöffnet. Im Hintergrund geschieht Folgendes:
+
+1. Die CLI startet einen lokalen HTTP-Server auf `127.0.0.1:9876` (verwendet einen vom Betriebssystem zugewiesenen Port, falls 9876 belegt ist)
+2. Ihr Browser öffnet `dashboard.jamdesk.com/cli-auth`
+3. Sie authentifizieren sich mit einer beliebigen Dashboard-Anmeldemethode (E-Mail/Passwort, Google, GitHub)
+4. Das Dashboard sendet Ihre Anmeldedaten an den lokalen Server der CLI zurück
+5. Die Anmeldedaten werden in `~/.jamdeskrc` gespeichert
+
+Beim Callback wird ein state-Parameter überprüft, um standortübergreifende Request-Fälschungen zu verhindern. Der Anmeldevorgang läuft nach 2 Minuten ab.
+
+```bash Expected output
+$ jamdesk login
+ℹ Open this URL in your browser to log in:
+
+  https://dashboard.jamdesk.com/cli-auth?port=9876&state=abc123...
+
+ℹ Waiting for authentication...
+✔ Logged in as you@example.com
+```
+
+**Headless- und SSH-Umgebungen**: Die URL wird immer im Terminal ausgegeben, auch wenn der Browser nicht geöffnet werden kann. Kopieren Sie sie und fügen Sie sie in einen beliebigen Browser ein.
+
+## Abmelden
+
+```bash
+jamdesk logout
+```
+
+Löscht die gespeicherten Anmeldedaten aus `~/.jamdeskrc`. Hat keine Wirkung, wenn Sie nicht angemeldet sind.
+
+```bash Expected output
+$ jamdesk logout
+✔ Logged out (you@example.com)
+```
+
+## Whoami
+
+```bash
+jamdesk whoami
+```
+
+Zeigt Ihre authentifizierte E-Mail-Adresse an und validiert die Sitzung durch Aktualisieren des Tokens. Dies ist eine Live-Prüfung und kein Auslesen eines lokalen Caches.
+
+Es gibt drei mögliche Zustände:
+
+<CodeGroup>
+```bash Logged in
+$ jamdesk whoami
+✔ Logged in as you@example.com
+```
+
+```bash Session expired
+$ jamdesk whoami
+⚠ Logged in as you@example.com (session expired)
+  Run `jamdesk login` to re-authenticate.
+```
+
+```bash Not logged in
+$ jamdesk whoami
+ℹ Not logged in. Run `jamdesk login` to authenticate.
+```
+</CodeGroup>
+
+## Funktionsweise von Sitzungen
+
+Anmeldedaten werden in `~/.jamdeskrc` als JSON mit den Berechtigungen `0600` gespeichert (Lesen und Schreiben nur für den Eigentümer):
+
+```json ~/.jamdeskrc
+{
+  "auth": {
+    "refreshToken": "AGK...",
+    "email": "you@example.com",
+    "uid": "abc123",
+    "expiresAt": 1700000000000
+  }
+}
+```
+
+Die CLI verwendet eine **Architektur mit Refresh-Token und ID-Token**:
+
+- **ID-Tokens** laufen nach etwa 1 Stunde ab und werden für API-Aufrufe verwendet
+- Die CLI **aktualisiert** ID-Tokens automatisch mit dem gespeicherten Refresh-Token und einem Puffer von 5 Minuten vor dem Ablauf
+- Refresh-Tokens sind langlebig, können aber widerrufen werden (Passwortänderung, Kontolöschung)
+- Wenn der Refresh-Token dauerhaft ungültig ist (`TOKEN_EXPIRED`, `USER_NOT_FOUND`, `INVALID_REFRESH_TOKEN`), werden die gespeicherten Authentifizierungsdaten automatisch gelöscht
+
+Sie müssen Tokens nicht manuell verwalten. Die CLI übernimmt die Aktualisierung bei jedem authentifizierten Befehl transparent.
+
+## Fehlerbehebung
+
+<AccordionGroup>
+  <Accordion title="Anmeldung läuft nach 2 Minuten ab">
+    Der lokale Callback-Server der CLI wird möglicherweise durch eine Firewall blockiert. Kopieren Sie die ausgegebene URL und öffnen Sie sie manuell in Ihrem Browser.
+
+    Wenn Port 9876 von einem anderen Prozess verwendet wird, wählt die CLI automatisch einen anderen Port. Überprüfen Sie die URL in der Terminalausgabe.
+  </Accordion>
+
+  <Accordion title='"Sitzung abgelaufen" bei jedem Befehl'>
+    Ihr Refresh-Token ist nicht mehr gültig. Dies geschieht nach Passwortänderungen oder längeren Zeiträumen ohne Aktivität.
+
+    Führen Sie `jamdesk login` aus, um eine neue Sitzung zu erhalten.
+  </Accordion>
+
+  <Accordion title="Browser wird nicht geöffnet">
+    Dies ist in Headless-Umgebungen (SSH, Docker, CI) zu erwarten. Kopieren Sie die URL aus dem Terminal und öffnen Sie sie in einem beliebigen Browser, der den Callback-Port Ihres Computers erreichen kann.
+  </Accordion>
+
+  <Accordion title='"Nicht angemeldet" direkt nach der Anmeldung'>
+    Überprüfen Sie, ob `~/.jamdeskrc` vorhanden ist und einen `auth`-Schlüssel enthält:
+
+    ```bash
+    cat ~/.jamdeskrc
+    ```
+
+    Die Dateiberechtigungen sollten `0600` sein. Wenn die Datei fehlt, gibt es möglicherweise Berechtigungsprobleme in Ihrem Home-Verzeichnis. Überprüfen Sie dies mit `ls -la ~`.
+  </Accordion>
+</AccordionGroup>
+
+Weitere Informationen zur Fehlerbehebung der CLI finden Sie im [CLI-Leitfaden des Help Centers](/de/help/troubleshooting/cli-issues).
+
+## Wie geht es weiter?
+
+<Columns cols={2}>
+  <Card title="CLI-Bereitstellung" icon="cloud-arrow-up" href="/de/cli/deploy">
+    Stellen Sie Ihre Dokumentation über das Terminal bereit
+  </Card>
+  <Card title="CLI-Übersicht" icon="terminal" href="/de/cli/overview">
+    Alle CLI-Befehle auf einen Blick
+  </Card>
+</Columns>

@@ -1,0 +1,179 @@
+---
+title: Bilder
+description: >-
+  Erfahren Sie, wie Jamdesk Bildgrößen, Bildunterschriften, Hell-/Dunkelvarianten
+  und unterstützte Formate für klare, zugängliche Dokumentation verarbeitet.
+---
+
+Jamdesk rendert Bilder mit abgerundeten Ecken und einheitlichen Abständen. Legen Sie Dateien in Ihrem `/images`-Verzeichnis ab und verweisen Sie mit Standard-Markdown darauf.
+
+Die Screenshots zeigen die Benutzeroberfläche auf Englisch.
+
+## Standard-Markdown
+
+Verwenden Sie die vertraute Syntax `![alt](path)`:
+
+```markdown
+![API response showing user data in JSON format](/images/tabs-preview.webp)
+```
+
+![API response showing user data in JSON format](/images/tabs-preview.webp)
+
+Pfade beginnen im Stammverzeichnis Ihres Projekts. Ein Bild unter `your-docs/images/screenshot.webp` wird als `/images/screenshot.webp` referenziert.
+
+## Bildabmessungen
+
+Fügen Sie nach der Bild-URL (durch ein Leerzeichen getrennt) `=WIDTHxHEIGHT` an, um die Größe zu steuern:
+
+```markdown
+![Dashboard overview](/images/tabs-preview.webp =400x300)
+```
+
+Legen Sie nur eine Abmessung fest, wird die andere proportional skaliert:
+
+```markdown
+![Wide banner](/images/tabs-preview.webp =800x)
+![Tall graphic](/images/tabs-preview.webp =x200)
+```
+
+Das ist hilfreich, wenn Sie eine einheitliche Spalte mit Screenshots derselben Breite benötigen oder ein hochauflösendes Bild auf eine angemessene Anzeigegröße verkleinern möchten.
+
+## Bildunterschriften
+
+Binden Sie ein Bild in die `<Frame>`-Komponente ein, um einen Rahmen und eine Bildunterschrift darunter hinzuzufügen:
+
+```mdx
+<Frame caption="Dashboard overview showing project statistics">
+  ![Dashboard](/images/tabs-preview.webp)
+</Frame>
+```
+
+<Frame caption="Beispiel eines gerahmten Bildes mit Bildunterschrift">
+  ![Jamdesk](/images/jd-blueprint-transparent.webp)
+
+</Frame>
+
+`Frame` zeichnet einen dezenten Rahmen um das Bild und platziert den Bildunterschriftstext darunter. Die Komponente funktioniert mit beliebigen Inhalten, nicht nur mit Bildern.
+
+## Hell-/Dunkelmodus
+
+Dokumentationswebsites benötigen häufig unterschiedliche Bildvarianten für jedes Farbschema: Ein Logo auf weißem Hintergrund sieht im Dunkelmodus falsch aus.
+
+### Das Attribut `srcDark`
+
+Der einfachste Ansatz. Jamdesk tauscht die Bildquelle basierend auf dem aktiven Theme aus:
+
+```mdx
+<img
+  src="/images/logo-light.webp"
+  srcDark="/images/logo-dark.webp"
+  alt="Company logo"
+/>
+```
+
+Der Browser lädt nur das Bild, das dem aktuellen Farbschema entspricht.
+
+### Das HTML-Element `<picture>`
+
+Wenn Sie standardmäßiges HTML benötigen, das auch außerhalb von Jamdesk funktioniert, verwenden Sie `<picture>` mit einer Media Query:
+
+```mdx
+<picture>
+  <source srcset="/images/logo-dark.webp" media="(prefers-color-scheme: dark)" />
+  <img src="/images/logo-light.webp" alt="Company logo" />
+</picture>
+```
+
+Der `<picture>`-Ansatz berücksichtigt die Farbschemaeinstellung des Betriebssystems. Das Attribut `srcDark` reagiert stattdessen auf den Theme-Umschalter von Jamdesk, was für Dokumentationsseiten normalerweise die gewünschte Option ist.
+
+## Unterstützte Formate
+
+| Format | Am besten geeignet für | Hinweise |
+|--------|------------------------|----------|
+| PNG | Screenshots, UI-Aufnahmen | Verlustfreie Qualität, unterstützt Transparenz. Größere Dateien. |
+| JPEG | Fotografien | Gute Komprimierung, keine Unterstützung für Transparenz. |
+| SVG | Symbole, Diagramme, Logos | Vektorformat, das ohne Qualitätsverlust auf jede Größe skaliert werden kann. Sehr kleine Dateigröße. |
+| GIF | Einfache Animationen | Kann schnell sehr groß werden. Für alles über wenige Frames sollten Sie kurze `.mp4`-Schleifen in Betracht ziehen. |
+| WebP | Allgemeine Verwendung | Bei vergleichbarer Qualität kleiner als PNG und JPEG. Funktioniert in allen modernen Browsern. |
+
+<Tip>
+WebP bietet für die meisten Dokumentationsbilder das beste Verhältnis von Dateigröße und Qualität. Wenn Sie Transparenz benötigen, unterstützt WebP auch diese, sodass Sie kein PNG benötigen.
+</Tip>
+
+## Bewährte Vorgehensweisen
+
+<AccordionGroup>
+  <Accordion title="Aussagekräftigen Alternativtext verfassen" icon="universal-access">
+    Alternativtext erfüllt zwei Zwecke: Screenreader verwenden ihn für die Barrierefreiheit, und er wird als Platzhalter angezeigt, wenn das Bild nicht geladen werden kann. Beschreiben Sie, was das Bild tatsächlich zeigt.
+
+    ```markdown
+    {/* Good -- says what's in the image */}
+    ![API response showing user data in JSON format](/images/tabs-preview.webp)
+
+    {/* Bad -- tells you nothing */}
+    ![Screenshot](/images/tabs-preview.webp)
+    ```
+
+    Verwenden Sie für dekorative Bilder, die keine Informationen hinzufügen (Hintergrundmuster, Trennlinien), einen leeren Alternativtext: `![](/images/decoration.webp)`.
+  </Accordion>
+
+  <Accordion title="Dateigrößen klein halten" icon="gauge-high">
+    Große Bilder verlangsamen das Laden von Seiten, insbesondere bei mobilen Verbindungen. Zielgrößen:
+
+    - **Screenshots/UI:** PNG oder WebP, unter 500 KB
+    - **Fotos:** JPEG oder WebP, unter 200 KB
+    - **Symbole und Diagramme:** möglichst SVG
+
+    [Squoosh](https://squoosh.app) und [TinyPNG](https://tinypng.com) komprimieren Bilder ohne sichtbaren Qualitätsverlust. Lassen Sie Screenshots vor dem Commit durch eines dieser Tools laufen.
+
+    Oder lassen Sie Jamdesk die Verarbeitung beim Build übernehmen. Aktivieren Sie die [automatische WebP-Konvertierung](/de/builds/image-optimization) in Ihrer `docs.json`, damit alle von Ihnen committeten PNG- oder JPG-Dateien bei jedem Build optimiert werden.
+  </Accordion>
+
+  <Accordion title="Einheitliche Abmessungen verwenden" icon="ruler-combined">
+    Screenshots, die zwischen verschiedenen Breiten wechseln, wirken unübersichtlich. Wählen Sie eine Standardbreite für Aufnahmen (1200px funktioniert gut) und verwenden Sie sie in Ihrer gesamten Dokumentation. Jamdesk skaliert Bilder automatisch so, dass sie in den Inhaltsbereich passen. Einheitliche Quelldimensionen sorgen daher für einheitliche gerenderte Ergebnisse.
+  </Accordion>
+
+  <Accordion title="Social-Share-Bild überprüfen" icon="share-nodes">
+    Jamdesk generiert automatisch eine gebrandete Social Card mit 1200×630 für jede Seite. Sie können sie pro Seite mit `og:image` im Frontmatter überschreiben. Rufen Sie nach einem Build die Seiten-URL mit dem kostenlosen Tool [OpenGraph Preview](https://jamdesk.com/utilities/opengraph-preview) auf, um zu sehen, wie die Card auf X, Facebook, LinkedIn, Slack, Discord und weiteren Plattformen gerendert wird. Eine vollständige Einrichtung finden Sie unter [SEO-Optimierung](/de/content/seo).
+  </Accordion>
+</AccordionGroup>
+
+## Dateiorganisation
+
+Gruppieren Sie Bilder in Unterverzeichnissen, die Ihre Inhaltsstruktur widerspiegeln. So bleiben sie auffindbar, wenn Ihre Dokumentation wächst:
+
+```bash
+your-docs/
+├── images/
+│   ├── getting-started/
+│   │   ├── step-1.png
+│   │   └── step-2.png
+│   ├── api/
+│   │   └── response.png
+│   └── logo.svg
+└── docs.json
+```
+
+Verweisen Sie mit dem vollständigen Pfad aus dem Stammverzeichnis Ihres Projekts darauf:
+
+```markdown
+![GitHub repository access](/images/getting-started/step-1.png)
+```
+
+<Warning>
+Vermeiden Sie Leerzeichen in Dateinamen von Bildern. Verwenden Sie stattdessen Bindestriche: `api-response.webp`, nicht `api response.webp`.
+</Warning>
+
+## Wie geht es weiter?
+
+<Columns cols={3}>
+  <Card title="YouTube-Einbettungen" icon="youtube" href="/de/content/youtube">
+    YouTube-Videos und Shorts einbetten
+  </Card>
+  <Card title="Videos" icon="video" href="/de/content/videos">
+    Lokale MP4- und WebM-Dateien
+  </Card>
+  <Card title="iFrames" icon="code" href="/de/content/iframes">
+    Vimeo, CodePen, Figma und mehr
+  </Card>
+</Columns>

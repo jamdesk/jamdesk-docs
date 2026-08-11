@@ -1,0 +1,142 @@
+---
+title: CLI-Bereitstellung
+description: >-
+  Erfahren Sie, wie der jamdesk deploy-CLI-Befehl Ihre Dokumentation paketiert,
+  hochlädt und erstellt – einschließlich Flags, Build-Phasen und Fehlercodes.
+---
+
+Der Befehl `deploy` paketiert Ihre Dokumentation, lädt sie zu Jamdesk hoch und startet einen Build vom Terminal aus. Verwenden Sie ihn für schnelle Iterationen, zum Testen von Änderungen oder für Projekte, die nicht mit einem GitHub-Repository verbunden sind.
+
+## Schnellstart
+
+```bash
+jamdesk login        # First time only
+jamdesk deploy       # From your project directory
+```
+
+## Optionen
+
+| Flag | Beschreibung |
+|------|-------------|
+| `--detach` | Wartet den Build in die Warteschlange ein und beendet sich sofort (gibt einen Dashboard-Link aus) |
+| `--full-rebuild` | Erzwingt einen vollständigen Build und umgeht den Build-Cache |
+| `--project <id>` | Stellt in einem bestimmten Projekt mit der angegebenen Projekt-ID bereit (überspringt die interaktive Auswahl) |
+| `--allow-empty` | Ermöglicht die Bereitstellung mit null `.mdx`-Inhaltsseiten. Standardmäßig verweigert die CLI die Bereitstellung eines leeren Projekts, damit ein falsches Arbeitsverzeichnis nicht versehentlich eine leere Website veröffentlicht (Snippets zählen nicht als Inhaltsseiten) |
+
+`jamdesk push` ist ein Alias für `jamdesk deploy`.
+
+## Funktionsweise
+
+<Steps>
+  <Step title="Authentifizieren">
+    Überprüft, ob Ihre Sitzung gültig ist. Wenn Ihr Token abgelaufen ist, werden Sie aufgefordert, `jamdesk login` auszuführen.
+  </Step>
+  <Step title="Konfiguration laden">
+    Liest `docs.json` aus dem aktuellen Verzeichnis und validiert die Datei.
+  </Step>
+  <Step title="Projekt auflösen">
+    Liest `projectId` aus `docs.json`. Wenn die Angabe fehlt (erste Bereitstellung), fordert die CLI Sie auf, ein Projekt aus Ihren Projekten auszuwählen. Ihre Auswahl wird in `docs.json` gespeichert, sodass die Eingabeaufforderung bei der nächsten Bereitstellung übersprungen wird.
+
+    Verwenden Sie `--project <id>`, um diese Einstellung zu überschreiben.
+  </Step>
+  <Step title="Dateien paketieren">
+    Erstellt ein komprimiertes Tarball Ihrer Dokumentation und berücksichtigt dabei `.gitignore`. Wenn Dateien möglicherweise Geheimnisse enthalten, gibt die CLI eine Warnung aus (der Upload wird jedoch nicht blockiert).
+  </Step>
+  <Step title="Hochladen">
+    Sendet das Tarball über eine vorab signierte URL an Jamdesk. Die maximale Upload-Größe beträgt 100 MB.
+  </Step>
+  <Step title="Build">
+    Stellt einen Build in die Warteschlange und fragt den Status ab. Dabei wird jede Phase ausgegeben, sobald sie abgeschlossen ist. Drücken Sie Strg+C, um die Statusabfrage zu beenden; der Build wird im Hintergrund fortgesetzt.
+  </Step>
+  <Step title="Fertig">
+    Gibt die Live-URL aus, sobald der Build abgeschlossen ist.
+  </Step>
+</Steps>
+
+## Build-Phasen
+
+Während der Statusabfrage sehen Sie, wie jede Phase nacheinander abgeschlossen wird:
+
+| Phase | Beschreibung |
+|-------|-------------|
+| Dateien werden extrahiert | Entpacken des hochgeladenen Tarballs |
+| Konfiguration wird validiert | Überprüfen des Schemas und Inhalts von `docs.json` |
+| Inhalte werden vorbereitet | Verarbeiten von MDX-Dateien und Assets |
+| Dokumentation wird erstellt | Kompilieren von Seiten und Generieren statischer Artefakte |
+| Upload in CDN | Übertragen der erstellten Ausgabe in das Edge-Netzwerk |
+| Cache wird aktualisiert | Entfernen veralteter Inhalte aus dem CDN |
+
+## Dateiausschlüsse
+
+Die folgenden Dateien und Verzeichnisse werden unabhängig von Ihrer `.gitignore` immer von Uploads ausgeschlossen:
+
+`.git`, `node_modules`, `.next`, `.env`, `.env.*`, `*.pem`, `*.key`, `credentials.json`, `.gcloud`, `.DS_Store`, `Thumbs.db`
+
+Alles, was in Ihrer `.gitignore` aufgeführt ist, wird ebenfalls ausgeschlossen.
+
+### Warnungen zu geheimen Dateien
+
+Die CLI gibt eine Warnung aus (blockiert den Upload jedoch nicht), wenn sie Dateien erkennt, die möglicherweise Geheimnisse enthalten:
+
+- `.env`- und `.env.*`-Dateien
+- `*.pem`- und `*.key`-Dateien
+- `credentials.json`
+- `service_account*.json`
+- Dateien, die mit `secret` beginnen
+
+Fügen Sie diese Dateien zu `.gitignore` hinzu, um die Warnung zu unterdrücken und sie von Uploads auszuschließen.
+
+## Fehlerreferenz
+
+| Fehler | Code | Ursache | Lösung |
+|-------|------|-------|-----|
+| Nicht angemeldet | `AUTH_REQUIRED` | Keine gespeicherten Anmeldedaten | `jamdesk login` |
+| Sitzung abgelaufen | `AUTH_EXPIRED` | Aktualisierung des Tokens fehlgeschlagen | `jamdesk login` |
+| Zugriff verweigert | `FORBIDDEN` | Sie sind kein Mitglied dieses Projekts | Überprüfen Sie die Projektmitgliedschaft im Dashboard |
+| Projekt nicht gefunden | `NOT_FOUND` | Ungültige Projekt-ID | Überprüfen Sie die ID oder entfernen Sie `projectId` aus docs.json |
+| Build läuft bereits | `BUILD_IN_PROGRESS` | Ein anderer Build wird ausgeführt | Warten Sie oder überprüfen Sie das Dashboard |
+| Upload zu groß | `TOO_LARGE` | Server hat den Upload abgelehnt (Limit: 100 MB) | Schließen Sie große Dateien über `.gitignore` aus |
+| Projekt zu groß | `PROJECT_TOO_LARGE` | Das Tarball überschreitet beim Paketieren 100 MB | Schließen Sie große Dateien über `.gitignore` aus |
+| Keine Projekte | `NO_PROJECTS` | Keine Projekte in Ihrem Konto | Erstellen Sie zuerst ein Projekt im Dashboard |
+| Keine Dateien | `EMPTY_PROJECT` | Alle Dateien wurden ausgeschlossen | Überprüfen Sie `.gitignore` |
+| Keine Inhaltsseiten | `NO_CONTENT` | Keine `.mdx`-Inhaltsseiten gefunden (Snippets zählen nicht) | Führen Sie den Befehl aus Ihrem Dokumentationsverzeichnis aus oder übergeben Sie `--allow-empty`, wenn die leere Veröffentlichung beabsichtigt ist |
+| Konfiguration ungültig | `CONFIG_NOT_FOUND` | `docs.json` fehlt oder ist ungültig | Führen Sie den Befehl aus dem Projektstamm aus und überprüfen Sie die Konfiguration |
+| Upload fehlgeschlagen | `UPLOAD_FAILED` | Netzwerkproblem während des Uploads | Überprüfen Sie die Internetverbindung und versuchen Sie es erneut |
+| Build fehlgeschlagen | `BUILD_FAILED` | Fehler des Build-Dienstes | Überprüfen Sie die Build-Protokolle im Dashboard |
+
+## Fehlerbehebung
+
+<AccordionGroup>
+  <Accordion title='"Ein Build läuft bereits"'>
+    Pro Projekt wird jeweils nur ein Build ausgeführt. Warten Sie, bis der aktuelle Build abgeschlossen ist, und überprüfen Sie den Status im Dashboard unter **Deployments**.
+  </Accordion>
+
+  <Accordion title='"docs.json nicht gefunden oder ungültig"'>
+    Stellen Sie sicher, dass Sie den Befehl aus dem Verzeichnis ausführen, das `docs.json` enthält. Führen Sie `jamdesk validate` aus, um Konfigurationsfehler zu überprüfen.
+  </Accordion>
+
+  <Accordion title='"Upload zu groß"'>
+    Das Limit von 100 MB gilt für das komprimierte Tarball aller nicht ausgeschlossenen Dateien. Überprüfen Sie, welche Dateien einbezogen werden. Große Bilder, Videos oder Datendateien sind häufige Ursachen; fügen Sie sie zu `.gitignore` hinzu, um sie auszuschließen.
+  </Accordion>
+
+  <Accordion title="Bereitstellung bleibt während der Statusabfrage hängen">
+    Drücken Sie Strg+C, um den Vorgang zu beenden; der Build wird im Hintergrund fortgesetzt. Überprüfen Sie den Status im Dashboard. Wenn dies regelmäßig passiert, werden die Anfragen zur Statusabfrage möglicherweise von Ihrem Netzwerk unterbrochen.
+  </Accordion>
+
+  <Accordion title='"Keine Projekte gefunden"'>
+    Sie benötigen mindestens ein Projekt in Ihrem Jamdesk-Konto. Erstellen Sie eines unter [dashboard.jamdesk.com](https://dashboard.jamdesk.com).
+  </Accordion>
+</AccordionGroup>
+
+Weitere Informationen zur Fehlerbehebung bei der CLI finden Sie im [CLI-Leitfaden des Help Centers](/de/help/troubleshooting/cli-issues).
+
+## Wie geht es weiter?
+
+<Columns cols={2}>
+  <Card title="Bereitstellungs-Workflow" icon="rotate" href="/de/development/deployment">
+    Automatische Bereitstellung über GitHub und Bereitstellungsstatus
+  </Card>
+  <Card title="Authentifizierung" icon="key" href="/de/cli/authentication">
+    Anmeldeablauf, Sitzungen und Fehlerbehebung
+  </Card>
+</Columns>

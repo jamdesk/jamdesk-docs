@@ -1,0 +1,277 @@
+---
+title: Eine Seite einbetten
+description: Fügen Sie Ihrer App eine „What's new?“-Schaltfläche hinzu, die das Jamdesk-Changelog modal mit Unread-Punkt öffnet – nur ein Script-Tag, kein Build-Schritt.
+---
+
+Ihr Changelog befindet sich bereits in Ihrer Dokumentation. Dieser Leitfaden fügt einen „What's new?“-Auslöser in Ihr eigenes Produkt ein: eine Schaltfläche oder einen schwebenden Launcher, der dieselben Einträge in einem Modal mit einem Punkt öffnet, der ungelesene Aktualisierungen pro Besucher markiert. Sie fügen ein `<script>`-Tag ein; Jamdesk hostet und versioniert das Widget.
+
+Die häufigste Anwendung ist ein Changelog, und darauf ist der Unread-Punkt ausgerichtet. Dasselbe Widget kann jedoch *jede* Dokumentationsseite im Modal öffnen. Verweisen Sie `data-page` auf eine beliebige Stelle, an der eine fokussierte, kontextbezogene Seite hilfreich ist (siehe [Das Modal auf eine beliebige Seite richten](#das-modal-auf-eine-beliebige-seite-richten)).
+
+Die Screenshots zeigen die Benutzeroberfläche auf Englisch.
+
+<img src="/images/embed-changelog/modal.webp" alt="Das geöffnete What's new-Modal über einer abgedunkelten App mit der Jamdesk-Changelog-Seite, einer Schaltfläche zum Kopieren der Seite und datierten Aktualisierungseinträgen sowie einer Schaltfläche zum Schließen in der oberen Ecke" width="420" style={{ display: 'block', margin: '0 auto' }} />
+
+## Live ausprobieren
+
+Diese Seite verwendet das echte Widget. Klicken Sie unten, um dasselbe Modal zu öffnen, das Ihre Besucher sehen. Es lädt hier das Changelog dieser Website:
+
+<Widget page="/reference/changelog" label="What's new" unread={false} />
+
+Diese Live-Schaltfläche ist die MDX-Komponente [`<Widget>`](/de/components/widget), die einfachste Möglichkeit, das Widget **in einer Jamdesk-Dokumentationsseite** einzubetten: Sie besteht aus einem einzigen Tag, benötigt kein Script und ermittelt Ihre Website automatisch. Das folgende `<script>`-Snippet ist für den anderen Anwendungsfall vorgesehen: das Einbetten des Widgets **in Ihr eigenes Produkt oder Ihre eigene App**, in der MDX-Komponenten nicht ausgeführt werden. In beiden Fällen werden dasselbe Widget und Modal verwendet; der Rest dieser Seite behandelt das Script.
+
+## Voraussetzungen
+
+- **Eine veröffentlichte Jamdesk-Website** auf ihrer `*.jamdesk.app`-Subdomain (das Widget wird immer von dort geladen, auch wenn Sie Dokumentation zusätzlich unter einer benutzerdefinierten Domain bereitstellen).
+- **Eine Changelog-Seite**, die aus [`<Update>`](/de/components/update)-Einträgen mit `rss: true` im Frontmatter erstellt wurde (siehe [Mit `rss: true` aktivieren](#mit-rss-true-aktivieren)).
+
+## Schnellstart
+
+Öffnen Sie Ihr Dashboard, gehen Sie zu **Integrations → What's New widget**, legen Sie die Seiten- und Launcher-Optionen fest und kopieren Sie das generierte Snippet. Es sieht so aus:
+
+```html
+<script
+  src="https://acme.jamdesk.app/_jd/widget.js"
+  data-base="https://acme.jamdesk.app"
+  data-page="/changelog"
+  data-theme="auto"
+  async
+></script>
+```
+
+Fügen Sie es vor dem schließenden `</body>`-Tag in das HTML Ihrer App ein. Beim Laden wird ein schwebender **What's new**-Launcher in der Ecke hinzugefügt. Beim Anklicken wird Ihr Changelog in einem Modal geöffnet; ein Unread-Punkt erscheint, wenn der Besucher einen Eintrag noch nicht gesehen hat.
+
+<Note>
+Ersetzen Sie `acme` durch Ihre eigene Subdomain. Die Dashboard-Karte trägt diesen Wert automatisch ein und sorgt dafür, dass `data-base` auf den richtigen Ursprung zeigt, einschließlich des `/docs`-Pfads, wenn Sie die Dokumentation unter einem Unterpfad hosten.
+</Note>
+
+## Eine Version festlegen oder selbst hosten
+
+Das Widget ist Open Source. Das oben gehostete Snippet stellt immer die neueste Version bereit, was für die meisten Websites die richtige Standardeinstellung ist. Wenn Sie stattdessen eine bekannte Version festschreiben oder die Datei selbst bereitstellen möchten, bietet das Repository [`jamdesk-widget`](https://github.com/jamdesk/jamdesk-widget) zwei weitere Möglichkeiten zum Laden.
+
+**Eine Version mit jsDelivr festlegen.** Laden Sie eine markierte Version vom CDN. Die Bytes ändern sich danach nicht mehr:
+
+```html
+<script
+  src="https://cdn.jsdelivr.net/gh/jamdesk/jamdesk-widget@v1.0.0/widget.js"
+  data-base="https://acme.jamdesk.app"
+  data-page="/changelog"
+  async
+></script>
+```
+
+**Selbst hosten.** Laden Sie `widget.js` aus dem [neuesten Release](https://github.com/jamdesk/jamdesk-widget/releases/latest) herunter und stellen Sie die Datei von Ihrem eigenen Ursprung bereit. Das ist hilfreich, wenn eine strenge `script-src`-Richtlinie Skripte von Drittanbietern ausschließt.
+
+Setzen Sie in beiden Fällen `data-base` auf Ihren `*.jamdesk.app`-Ursprung: Das gehostete Snippet liest den Wert aus der eigenen Script-URL, ein CDN oder Ihr eigener Server kann dies jedoch nicht. Jedes Release veröffentlicht einen Subresource-Integrity-Hash, mit dem Sie die exakten Bytes festschreiben können. Die [README des Repositorys](https://github.com/jamdesk/jamdesk-widget#install) beschreibt alle drei Installationswege.
+
+## Mit `rss: true` aktivieren
+
+Das Widget liest den neuesten Eintrag aus demselben Feed, der Ihren RSS-Feed bereitstellt. Eine Seite wird daher nur dann an das Widget übergeben, wenn ihr Frontmatter `rss: true` enthält:
+
+```mdx
+---
+title: Changelog
+rss: true
+---
+
+<Update label="June 2026" date="2026-06-01">
+**Spec validation at build time.** Every deploy validates the OpenAPI specs your `docs.json` references.
+</Update>
+```
+
+Ohne `rss: true` wird das Widget geladen, zeigt aber keine Einträge an, und der Launcher bleibt verborgen. Eine Dokumentationsseite, die lediglich die `<Update>`-Komponente *demonstriert* (ohne `rss: true`), wird korrekt ausgeschlossen. Ein Demo-Datum lässt den Punkt daher nicht aufleuchten.
+
+<Warning>
+Jeder `<Update>`, der in den Widget-Feed einfließt, benötigt ein **`date`** (jeden Wert, den `Date.parse` lesen kann, etwa `2026-06-01`), nicht nur `rss: true` auf der Seite. Das Datum bestimmt die Reihenfolge des Feeds und identifiziert den neuesten Eintrag. Einträge ohne Datum werden daher übersprungen. Wenn keiner Ihrer Einträge datiert ist, bleibt der schwebende Launcher verborgen und der Unread-Punkt erscheint nie – auch wenn `rss: true` gesetzt ist.
+</Warning>
+
+## Das Snippet konfigurieren
+
+Jede Option wird als `data-`Attribut am Script-Tag angegeben. Die Dashboard-Karte trägt diese Werte automatisch ein, Sie können das Snippet aber auch manuell bearbeiten.
+
+| Attribut | Werte | Standard | Zweck |
+|-----------|--------|---------|---------|
+| `data-base` | Ihre Website-URL | Script-Ursprung | Der `*.jamdesk.app`-Ursprung (plus `/docs`, wenn Sie unter einem Unterpfad hosten). |
+| `data-page` | Pfad | `/changelog` | Jeder Dokumentationspfad, der im Modal geöffnet werden soll, nicht nur das Changelog. Siehe [Das Modal auf eine beliebige Seite richten](#das-modal-auf-eine-beliebige-seite-richten). |
+| `data-theme` | `auto`, `light`, `dark` | `auto` | Farbschema des Modals erzwingen oder der Systemeinstellung des Besuchers folgen. |
+| `data-position` | `bottom-right`, `bottom-left`, `top-right`, `top-left` | `bottom-right` | Die Ecke, in der der schwebende Launcher angezeigt wird. Wird ignoriert, wenn `data-trigger` gesetzt ist. |
+| `data-label` | Text | `What's new` | Der Schaltflächentext des schwebenden Launchers. |
+| `data-width` | CSS-Länge | `560px` | Breite des Modals. Siehe [Modalgröße festlegen](#modalgröße-festlegen). |
+| `data-height` | CSS-Länge | `680px` | Höhe des Modals. |
+| `data-radius` | CSS-Länge | `12px` | Eckenradius des Modals. Verringern Sie den Wert für eckigere Ecken. |
+| `data-unread` | `off` zum Deaktivieren | on | Gibt an, ob der Unread-Punkt angezeigt wird. |
+| `data-unread-color` | Hexadezimalwert oder CSS-Farbname | `#e5484d` | Farbe des Unread-Punkts. |
+| `data-button-color` | Hexadezimalwert oder CSS-Farbname | `#111` | Hintergrund des schwebenden Launchers. Wird ignoriert, wenn `data-trigger` gesetzt ist. |
+| `data-button-text-color` | Hexadezimalwert oder CSS-Farbname | `#fff` | Textfarbe des schwebenden Launchers. |
+| `data-trigger` | CSS-Selektor | _(none)_ | Bindet das Widget an Ihr eigenes Element statt an den schwebenden Launcher. |
+| `data-project` | Slug | aus `data-base` abgeleitet | Der Schlüssel, unter dem der „gesehen“-Status pro Besucher gespeichert wird. Überschreiben Sie ihn nur, wenn ein Ursprung mehr als ein Changelog bereitstellt. |
+
+### Das Modal auf eine beliebige Seite richten
+
+`data-page` öffnet jeden Pfad Ihrer Dokumentationswebsite, nicht nur `/changelog`. Das Modal rendert die angegebene Seite, etwa eine einzelne Ankündigung oder einen Migrationshinweis, ohne die Elemente der Website-Oberfläche. Verweisen Sie es überall dorthin, wo eine fokussierte, kontextbezogene Seite hilfreich ist:
+
+```html
+<script
+  src="https://acme.jamdesk.app/_jd/widget.js"
+  data-base="https://acme.jamdesk.app"
+  data-page="/announcements/2026-migration"
+  data-unread="off"
+  async
+></script>
+```
+
+Zwei Verhaltensweisen bleiben an Ihren Changelog-Feed gebunden. Beachten Sie dies, wenn es sich bei der Seite nicht um ein Changelog handelt:
+
+- **Der Unread-Punkt** verfolgt den neuesten Eintrag Ihres Changelogs, nicht die Seite im Modal. Setzen Sie `data-unread="off"`, wenn das Modal etwas anderes öffnet. Andernfalls leuchtet der Punkt bei Changelog-Aktualisierungen auf, die der Besucher dort nicht sieht.
+- **Der schwebende Launcher** wird erst automatisch angezeigt, wenn Ihr Changelog einen Eintrag enthält (siehe [Mit `rss: true` aktivieren](#mit-rss-true-aktivieren)). Um eine Seite auf einer Website ohne Changelog einzubetten, binden Sie das Widget mit [`data-trigger`](#launchermodi) an Ihr eigenes Element. Ihr Element wird unabhängig davon angezeigt.
+
+### Launchermodi
+
+<Columns cols={2}>
+  <Card title="Schwebender Launcher" icon="circle-dot">
+    Lassen Sie `data-trigger` deaktiviert. Das Widget rendert dann eine eigene Schaltfläche in der durch `data-position` festgelegten Ecke, mit dem Text aus `data-label`.
+  </Card>
+  <Card title="An eigenes Element binden" icon="link">
+    Setzen Sie `data-trigger="#whats-new"` (einen beliebigen CSS-Selektor). Das Widget wird dann stattdessen über Ihren vorhandenen Navigationslink oder Ihre vorhandene Schaltfläche geöffnet.
+  </Card>
+</Columns>
+
+Wenn Sie das Widget an Ihr eigenes Element binden, fügt es diesem Element den Unread-Punkt hinzu und rendert keine schwebende Schaltfläche (daher gelten `data-position` und `data-label` nicht mehr):
+
+```html
+<script
+  src="https://acme.jamdesk.app/_jd/widget.js"
+  data-base="https://acme.jamdesk.app"
+  data-page="/changelog"
+  data-trigger="#whats-new"
+  async
+></script>
+```
+
+### Modalgröße festlegen
+
+Das Modal wird mit 560 × 680 px geöffnet. Ändern Sie die Werte mit `data-width` und `data-height`. Eine einfache Zahl wird als Pixelwert interpretiert. Alternativ können Sie jeden Wert in `px`, `vw`, `vh`, `rem`, `em` oder `%` verwenden:
+
+```html
+<script
+  src="https://acme.jamdesk.app/_jd/widget.js"
+  data-base="https://acme.jamdesk.app"
+  data-page="/changelog"
+  data-width="720px"
+  data-height="600px"
+  async
+></script>
+```
+
+Beide Abmessungen werden responsiv begrenzt (`92vw` breit, `86vh` hoch), sodass auch eine große Größe auf einem Smartphone passt. Ein nicht erkannter Wert fällt auf den Standardwert zurück. Der Eckenradius beträgt standardmäßig 12 px. Setzen Sie `data-radius` (jede CSS-Länge), um die Ecken eckiger oder runder zu gestalten.
+
+### Die Launcher-Schaltfläche gestalten
+
+Der schwebende Launcher ist standardmäßig ein dunkles, abgerundetes Element. Ändern Sie seine Farbe mit `data-button-color` (Hintergrund) und `data-button-text-color` (Text), jeweils mit einem Hexadezimalwert oder CSS-Farbnamen:
+
+```html
+<script
+  src="https://acme.jamdesk.app/_jd/widget.js"
+  data-base="https://acme.jamdesk.app"
+  data-page="/changelog"
+  data-button-color="#4f46e5"
+  data-button-text-color="#ffffff"
+  async
+></script>
+```
+
+Diese beiden Attribute gestalten ausschließlich die eigene schwebende Schaltfläche des Widgets. Wenn Sie das Widget mit `data-trigger` an Ihr eigenes Element binden, übernimmt der Launcher die Gestaltung dieses Elements. Die Attribute haben dann keine Wirkung.
+
+### Den Unread-Punkt anpassen
+
+Der Unread-Punkt ist rot (`#e5484d`) und standardmäßig aktiviert. Ändern Sie seine Farbe mit `data-unread-color` (einem Hexadezimalwert oder CSS-Farbnamen) oder deaktivieren Sie ihn mit `data-unread="off"`:
+
+```html
+<!-- Recolor the dot -->
+<script src="https://acme.jamdesk.app/_jd/widget.js" data-base="https://acme.jamdesk.app" data-unread-color="#7c3aed" async></script>
+
+<!-- Turn the dot off -->
+<script src="https://acme.jamdesk.app/_jd/widget.js" data-base="https://acme.jamdesk.app" data-unread="off" async></script>
+```
+
+Durch das Deaktivieren des Punkts bleiben Launcher und Modal erhalten. Nur der Indikator wird entfernt. Im nächsten Abschnitt wird erklärt, wie der „gesehen“-Status verfolgt wird.
+
+## Der Unread-Punkt
+
+Das Widget verwaltet einen Unread-Indikator pro Besucher. Es vergleicht die ID des neuesten Eintrags mit einem Wert im `localStorage` des Browsers (ein Schlüssel pro Projekt). Bei unterschiedlichen Werten wird ein Punkt am Launcher angezeigt. Beim Öffnen des Modals wird der Eintrag als gesehen markiert und der Punkt bis zur Veröffentlichung der nächsten Aktualisierung entfernt.
+
+Da der Status in `localStorage` gespeichert wird, gilt er pro Browser und Besucher. Es gibt weder ein Konto noch Tracking. Durch das Löschen der Websitedaten wird der Status zurückgesetzt. Ein Besucher sieht den Punkt in einem neuen Browser einmal und danach erst wieder, wenn Sie etwas Neues veröffentlichen.
+
+## Beispiele
+
+<CodeGroup>
+```html Floating, bottom-left, green dot
+<script
+  src="https://acme.jamdesk.app/_jd/widget.js"
+  data-base="https://acme.jamdesk.app"
+  data-page="/changelog"
+  data-position="bottom-left"
+  data-unread-color="#22c55e"
+  async
+></script>
+```
+
+```html Bound to a nav link, larger modal
+<script
+  src="https://acme.jamdesk.app/_jd/widget.js"
+  data-base="https://acme.jamdesk.app"
+  data-page="/changelog"
+  data-trigger="#whats-new"
+  data-width="720px"
+  data-height="600px"
+  async
+></script>
+```
+
+```html No dot, custom label
+<script
+  src="https://acme.jamdesk.app/_jd/widget.js"
+  data-base="https://acme.jamdesk.app"
+  data-page="/changelog"
+  data-label="Release notes"
+  data-unread="off"
+  async
+></script>
+```
+</CodeGroup>
+
+## Content-Security-Policy
+
+Wenn Ihre eigene Website eine strenge `Content-Security-Policy` sendet, erlauben Sie Ihren `*.jamdesk.app`-Ursprung in drei Direktiven. Andernfalls bleibt das Widget ohne Meldung inaktiv:
+
+```
+Content-Security-Policy:
+  script-src  https://acme.jamdesk.app;
+  frame-src   https://acme.jamdesk.app;
+  connect-src https://acme.jamdesk.app;
+```
+
+- **`script-src`** lädt `widget.js`.
+- **`frame-src`** rendert das iframe des Modals.
+- **`connect-src`** ruft die Changelog-Metadaten für den Unread-Punkt ab.
+
+Wenn eine Direktive fehlt, wird kein Fehlerbanner angezeigt: Der Launcher erscheint einfach nicht oder das Modal bleibt leer. Prüfen Sie die Browserkonsole auf CSP-Verstöße, wenn das Widget nicht angezeigt wird.
+
+## Passwortgeschützte Websites
+
+<Warning>
+Betten Sie das Widget nicht ein, wenn Ihre Dokumentationswebsite passwortgeschützt ist. Der Entsperrbildschirm ist dafür vorgesehen, direkt auf Ihrer `*.jamdesk.app`-Website ausgefüllt zu werden, nicht in einem iframe eines Drittanbieters. Durch das Einbetten würden Besucher aufgefordert, Ihr Websitepasswort in einem Frame eines anderen Ursprungs einzugeben – genau das typische Muster einer Phishing-Abfrage. Verwenden Sie das Widget nur für öffentliche Changelogs.
+</Warning>
+
+## Wie geht es weiter?
+
+<Columns cols={2}>
+  <Card title="Update Component" icon="timeline" href="/de/components/update">
+    Verfassen Sie die Changelog-Einträge, die das Widget liest
+  </Card>
+  <Card title="Custom Domains" icon="globe" href="/de/deploy/custom-domains">
+    Stellen Sie die Dokumentation unter Ihrer eigenen Domain bereit (das Widget wird weiterhin von jamdesk.app geladen)
+  </Card>
+  <Card title="Widget Source" icon="github" href="https://github.com/jamdesk/jamdesk-widget">
+    Legen Sie eine Version fest, hosten Sie das Widget selbst oder lesen Sie den Quellcode auf GitHub
+  </Card>
+</Columns>

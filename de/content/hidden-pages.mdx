@@ -1,0 +1,101 @@
+---
+title: Ausgeblendete Seiten
+description: Seiten aus Seitenleiste und Suchergebnissen ausblenden, ohne sie zu löschen. Sichtbarkeit per Frontmatter, docs.json oder SEO-Steuerung verwalten.
+---
+
+Einige Seiten gehören nicht in die öffentliche Seitenleiste: Entwürfe, interne Handbücher oder veraltete Anleitungen, auf die Sie weiterhin verlinken müssen. Ausgeblendete Seiten bleiben über ihre direkte URL erreichbar, verschwinden jedoch aus Navigation, Suche, Sitemap und dem KI-Kontext für LLMs.
+
+## Eine einzelne Seite ausblenden
+
+Fügen Sie `hidden: true` zum Frontmatter der Seite hinzu:
+
+```mdx
+---
+title: Internal handbook
+hidden: true
+---
+```
+
+Die Seite wird normal dargestellt, wenn jemand ihre URL aufruft. Jamdesk:
+
+- Entfernt sie aus der Seitenleiste
+- Fügt `<meta name="robots" content="noindex, follow">` hinzu, damit Suchmaschinen sie überspringen
+- Schließt sie aus `sitemap.xml`, `llms.txt`, `llms-full.txt` und der On-Site-Suche aus
+
+## Eine ganze Gruppe oder einen Tab ausblenden
+
+Setzen Sie `"hidden": true` für eine Gruppe oder einen Tab in `docs.json`:
+
+```json
+{
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Public",
+        "groups": [{ "group": "Guides", "pages": ["intro", "quickstart"] }]
+      },
+      {
+        "tab": "Internal",
+        "hidden": true,
+        "groups": [{ "group": "Runbooks", "pages": ["oncall", "postmortems"] }]
+      }
+    ]
+  }
+}
+```
+
+Jede Seite unterhalb des ausgeblendeten Knotens übernimmt diese Regel. Dasselbe Flag funktioniert für `tabs`, `groups`, `anchors`, `dropdowns`, `products`, `languages` und `versions`.
+
+## Ausgeblendete Seiten in der Suche behalten
+
+Wenn ein ausgeblendeter Tab oder eine ausgeblendete Gruppe aus der Seitenleiste, aber weiterhin für die Site-Suche, KI-Antworten und die Sitemap indexiert werden soll, fügen Sie `"searchable": true` hinzu:
+
+```json
+{
+  "tab": "Internal",
+  "hidden": true,
+  "searchable": true,
+  "groups": [{ "group": "Runbooks", "pages": ["oncall"] }]
+}
+```
+
+`hidden: true` im Frontmatter einer untergeordneten Seite hat weiterhin Vorrang. `searchable` öffnet nur Nachkommen wieder, die sich nicht selbst ausgeschlossen haben.
+
+## Projektweite Steuerungen
+
+Beide Flags befinden sich unter `seo` in `docs.json`:
+
+| Flag | Standard | Wirkung |
+|---|---|---|
+| `seo.indexing` | `"navigable"` | Nur in Ihrer Navigation aufgeführte Seiten erscheinen in den Artefakten. Setzen Sie den Wert auf `"all"`, um jede MDX-Datei in Ihrem Repository einzuschließen. |
+| `seo.indexHiddenPages` | `false` | Auf `true` setzen, um Seiten mit `hidden: true` in Sitemap, llms.txt und Suche einzuschließen und das automatische No-Index-Tag zu entfernen. |
+
+Beispiel:
+
+```json
+{
+  "seo": {
+    "indexing": "all"
+  }
+}
+```
+
+## Kurzübersicht
+
+| Szenario | Frontmatter | docs.json | In der Seitenleiste sichtbar | Direkte URL | In der Sitemap |
+|---|---|---|---|---|---|
+| Normale Seite | — | aufgeführt | Ja | Ja | Ja |
+| Über Frontmatter ausgeblendet | `hidden: true` | aufgeführt | Nein | Ja | Nein |
+| Seite nicht in der Navigation (verwaist) | — | nicht aufgeführt | Nein | Ja | Nein |
+| Ausgeblendete Gruppe | — | `hidden: true` für die Gruppe | Nein | Ja | Nein |
+| Ausgeblendete und durchsuchbare Gruppe | — | `hidden: true, searchable: true` | Nein | Ja | Ja |
+| Projekt aktiviert die vollständige Indexierung | — | beliebig | Wie oben | Ja | Ja |
+
+## Wann welche Option verwenden?
+
+- **Entwürfe und Vorschauen:** `hidden: true` im Frontmatter einzelner Seiten
+- **Interne Bereiche** für ein kleines Team: eine ausgeblendete Gruppe oder ein ausgeblendeter Tab
+- **Compliance-Dokumentation**, die öffentlich sein, aber nicht beworben werden soll: ausgeblendete Gruppe mit `searchable: true`
+- **Indexierung des gesamten Repositorys** ausschließlich für KI-Grounding: `seo.indexing: "all"`
+
+Ausgeblendete Seiten bieten keine Zugriffskontrolle. Jeder, der die URL kennt, kann sie lesen. Für eine echte Zugriffskontrolle siehe [Passwortschutz](/de/setup/password-protection).

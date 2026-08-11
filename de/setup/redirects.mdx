@@ -1,0 +1,189 @@
+---
+title: Weiterleitungen
+description: Richten Sie URL-Weiterleitungen für verschobene Seiten, umbenannte Routen und alte URLs ein. Unterstützt exakte und musterbasierte Weiterleitungen.
+---
+
+Weiterleitungen leiten Benutzer von alten URLs zu neuen weiter. Verwenden Sie sie beim Neustrukturieren der Dokumentation, beim Umbenennen von Seiten oder zum Erhalten von Links aus früheren Dokumentationsversionen.
+
+## Konfiguration
+
+Fügen Sie Weiterleitungen zu Ihrer `docs.json` hinzu:
+
+```json docs.json
+{
+  "redirects": [
+    {
+      "source": "/old-page",
+      "destination": "/new-page"
+    },
+    {
+      "source": "/guides/setup",
+      "destination": "/getting-started"
+    }
+  ]
+}
+```
+
+## Weiterleitungstypen
+
+### Exakte Übereinstimmung
+
+Leitet eine bestimmte URL weiter:
+
+```json
+{
+  "source": "/api/v1/users",
+  "destination": "/api/v2/users"
+}
+```
+
+`/api/v1/users` → `/api/v2/users`
+
+### Platzhalterübereinstimmung
+
+Verwenden Sie `*`, um Pfadsegmente abzugleichen:
+
+```json
+{
+  "source": "/blog/*",
+  "destination": "/articles/*"
+}
+```
+
+`/blog/hello-world` → `/articles/hello-world`
+
+### Präfixübereinstimmung
+
+Leitet alle Pfade unter einem Präfix weiter:
+
+```json
+{
+  "source": "/v1/*",
+  "destination": "/v2/*"
+}
+```
+
+`/v1/api/users` → `/v2/api/users`
+
+## HTTP-Statuscodes
+
+Standardmäßig geben Weiterleitungen den Statuscode `308` (permanente Weiterleitung) zurück. Geben Sie einen anderen Status an:
+
+```json
+{
+  "source": "/old-page",
+  "destination": "/new-page",
+  "statusCode": 307
+}
+```
+
+| Status | Typ | Anwendungsfall |
+|--------|------|----------|
+| `301` | Permanent (GET) | Dauerhaft verschoben, ändert POST in GET |
+| `302` | Temporär (GET) | Vorübergehend verschoben, ändert POST in GET |
+| `307` | Temporär | Vorübergehend verschoben, behält die HTTP-Methode bei |
+| `308` | Permanent | Dauerhaft verschoben, behält die HTTP-Methode bei |
+
+Verwenden Sie `308` für die meisten Weiterleitungen in der Dokumentation. Verwenden Sie `307` für vorübergehende Verschiebungen während Migrationen.
+
+## Häufige Muster
+
+### Neustrukturierung der Dokumentation
+
+Beim Umstrukturieren Ihrer Navigation:
+
+```json
+{
+  "redirects": [
+    { "source": "/setup", "destination": "/getting-started" },
+    { "source": "/setup/install", "destination": "/getting-started/installation" },
+    { "source": "/setup/config", "destination": "/getting-started/configuration" }
+  ]
+}
+```
+
+### Migration der API-Version
+
+Beim Einstellen einer API-Version:
+
+```json
+{
+  "redirects": [
+    { "source": "/api/v1/*", "destination": "/api/v2/*" }
+  ]
+}
+```
+
+### Externe Weiterleitungen
+
+Leiten Sie zu externen URLs weiter:
+
+```json
+{
+  "source": "/community",
+  "destination": "https://discord.gg/your-server"
+}
+```
+
+### SEO beibehalten
+
+Wenn Seiten bereits Suchrankings haben:
+
+```json
+{
+  "redirects": [
+    {
+      "source": "/tutorials/getting-started-with-api",
+      "destination": "/quickstart",
+      "statusCode": 301
+    }
+  ]
+}
+```
+
+## Reihenfolge der Weiterleitungen
+
+Weiterleitungen werden der Reihe nach ausgewertet. Spezifischere Regeln sollten vor Platzhaltern stehen:
+
+```json
+{
+  "redirects": [
+    { "source": "/api/v1/special-endpoint", "destination": "/api/special" },
+    { "source": "/api/v1/*", "destination": "/api/v2/*" }
+  ]
+}
+```
+
+Die erste übereinstimmende Regel wird angewendet.
+
+## Einschränkungen
+
+- Weiterleitungen gelten nur für Dokumentationspfade
+- Query-Parameter werden automatisch beibehalten
+- Hash-Fragmente werden automatisch beibehalten
+- Maximal 1000 Weiterleitungen pro Projekt
+
+## Weiterleitungen testen
+
+Nach dem Hinzufügen von Weiterleitungen:
+
+1. Stellen Sie Ihre Änderungen bereit
+2. Rufen Sie die alte URL direkt auf
+3. Überprüfen Sie, ob Sie am neuen Ziel landen
+4. Prüfen Sie den HTTP-Statuscode in den Entwicklerwerkzeugen des Browsers
+
+```bash
+# Check redirect with curl
+curl -I https://docs.example.com/old-page
+```
+
+## Wie geht es weiter?
+
+<Columns cols={2}>
+  <Card title="Custom Domains" icon="globe" href="/de/deploy/custom-domains">
+    Richten Sie Ihre eigene Domain ein
+  </Card>
+  <Card title="Navigation" icon="sitemap" href="/de/navigation/overview">
+    Organisieren Sie die Struktur Ihrer Dokumentation
+  </Card>
+</Columns>

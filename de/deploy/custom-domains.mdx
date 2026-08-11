@@ -1,0 +1,180 @@
+---
+title: Benutzerdefinierte Domains
+description: Dokumentation über die eigene Domain statt über *.jamdesk.app bereitstellen – DNS, SSL und Verifizierung für Subdomains und Apex-Domains.
+---
+
+Stellen Sie Ihre Dokumentation über die eigene Domain statt über die standardmäßige `*.jamdesk.app`-Subdomain bereit.
+
+## Übersicht zur Einrichtung
+
+<Steps>
+  <Step title="Domain im Dashboard hinzufügen">
+    Gehen Sie zu **Settings** → **Domain** in Ihrem Projekt und geben Sie Ihre Domain ein (z. B. `docs.example.com` oder `example.com`).
+  </Step>
+  <Step title="DNS konfigurieren">
+    Fügen Sie die im Dashboard angezeigten DNS-Einträge bei Ihrem DNS-Anbieter hinzu. Die Einträge hängen von Ihrem Domain-Typ ab (siehe unten).
+  </Step>
+  <Step title="Verifizieren und warten">
+    Jamdesk verifiziert den Besitz und stellt automatisch ein SSL-Zertifikat bereit.
+  </Step>
+</Steps>
+
+## Hosting-Optionen
+
+Wählen Sie beim Hinzufügen einer Domain Ihren Hosting-Modus:
+
+### Standarddomain
+
+Ihre Dokumentation wird von Jamdesk direkt über Ihre benutzerdefinierte Domain bereitgestellt:
+
+```text
+docs.example.com → acme.jamdesk.app
+```
+
+Der DNS verweist auf Jamdesk, und SSL-Zertifikate werden automatisch verwaltet.
+
+### Hosting unter /docs (Proxy-basiertes, anpassbares Unterverzeichnis)
+
+Ihre Dokumentation wird in einem Unterverzeichnis Ihrer bestehenden Website bereitgestellt:
+
+```text
+example.com/docs → acme.jamdesk.app/docs
+```
+
+`/docs` ist die Standardeinstellung. Sie können über denselben Umschalter stattdessen ein beliebiges Unterverzeichnis mit nur einem Segment auswählen (`/help`, `/guide` usw.). Sie konfigurieren einen Proxy (Cloudflare, Vercel, nginx usw.), der Anfragen für das gewählte Unterverzeichnis an Jamdesk weiterleitet. Weitere Informationen finden Sie unter [Hosting in Unterverzeichnissen](/de/deploy/subpath-hosting), einschließlich Einrichtungsanleitungen und Regeln für die Auswahl eines Unterverzeichnisses.
+
+<Note>
+Das Ein- oder Ausschalten von „Host at a subpath“ oder das Ändern des Unterverzeichnisses löst einen automatischen Build aus, da sich die URL-Struktur ändert.
+</Note>
+
+## DNS-Konfiguration
+
+Die benötigten Einträge hängen davon ab, ob Sie eine Subdomain oder eine Apex-Domain (Root-Domain) verwenden.
+
+### Subdomains (z. B. docs.example.com)
+
+| Typ | Name | Wert |
+|------|------|-------|
+| CNAME | `docs` | `cname.jamdesk.com` |
+| TXT | `_jamdesk.docs` | *(im Dashboard angezeigt)* |
+
+Das Feld „Name“ enthält lediglich den Subdomain-Teil. Für `docs.example.com` geben Sie `docs` ein.
+
+### Apex-Domains (z. B. example.com)
+
+| Typ | Name | Wert |
+|------|------|-------|
+| A | `@` | `76.76.21.21` |
+| TXT | `_jamdesk` | *(im Dashboard angezeigt)* |
+
+Apex-Domains verwenden statt CNAME einen A-Eintrag, da DNS-Standards (RFC 1034) CNAME-Einträge am Zonen-Apex verbieten.
+
+<Note>
+DNS-Änderungen können bis zu 48 Stunden benötigen, bis sie propagiert sind. Die meisten Änderungen sind jedoch innerhalb weniger Minuten abgeschlossen. Prüfen Sie den Status unter [whatsmydns.net](https://www.whatsmydns.net/).
+</Note>
+
+## Verifizierung
+
+Nach dem Hinzufügen der DNS-Einträge führt Jamdesk automatisch folgende Schritte aus:
+
+1. Erkennt Ihre DNS-Einträge (CNAME- oder A-Eintrag sowie TXT)
+2. Verifiziert den Domainbesitz über den TXT-Eintrag
+3. Stellt über Let's Encrypt ein SSL-Zertifikat bereit
+4. Leitet den Datenverkehr an Ihre Dokumentation weiter
+
+Prüfen Sie den Verifizierungsstatus unter **Settings** → **Domain**. Der Status wird wie folgt angezeigt:
+- **Pending** – Warten auf die DNS-Propagation
+- **Active** – Domain verifiziert und stellt Datenverkehr bereit
+- **Needs Attention** – Konfigurationsabweichung oder Konflikt (prüfen Sie die E-Mail-Benachrichtigung)
+- **Error** – Konfigurationsproblem (siehe Details im Dashboard)
+
+Klicken Sie im Dashboard auf **Refresh**, um den Verifizierungsstatus manuell zu prüfen.
+
+## SSL-Zertifikate
+
+SSL-Zertifikate werden automatisch bereitgestellt und vor ihrem Ablauf erneuert. HTTPS ist erforderlich, daher werden HTTP-Anfragen an HTTPS weitergeleitet.
+
+Sie müssen Zertifikate nicht manuell konfigurieren.
+
+## Root-Domains
+
+Root-Domains (Apex-Domains) wie `example.com` werden vollständig unterstützt. Das Dashboard zeigt automatisch die richtigen Einträge an: einen A-Eintrag, der auf `76.76.21.21` verweist, statt eines CNAME-Eintrags, da DNS-Standards CNAME-Einträge am Zonen-Apex verbieten.
+
+Wenn Sie eine Subdomain wie `docs.example.com` bevorzugen, funktioniert auch das.
+
+## Mehrere Domains
+
+Jedes Projekt unterstützt eine benutzerdefinierte Domain. Für mehrere Domains, die auf dieselbe Dokumentation verweisen:
+
+1. Richten Sie Ihre primäre Domain in Jamdesk ein
+2. Konfigurieren Sie zusätzliche Domains so, dass sie auf DNS-/CDN-Ebene zur primären Domain weiterleiten
+
+## Domain entfernen
+
+So trennen Sie eine benutzerdefinierte Domain:
+
+1. Gehen Sie zu **Settings** → **Domain**
+2. Klicken Sie auf **Remove Domain**
+3. Ihre Dokumentation bleibt unter der `*.jamdesk.app`-Subdomain erreichbar
+
+<Warning>
+Das Entfernen einer Domain, für die „Host at a subpath“ aktiviert war, löst einen Build aus, um die URL-Pfade zu aktualisieren. Ein benutzerdefiniertes Unterverzeichnis wird zusammen mit der Domain gelöscht. Wenn Sie später erneut eine Domain verbinden, beginnt die Dokumentation wieder unter dem standardmäßigen `/docs`.
+</Warning>
+
+## Cloudflare-Nutzer
+
+Wenn Sie Cloudflare als DNS-Anbieter verwenden:
+
+1. Setzen Sie den Proxy-Status während der Domainverifizierung auf **DNS only** (graues Cloud-Symbol)
+2. Überlassen Sie Vercel die SSL-Verwaltung: Deaktivieren Sie „Always Use HTTPS“ von Cloudflare für die Dokumentations-Subdomain
+3. Nach Abschluss der Verifizierung können Sie das Proxying wieder aktivieren (orangefarbene Cloud)
+
+<Note>
+**Verwenden Sie einen Cloudflare Worker?** Der DNS-Eintrag muss per Proxy weitergeleitet werden (orangefarbene Cloud), damit der Worker ausgeführt wird. Verwenden Sie nur während der Verifizierung die graue Cloud und wechseln Sie danach zurück. Weitere Informationen finden Sie unter [Einrichtung von Cloudflare Workers](/de/deploy/cloudflare).
+</Note>
+
+## Fehlerbehebung
+
+| Problem | Lösung |
+|-------|----------|
+| Domain bleibt bei „Pending“ hängen | Prüfen Sie die DNS-Einträge mit `dig` (CNAME für Subdomains, A für Apex-Domains) |
+| Fehler bei SSL-Zertifikaten | Stellen Sie sicher, dass keine CAA-Einträge Let's Encrypt blockieren |
+| Weiterleitungsschleifen | Wenn Sie Cloudflare verwenden, setzen Sie während der Verifizierung die graue Cloud (siehe [Cloudflare-Nutzer](#cloudflare-nutzer) oben) |
+| CNAME wird nicht aufgelöst | Überprüfen Sie den Eintrag beim DNS-Anbieter und warten Sie auf die Propagation |
+| Domain wird bereits verwendet | Die Domain ist aufgrund einer vorherigen Einrichtung in Vercel registriert; die Verifizierung wird normalerweise automatisch abgeschlossen |
+
+### DNS mit dig überprüfen
+
+```bash
+# Check CNAME record (subdomains)
+dig CNAME docs.example.com
+
+# Check A record (apex domains)
+dig A example.com
+
+# Check TXT record
+dig TXT _jamdesk.example.com
+```
+
+Ausführliche Diagnosen finden Sie unter [Fehlerbehebung bei DNS-Problemen](/de/help/troubleshooting/dns-issues).
+
+## Konkurriert die jamdesk.app-Subdomain in der Suche mit meiner Domain?
+
+Nein. Sobald Ihre benutzerdefinierte Domain aktiv ist, enthalten Seiten, die direkt über Ihre
+`[slug].jamdesk.app`-Subdomain bereitgestellt werden, einen Canonical-Link zu Ihrer
+Domain. Dadurch behandeln Suchmaschinen Ihre Domain als einzige maßgebliche Quelle
+und bündeln dort alle Ranking-Signale.
+
+## Wie geht es weiter?
+
+<Columns cols={2}>
+  <Card title="Subdomains" icon="sitemap" href="/de/deploy/subdomains">
+    Subdomain-spezifische Einstellungen konfigurieren
+  </Card>
+  <Card title="Hosting in Unterverzeichnissen" icon="route" href="/de/deploy/subpath-hosting">
+    Dokumentation unter example.com/docs bereitstellen
+  </Card>
+  <Card title="Fehlerbehebung bei DNS-Problemen" icon="server" href="/de/help/troubleshooting/dns-issues">
+    DNS-Konfigurationsprobleme diagnostizieren
+  </Card>
+</Columns>

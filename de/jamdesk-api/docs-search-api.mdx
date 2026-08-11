@@ -1,0 +1,234 @@
+---
+title: Docs-Such-API
+description: Durchsuche deine Jamdesk-Dokumentation programmgesteuert und versorge Chatbots, Slack-Bots und KI-Agenten mit aktuellen Antworten.
+---
+
+Die Docs-Such-API ermöglicht dir über die semantische Suche programmgesteuerten Zugriff auf deine Dokumentationsinhalte. Ein Endpoint (`POST /_api/search`) nimmt eine Anfrage in natürlicher Sprache entgegen und gibt die relevantesten Passagen deiner Dokumentation nach Relevanz sortiert zurück.
+
+## Anwendungsfälle
+
+<Columns cols={2}>
+  <Card title="Support-Chatbots" icon="comment-dots">
+    Verbinde Intercom Fin, Zendesk AI oder einen benutzerdefinierten Chatbot mit deiner Dokumentation, damit Fragen mit präzisen, zitierten Inhalten beantwortet werden.
+  </Card>
+  <Card title="Slack-Bots" icon="slack">
+    Erstelle einen `/docs`-Slack-Befehl, der deine Dokumentation durchsucht und die besten Ergebnisse in jedem Channel veröffentlicht.
+  </Card>
+  <Card title="Benutzerdefinierte Suche" icon="magnifying-glass">
+    Füge deinem Produkt, Dashboard oder deinen internen Tools eine Suchoberfläche hinzu, die relevante Dokumentation im passenden Kontext anzeigt.
+  </Card>
+  <Card title="KI-Agenten" icon="robot">
+    Gib KI-Agenten wie Claude oder GPT ein Tool, das deine aktuelle Dokumentation abruft, statt sich auf ihre Trainingsdaten zu verlassen.
+  </Card>
+</Columns>
+
+## Schnellstart
+
+<Steps>
+  <Step title="API-Schlüssel generieren">
+    Gehe im [Jamdesk-Dashboard](https://dashboard.jamdesk.com) zu **Project Settings → API Keys**. Klicke auf **Generate Key**, gib dem Schlüssel einen Namen und kopiere ihn. Er beginnt mit `jd_live_`, gefolgt von 32 Hexadezimalzeichen (insgesamt 40 Zeichen), und wird nur einmal angezeigt.
+  </Step>
+  <Step title="Deine erste Suchanfrage senden">
+    Sende eine `POST`-Anfrage an `/_api/search` auf deiner Docs-Subdomain:
+
+    ```bash
+    curl -X POST https://your-project.jamdesk.app/_api/search \
+      -H "Authorization: Bearer jd_live_c83003a54ae0a83123454c3f7ec82f0a" \
+      -H "Content-Type: application/json" \
+      -d '{"query": "How do I set up a custom domain?", "limit": 5, "language": "en"}'
+    ```
+  </Step>
+  <Step title="Ergebnisse verwenden">
+    Die Antwort gibt ein Array übereinstimmender Passagen mit Relevanzwerten und Seitenmetadaten zurück:
+
+    ```json
+    {
+      "query": "How do I set up a custom domain?",
+      "language": "en",
+      "results": [
+        {
+          "title": "Custom Domains",
+          "section": "Step 4: Deploy",
+          "slug": "deploy/custom-domains",
+          "content": "To add a custom domain, go to Project Settings and enter your domain. You'll need to add a CNAME record pointing to your Jamdesk subdomain.",
+          "url": "https://your-project.jamdesk.app/deploy/custom-domains",
+          "score": 0.94
+        }
+      ],
+      "total": 1,
+      "durationMs": 85
+    }
+    ```
+  </Step>
+</Steps>
+
+## Authentifizierung
+
+Alle Anfragen benötigen ein Bearer-Token im `Authorization`-Header.
+
+```http
+Authorization: Bearer jd_live_c83003a54ae0a83123454c3f7ec82f0a
+```
+
+### API-Schlüssel generieren
+
+<Steps>
+  <Step title="Project Settings öffnen">
+    Navigiere im Jamdesk-Dashboard zu deinem Projekt und klicke auf **Settings**.
+  </Step>
+  <Step title="Zu API Keys wechseln">
+    Wähle den Tab **API Keys** aus.
+  </Step>
+  <Step title="Schlüssel erstellen">
+    Klicke auf **Generate Key**, gib einen aussagekräftigen Namen ein (z. B. "Intercom chatbot") und klicke auf **Create**.
+  </Step>
+  <Step title="Schlüssel kopieren">
+    Kopiere den Schlüssel sofort. Er beginnt mit `jd_live_`, gefolgt von 32 Hexadezimalzeichen, und wird **nur einmal** angezeigt. Speichere ihn in deinem Secrets-Manager oder in Umgebungsvariablen.
+  </Step>
+</Steps>
+
+### Schlüsselverwaltung
+
+<Info>
+API-Schlüssel sind auf ein einzelnes Projekt beschränkt. Ein Schlüssel für `acme.jamdesk.app` kann nicht die Dokumentation eines anderen Projekts abfragen.
+</Info>
+
+| Regel | Details |
+|------|--------|
+| **Format** | `jd_live_<32 hex chars>` (insgesamt 40 Zeichen, läuft nie ab) |
+| **Gültigkeitsbereich** | Ein Schlüssel pro Projekt (kein Zugriff auf andere Projekte) |
+| **Rotation** | Jederzeit über Project Settings widerrufen und neu generieren |
+| **Speicherung** | In Umgebungsvariablen oder einem Secrets-Manager speichern, niemals in die Quellcodeverwaltung übernehmen |
+
+### Schlüssel widerrufen
+
+Um einen Schlüssel zu widerrufen, gehe zu **Project Settings → API Keys**, suche den Schlüssel anhand seines Namens und klicke auf **Revoke**. Widerrufene Schlüssel funktionieren sofort nicht mehr. Generiere einen neuen Schlüssel als Ersatz.
+
+## Rate-Limits
+
+Anfragen werden pro API-Schlüssel mit einem Rate-Limit versehen.
+
+| Plan | Limit |
+|------|-------|
+| **Pro** | 60 Anfragen / Minute |
+| **Enterprise** | Benutzerdefiniert; kontaktiere den [Support](mailto:support@jamdesk.com) |
+
+Wenn du das Limit überschreitest, gibt die API `429 Too Many Requests` mit einem `Retry-After: 60`-Header und `{"error": "Rate limit exceeded"}` im Body zurück.
+
+<Warning>
+Wenn du für eine produktive Integration höhere Rate-Limits benötigst, [kontaktiere uns](mailto:support@jamdesk.com), um Enterprise-Optionen zu besprechen.
+</Warning>
+
+## Abfragelimits
+
+Jede Anfrage akzeptiert einen `limit`-Parameter, der steuert, wie viele Ergebnisse zurückgegeben werden. Das Maximum ist **20**, der Standardwert ist **5** und das Minimum ist **1**. Es gibt keine Paginierung; alle übereinstimmenden Ergebnisse werden in einer einzigen Antwort zurückgegeben. Wenn du mehr Kontext benötigst, versuche eine spezifischere Anfrage, statt das Limit zu erhöhen.
+
+Eine Anfrage ohne Treffer gibt HTTP 200 mit einem leeren Ergebnis-Array zurück:
+
+```json
+{"query": "quantum entanglement", "results": [], "total": 0, "durationMs": 48}
+```
+
+## Nach Sprache filtern
+
+Wenn deine Docs-Site mehrere Sprachen unterstützt, filtert die API die Ergebnisse pro Anfrage auf eine einzelne Sprache. Übergebe `language` im Anfragetext mit einem BCP-47-Code (z. B. `en`, `es`, `fr`, `pt-BR`, `zh-Hans`).
+
+```bash
+curl -X POST https://your-project.jamdesk.app/_api/search \
+  -H "Authorization: Bearer jd_live_c83003a54ae0a83123454c3f7ec82f0a" \
+  -H "Content-Type: application/json" \
+  -d '{"query": "¿Cómo configuro un dominio personalizado?", "language": "es"}'
+```
+
+| Regel | Details |
+|------|--------|
+| **Standard** | `en` (Englisch). Lass das Feld weg oder übergebe `null`, um den Standardwert zu verwenden. |
+| **Format** | BCP-47 (`^[a-zA-Z]{2,3}([-_][a-zA-Z]{2,4})?$`). Beispiele: `en`, `es`, `fr`, `pt-BR`, `zh-Hans`. |
+| **Validierung** | Fehlerhafte Werte geben `400` mit `{"error": "Invalid language code"}` zurück. |
+| **Tags mit 3 Segmenten** | Derzeit nicht unterstützt. Codes wie `zh-Hant-HK` und `sr-Latn-RS` geben `400` zurück. [Kontaktiere den Support](mailto:support@jamdesk.com), wenn du sie benötigst. |
+| **Mehrsprachige Projekte** | Der Filter ist strikt: Nur Chunks mit der angeforderten Sprache werden zurückgegeben. Eine Anfrage für `de` an ein Projekt, das nur Englisch und Französisch enthält, gibt eine leere Ergebnismenge und nicht `400` zurück. |
+| **Einsprachige Projekte** | Der Filter wird ignoriert; du erhältst immer die vollständige Ergebnismenge. Das Senden von `language` ist unproblematisch und kein Fehler. |
+| **In der Antwort enthalten** | Jede erfolgreiche Antwort enthält ein `language`-Feld mit dem vom Server aufgelösten Wert (Anfragewert oder Standardwert `en`). |
+
+<Info>
+Ein Projekt ist mehrsprachig, wenn `docs.json` ein `navigation.languages`-Array mit mindestens zwei Einträgen enthält. Um zu prüfen, ob deine Site mehrsprachig ist, öffne den Tab **Settings → Languages** im Dashboard oder öffne `docs.json` direkt.
+</Info>
+
+<Warning>
+Der Standardwert `en` gilt auch für Projekte, die keine englische Version haben. Wenn dein mehrsprachiges Projekt beispielsweise nur Französisch und Spanisch enthält, filtert ein Aufruf des Endpoints ohne `language`-Feld nach `en` und gibt eine leere Ergebnismenge zurück. Übergib von nicht ausschließlich englischsprachigen Sites immer einen expliziten `language`-Wert.
+</Warning>
+
+## Fehlerbehandlung
+
+Alle Fehlerantworten enthalten ein maschinenlesbares `error`-Feld, anhand dessen du programmgesteuert verzweigen kannst.
+
+| Status | `error`-Wert | Bedeutung | Aktion |
+|--------|---------------|---------|--------|
+| **400** | `Missing or empty "query" field` | Im Anfragetext fehlt `query` oder das Feld ist leer | Füge einen nicht leeren `query`-String hinzu |
+| **400** | `Invalid language code` | Das Feld `language` ist kein String oder entspricht nicht dem BCP-47-Muster (`null` ist zulässig; leere Strings, Strings aus Leerzeichen und Tags mit 3 Segmenten sind nicht zulässig) | Verwende einen gültigen Code mit 1 oder 2 Segmenten wie `en`, `es`, `fr` oder `pt-BR` |
+| **401** | `invalid_key_format` | Der `Authorization`-Header fehlt oder der Schlüssel entspricht nicht `jd_live_<32 hex>` | Prüfe das Header-Format; es muss `Bearer jd_live_...` lauten |
+| **401** | `invalid_key` | Der Schlüssel wird nicht erkannt oder wurde widerrufen | Generiere im Dashboard einen neuen Schlüssel |
+| **403** | `wrong_project` | Der Schlüssel ist gültig, wurde aber für ein anderes Projekt generiert | Verwende einen Schlüssel, der zum Projektslug in der URL passt |
+| **429** | `Rate limit exceeded` | 60 Anfragen pro Minute wurden überschritten | Warte die im `Retry-After`-Header angegebene Anzahl von Sekunden |
+| **502** | `Search temporarily unavailable` | Das Backend der Vektorsuche ist nicht verfügbar | Wiederhole die Anfrage nach einer kurzen Wartezeit |
+| **503** | `lookup_failed` oder `redis_unavailable` | Das Backend zur Schlüsselüberprüfung ist nicht erreichbar | Wiederhole die Anfrage nach einer kurzen Wartezeit |
+
+<Info>
+401 und 403 sind dauerhafte Fehler. Ein erneuter Versuch mit demselben Schlüssel hilft nicht. 429, 502 und 503 sind vorübergehende Fehler; wiederhole die Anfrage mit exponentiellem Backoff.
+</Info>
+
+## CORS
+
+CORS ist für alle Endpoints aktiviert. Browserbasierte Clients (Single-Page-Apps, Browsererweiterungen, statische Sites) können `/_api/search` direkt ohne Backend-Proxy aufrufen. Alle Origins sind zulässig.
+
+## SDKs
+
+Derzeit gibt es keine offiziellen SDKs für Programmiersprachen. Verwende die REST-API direkt über `fetch`, `requests`, `curl` oder einen beliebigen HTTP-Client. Die [Postman-Sammlung](#postman-sammlung) unten bietet sofort verwendbare Beispiele, die du forken kannst.
+
+## Versionierung
+
+Die API befindet sich derzeit bei **v1.0.0**. Breaking Changes (Umbenennungen von Feldern, entfernte Endpoints, geänderte Authentifizierung) werden mindestens 90 Tage vor ihrer Entfernung über den [Jamdesk-Blog](https://jamdesk.com/blog) und einen Hinweis zur Einstellung im `X-Deprecation`-Antwortheader angekündigt.
+
+## OpenAPI-Spezifikation
+
+Die vollständige OpenAPI-3.1-Spezifikation ist als YAML verfügbar. Importiere sie in dein Codegen-Tool, deinen API-Client oder deine Pipeline für Vertragstests.
+
+<Columns cols={2}>
+  <Card title="OpenAPI-YAML herunterladen" icon="file-arrow-down" href="https://raw.githubusercontent.com/jamdesk/jamdesk-docs/main/openapi/docs-search-api.yaml">
+    `docs-search-api.yaml` (OpenAPI 3.1, immer synchron mit der neuesten veröffentlichten Version).
+  </Card>
+  <Card title="Auf GitHub durchsuchen" icon="github" href="https://github.com/jamdesk/jamdesk-docs/blob/main/openapi/docs-search-api.yaml">
+    Lies die Quelle der Spezifikation, melde Probleme oder beobachte Änderungen.
+  </Card>
+</Columns>
+
+## Postman-Sammlung
+
+Wir veröffentlichen einen offiziellen Postman-Arbeitsbereich mit der vollständigen OpenAPI-Spezifikation und einer Sammlung, die du forken kannst, um Anfragen in der Postman-Oberfläche ohne eigenen Code zu testen.
+
+<Columns cols={2}>
+  <Card title="Jamdesk Docs API-Arbeitsbereich" icon="rocket" href="https://www.postman.com/jamdesk/jamdesk-docs-api">
+    Forke die Sammlung und führe Anfragen in Postman aus. Enthält einen Getting Started-Ordner und funktionierende Beispiele.
+  </Card>
+  <Card title="Alle Jamdesk-APIs" icon="layer-group" href="https://www.postman.com/jamdesk">
+    Durchsuche jeden öffentlichen Jamdesk-API-Arbeitsbereich und bleibe auf dem neuesten Stand, wenn neue APIs veröffentlicht werden.
+  </Card>
+</Columns>
+
+<Warning>
+Nach dem Forken der Sammlung **musst** du vor der ersten funktionierenden Anfrage zwei Sammlungsvariablen aktualisieren:
+
+- **`baseUrl`**: Setze den Wert auf deine eigene Jamdesk-Docs-Site. Für die meisten Kunden ist dies `https://your-project.jamdesk.app` (ersetze `your-project` durch deinen Projektslug). Kunden mit eigener Domain verwenden ihren eigenen Host. Kunden, die ihre Dokumentation unter einem Unterpfad bereitstellen, müssen den vollständigen Pfad angeben (z. B. `https://example.com/docs`).
+- **`apiKey`**: Ersetze den Platzhalter durch einen echten Schlüssel, der unter **Dashboard → Project Settings → API Keys** generiert wurde.
+</Warning>
+
+## Nächste Schritte
+
+<Columns cols={2}>
+  <Card title="Search Endpoint" icon="magnifying-glass" href="/de/jamdesk-api/search">
+    Vollständige Referenz mit Anfrage-/Antwortschemas und interaktivem Playground
+  </Card>
+  <Card title="Integrationsleitfäden" icon="plug" href="/de/jamdesk-api/integrations">
+    Schritt-für-Schritt-Anleitungen für Intercom, Zendesk, Slack-Bots und benutzerdefinierte Chatbots
+  </Card>
+</Columns>

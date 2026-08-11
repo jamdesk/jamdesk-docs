@@ -1,0 +1,184 @@
+---
+title: API-Playground
+description: Testen Sie API-Endpunkte direkt in Ihrer Dokumentation: Parameter ausfüllen, Live-Codebeispiele sehen und echte Anfragen senden.
+---
+
+Der API-Playground fügt Ihren API-Endpunktseiten eine interaktive Schaltfläche „Try it“ hinzu. Entwickler füllen Parameter aus, sehen in Echtzeit aktualisierte Codebeispiele und senden echte HTTP-Anfragen direkt von der Dokumentationsseite.
+
+Die Screenshots zeigen die Benutzeroberfläche auf Englisch.
+
+<Frame>
+  <img src="/images/playground/playground-modal.webp" alt="API-Playground-Modal mit Parameterformular links und Live-Codebeispielen rechts" />
+</Frame>
+
+## Schnellstart
+
+Der Playground ist standardmäßig aktiviert. Jede Seite mit einem `openapi:`- oder `api:`-Frontmatter-Feld erhält automatisch eine Schaltfläche „Try it“. CORS wird automatisch verarbeitet.
+
+Es ist keine `docs.json`-Konfiguration erforderlich. Fügen Sie der Frontmatter Ihrer Seite ein `openapi:`- oder `api:`-Feld hinzu, damit der Playground angezeigt wird.
+
+## Anzeigemodi
+
+Das Feld `display` steuert, welche Funktionen der Playground bietet:
+
+| Modus | Schaltfläche „Try it“ | Parameter ausfüllen | Live-Code | Anfrage senden |
+|------|:-:|:-:|:-:|:-:|
+| `"interactive"` (Standard) | ✓ | ✓ | ✓ | ✓ |
+| `"simple"` | ✓ | ✓ | ✓ | ✗ |
+| `"none"` | ✗ | ✗ | ✗ | ✗ |
+
+<Tabs>
+  <Tab title="Interaktiv">
+    Vollständiger Playground. Entwickler füllen Parameter aus, sehen live aktualisierte Codebeispiele und senden echte HTTP-Anfragen. Antworten werden inline mit Statuscodes, Zeitangaben und formatierten Inhalten angezeigt.
+
+    ```json docs.json
+    {
+      "api": {
+        "playground": {
+          "display": "interactive"
+        }
+      }
+    }
+    ```
+  </Tab>
+  <Tab title="Einfach">
+    Schreibgeschützter Modus ohne Send-Schaltfläche. Entwickler können Parameter ausfüllen und generierte Codebeispiele kopieren, aber keine Anfragen ausführen. Nützlich, wenn Ihre API eine Authentifizierung erfordert, die nicht in der Dokumentation geteilt werden kann.
+
+    ```json docs.json
+    {
+      "api": {
+        "playground": {
+          "display": "simple"
+        }
+      }
+    }
+    ```
+  </Tab>
+</Tabs>
+
+## Authentifizierung
+
+Wenn Ihre API eine Authentifizierung erfordert (konfiguriert über `api.mdx.auth.method` in `docs.json`), zeigt der Playground oben im Parameterformular ein Authentifizierungsfeld an. Entwickler geben ihren API-Schlüssel oder ihr Token direkt im Modal ein.
+
+Anmeldedaten werden nur für die aktuelle Sitzung im Arbeitsspeicher gehalten. Sie werden niemals in `localStorage` gespeichert oder zwischen Besuchen beibehalten.
+
+## Beispielwerte vorausfüllen
+
+Wenn Ihre OpenAPI-Spezifikation `example`-Werte für Parameter und Anfrageinhalte enthält, kann der Playground diese vorausfüllen:
+
+```json docs.json
+{
+  "api": {
+    "examples": {
+      "prefill": true
+    }
+  }
+}
+```
+
+So sparen Entwickler Zeit, da realistische Werte angezeigt werden, die sie ändern können, anstatt mit leeren Feldern zu beginnen.
+
+## Überschreibung pro Seite
+
+Überschreiben Sie den globalen Anzeigemodus auf einzelnen Seiten über das Frontmatter-Feld `playground`:
+
+```mdx
+---
+title: Create Ticket
+openapi: POST /tickets
+playground: interactive
+---
+```
+
+Dies ist nützlich, wenn der Playground global deaktiviert, aber für bestimmte Demo-Endpoints aktiviert werden soll – oder umgekehrt.
+
+| Frontmatter | Verhalten |
+|-------------|----------|
+| `playground: interactive` | Vollständiger Playground auf dieser Seite |
+| `playground: simple` | Code-only-Playground auf dieser Seite |
+| `playground: none` | Kein Playground auf dieser Seite |
+
+## Funktionsweise
+
+<Steps>
+  <Step title="'Try it' anklicken">
+    Der Playground wird als bildschirmfüllendes Modal-Overlay geöffnet. Ihre Dokumentationsseite bleibt darunter unverändert erhalten.
+  </Step>
+  <Step title="Parameter ausfüllen">
+    Pfad-, Query-, Header- und Body-Parameter werden als Formularfelder angezeigt. Pflichtfelder sind gekennzeichnet. Die Basis-URL wird aus dem Feld `servers` Ihrer OpenAPI-Spezifikation übernommen.
+  </Step>
+  <Step title="Codeaktualisierung beobachten">
+    Während der Eingabe werden Codebeispiele in allen konfigurierten Programmiersprachen in Echtzeit neu generiert. Kopieren Sie jedes Beispiel mit einem Klick.
+  </Step>
+  <Step title="Anfrage senden">
+    Klicken Sie im interaktiven Modus auf Send (oder drücken Sie `Ctrl/Cmd+Enter`), um die Anfrage auszuführen. Die Antwort wird darunter mit Statuscode, Dauer und formatiertem Inhalt angezeigt.
+  </Step>
+</Steps>
+
+<Frame>
+  <img src="/images/playground/playground-response.webp" alt="API-Playground mit einer Antwort 201 Created und JSON-Inhalt nach dem Senden einer Anfrage" />
+</Frame>
+
+<Tip>
+Wenn der Playground geöffnet ist, wird die URL um `?playground=open` ergänzt. Teilen Sie diese URL, um direkt zur Playground-Ansicht eines Endpoints zu verlinken.
+</Tip>
+
+## Tastenkürzel
+
+| Tastenkürzel | Aktion |
+|----------|--------|
+| `Ctrl/Cmd + Enter` | Anfrage senden |
+| `Escape` | Playground schließen |
+
+## Funktioniert mit beiden API-Seitentypen
+
+Der Playground funktioniert auf Seiten, die entweder das `openapi:`- oder das `api:`-Frontmatter-Format verwenden:
+
+<Tabs>
+  <Tab title="OpenAPI-Seiten">
+    Parameter und Schemas werden automatisch aus Ihrer OpenAPI-Spezifikation übernommen. Keine zusätzliche Einrichtung erforderlich.
+
+    ```mdx
+    ---
+    openapi: POST /tickets
+    ---
+    ```
+  </Tab>
+  <Tab title="MDX-api:-Seiten">
+    Parameter werden aus Ihren `<ParamField>`-Komponenten extrahiert. Die Basis-URL stammt aus `api.mdx.server` in Ihrer docs.json.
+
+    ```mdx
+    ---
+    api: GET /tickets/{ticket_id}
+    ---
+    ```
+  </Tab>
+</Tabs>
+
+## Lokale Entwicklung
+
+Wenn Sie `jamdesk dev` ausführen, sind die „Try it“-Schaltflächen sichtbar, der Playground selbst ist jedoch nur in der Produktionsumgebung verfügbar. Wenn Sie in der lokalen Entwicklung auf „Try it“ klicken, wird statt des Modals eine kurze Benachrichtigung angezeigt. Stellen Sie Ihre Dokumentation bereit, um den vollständigen Playground zu verwenden.
+
+## Live ausprobieren
+
+Auf dieser Dokumentationsseite ist der Playground aktiviert. Besuchen Sie die Seite [OpenAPI Example](/de/api-reference/openapi-example) und klicken Sie auf „Try it“, um den Playground mit der Demo-API in Aktion zu sehen.
+
+## Wie geht es weiter?
+
+<Columns cols={2}>
+  <Card title="OpenAPI Example" icon="plug" href="/de/api-reference/openapi-example">
+    Einen Live-Playground auf einer automatisch generierten Endpoint-Seite anzeigen
+  </Card>
+  <Card title="docs.json Reference" icon="file-lines" href="/de/config/docs-json-reference">
+    Vollständige Konfigurationsreferenz einschließlich api.playground
+  </Card>
+</Columns>
+
+<Columns cols={2}>
+  <Card title="Anfrage-/Antwortbeispiele" icon="code" href="/de/api-reference/request-response-examples">
+    Von Hand erstellte API-Endpunktseiten mit MDX-Komponenten
+  </Card>
+  <Card title="Codebeispiele" icon="terminal" href="/de/config/docs-json-reference#apiexampleslanguages">
+    Konfigurieren, welche Programmiersprachen in Codebeispielen angezeigt werden
+  </Card>
+</Columns>

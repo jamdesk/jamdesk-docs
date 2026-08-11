@@ -1,0 +1,89 @@
+---
+title: Übersicht zur Bereitstellung
+description: "Hosting-Optionen für deine Dokumentation: Jamdesk-Subdomain, eigene Domain mit SSL oder ein /docs-Unterpfad hinter deiner bestehenden Website per Reverse Proxy."
+---
+
+Jamdesk stellt deine Dokumentation automatisch unter einer `*.jamdesk.app`-Subdomain bereit. Wenn du bereit bist, deine eigene Domain zu verwenden, kannst du eine benutzerdefinierte Subdomain wie `docs.example.com` wählen oder deine Dokumentation unter einem Unterpfad deiner Hauptwebsite hosten: standardmäßig unter `/docs` oder unter einem benutzerdefinierten Segment deiner Wahl.
+
+## Optionen für die Bereitstellung
+
+| Option | Geeignet für | Komplexität der Einrichtung |
+|--------|--------------|----------------------------|
+| **Jamdesk-Subdomain** (`your-project.jamdesk.app`) | Schnellster Start ohne DNS-Aufwand | Niedrig |
+| **Benutzerdefinierte Subdomain** (`docs.example.com`) | Produktionsdokumentation mit deiner Marke | Mittel |
+| **Hosting unter einem Unterpfad** (`example.com/docs`, anpassbar) | Dokumentation auf der Hauptdomain | Hoch |
+
+## Standardhosting (keine Einrichtung)
+
+Jedes Projekt wird live unter einer Jamdesk-Subdomain bereitgestellt, sobald du ein Repository verbindest. Dies ist die einfachste Option für interne Dokumentation, Vorschauen oder frühe Starts.
+
+## Benutzerdefinierte Domain (Subdomain)
+
+Verwende deine eigene Subdomain, zum Beispiel `docs.example.com`, für eine markengerechte, öffentlich zugängliche URL. Du fügst DNS-Einträge hinzu und bestätigst den Besitz im Jamdesk-Dashboard.
+
+<Note>
+Die DNS-Bestätigung und SSL werden automatisch durchgeführt, sobald die Einträge vorhanden sind. Weitere Informationen zur Einrichtung findest du unter [Benutzerdefinierte Domains](/de/deploy/custom-domains).
+</Note>
+
+## Hosting unter einem Unterpfad
+
+Hoste deine Dokumentation unter einem Unterpfad deiner Domain, indem du den Datenverkehr per Proxy an Jamdesk weiterleitest: standardmäßig unter `example.com/docs` oder unter einem benutzerdefinierten Segment wie `example.com/help`. Verwende diese Option, wenn deine Dokumentation unter deiner zentralen Marketingdomain verfügbar sein soll.
+
+<Info>
+Für das Hosting unter einem Unterpfad ist eine Proxy- oder CDN-Ebene erforderlich, die Anfragen weiterleitet und den Header `X-Jamdesk-Forwarded-Host` setzt. Siehe [Hosting unter einem Unterpfad](/de/deploy/subpath-hosting).
+</Info>
+
+### Beispiel für einen Proxy-Ausschnitt (nginx)
+
+```nginx nginx.conf
+location /docs {
+    proxy_pass https://YOUR_SLUG.jamdesk.app;
+    proxy_set_header X-Jamdesk-Forwarded-Host $host;
+}
+
+location /_next/ {
+    proxy_pass https://YOUR_SLUG.jamdesk.app;
+}
+
+location /_jd/ {
+    proxy_pass https://YOUR_SLUG.jamdesk.app;
+}
+```
+
+Eine vollständige Konfiguration mit SSL, Headern und anbieterspezifischen Hinweisen findest du im Leitfaden [Hosting unter einem Unterpfad](/de/deploy/subpath-hosting).
+
+## Leitfäden für Anbieter
+
+Wähle deine Infrastruktur, um das Hosting unter einem Unterpfad zu implementieren:
+
+<Columns cols={2}>
+  <Card title="Cloudflare" icon="cloud" href="/de/deploy/cloudflare">
+    Verwende Cloudflare Workers, um den /docs-Datenverkehr per Proxy weiterzuleiten
+  </Card>
+  <Card title="AWS" icon="aws" href="/de/deploy/aws">
+    Konfiguriere CloudFront mit Route 53
+  </Card>
+  <Card title="Vercel" icon="triangle" href="/de/deploy/vercel">
+    Füge Rewrites oder Edge-Middleware hinzu
+  </Card>
+  <Card title="Reverse Proxy" icon="server" href="/de/deploy/reverse-proxy">
+    nginx, Apache oder andere Proxyserver
+  </Card>
+</Columns>
+
+## Wie geht es weiter?
+
+<Columns cols={2}>
+  <Card title="Build- und Bereitstellungsprozess" icon="rotate" href="/de/deploy/lifecycle">
+    So werden Builds ausgelöst und bereitgestellt
+  </Card>
+  <Card title="Hosting unter einem Unterpfad" icon="folder-tree" href="/de/deploy/subpath-hosting">
+    Hoste deine Dokumentation unter /docs auf deiner Hauptdomain
+  </Card>
+  <Card title="Benutzerdefinierte Domains" icon="globe" href="/de/deploy/custom-domains">
+    Richte docs.yourdomain.com ein
+  </Card>
+  <Card title="DNS-Fehlerbehebung" icon="server" href="/de/help/troubleshooting/dns-issues">
+    Behebe Probleme mit der DNS-Propagation und -Bestätigung
+  </Card>
+</Columns>

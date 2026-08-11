@@ -1,0 +1,78 @@
+---
+title: Zugriffskontrolle
+description: "Wählen Sie, wie Leser Ihre Dokumentation erreichen: öffentlich, passwortgeschützt, teilweise öffentlich/privat oder per SSO."
+---
+
+Jamdesk bietet Ihnen vier Möglichkeiten, zu steuern, wer Ihre Dokumentation lesen kann. Die meisten Teams entscheiden sich für eine Option und bleiben dabei; manche kombinieren mehrere.
+
+## Den richtigen Ansatz auswählen
+
+| Ansatz | Verwendung | Einrichtung |
+|---|---|---|
+| **Vollständig öffentlich** | Produktdokumentation für externe Zielgruppen, Open-Source-Projekte und alles, was indexiert und geteilt werden soll. | Standard; keine Konfiguration erforderlich. |
+| **Gesamte Website per Passwort schützen** | Alles ist intern: technische Runbooks, Dokumentation nur für Partner oder ein noch nicht veröffentlichtes Produkt. Eine gemeinsame Passphrase schützt die gesamte Website. | `auth.password.enabled: true` in `docs.json` + Passwort im Dashboard festlegen. Siehe [Passwortschutz](/de/setup/password-protection). |
+| **Gemischt (einige Seiten privat)** | Der Großteil der Dokumentation ist öffentlich; einige Seiten sind intern (ein Runbook, eine Beta-Funktion oder eine interne API-Referenz). | Fügen Sie den internen Seiten im Frontmatter `private: true` hinzu oder listen Sie sie unter `auth.password.private[]` auf. Siehe [Passwortschutz](/de/setup/password-protection). |
+| **SSO (Enterprise)** | Leser sollen sich bei Ihrem bestehenden Identitätsanbieter anmelden: keine gemeinsamen Passwörter, ein Prüfpfad und eine Aufhebung des Zugriffs durch Entfernen des Benutzers. | Enterprise-Tarif. Siehe [SSO](/de/setup/sso). |
+
+<Tip>
+  Sie können jederzeit zwischen den Ansätzen wechseln, indem Sie `docs.json` bearbeiten und die Änderungen pushen. Der Wechsel von der gesamten Website zu einer gemischten Konfiguration (oder umgekehrt) erfordert nur einen Build.
+</Tip>
+
+## Häufige Muster
+
+### Interne und externe Dokumentation in einem Projekt
+
+Die meisten Teams möchten umfangreiche interne Dokumentation hinter einer Anmeldung und daneben eine kleinere öffentliche Website für Kunden. Sie benötigen dafür nicht zwei Projekte. Verwenden Sie den **gemischten Modus** in einem einzelnen Jamdesk-Projekt:
+
+```yaml
+---
+title: Incident Runbook
+private: true
+---
+```
+
+Seiten mit `private: true` sind geschützt; alle anderen bleiben öffentlich. Alles befindet sich in einem einzigen Repository mit einem Build und einem Dashboard. Der Entsperrbildschirm wird nur angezeigt, wenn ein Leser eine geschützte Seite aufruft.
+
+Für größere interne Bereiche können Sie die Pfade in `docs.json` auflisten, anstatt jede Datei zu markieren. Hinweis: `auth.password.private[]` aktiviert automatisch den Modus für bestimmte Seiten. Fügen Sie daneben nicht `enabled: true` hinzu (das ist der Modus für die gesamte Website und das Gegenteil von dem, was Sie hier benötigen).
+
+```json docs.json
+{
+  "auth": {
+    "password": {
+      "hint": "Ask the on-call engineer",
+      "private": ["/internal/**", "/admin/runbook"]
+    }
+  }
+}
+```
+
+### Zwei separate Projekte
+
+Verwenden Sie nur dann zwei Projekte, wenn die Zielgruppen vollständig unterschiedliches Branding, separate benutzerdefinierte Domains, separate Analysen oder unterschiedliche Tarifstufen benötigen. Beispiele: eine öffentliche Dokumentationswebsite unter `docs.acme.com` und ein separates internes Wiki unter `internal.acme.com`. Der Wartungsaufwand ist höher: zwei Builds, zwei Dashboards und zwei Domains.
+
+### SSO für die Dokumentationswebsite
+
+Bei Enterprise-Tarifen melden sich Leser bei Ihrem Identitätsanbieter (Okta, Google Workspace, Azure AD usw.) an, anstatt ein gemeinsames Passwort einzugeben. Das eignet sich besonders, wenn Sie nachvollziehen müssen, wer was gelesen hat, oder wenn der Zugriff auf die Dokumentation beim Ausscheiden eines Benutzers sofort widerrufen werden muss. Siehe [SSO](/de/setup/sso) für eine Übersicht und Informationen dazu, wie Sie ein Gespräch mit dem Vertrieb beginnen.
+
+## Editoren und Leser
+
+Manchmal werden drei verschiedene Zugriffskonzepte verwechselt:
+
+| Rolle | Aufgabe | Gewährung des Zugriffs |
+|---|---|---|
+| **Editoren** | MDX-Inhalte schreiben und aktualisieren. | Die Dokumentation wird bearbeitet, indem MDX in Ihr verbundenes GitHub-Repository committed wird. Daher **entsprechen die Berechtigungen Ihres GitHub-Repositorys den Editorberechtigungen**. Es gibt keine separate Jamdesk-Editorrolle darüber hinaus: Jeder, der in Ihren Dokumentations-Branch pushen kann, kann eine Änderung veröffentlichen. |
+| **Leser** | Die veröffentlichte Dokumentationswebsite anzeigen. | Jeder (öffentlich), jeder mit dem Passwort (Passwortmodus) oder jeder, der über Ihren IdP authentifiziert ist (SSO). |
+| **Dashboard-Teammitglieder** | Builds, Analysen und Projekteinstellungen im Jamdesk-Dashboard verwalten. | Über **Settings → Team** im Dashboard eingeladen. Sie erstellen keine Inhalte direkt. Siehe [Teammitglieder](/de/help/projects/team-members). |
+
+Ein Teamkollege kann jede Kombination dieser drei Rollen haben. Sie sind voneinander unabhängig.
+
+## Wie geht es weiter?
+
+<Columns cols={2}>
+  <Card title="Passwortschutz" icon="lock" href="/de/setup/password-protection">
+    Passwortschutz für die gesamte Website und einzelne Seiten, Hinweise, Passwortwechsel und Sitzungssteuerung.
+  </Card>
+  <Card title="SSO (Enterprise)" icon="key" href="/de/setup/sso">
+    Anmeldung bei Ihrem Identitätsanbieter für Dashboard und Dokumentation.
+  </Card>
+</Columns>

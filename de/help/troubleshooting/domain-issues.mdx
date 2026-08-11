@@ -1,0 +1,117 @@
+---
+title: Domainprobleme
+description: Beheben Sie Probleme mit benutzerdefinierten Domains – ausstehende Status, SSL-Zertifikatfehler, falsch konfigurierte CNAMEs und falsch geladene Websites.
+---
+
+Benutzerdefinierte Domains benötigen einen korrekt konfigurierten CNAME-Eintrag und ein gültiges SSL-Zertifikat.
+
+## Domain wird nicht verifiziert
+
+Wenn Ihre Domain als „Pending“ oder „Not verified“ angezeigt wird:
+
+<Steps>
+  <Step title="DNS-Einträge prüfen">
+    Überprüfen Sie, ob Ihr CNAME-Eintrag auf Ihre Jamdesk-URL verweist:
+    ```text
+    docs.example.com  CNAME  your-project.jamdesk.app
+    ```
+  </Step>
+  <Step title="Auf die Propagierung warten">
+    DNS-Änderungen können bis zu 48 Stunden benötigen, um weltweit propagiert zu werden.
+  </Step>
+  <Step title="DNS testen">
+    Verwenden Sie ein Tool wie `dig` oder [dnschecker.org](https://dnschecker.org), um Ihre Einträge zu überprüfen.
+  </Step>
+</Steps>
+
+## SSL-Zertifikatfehler
+
+### Zertifikat wird nicht ausgestellt
+
+Jamdesk verwendet Let's Encrypt für automatische SSL-Zertifikate. Wenn die Ausstellung fehlschlägt:
+
+1. Überprüfen Sie, ob DNS korrekt konfiguriert ist
+2. Warten Sie 15 Minuten auf die Ausstellung
+3. Prüfen Sie, ob Ihre Domain nicht durch Firewall-Regeln blockiert wird
+
+### Zertifikat abgelaufen
+
+Zertifikate werden automatisch erneuert. Wenn Ihres abgelaufen ist:
+
+1. Gehen Sie zu **Settings** → **Domains**
+2. Klicken Sie auf **Refresh Certificate**
+3. Wenn dies fehlschlägt, wenden Sie sich an den Support
+
+### Warnungen zu gemischten Inhalten
+
+Ihre Domain funktioniert, zeigt aber Sicherheitswarnungen an:
+
+- Suchen Sie in Ihren Inhalten nach `http://`-Links
+- Aktualisieren Sie alle Asset-URLs, sodass sie `https://` verwenden
+
+## Domain wird nicht geladen
+
+### „Site can't be reached“
+
+1. Überprüfen Sie, ob die DNS-Einträge korrekt sind
+2. Prüfen Sie, ob die Domain in Jamdesk nicht gelöscht wurde
+3. Leeren Sie den DNS-Cache Ihres Browsers
+
+### Falsche Website wird angezeigt
+
+Ihr DNS verweist möglicherweise auf einen alten Server:
+
+1. Aktualisieren Sie den CNAME auf Ihre Jamdesk-URL
+2. Entfernen Sie alle widersprüchlichen A-Einträge
+3. Warten Sie auf die DNS-Propagierung
+
+## Häufige DNS-Fehler
+
+<Accordion title="Verwendung eines A-Eintrags statt eines CNAME-Eintrags">
+  Jamdesk erfordert einen CNAME-Eintrag, keinen A-Eintrag. Mit einem CNAME können wir den Datenverkehr korrekt weiterleiten.
+</Accordion>
+
+<Accordion title="Protokoll einschließen">
+  Fügen Sie `https://` nicht in Ihren CNAME-Wert ein. Verwenden Sie nur die Domain:
+
+  ✓ `your-project.jamdesk.app`
+  ✗ `https://your-project.jamdesk.app`
+</Accordion>
+
+<Accordion title="Widersprüchliche Einträge">
+  Wenn Sie sowohl A- als auch CNAME-Einträge für dieselbe Subdomain haben, entfernen Sie den A-Eintrag.
+</Accordion>
+
+## Domains mit Subpfad
+
+Für Domains mit einem Subpfad (z. B. `example.com/docs`):
+
+1. Konfigurieren Sie einen Reverse-Proxy (Cloudflare, nginx usw.)
+2. Lesen Sie [Hosting mit Subpfad](/de/deploy/subpath-hosting) für Einrichtungsanweisungen
+
+<Warning>
+Die Konfiguration eines Subpfads erfordert zusätzliche Einrichtung außerhalb von Jamdesk.
+</Warning>
+
+## Bestehen weiterhin Probleme?
+
+<Card title="Support kontaktieren" icon="headset" href="/de/help/support/contact">
+  Geben Sie Ihren Domainnamen und die aktuelle DNS-Konfiguration an
+</Card>
+
+## Verwandte Artikel
+
+<Columns cols={2}>
+  <Card title="DNS-Fehlerbehebung" icon="server" href="/de/help/troubleshooting/dns-issues">
+    Prüfungen der Propagierung, CNAME-Konflikte und anbieterspezifische Lösungen
+  </Card>
+  <Card title="Einrichtung benutzerdefinierter Domains" icon="globe" href="/de/deploy/custom-domains">
+    Vollständige Einrichtungsanleitung über das Dashboard
+  </Card>
+  <Card title="Fehlerreferenz" icon="book" href="/de/help/troubleshooting/error-reference">
+    Vollständige Liste der Fehlercodes
+  </Card>
+  <Card title="Support kontaktieren" icon="headset" href="/de/help/support/contact">
+    Nicht behobene Probleme eskalieren
+  </Card>
+</Columns>

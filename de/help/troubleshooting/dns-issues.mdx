@@ -1,0 +1,185 @@
+---
+title: DNS-Fehlerbehebung
+description: "Beheben Sie DNS-Propagation, CNAME-Konflikte und TXT-Verifizierungsfehler bei der Einrichtung benutzerdefinierter Domains – mit dig-Befehlen und Lösungen."
+---
+
+DNS-Probleme sind die häufigste Ursache für Probleme mit benutzerdefinierten Domains.
+
+## DNS-Propagation prüfen
+
+DNS-Änderungen können bis zu 48 Stunden benötigen, um sich global zu verbreiten. Die meisten Änderungen sind jedoch innerhalb weniger Stunden vollständig wirksam.
+
+Status der Propagation prüfen:
+
+```bash
+# Check if your CNAME is resolving
+dig CNAME docs.yourdomain.com
+
+# Or use nslookup
+nslookup -type=CNAME docs.yourdomain.com
+```
+
+Die erwartete Ausgabe zeigt, dass Ihr CNAME auf `cname.jamdesk.com` verweist:
+
+```text
+docs.yourdomain.com. 300 IN CNAME cname.jamdesk.com.
+```
+
+Online-Tools wie [whatsmydns.net](https://www.whatsmydns.net/) zeigen die Propagation in mehreren Regionen.
+
+## Häufige Probleme
+
+### CNAME wird nicht aufgelöst
+
+**Symptom**: `dig` zeigt keinen CNAME-Eintrag oder ein falsches Ziel an.
+
+**Ursachen**:
+- Eintrag wurde beim DNS-Anbieter nicht gespeichert
+- Tippfehler im Namen oder Wert des Eintrags
+- DNS-Propagation ist noch nicht abgeschlossen
+
+**Lösung**:
+1. Melden Sie sich bei Ihrem DNS-Anbieter an
+2. Prüfen Sie, ob der CNAME-Eintrag mit den korrekten Werten vorhanden ist
+3. Warten Sie 15–30 Minuten und prüfen Sie erneut
+
+### CNAME auf der Root-Domain
+
+**Symptom**: Der DNS-Anbieter lehnt einen CNAME-Eintrag für `yourdomain.com` (ohne Subdomain) ab.
+
+**Ursache**: DNS-Standards (RFC 1034) verbieten CNAME-Einträge am Zonen-Apex (Root-Domain).
+
+**Lösung**: Das Jamdesk-Dashboard zeigt für Apex-Domains automatisch einen A-Eintrag (`76.76.21.21`) anstelle eines CNAME an. Wenn Ihr Dashboard weiterhin einen CNAME für eine Apex-Domain anzeigt, klicken Sie auf **Refresh**, um die aktualisierten Einträge abzurufen.
+
+### Konflikte mit dem Cloudflare-Proxy
+
+**Symptom**: Bei der Verwendung von Cloudflare treten SSL-Fehler oder Weiterleitungsschleifen auf.
+
+**Ursache**: Der Proxy von Cloudflare (orangefarbene Wolke) kann das SSL von Vercel beeinträchtigen.
+
+**Lösung**:
+1. Klicken Sie in den Cloudflare-DNS-Einstellungen auf das orangefarbene Wolkensymbol
+2. Ändern Sie die Einstellung für Ihre Docs-Subdomain in „DNS only“ (graue Wolke)
+3. Lassen Sie Vercel das SSL verwalten
+
+### Konfligierende Einträge
+
+**Symptom**: Die CNAME-Verifizierung schlägt fehl, obwohl der Eintrag korrekt aussieht.
+
+**Ursache**: Ein vorhandener A-Eintrag steht im Konflikt mit dem CNAME.
+
+**Lösung**:
+1. Prüfen Sie, ob für dieselbe Subdomain A-Einträge vorhanden sind
+2. Löschen Sie konfligierende A-Einträge
+3. Stellen Sie sicher, dass nur der CNAME verbleibt
+
+```bash
+# Check for A records
+dig A docs.yourdomain.com
+```
+
+### TXT-Verifizierung schlägt fehl
+
+**Symptom**: Der TXT-Eintrag für das Hosting unter einem Unterpfad kann nicht verifiziert werden.
+
+**Ursachen**:
+- Eintrag wurde der falschen Domain hinzugefügt
+- Tippfehler im Wert des Eintrags
+- Vorhandene TXT-Einträge verursachen Probleme
+
+**Lösung**:
+1. Prüfen Sie, ob sich der TXT-Eintrag unter `_jamdesk.yourdomain.com` befindet
+2. Kopieren Sie den exakten Verifizierungswert aus dem Dashboard
+3. Prüfen Sie, ob konfligierende TXT-Einträge vorhanden sind
+
+```bash
+# Check TXT records
+dig TXT _jamdesk.yourdomain.com
+```
+
+### SSL-Zertifikat wird nicht ausgestellt
+
+**Symptom**: Die Domain wird dauerhaft als „pending“ angezeigt.
+
+**Ursachen**:
+- CAA-Einträge verhindern die Ausstellung des Zertifikats
+- DNS-Propagation ist noch nicht vollständig
+- Domain ist nicht erreichbar
+
+**Lösung**:
+
+CAA-Einträge prüfen:
+```bash
+dig CAA yourdomain.com
+```
+
+Wenn CAA-Einträge vorhanden sind, fügen Sie einen Eintrag hinzu, der Let's Encrypt erlaubt:
+```text
+yourdomain.com. CAA 0 issue "letsencrypt.org"
+```
+
+## Diagnosebefehle
+
+```bash
+# Full DNS lookup
+dig +trace docs.yourdomain.com
+
+# Check all record types
+dig ANY docs.yourdomain.com
+
+# Check specific nameservers
+dig @8.8.8.8 docs.yourdomain.com
+
+# Check TTL (time to live)
+dig +noall +answer docs.yourdomain.com
+```
+
+## Hinweise zu bestimmten DNS-Anbietern
+
+### Cloudflare
+- Setzen Sie den Proxy-Status während der Domain-Verifizierung auf „DNS only“ (graue Wolke)
+- Wechseln Sie nach Abschluss der Verifizierung wieder zu „proxied“ (orangefarbene Wolke)
+- **Verwenden Sie einen Worker?** Der DNS-Eintrag muss für die Ausführung des Workers über den Proxy laufen (orangefarbene Wolke). Verwenden Sie die graue Wolke nur während der Verifizierung und wechseln Sie anschließend wieder zur orangefarbenen Wolke.
+- Deaktivieren Sie „Always Use HTTPS“ für die Docs-Subdomain, um SSL-Konflikte mit Vercel zu vermeiden
+
+### GoDaddy
+- Das CNAME-Ziel darf NICHT mit einem Punkt enden
+- Die Propagation von Änderungen kann länger dauern
+
+### Namecheap
+- Verwenden Sie den Typ „CNAME Record“
+- Das Host-Feld enthält nur die Subdomain (`docs`, nicht `docs.yourdomain.com`)
+
+### Route 53
+- Das CNAME-Ziel MUSS mit einem Punkt enden (`cname.jamdesk.com.`)
+- Zielintegrität prüfen: Nein
+
+## Wann Sie den Support kontaktieren sollten
+
+Kontaktieren Sie den Support, wenn:
+- DNS-Einträge als korrekt verifiziert wurden, die Domain aber nach 48 Stunden weiterhin als ausstehend angezeigt wird
+- SSL-Zertifikatsfehler trotz Befolgung aller Schritte weiterhin auftreten
+- Fehler angezeigt werden, die spezifisch die Jamdesk-Infrastruktur betreffen
+
+Fügen Sie Ihrer Supportanfrage Folgendes hinzu:
+- Ihren Domainnamen
+- Den Namen Ihres DNS-Anbieters
+- Die Ausgabe der `dig`-Befehle
+- Einen Screenshot der DNS-Konfiguration
+
+## Wie geht es weiter?
+
+<Columns cols={2}>
+  <Card title="Domain Issues" icon="circle-exclamation" href="/de/help/troubleshooting/domain-issues">
+    SSL-Fehler, Verifizierungsfehler und das Laden der falschen Website
+  </Card>
+  <Card title="Custom Domains Setup" icon="globe" href="/de/deploy/custom-domains">
+    Vollständige Anleitung zur Einrichtung benutzerdefinierter Domains
+  </Card>
+  <Card title="Subpath Hosting" icon="route" href="/de/deploy/subpath-hosting">
+    Hosting unter yourdomain.com/docs
+  </Card>
+  <Card title="Contact Support" icon="headset" href="/de/help/support/contact">
+    `dig`-Ausgabe und DNS-Screenshots hinzufügen
+  </Card>
+</Columns>

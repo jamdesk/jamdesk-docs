@@ -1,0 +1,309 @@
+---
+title: SEO-Optimierung
+description: Steuern Sie Titel, Beschreibungen und Meta-Tags für Suchmaschinen und Social Previews. Jamdesk erstellt automatisch Sitemaps und Open-Graph-Bilder.
+---
+
+Optimieren Sie Ihre Dokumentation für Suchmaschinen und Social Previews, indem Sie Titel, Beschreibungen und Metadaten im Frontmatter festlegen.
+
+## Was Jamdesk automatisch erledigt
+
+<Columns cols={3}>
+  <Card title="Meta-Tags" icon="tags">
+    Titel und Beschreibung aus dem Frontmatter werden zu Meta-Tags.
+  </Card>
+  <Card title="Open Graph" icon="share">
+    Für jede Seite werden Bilder für das Teilen in sozialen Netzwerken erstellt.
+  </Card>
+  <Card title="Sitemap & Robots" icon="sitemap">
+    Bei jedem Build werden eine XML-Sitemap und robots.txt erstellt.
+  </Card>
+  <Card title="JSON-LD" icon="code">
+    Strukturierte Schema.org-Daten auf jeder Seite sorgen für umfangreiche Suchergebnisse.
+  </Card>
+  <Card title="IndexNow" icon="bolt">
+    Geänderte URLs werden nach jedem Build an Suchmaschinen übermittelt.
+  </Card>
+  <Card title="AI-Endpunkte" icon="robot" href="/de/ai/overview">
+    `llms.txt` und ein MCP-Server ermöglichen es AI-Tools, Ihre Dokumentation zu lesen.
+  </Card>
+</Columns>
+
+## Inhalte optimieren
+
+### Effektives Frontmatter verfassen
+
+```yaml
+---
+title: User Authentication    # Under 60 characters
+description: Set up OAuth, JWT, and session-based authentication  # 120-160 characters
+---
+```
+
+<Tip>
+**Keywords an den Anfang stellen.** „Authentication setup“ ist besser als „How to set up authentication.“
+</Tip>
+
+### Seitentitel
+
+- Halten Sie Titel unter 60 Zeichen, um eine Kürzung in den Suchergebnissen zu vermeiden
+- Fügen Sie Ihr primäres Keyword möglichst weit vorne ein
+- Verwenden Sie in Ihrer Dokumentation für jeden Titel eine eindeutige Formulierung
+
+### Beschreibungen
+
+- Streben Sie 120–160 Zeichen an
+- Fassen Sie zusammen, was die lesende Person erfahren wird
+- Fügen Sie relevante Keywords auf natürliche Weise ein
+
+<Note>
+**Automatisch generierter Fallback.** Wenn `description` im Frontmatter fehlt, extrahiert Jamdesk automatisch den ersten Absatz aus dem Seiteninhalt (bis zu 155 Zeichen). Überschriften, Codeblöcke, Bilder und MDX-Komponenten werden übersprungen. Dieser Text wird für `<meta name="description">`, Open Graph und Twitter Cards verwendet. Eine explizite Beschreibung wird für optimale Ergebnisse weiterhin empfohlen.
+</Note>
+
+## Indexierung steuern
+
+### Websiteweite Einstellungen
+
+Konfigurieren Sie in Ihrer `docs.json` das standardmäßige Verhalten für Robots:
+
+```json docs.json
+{
+  "seo": {
+    "metatags": {
+      "robots": "index, follow"
+    }
+  }
+}
+```
+
+### Steuerung pro Seite
+
+Überschreiben Sie die Indexierung für bestimmte Seiten im Frontmatter:
+
+```yaml
+---
+title: Internal Notes
+noindex: true
+---
+```
+
+Verwenden Sie `noindex` für:
+- Entwürfe oder Seiten in Bearbeitung
+- Interne Dokumentation
+- Veraltete Inhalte, die Sie als Referenz behalten
+
+### Suchindexierung vs. AI-Aufnahme
+
+`robots`-Metadaten und `noindex` steuern **Suchmaschinen**: ob eine Seite in Google und Ihrer `sitemap.xml` erscheint. Sie haben keine Auswirkungen auf die Dateien `llms.txt` und `llms-full.txt`, die AI-Tools lesen. Um deren Veröffentlichung zu verhindern, setzen Sie `seo.ai.llmsTxt` auf `false` (siehe [llms.txt deaktivieren](/de/ai/llms-txt#llmstxt-deaktivieren)). Die beiden Einstellungen sind unabhängig: Eine Seite kann von Suchmaschinen indexiert, aber von der AI-Aufnahme ausgeschlossen werden – oder umgekehrt.
+
+## Kanonische URLs
+
+Wenn Ihre Dokumentation unter mehreren URLs erreichbar ist, legen Sie eine kanonische URL fest:
+
+```yaml
+---
+title: Getting Started
+canonical: https://docs.example.com/getting-started
+---
+```
+
+Sie können auch eine websiteweite kanonische Basis-URL in `docs.json` festlegen. Jamdesk hängt den
+Pfad jeder Seite daran an, sodass jede Seite eine korrekte seitenbezogene kanonische URL erhält:
+
+```json docs.json
+{
+  "seo": {
+    "metatags": {
+      "canonical": "https://docs.acme.com"
+    }
+  }
+}
+```
+
+## Social Previews & Open Graph
+
+Jamdesk erstellt automatisch eine gebrandete Social Card mit 1200×630 Pixeln für jede Seite. Überschreiben Sie beliebige
+Social-Tags im Frontmatter. Sie können **flache Schlüssel auf oberster Ebene** oder einen
+verschachtelten **`seo:`**-Block verwenden. Beides funktioniert. Wenn derselbe Schlüssel auf beide Arten festgelegt ist, hat der Wert auf oberster Ebene Vorrang.
+
+<Card title="OpenGraph Preview" icon="share-nodes" href="https://jamdesk.com/utilities/opengraph-preview" horizontal>
+  Sehen Sie, wie die Card jeder Seite auf X, Facebook, LinkedIn und weiteren Plattformen dargestellt wird, und validieren Sie ihre Open-Graph-Tags mit dem OpenGraph Preview-Tool.
+</Card>
+
+<CodeGroup>
+```yaml Flat (top-level)
+---
+title: API Reference
+description: REST API endpoints and authentication
+"og:title": API Reference — Acme
+"og:description": Everything you need to call the Acme API
+"og:image": /images/api-social-card.png
+"twitter:card": summary_large_image
+"twitter:creator": "@acme"
+keywords: ["api", "rest", "authentication"]
+canonical: https://docs.acme.com/api-reference
+---
+```
+
+```yaml Nested (seo block)
+---
+title: API Reference
+description: REST API endpoints and authentication
+seo:
+  "og:title": API Reference — Acme
+  "og:image": /images/api-social-card.png
+  "twitter:card": summary_large_image
+  x-custom-tag: any custom meta value
+---
+```
+</CodeGroup>
+
+### Unterstützte Tags
+
+| Gruppe | Tags |
+|-------|------|
+| Open Graph | `og:title`, `og:description`, `og:image`, `og:image:width`, `og:image:height`, `og:image:alt`, `og:url`, `og:type`, `og:site_name`, `og:locale`, `og:video`, `og:audio` |
+| Artikel | `og:type: article` mit `article:published_time`, `article:modified_time`, `article:author`, `article:section`, `article:tag` |
+| Twitter / X | `twitter:card`, `twitter:title`, `twitter:description`, `twitter:image`, `twitter:image:alt`, `twitter:site`, `twitter:creator`, `twitter:player`, App-Card-Tags |
+| Sonstige | `keywords`, `author`, `robots`, `googlebot`, `google-site-verification`, `theme-color` sowie beliebige benutzerdefinierte Tags (benutzerdefinierte Tags unter `seo:` platzieren) |
+
+<Note>
+**Benutzerdefinierte OG-Bildabmessungen.** Wenn Sie ein benutzerdefiniertes `og:image` festlegen, setzen Sie auch `og:image:width`
+und `og:image:height`, damit Crawler es scharf darstellen. Die automatisch erstellte Card ist immer
+1200×630 Pixel groß.
+</Note>
+
+<Note>
+**Benutzerdefinierte Tags.** Beliebige Meta-Tags (z. B. `x-pinterest`) werden als `<meta name="...">` ausgegeben.
+Platzieren Sie sie im `seo:`-Block. Beim Platzieren auf oberster Ebene werden nur erkannte SEO-Schlüssel berücksichtigt.
+</Note>
+
+### Card-Typ für Twitter / X
+
+Der Tag `twitter:card` steuert, welches Layout X (und andere Plattformen) verwendet, wenn Ihr Link geteilt wird:
+
+| Wert | Darstellung |
+|-------|--------------------|
+| `summary` | Kleines quadratisches Vorschaubild links, daneben Titel und Beschreibung. Kompakt. |
+| `summary_large_image` | Großes, bildschirmbreites Bild oben, darunter Titel und Beschreibung. Die große, auffällige Variante. |
+
+Verwenden Sie für eine gebrandete Card mit 1200×630 Pixeln `summary_large_image`, damit das Bild in voller Breite dargestellt wird.
+
+### Websiteweites Standardbild
+
+Legen Sie ein Fallback-Social-Bild für jede Seite in `docs.json` fest. Jede Seite, die ein eigenes `og:image` festlegt, überschreibt dieses:
+
+```json docs.json
+{
+  "seo": {
+    "metatags": {
+      "og:image": "https://docs.acme.com/images/default-card.png"
+    }
+  }
+}
+```
+
+<Tip>
+**Vor der Veröffentlichung prüfen.** Fügen Sie nach einem Build die Seiten-URL in das [OpenGraph Preview](https://jamdesk.com/utilities/opengraph-preview)-Tool ein, um zu prüfen, wie die Card auf den einzelnen Plattformen dargestellt wird, und um die Open-Graph-Tags zu validieren. Das Tool prüft auch die Bildabmessungen und erklärt, wie gefundene Probleme behoben werden.
+</Tip>
+
+## Sitemap & Robots.txt
+
+Jede Jamdesk-Website erstellt bei jedem Build automatisch `sitemap.xml` und `robots.txt`.
+
+| Datei | Zweck |
+|------|---------|
+| `sitemap.xml` | Listet alle Seiten mit Änderungsdaten für Suchmaschinen auf |
+| `robots.txt` | Erlaubt allen Crawlern den Zugriff und verweist auf die Sitemap |
+
+### Wo Sie sie finden
+
+Die URLs hängen davon ab, ob Ihre Dokumentation unter einer Root-Domain oder unter einem `/docs`-Unterpfad liegt:
+
+<Tabs>
+  <Tab title="Root-Domain">
+    Wenn sich Ihre Dokumentation im Root-Verzeichnis Ihrer Domain befindet (z. B. `docs.acme.com` oder `acme.jamdesk.app`):
+
+    ```bash
+    https://docs.acme.com/sitemap.xml
+    https://docs.acme.com/robots.txt
+    ```
+  </Tab>
+  <Tab title="/docs-Unterpfad">
+    Wenn sich Ihre Dokumentation unter `/docs` auf Ihrer Hauptwebsite befindet (wie diese Website unter `jamdesk.com/docs`):
+
+    ```bash
+    https://jamdesk.com/docs/sitemap.xml
+    https://jamdesk.com/docs/robots.txt
+    ```
+  </Tab>
+</Tabs>
+
+### Was in der Sitemap enthalten ist
+
+- Alle veröffentlichten Seiten (ausgenommen Seiten mit `noindex` oder `hidden` im Frontmatter)
+- Änderungsdaten aus dem Frontmatter, sofern verfügbar
+- Wöchentliche Änderungshäufigkeit
+
+### Seiten aus der Sitemap ausschließen
+
+Fügen Sie `noindex` zum Frontmatter hinzu, um eine Seite sowohl aus der Sitemap als auch aus den Suchmaschinen auszuschließen:
+
+```yaml
+---
+title: Internal Notes
+noindex: true
+---
+```
+
+Seiten mit `hidden: true` werden ebenfalls automatisch ausgeschlossen.
+
+## Strukturierte Daten mit JSON-LD
+
+Jede Seite enthält automatisch strukturierte [schema.org](https://schema.org)-Daten als `<script type="application/ld+json">`-Tag mit zwei Schemata:
+
+- `WebSite`: Name, URL und Beschreibung Ihrer Website (aus `docs.json`).
+- `BreadcrumbList`: Navigationspfad von Home zur aktuellen Seite, abgeleitet aus Ihrer `navigation`-Konfiguration.
+
+Keine Konfiguration erforderlich. Suchmaschinen verwenden diese Daten für umfangreiche Ergebnisse wie Breadcrumb-Pfade in Suchergebnissen.
+
+<Tip>
+**Markup überprüfen.** Fügen Sie eine beliebige Seiten-URL in den [Rich Results Test von Google](https://search.google.com/test/rich-results) ein, um zu bestätigen, dass die strukturierten Daten erkannt werden.
+</Tip>
+
+## IndexNow
+
+Nach jedem Build übermittelt Jamdesk automatisch geänderte Seiten-URLs an [IndexNow](https://www.indexnow.org), damit Suchmaschinen sie schneller indexieren. Dadurch werden Bing, Yandex und andere teilnehmende Suchmaschinen über Ihre Inhaltsänderungen informiert, ohne auf den nächsten Crawl-Zyklus warten zu müssen.
+
+- Wird nach jedem erfolgreichen Build ausgeführt
+- Übermittelt nur Seiten, die tatsächlich geändert wurden
+- Nicht blockierend, sodass der Build nie verzögert wird
+- Keine Konfiguration erforderlich
+
+## Best Practices
+
+Gehen Sie diese Checkliste vor der Veröffentlichung durch:
+
+<Note>
+**Checkliste vor der Veröffentlichung**
+
+- **Eindeutige Titel.** Jede Seite hat einen eigenen, aussagekräftigen Titel mit weniger als 60 Zeichen.
+- **Aussagekräftige Beschreibungen.** Beschreibungen fassen die Seite in 120–160 Zeichen zusammen.
+- **Logische Überschriften.** Überschriften folgen einer klaren Hierarchie: eine H1, dann H2 → H3.
+- **Aussagekräftige Links.** Interne Links verwenden sinnvollen Ankertext, niemals „click here“.
+- **Alternativtext für Bilder.** Jedes Bild verfügt für Barrierefreiheit und Bildersuche über einen Alternativtext.
+- **Social-Bild.** Legen Sie auf wichtigen Seiten ein benutzerdefiniertes `og:image` fest oder verlassen Sie sich auf die automatisch erstellte Card. Überprüfen Sie es mit dem [OpenGraph Preview](https://jamdesk.com/utilities/opengraph-preview)-Tool.
+</Note>
+
+## Verwandte Artikel
+
+<Columns cols={2}>
+  <Card title="Frontmatter-Referenz" icon="file-lines" href="/de/content/frontmatter">
+    Alle verfügbaren Frontmatter-Optionen
+  </Card>
+  <Card title="docs.json-Referenz" icon="gear" href="/de/config/docs-json-reference">
+    Websiteweite Konfigurationsoptionen
+  </Card>
+  <Card title="OpenGraph Preview-Tool" icon="share-nodes" href="https://jamdesk.com/utilities/opengraph-preview">
+    Social Cards auf allen Plattformen in der Vorschau anzeigen und validieren
+  </Card>
+</Columns>

@@ -1,0 +1,110 @@
+---
+title: Defekte Links beheben
+description: >-
+  Erfahren Sie, wie jamdesk fix defekte interne Links und fehlerhafte Anker automatisch behebt und Änderungen vor der Anwendung sicher in der Vorschau anzeigt.
+---
+
+`jamdesk fix` ergänzt `jamdesk broken-links` um eine automatische Reparatur. Der Befehl liest dieselben Warnungen zu defekten Links und schreibt jede Datei neu, für die sich das korrekte Ziel eindeutig bestimmen lässt. Mehrdeutige Fälle werden zur manuellen Prüfung markiert und nicht geändert.
+
+<Tip>
+  Möchten Sie lieber im Dashboard bleiben? [Fix with AI](/de/builds/fix-with-ai) führt dieselbe Reparatur für einen Build durch, deckt außerdem fehlende Seitenbeschreibungen ab und überträgt die Änderungen für Sie in GitHub.
+</Tip>
+
+Der Befehl behebt zwei Arten defekter interner Links:
+
+- **Fehlerhafte Anker** — ein Fragment, das eine eindeutige Falschschreibung einer echten Überschrift auf der Zielseite ist (z. B. `#instalation` → `#installation`)
+- **Ankerabweichungen zwischen Locales** — eine übersetzte Seite hat ihre Überschriften umbenannt, aber Links in diesem Locale verweisen weiterhin auf das alte englische Fragment (z. B. `/fr/ai/selectors#ai-strategies` → `/fr/ai/selectors#stratégies-ia`)
+
+## Schritt 1: Defekte Links finden
+
+Führen Sie `jamdesk broken-links` aus, um zu sehen, was behoben werden muss:
+
+```bash
+jamdesk broken-links
+```
+
+Prüfen Sie die Ausgabe. `jamdesk fix` bearbeitet Warnungen, bei denen ein wahrscheinlich korrekter Anker einer echten Überschrift zugeordnet werden kann.
+
+## Schritt 2: Korrekturen in der Vorschau anzeigen
+
+Führen Sie den Befehl mit `--dry-run` aus, um genau zu sehen, was sich ändern würde, bevor Dateien angefasst werden:
+
+```bash
+jamdesk fix --dry-run
+```
+
+**Beispielausgabe:**
+
+```text
+Planned fixes:
+
+  fr/ai/overview.mdx:9
+    /fr/ai/selectors#ai-strategies  →  /fr/ai/selectors#stratégies-ia
+
+(dry run — no files written)
+```
+
+Prüfen Sie jede geplante Korrektur. Wenn eine Änderung nicht korrekt aussieht, korrigieren Sie den Link stattdessen manuell. `jamdesk fix` schreibt nur Links neu, die sich eindeutig auflösen lassen.
+
+## Schritt 3: Korrekturen anwenden
+
+Führen Sie den Befehl ohne `--dry-run` aus, um die Korrekturen anzuwenden. Sie werden zur Bestätigung aufgefordert:
+
+```bash
+jamdesk fix
+```
+
+```text
+Apply 1 fix(es) to local files? (y/N)
+```
+
+Drücken Sie `y`, um die Änderungen zu schreiben. Um die Abfrage in CI oder Skripten zu überspringen, verwenden Sie `-y`:
+
+```bash
+jamdesk fix -y
+```
+
+Nach der Anwendung gibt der Befehl Folgendes aus:
+
+```text
+Fixed 1 file(s); 0 warning(s) left for manual review.
+```
+
+Wenn das Ziel einer Warnung mehrdeutig ist, lässt `jamdesk fix` den Link unverändert, damit Sie ihn manuell korrigieren können.
+
+## Schritt 4: Diff prüfen und committen
+
+Prüfen Sie die Änderungen vor dem Committen:
+
+```bash
+git diff
+```
+
+Vergewissern Sie sich, dass jeder neu geschriebene Link auf das erwartete Ziel verweist. Committen Sie anschließend:
+
+```bash
+git add -A
+git commit -m "fix(docs): auto-fix broken internal links"
+```
+
+## Optionen
+
+| Flag | Beschreibung |
+|------|-------------|
+| `--dry-run` | Geplante Korrekturen anzeigen, ohne Dateien zu schreiben |
+| `-y, --yes` | Korrekturen ohne Bestätigungsabfrage anwenden |
+| `--types <list>` | Durch Kommas getrennte Warntypen, die behoben werden sollen (Standard: alle unterstützten) |
+
+## Wie geht es weiter?
+
+<Columns cols={2}>
+  <Card title="Mit KI beheben" icon="wand-magic-sparkles" href="/de/builds/fix-with-ai">
+    Probleme im Dashboard beheben und in GitHub committen
+  </Card>
+  <Card title="CLI-Übersicht" icon="terminal" href="/de/cli/overview">
+    Vollständige Befehlsreferenz
+  </Card>
+  <Card title="Links und Navigation" icon="link" href="/de/content/links">
+    So werden interne Links erkannt und aufgelöst
+  </Card>
+</Columns>

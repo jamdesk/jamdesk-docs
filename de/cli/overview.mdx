@@ -1,0 +1,582 @@
+---
+title: CLI-Übersicht
+description: >-
+  Dokumentation lokal anzeigen, Konfiguration validieren, fehlerhafte Links prüfen und Plattformen mit der Open-Source-Jamdesk-CLI migrieren.
+---
+
+Mit der Jamdesk CLI können Sie Dokumentation lokal anzeigen, die Konfiguration validieren, fehlerhafte Links prüfen und von anderen Plattformen migrieren. Sie ist als Open-Source-Software unter der [Apache License 2.0](https://github.com/jamdesk/jamdesk-cli) verfügbar.
+
+## Installation
+
+<Tabs>
+  <Tab title="npm (Empfohlen)">
+    Installieren Sie die CLI global über [npm](https://www.npmjs.com/package/jamdesk), um `jamdesk` überall verwenden zu können:
+
+    ```bash
+    npm install -g jamdesk
+    ```
+  </Tab>
+  <Tab title="Homebrew (macOS/Linux)">
+    Installieren Sie die CLI über Homebrew unter macOS oder Linux:
+
+    ```bash
+    brew tap jamdesk/tap
+    brew install jamdesk
+    ```
+  </Tab>
+  <Tab title="curl (macOS/Linux)">
+    Installation per Skript:
+
+    ```bash
+    curl -fsSL https://get.jamdesk.com | bash
+    ```
+
+    Aktualisieren oder deinstallieren:
+
+    ```bash
+    curl -fsSL https://get.jamdesk.com/upgrade | bash
+    curl -fsSL https://get.jamdesk.com/uninstall | bash
+    ```
+  </Tab>
+  <Tab title="PowerShell (Windows)">
+    Installation per Skript:
+
+    ```powershell
+    iwr https://get.jamdesk.com/win | iex
+    ```
+
+    Aktualisieren oder deinstallieren:
+
+    ```powershell
+    iwr https://get.jamdesk.com/upgrade | iex
+    iwr https://get.jamdesk.com/uninstall | iex
+    ```
+  </Tab>
+  <Tab title="npx">
+    Ohne Installation ausführen:
+
+    ```bash
+    npx jamdesk dev
+    ```
+  </Tab>
+</Tabs>
+
+Überprüfen Sie nach der Installation, ob die CLI funktioniert:
+
+```bash
+jamdesk --version
+```
+
+### Voraussetzungen
+
+- **Node.js** v20.0.0 oder höher
+- **npm** v8 oder höher (empfohlen)
+
+## Schnellstart
+
+<Steps>
+  <Step title="Projekt erstellen">
+    Erstellen Sie ein neues Dokumentationsprojekt:
+
+    ```bash
+    jamdesk init my-docs
+    cd my-docs
+    ```
+  </Step>
+  <Step title="Entwicklungsserver starten">
+    Starten Sie den lokalen Entwicklungsserver mit Hot Reload:
+
+    ```bash
+    jamdesk dev
+    ```
+
+    Ihre Dokumentation ist unter **http://localhost:3000/docs** verfügbar.
+  </Step>
+  <Step title="Vor dem Bereitstellen validieren">
+    Prüfen Sie Konfigurationsfehler, fehlerhafte Links und Rechtschreibfehler:
+
+    ```bash
+    jamdesk validate
+    jamdesk broken-links
+    jamdesk fix --dry-run
+    jamdesk fix
+    jamdesk spellcheck
+    ```
+  </Step>
+</Steps>
+
+## Befehle
+
+Führen Sie `jamdesk <command> --help` aus, um detaillierte Informationen zu einem beliebigen Befehl anzuzeigen.
+
+### Entwicklung
+
+<Accordion title="jamdesk dev" icon="play" defaultOpen>
+  Starten Sie den lokalen Entwicklungsserver mit Hot Reload.
+
+  ```bash
+  jamdesk dev
+  jamdesk dev --port 3001
+  ```
+
+  **Funktionen:**
+  - Automatische Validierung beim Start (docs.json-Schema, MDX-Syntax und referenzierte OpenAPI-Spezifikationen; eine ungültige Spezifikation stoppt den Server, damit Sie den Fehler vor dem Bereitstellen erkennen)
+  - Hot Reload bei Änderungen an MDX-Dateien
+  - Automatischer Neuaufbau der Navigation bei Änderungen an docs.json
+  - Benutzerdefiniertes CSS (`style.css`) wird beim Aktualisieren des Browsers neu geladen
+  - Vollständige Suchfunktion
+  - Alle Themes und Komponenten verfügbar
+
+  **Optionen:**
+
+  | Flag | Beschreibung |
+  |------|-------------|
+  | `-p, --port <port>` | Port, auf dem der Server ausgeführt wird (Standard: 3000) |
+  | `-v, --verbose` | Ausführliche Ausgabe aktivieren |
+</Accordion>
+
+<Accordion title="jamdesk init" icon="folder-plus">
+  Erstellen Sie ein neues Dokumentationsprojekt.
+
+  ```bash
+  jamdesk init              # Interactive mode
+  jamdesk init my-docs      # Create in new directory
+  ```
+
+  Dadurch wird ein neues Projekt erstellt mit:
+  - Konfigurationsdatei `docs.json`
+  - Beispielseiten im MDX-Format
+  - Empfohlener Ordnerstruktur
+</Accordion>
+
+### Authentifizierung
+
+<Accordion title="jamdesk login" icon="right-to-bracket">
+  Melden Sie sich über Ihren Browser bei Jamdesk an. Dies ist vor dem Bereitstellen erforderlich.
+
+  ```bash
+  jamdesk login
+  ```
+
+  Öffnet das Jamdesk-Dashboard zur Authentifizierung in Ihrem Browser. Anmeldedaten werden lokal in `~/.jamdeskrc` gespeichert.
+
+  <Card title="Authentifizierungsleitfaden" icon="key" href="/de/cli/authentication">
+    Browserbasierter Authentifizierungsablauf, Sitzungsverwaltung und Fehlerbehebung
+  </Card>
+</Accordion>
+
+<Accordion title="jamdesk logout" icon="right-from-bracket">
+  Gespeicherte Anmeldedaten löschen.
+
+  ```bash
+  jamdesk logout
+  ```
+</Accordion>
+
+<Accordion title="jamdesk whoami" icon="circle-user">
+  Den aktuell authentifizierten Benutzer anzeigen und überprüfen, ob Ihre Sitzung gültig ist.
+
+  ```bash
+  jamdesk whoami
+  ```
+</Accordion>
+
+### Validierung
+
+<Accordion title="jamdesk validate" icon="check">
+  Validieren Sie Ihre `docs.json`-Konfiguration, die MDX-Syntax und OpenAPI-Spezifikationen.
+
+  ```bash
+  jamdesk validate
+  jamdesk validate --skip-mdx
+  ```
+
+  **Prüft:**
+  - Gültige JSON-Syntax in docs.json
+  - Erforderliche Felder (name, navigation)
+  - Gültige Theme-Werte
+  - MDX-Syntaxfehler (z. B. nicht maskierte Zeichen `<`)
+  - Validierung der OpenAPI-Spezifikation (falls konfiguriert)
+  - Schema-Konformität
+
+  **Optionen:**
+
+  | Flag | Beschreibung |
+  |------|-------------|
+  | `--skip-mdx` | MDX-Syntaxvalidierung überspringen |
+  | `-v, --verbose` | Detaillierte Validierungsausgabe anzeigen |
+
+  Führen Sie diesen Befehl vor dem Bereitstellen aus, um Fehler frühzeitig zu erkennen.
+</Accordion>
+
+<Accordion title="jamdesk broken-links" icon="link-slash">
+  Scannen Sie Ihre Dokumentation nach fehlerhaften internen Links.
+
+  ```bash
+  jamdesk broken-links
+  ```
+
+  **Beispielausgabe:**
+  ```text
+  docs/getting-started.mdx:15 - /docs/quikstart
+    Did you mean: /docs/quickstart
+
+  Found 1 broken link in 45 files.
+  ```
+
+  Erkennt Links zu fehlenden Seiten und Tippfehler. Weitere Informationen finden Sie unter [Links und Navigation](/de/content/links#erkennung-interner-links).
+</Accordion>
+
+<Accordion title="jamdesk fix" icon="wrench">
+  Behebt Warnungen zu fehlerhaften internen Links automatisch, wenn das Ziel eindeutig ist. Behandelt zwei Kategorien:
+  - **Tippfehler in Ankern**: ein Fragment wie `#instalation`, das eindeutig `#installation` lauten sollte
+  - **Ankerabweichung zwischen Locales**: Eine übersetzte Seite hat ihre Überschriften umbenannt, aber Links in diesem Locale verweisen weiterhin auf das alte englische Fragment
+
+  ```bash
+  # Preview what would change without touching any files
+  jamdesk fix --dry-run
+
+  # Apply fixes (prompts for confirmation)
+  jamdesk fix
+  ```
+
+  **Beispielausgabe eines Probelaufs:**
+  ```text
+  Planned fixes:
+
+    fr/ai/overview.mdx:9
+      /fr/ai/selectors#ai-strategies  →  /fr/ai/selectors#stratégies-ia
+
+  (dry run — no files written)
+  ```
+
+  Eine Korrektur wird nur geschrieben, wenn der korrigierte Anker auf eine echte Überschrift in der Zielseite verweist. Uneindeutige Fälle bleiben zur manuellen Prüfung offen.
+
+  **Optionen:**
+
+  | Flag | Beschreibung |
+  |------|-------------|
+  | `--dry-run` | Geplante Korrekturen anzeigen, ohne Dateien zu schreiben |
+  | `-y, --yes` | Korrekturen ohne Bestätigungsabfrage anwenden |
+  | `--types <list>` | Durch Kommas getrennte Warntypen, die korrigiert werden sollen (Standard: alle unterstützten) |
+
+  <Card title="Leitfaden: Fehlerhafte Links korrigieren" icon="wrench" href="/de/cli/fix-broken-links">
+    Schritt-für-Schritt-Anleitung zum Anzeigen, Anwenden, Prüfen und Committen von Korrekturen
+  </Card>
+</Accordion>
+
+<Accordion title="jamdesk spellcheck" icon="spell-check">
+  Prüfen Sie Ihre Dokumentation auf Rechtschreibfehler.
+
+  ```bash
+  jamdesk spellcheck
+  ```
+
+  **Beispielausgabe:**
+  ```text
+  getting-started.mdx:14 - "recieve"
+    └─ Did you mean: receive
+
+  Found 3 misspellings across 24 pages.
+  Tip: Run "jamdesk spellcheck --fix" to interactively fix or ignore words.
+  ```
+
+  Verwendet ein englisches Wörterbuch mit mehr als 150 integrierten technischen Begriffen (API, GraphQL, Kubernetes, React usw.), damit gängiger Fachjargon nicht fälschlicherweise markiert wird. Überspringt Codeblöcke, Inline-Code, Frontmatter, JSX, URLs und Dateipfade. Derzeit nur auf Englisch verfügbar; Unterstützung für Wörterbücher in mehreren Sprachen ist geplant.
+
+  **Optionen:**
+
+  | Flag | Beschreibung |
+  |------|-------------|
+  | `--fix` | Rechtschreibfehler interaktiv korrigieren oder zur Ignorierliste hinzufügen |
+  | `--json` | Als JSON ausgeben (für CI-Pipelines) |
+  | `-v, --verbose` | Jede geprüfte Datei anzeigen |
+
+  Der **interaktive Korrekturmodus (`--fix`)** führt durch jedes eindeutige falsch geschriebene Wort:
+
+  ```text
+  1/10  "recieve" — found in 3 files
+        intro.mdx:14, setup.mdx:7, guide.mdx:22
+
+  ? What do you want to do?
+  ❯ Fix → receive (recommended)
+    Fix → relieve
+    Ignore in the future (add to docs.json)
+    Skip
+  ```
+
+  - **Korrigieren** ersetzt das Wort in allen Dateien durch einen Vorschlag (prosa-sicher, sodass weder Codeblöcke noch JSX-Attribute geändert werden). Es werden bis zu 3 Vorschläge angezeigt; die beste Übereinstimmung wird als empfohlen markiert.
+  - **Ignorieren** fügt das Wort zu `spellcheck.ignore` in Ihrer docs.json hinzu, damit es nicht erneut markiert wird
+  - **Überspringen** führt bei diesem Durchlauf keine Aktion aus
+
+  Änderungen werden vor der Anwendung in einer Vorschau angezeigt und bestätigt.
+
+  **Benutzerdefinierte Ignorierliste:** Fügen Sie projektspezifische Begriffe zu Ihrer docs.json hinzu:
+
+  ```json docs.json
+  {
+    "spellcheck": {
+      "ignore": ["YourProduct", "kubectl", "Terraform"]
+    }
+  }
+  ```
+
+  Der Projektname aus `docs.json` wird automatisch ignoriert.
+</Accordion>
+
+<Accordion title="jamdesk openapi-check" icon="file-code">
+  Validieren Sie eine einzelne OpenAPI-Spezifikationsdatei.
+
+  ```bash
+  jamdesk openapi-check openapi.yaml
+  jamdesk openapi-check api/spec.json
+  ```
+
+  **Validiert:**
+  - Gültige YAML-/JSON-Syntax
+  - OpenAPI-3.x-Schema-Konformität
+  - Endpoint-Definitionen
+  - `$ref`-Referenzen werden korrekt aufgelöst
+</Accordion>
+
+<Note>
+  **Ihre OpenAPI-Spezifikationen werden an drei Stellen validiert.** `jamdesk dev` stoppt beim Start, wenn eine referenzierte Spezifikation ungültig ist, und `jamdesk validate` / `jamdesk openapi-check` prüfen Spezifikationen auf Anfrage. Beim Bereitstellen validiert der Cloud-Build Ihre referenzierten Spezifikationen ebenfalls, dort jedoch als **nicht kritische Warnung**: Der Rest Ihrer Dokumentation wird weiterhin veröffentlicht, und Sie erhalten per E-Mail sowie in der Build-Liste des Dashboards genaue Informationen zum Fehler (einen Analysefehler mit Zeile und Spalte, eine nicht auflösbare `$ref`-Referenz oder eine doppelte `operationId`). Beheben Sie die Spezifikation und pushen Sie sie erneut, um die Warnung zu entfernen.
+</Note>
+
+### Dateiverwaltung
+
+<Accordion title="jamdesk rename" icon="file-pen">
+  Benennen Sie eine Seite um und aktualisieren Sie automatisch alle Verweise.
+
+  ```bash
+  jamdesk rename docs/old-name.mdx docs/new-name.mdx
+  ```
+
+  **Dabei wird Folgendes ausgeführt:**
+  - Datei umbenennen
+  - Navigation in docs.json aktualisieren
+  - Links in allen anderen MDX-Dateien aktualisieren
+  - Verweise auf Snippets aktualisieren
+
+  Verwenden Sie diesen Befehl statt einer manuellen Umbenennung, damit alle Verweise synchron bleiben.
+</Accordion>
+
+### Migration
+
+<Accordion title="jamdesk migrate" icon="right-left">
+  Migrieren Sie Dokumentation von Mintlify zu Jamdesk.
+
+  ```bash
+  jamdesk migrate
+  ```
+
+  Erkennt Ihre Mintlify-Konfiguration und konvertiert sie in das Jamdesk-Format. Im selben Durchlauf werden veraltete Komponenten umbenannt (z. B. `CardGroup` → `Columns`), verwaiste MDX-Snippet-Dateien nach `/snippets/` verschoben und elternrelative Imports umgeschrieben, Inline-Komponenten mit React-Hooks nach `/snippets/<name>.tsx` extrahiert und mit `'use client'` versehen sowie mechanische MDX-Syntaxprobleme automatisch korrigiert. Der Vorgang ist idempotent und kann daher sicher erneut ausgeführt werden.
+
+  <Card title="Migrationsleitfaden" icon="right-left" href="/de/setup/migration">
+    Vollständiger Migrationsleitfaden mit Schritt-für-Schritt-Anleitungen für Mintlify und andere Plattformen
+  </Card>
+</Accordion>
+
+### Bereitstellung
+
+<Accordion title="jamdesk deploy" icon="cloud-arrow-up">
+  Laden Sie Ihre Dokumentation hoch und starten Sie direkt vom Terminal aus einen Build.
+
+  ```bash
+  jamdesk deploy
+  jamdesk deploy --detach
+  jamdesk deploy --full-rebuild
+  ```
+
+  Der Fortschritt wird live angezeigt, sobald jede Build-Phase abgeschlossen ist. Auch als `jamdesk push` verfügbar.
+
+  | Flag | Beschreibung |
+  |------|-------------|
+  | `--detach` | In die Warteschlange einreihen und sofort beenden |
+  | `--full-rebuild` | Vollständigen Neuaufbau erzwingen (ohne Cache) |
+  | `--project <id>` | In einem bestimmten Projekt bereitstellen |
+  | `--allow-empty` | Bereitstellung ohne `.mdx`-Inhaltsseiten erlauben (standardmäßig abgelehnt) |
+
+  <Card title="CLI-Bereitstellungsleitfaden" icon="cloud-arrow-up" href="/de/cli/deploy">
+    Vollständige Bereitstellungspipeline, Build-Phasen, Fehlerreferenz und Fehlerbehebung
+  </Card>
+</Accordion>
+
+<Accordion title="jamdesk deploy-proxy cloudflare" icon="cloud">
+  Erstellen und stellen Sie einen Cloudflare Worker bereit, der `/docs` auf Ihrer eigenen Domain an Ihre Jamdesk-Website weiterleitet.
+
+  ```bash
+  jamdesk deploy-proxy cloudflare
+  jamdesk deploy-proxy cloudflare --slug myproject --domain example.com --yes
+  ```
+
+  Standardmäßig interaktiv: Der Befehl prüft Wrangler, verifiziert Ihr Cloudflare-Konto, erkennt Ihren Slug automatisch aus `docs.json`, generiert die Worker-Dateien und stellt sie optional bereit. Mit `--yes` werden die Dateien generiert und der Vorgang beendet. Stellen Sie den Worker anschließend mit `npx wrangler deploy` aus dem Ausgabeverzeichnis bereit.
+
+  | Flag | Beschreibung |
+  |------|-------------|
+  | `--slug <slug>` | Jamdesk-Projektslug |
+  | `--domain <domain>` | Zieldomain (z. B. `example.com`) |
+  | `--path <path>` | Pfadpräfix (Standard: `/docs`) |
+  | `--output-dir <dir>` | Ausgabeverzeichnis (Standard: `cloudflare-worker/`) |
+  | `--skip-deploy` | Die Abfrage „Jetzt bereitstellen?“ bei einer interaktiven Ausführung überspringen |
+  | `--force` | Ausgabeverzeichnis überschreiben, falls es bereits existiert |
+  | `--yes` | Jede Abfrage mit ihrem Standardwert beantworten (CI-Modus). Stellt niemals bereit und überschreibt niemals ein vorhandenes Verzeichnis |
+
+  <Card title="Leitfaden für Cloudflare Workers" icon="cloud" href="/de/deploy/cloudflare">
+    Worker-Einrichtung, Routenmuster und Caching-Konfiguration
+  </Card>
+</Accordion>
+
+### Wartung
+
+<Accordion title="jamdesk doctor" icon="stethoscope">
+  Überprüfen Sie Ihre Umgebung und diagnostizieren Sie Probleme.
+
+  ```bash
+  jamdesk doctor
+  ```
+
+  **Prüft:**
+  - Node.js-Version (erfordert v20+)
+  - npm-Version
+  - Ob docs.json vorhanden und gültig ist
+  - Status des ~/.jamdesk-Cache
+  - Schreibberechtigungen
+
+  Führen Sie diesen Befehl aus, wenn Probleme mit der CLI auftreten.
+</Accordion>
+
+<Accordion title="jamdesk clean" icon="broom">
+  Löschen Sie das Cache-Verzeichnis ~/.jamdesk.
+
+  ```bash
+  jamdesk clean
+  ```
+
+  Dadurch werden zwischengespeicherte Abhängigkeiten und Build-Artefakte entfernt. Verwenden Sie den Befehl, um:
+  - Speicherplatz freizugeben
+  - Probleme mit einem beschädigten Cache zu beheben
+  - Eine frische Installation der Abhängigkeiten zu erzwingen
+
+  Abhängigkeiten werden beim nächsten `jamdesk dev` erneut installiert.
+</Accordion>
+
+<Accordion title="jamdesk update" icon="arrow-up">
+  Aktualisieren Sie die CLI auf die neueste Version.
+
+  ```bash
+  jamdesk update
+  ```
+
+  Sie können auch manuell aktualisieren:
+
+  ```bash
+  npm update -g jamdesk
+  ```
+</Accordion>
+
+## Konfiguration
+
+Erstellen Sie `~/.jamdeskrc`, um Standardoptionen festzulegen:
+
+```json
+{
+  "defaultPort": 3001,
+  "verbose": false,
+  "checkUpdates": true
+}
+```
+
+| Option | Typ | Standard | Beschreibung |
+|--------|------|---------|-------------|
+| `defaultPort` | number | 3000 | Standardport für den Entwicklungsserver |
+| `verbose` | boolean | false | Ausführliche Ausgabe standardmäßig aktivieren |
+| `checkUpdates` | boolean | true | Beim Start nach CLI-Updates suchen |
+
+## Fehlerbehebung
+
+<AccordionGroup>
+  <Accordion title="MDX-Syntaxfehler">
+    MDX-Dateien werden als JSX geparst, daher haben bestimmte Zeichen eine besondere Bedeutung.
+
+    **Häufiges Problem:** Das Zeichen `<` wird als Anfang eines JSX-Tags interpretiert.
+
+    ```text
+    ✗ Found 1 MDX syntax error(s)
+
+      getting-started.mdx:42
+        Unexpected character `5` (U+0035) before name
+        Fix: A < character is being parsed as JSX. Use &lt; or rewrite
+    ```
+
+    **Lösungen:**
+    - Verwenden Sie `&lt;` für ein wörtliches Kleiner-als-Zeichen: `Values &lt;50% are low`
+    - Formulieren Sie den Text ohne das Zeichen: `"Below 50%"` statt `"<50%"`
+    - Führen Sie `jamdesk validate` aus, um detaillierte Fehlermeldungen mit Zeilennummern zu erhalten
+  </Accordion>
+
+  <Accordion title="docs.json nicht gefunden">
+    Stellen Sie sicher, dass Sie sich in einem Verzeichnis mit einer Datei `docs.json` befinden.
+
+    **Lösungen:**
+    - Führen Sie `jamdesk init` aus, um ein neues Projekt zu erstellen
+    - Prüfen Sie, ob Sie sich im richtigen Verzeichnis befinden
+    - Überprüfen Sie, dass die Datei genau `docs.json` heißt (nicht `doc.json` oder ähnlich)
+  </Accordion>
+
+  <Accordion title="Entwicklungsserver startet nicht">
+    Der Entwicklungsserver kann aus mehreren Gründen möglicherweise nicht starten.
+
+    **Probieren Sie diese Schritte:**
+    1. Führen Sie `jamdesk doctor` aus, um Ihre Umgebung zu prüfen
+    2. Führen Sie `jamdesk clean` aus, um den Cache zu leeren
+    3. Verwenden Sie `jamdesk dev --verbose` für eine detaillierte Fehlerausgabe
+    4. Prüfen Sie, ob Node.js v20+ installiert ist: `node --version`
+  </Accordion>
+
+  <Accordion title="Langsamer erster Start">
+    Beim ersten Start werden Abhängigkeiten nach `~/.jamdesk/node_modules` installiert.
+
+    Das ist normal und geschieht nur einmal. Nachfolgende Starts sind deutlich schneller.
+  </Accordion>
+
+  <Accordion title="Port wird bereits verwendet">
+    Ein anderer Prozess verwendet den Standardport.
+
+    **Lösungen:**
+    ```bash
+    # Use a different port
+    jamdesk dev --port 3001
+
+    # Or set a default in ~/.jamdeskrc
+    { "defaultPort": 3001 }
+    ```
+  </Accordion>
+
+  <Accordion title="Fehler wegen fehlender Berechtigungen">
+    Möglicherweise haben Sie keine Schreibberechtigung für das Cache-Verzeichnis.
+
+    **Lösungen:**
+    1. Prüfen Sie die Berechtigungen für `~/.jamdesk`: `ls -la ~/.jamdesk`
+    2. Eigentümer ändern: `sudo chown -R $(whoami) ~/.jamdesk`
+    3. Führen Sie `jamdesk clean` aus und versuchen Sie es erneut
+  </Accordion>
+</AccordionGroup>
+
+**Bestehen weiterhin Probleme?** Lesen Sie den [Leitfaden zur CLI-Fehlerbehebung](/de/help/troubleshooting/cli-issues) oder [eröffnen Sie ein Issue auf GitHub](https://github.com/jamdesk/jamdesk-cli/issues).
+
+## Wie geht es weiter?
+
+<Columns cols={2}>
+  <Card title="Authentifizierung" icon="key" href="/de/cli/authentication">
+    Anmeldeablauf, Sitzungen und Fehlerbehebung
+  </Card>
+  <Card title="CLI-Bereitstellung" icon="cloud-arrow-up" href="/de/cli/deploy">
+    Vom Terminal aus bereitstellen
+  </Card>
+  <Card title="Lokale Vorschau" icon="eye" href="/de/development/local-preview">
+    Erweiterte Optionen für die lokale Entwicklung
+  </Card>
+  <Card title="Migrationsleitfaden" icon="right-left" href="/de/setup/migration">
+    Von Mintlify oder anderen Plattformen migrieren
+  </Card>
+</Columns>

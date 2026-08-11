@@ -1,0 +1,354 @@
+---
+title: Migrationsleitfaden
+description: Wechseln Sie von einer anderen Dokumentationsplattform? Jamdesk unterstützt die automatische oder manuelle Migration mit voller Kontrolle.
+---
+<Visibility for="agents">
+
+  Sehen Sie sich die saubere Markdown-Version dieser Seite unter https://jamdesk.com/docs/setup/migration.md an.
+
+</Visibility>
+
+
+
+Mintlify-Projekte bieten einen Pfad mit einem einzigen Befehl: `jamdesk migrate` liest `mint.json`, schreibt `docs.json` und schreibt Ihr MDX direkt um. Wechseln Sie von GitBook, Docusaurus, ReadMe, Confluence oder einer anderen Plattform? Der Tab „Andere Plattformen“ führt durch die manuellen Schritte. Diese sind kurz, wenn Sie Ihre Inhalte als Markdown exportieren können.
+
+<YouTube id="DvIHWeBliK0" />
+
+<Info>
+**Exportieren Sie zuerst als Markdown, wenn möglich.** Jamdesk basiert auf MDX. Alles, was bereits als Markdown vorliegt, kann mit einer Umbenennung in `.mdx` und einigen Frontmatter-Zeilen übernommen werden.
+</Info>
+
+## Wählen Sie Ihren Pfad
+
+<Tabs>
+  <Tab title="Von Mintlify">
+    Die CLI übernimmt den größten Teil der Arbeit für Sie.
+
+    <Card title="Leitfaden von Mintlify zu Jamdesk" icon="book-open" href="https://jamdesk.com/blog/migrating-from-mintlify-to-jamdesk">
+      Lesen Sie den Migrationsleitfaden mit Hintergrundinformationen, Beispielen und Migrationstipps.
+    </Card>
+
+    ### Automatische Migration
+
+    <Steps>
+      <Step title="CLI installieren">
+        ```bash
+        npm install -g jamdesk
+        ```
+      </Step>
+      <Step title="Migration ausführen">
+        ```bash
+        jamdesk migrate
+        ```
+
+        Vom Projektstamm aus führt dieser Befehl Folgendes in einem Durchlauf aus:
+
+        - Liest `mint.json` und schreibt `docs.json`
+        - Benennt veraltete Komponenten in MDX-Dateien um (z. B. `CardGroup` → `Columns`)
+        - Verschiebt verwaiste MDX-Snippet-Dateien nach `/snippets/` und schreibt alle übergeordneten relativen Imports (`../foo/bar.mdx`) in stammrelative Imports (`/snippets/foo/bar.mdx`) um
+        - Extrahiert Inline-Komponenten, die React-Hooks verwenden, mit der Direktive `'use client'` nach `/snippets/<name>.tsx` und schreibt das ursprüngliche MDX so um, dass es aus `/snippets/` importiert
+        - Behebt automatisch mechanische MDX-Syntaxprobleme, die den Build zum Absturz bringen würden
+
+        Der Befehl ist idempotent: Führen Sie ihn nach Änderungen erneut aus, werden nur neue Änderungen übernommen. Alles, was nicht sicher automatisch verarbeitet werden kann, wird als Warnung mit der Datei, dem Import und der erforderlichen Aktion ausgegeben.
+      </Step>
+      <Step title="Überprüfen und anpassen">
+        Prüfen Sie die generierten Dateien `docs.json` und MDX. Überprüfen Sie die Navigationsstruktur und alle von der CLI ausgegebenen Warnungen.
+      </Step>
+    </Steps>
+
+    ### Konfigurationszuordnung
+
+    Die CLI konvertiert `mint.json` automatisch in `docs.json`. Dies sind die wichtigsten Unterschiede, anhand derer Sie die Ausgabe überprüfen können.
+
+    **Mintlify (`mint.json`):**
+    ```json
+    {
+      "name": "My Docs",
+      "navigation": [
+        { "group": "Getting Started", "pages": ["introduction", "quickstart"] }
+      ],
+      "colors": { "primary": "#0D9373" },
+      "topbarLinks": [{ "name": "Blog", "url": "https://example.com/blog" }]
+    }
+    ```
+
+    **Jamdesk (`docs.json`):**
+    ```json
+    {
+      "$schema": "https://jamdesk.com/docs.json",
+      "name": "My Docs",
+      "theme": "jam",
+      "colors": { "primary": "#0D9373" },
+      "navbar": {
+        "links": [{ "label": "Blog", "href": "https://example.com/blog" }]
+      },
+      "navigation": {
+        "groups": [
+          { "group": "Getting Started", "pages": ["introduction", "quickstart"] }
+        ]
+      }
+    }
+    ```
+
+    ### Kompatibilität der Komponenten
+
+    Die meisten Mintlify-Komponenten haben direkte Entsprechungen in Jamdesk. Einige unterscheiden sich jedoch bei Namen oder Syntax.
+
+    | Mintlify-Komponente | Jamdesk-Entsprechung | Hinweise |
+    |---|---|---|
+    | `<Card>` | `<Card>` | Gleiche Syntax |
+    | CardGroup | `<Columns>` | Verwenden Sie die Prop `cols` für die Spaltenanzahl |
+    | `<Columns>` | `<Columns>` | Gleiche Syntax |
+    | `<Accordion>` | `<Accordion>` | Gleiche Syntax |
+    | `<Tabs>` / `<Tab>` | `<Tabs>` / `<Tab>` | Gleiche Syntax |
+    | `<Steps>` / `<Step>` | `<Steps>` / `<Step>` | Gleiche Syntax |
+    | `<CodeGroup>` | `<CodeGroup>` | Gleiche Syntax |
+    | `<Tip>`, `<Note>`, `<Warning>` | `<Tip>`, `<Note>`, `<Warning>` | Gleiche Syntax |
+    | `<ResponseField>` | `<ParamField>` | Anderer Name |
+    | `<Snippet>` | Import aus `/snippets/` | Anderer Ansatz |
+
+    ### Häufige Probleme
+
+    <AccordionGroup>
+      <Accordion title="CardGroup wird zu Columns">
+        `jamdesk migrate` benennt `CardGroup` in allen MDX-Dateien für Sie in `Columns` um. Die Prop `cols` wird unverändert übernommen. Überprüfen Sie alle Dateien, die Sie nach der Migration bearbeitet haben.
+      </Accordion>
+      <Accordion title="ResponseField wird zu ParamField">
+        Benennen Sie `<ResponseField>` in `<ParamField>` um. Die Props bleiben unverändert.
+
+        ```mdx
+        {/* Before */}
+        <ResponseField name="id" type="string" required>
+          The unique identifier
+        </ResponseField>
+
+        {/* After */}
+        <ParamField name="id" type="string" required>
+          The unique identifier
+        </ParamField>
+        ```
+      </Accordion>
+      <Accordion title="Snippets werden automatisch verschoben und neu verknüpft">
+        Jamdesk löst nur stammrelative `/snippets/*`-Imports auf. Mintlify-Projekte speichern MDX-Snippet-Dateien häufig an beliebigen Stellen im Verzeichnisbaum und importieren sie mit übergeordneten relativen Pfaden (`import X from '../shared/x.mdx'`).
+
+        `jamdesk migrate` führt hier in einem Durchlauf drei Aktionen aus:
+
+        - Erkennt MDX-Dateien, die als Snippets importiert werden, aber außerhalb von `/snippets/` liegen, und verschiebt sie unter `/snippets/`, wobei ihr relativer Pfad erhalten bleibt (damit Snippets mit vorangestellter Sprachkennung wie `de/foo.mdx` nicht kollidieren).
+        - Schreibt jeden übergeordneten relativen Snippet-Import in jeder MDX-Datei in den neuen stammrelativen Pfad um.
+        - Extrahiert jede Inline-Komponente, die React-Hooks verwendet, in eine `'use client'`-Datei unter `/snippets/<name>.tsx` und ersetzt den Inline-Export durch einen Import aus `/snippets/`.
+
+        Wenn Sie das Mintlify-JSX-Element `<Snippet file="my-snippet.mdx" />` verwendet haben, ersetzen Sie es durch einen MDX-Import. Dieses Element wird nicht automatisch umgeschrieben:
+
+        ```mdx
+        {/* Before (Mintlify) */}
+        <Snippet file="my-snippet.mdx" />
+
+        {/* After (Jamdesk) */}
+        import MySnippet from '/snippets/my-snippet.mdx'
+
+        <MySnippet />
+        ```
+
+        Das Verschieben ist konservativ. Wenn Ihr Projekt keine aufgelöste Navigation besitzt oder die geplanten Verschiebungen `max(5, 25%)` aller MDX-Dateien überschreiten, wird der Vorgang abgebrochen, ohne Änderungen vorzunehmen, und der Grund ausgegeben. Führen Sie den Befehl nach Behebung des Abbruchgrunds erneut aus.
+      </Accordion>
+      <Accordion title="topbarLinks wird navbar.links zugeordnet">
+        Sowohl `topbarLinks` als auch `topbarCtaButton` von Mintlify werden in `docs.json` `navbar.links` zugeordnet. Das Feld `name` wird zu `label`, und `url` wird zu `href`.
+      </Accordion>
+    </AccordionGroup>
+  </Tab>
+
+  <Tab title="Von anderen Plattformen">
+    Für GitBook, ReadMe, Docusaurus, Confluence, Notion oder andere Dokumentationstools.
+
+    <Card title="HTML-zu-MDX-Konverter" icon="file-code" href="https://jamdesk.com/utilities/html-to-mdx" horizontal>
+      Exportieren Sie von einer Plattform, die HTML bereitstellt (Confluence, Notion und viele andere)? Fügen Sie den Inhalt in den kostenlosen HTML-zu-MDX-Konverter ein, um sauberes MDX zu erhalten, das Sie direkt in Ihr Projekt übernehmen können.
+    </Card>
+
+    <Tip>
+      Benötigen Sie Hilfe bei Ihrer Migration? [Kontaktieren Sie uns](mailto:contact@jamdesk.com), und wir unterstützen Sie bei der Einrichtung.
+    </Tip>
+
+    ### Von GitBook
+
+    GitBook speichert Inhalte als Markdown mit einer Datei `SUMMARY.md` für die Navigation.
+
+    <Steps>
+      <Step title="Inhalte exportieren">
+        Exportieren Sie Ihren GitBook-Bereich als Markdown. Wenn Sie die Git-Synchronisierung von GitBook verwenden, liegen Ihre Inhalte bereits als `.md`-Dateien in einem Git-Repository.
+      </Step>
+      <Step title="Dateien in MDX konvertieren">
+        Benennen Sie `.md`-Dateien in `.mdx` um und fügen Sie jeder Datei Frontmatter hinzu:
+
+        ```mdx
+        ---
+        title: Your Page Title
+        description: A short description of the page
+        ---
+
+        Your existing Markdown content here.
+        ```
+      </Step>
+      <Step title="Navigation aus SUMMARY.md zuordnen">
+        GitBook verwendet `SUMMARY.md`, um seine Seitenleiste zu definieren. Konvertieren Sie diese in Navigationsgruppen in `docs.json`.
+
+        **GitBook (`SUMMARY.md`):**
+        ```markdown
+        # Summary
+
+        ## Getting Started
+        * [Introduction](introduction.md)
+        * [Quick Start](quickstart.md)
+
+        ## API Reference
+        * [Authentication](api/auth.md)
+        ```
+
+        **Jamdesk (`docs.json`):**
+        ```json
+        {
+          "navigation": {
+            "groups": [
+              {
+                "group": "Getting Started",
+                "pages": ["introduction", "quickstart"]
+              },
+              {
+                "group": "API Reference",
+                "pages": ["api/auth"]
+              }
+            ]
+          }
+        }
+        ```
+      </Step>
+      <Step title="Bilder verschieben">
+        Verschieben Sie alle Bilder in ein Verzeichnis `/images` und aktualisieren Sie die Verweise in Ihren MDX-Dateien so, dass sie absolute Pfade verwenden (z. B. `/images/screenshot.png`).
+      </Step>
+      <Step title="Lokal testen">
+        ```bash
+        jamdesk dev
+        ```
+      </Step>
+    </Steps>
+
+    ### Von Docusaurus
+
+    Docusaurus-Projekte verwenden bereits MDX, daher lässt sich der Großteil der Inhalte direkt übertragen.
+
+    <Steps>
+      <Step title="MDX-Dateien kopieren">
+        Kopieren Sie den Inhalt Ihres Docusaurus-Verzeichnisses `docs/` in den Projektstamm Ihres Jamdesk-Projekts. Behalten Sie Ihre bestehende Verzeichnisstruktur bei.
+      </Step>
+      <Step title="Frontmatter bereinigen">
+        Entfernen Sie Docusaurus-spezifische Frontmatter-Felder. Behalten Sie `title` und `description`, und entfernen Sie die übrigen Felder.
+
+        ```yaml
+        ---
+        # Remove these Docusaurus fields
+        sidebar_position: 3
+        sidebar_label: "Custom Label"
+        slug: /custom-url
+        pagination_next: null
+
+        # Keep these
+        title: Your Page Title
+        description: A short description
+        ---
+        ```
+      </Step>
+      <Step title="sidebars.js docs.json zuordnen">
+        Konvertieren Sie die Kategorienstruktur von `sidebars.js` in Navigationsgruppen von `docs.json`.
+
+        **Docusaurus (`sidebars.js`):**
+        ```javascript
+        module.exports = {
+          docs: [
+            {
+              type: 'category',
+              label: 'Getting Started',
+              items: ['intro', 'installation'],
+            },
+          ],
+        };
+        ```
+
+        **Jamdesk (`docs.json`):**
+        ```json
+        {
+          "navigation": {
+            "groups": [
+              {
+                "group": "Getting Started",
+                "pages": ["intro", "installation"]
+              }
+            ]
+          }
+        }
+        ```
+      </Step>
+      <Step title="Docusaurus-Komponenten ersetzen">
+        Ersetzen Sie Docusaurus-spezifische Komponenten durch die entsprechenden Jamdesk-Komponenten.
+
+        | Docusaurus | Jamdesk | Beispiel |
+        |---|---|---|
+        | `:::note` / `:::tip` / `:::warning` | `<Note>` / `<Tip>` / `<Warning>` | Siehe [Callout-Komponenten](/de/components/overview) |
+        | `import Tabs from '@theme/Tabs'` | `<Tabs>` (global verfügbar) | Kein Import erforderlich |
+        | `import TabItem from '@theme/TabItem'` | `<Tab>` (global verfügbar) | Verwenden Sie `title` statt `label` |
+      </Step>
+      <Step title="Lokal testen">
+        ```bash
+        jamdesk dev
+        ```
+      </Step>
+    </Steps>
+
+    ### Von anderen Tools
+
+    Für Confluence, Notion, ReadMe oder jede andere Plattform ist der Ablauf gleich: Übertragen Sie Ihre Inhalte in Markdown und richten Sie anschließend die Jamdesk-Projektstruktur ein.
+
+    <Steps>
+      <Step title="Als Markdown exportieren">
+        Die meisten Plattformen bieten eine Markdown- oder HTML-Exportoption. Verwenden Sie Markdown, sofern verfügbar. Konvertieren Sie HTML mit einem Tool wie [Pandoc](https://pandoc.org/) in Markdown.
+
+        ```bash
+        # Convert HTML to Markdown with Pandoc
+        pandoc input.html -f html -t markdown -o output.md
+        ```
+      </Step>
+      <Step title="docs.json erstellen">
+        Beginnen Sie mit einer minimalen Konfiguration und erweitern Sie die Navigation, wenn Sie weitere Seiten hinzufügen.
+      </Step>
+      <Step title="Dateien in MDX konvertieren">
+        Benennen Sie `.md`-Dateien in `.mdx` um und fügen Sie jeder Datei Frontmatter (`title`, `description`) hinzu.
+      </Step>
+      <Step title="Assets verschieben">
+        Verschieben Sie Bilder und andere Assets in ein Verzeichnis `/images`. Aktualisieren Sie die Dateiverweise so, dass sie absolute Pfade verwenden.
+      </Step>
+      <Step title="Lokal testen">
+        ```bash
+        jamdesk dev
+        ```
+      </Step>
+    </Steps>
+  </Tab>
+</Tabs>
+
+## Checkliste nach der Migration
+
+<Check>Alle Seiten werden fehlerfrei dargestellt</Check>
+<Check>Die Navigationsstruktur entspricht Ihrer ursprünglichen Website</Check>
+<Check>Interne Links funktionieren ordnungsgemäß</Check>
+<Check>Bilder und Assets werden korrekt angezeigt</Check>
+<Check>Codeblöcke verwenden die richtige Syntaxhervorhebung</Check>
+<Check>Die Suche indiziert Ihre Inhalte</Check>
+
+## Wie geht es weiter?
+
+<Columns cols={2}>
+  <Card title="Verzeichnisstruktur" icon="folder-tree" href="/de/setup/directory-structure">
+    Erfahren Sie, wie Sie Ihre Dokumentation organisieren
+  </Card>
+  <Card title="Referenz zu docs.json" icon="gear" href="/de/config/docs-json-reference">
+    Konfigurieren Sie die Einstellungen Ihrer Website
+  </Card>
+</Columns>

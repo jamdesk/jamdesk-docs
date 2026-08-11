@@ -1,0 +1,157 @@
+---
+title: PDF-Export
+description: Exportieren Sie Ihre gesamte Dokumentationswebsite als PDF. Aus dem Dashboard herunterladbar und per E-Mail zugestellt. Nur für kostenpflichtige Tarife.
+---
+
+Exportieren Sie Ihre Dokumentationswebsite über das Dashboard als einzelnes PDF. Jamdesk rendert jede veröffentlichte Seite in eine Datei, sendet Ihnen eine E-Mail mit einem Download-Link, sobald sie bereit ist, und stellt das PDF bis zu Ihrem nächsten Docs-Build erneut zum Download bereit.
+
+<Card title="Beispiel-PDF herunterladen" icon="file-pdf" href="https://github.com/jamdesk/jamdesk-docs/releases/download/sample-pdf-v1/jamdesk-docs.pdf">
+  Sehen Sie, wie ein echter Export aussieht. Die vollständige Jamdesk-Dokumentationswebsite, gerendert über dieselbe Pipeline. 408 Seiten, 6.6 MB.
+</Card>
+
+Der PDF-Export ist nützlich für:
+
+- Das Teilen von Dokumentation mit Prüfern, die keinen Dashboard-Zugriff haben
+- Offline-Lesen im Flugzeug, in gesicherten Einrichtungen oder bei Kunden vor Ort
+- Compliance- und Audit-Snapshots eines bestimmten Commits
+- Pakete zur Übergabe an Kunden
+
+## Wer kann es nutzen
+
+Der PDF-Export ist in jedem **kostenpflichtigen Tarif** ohne zusätzliche Kosten enthalten. Es muss kein Add-on erworben werden. Jedes Projekt kann bis zu **3 PDFs pro Tag** generieren. Der Zähler wird um Mitternacht UTC zurückgesetzt.
+
+## PDF generieren
+
+<Steps>
+  <Step title="Open Settings → PDF Exports">
+    Wählen Sie im Dashboard das Projekt aus der Seitenleiste aus, klicken Sie auf **Settings** und scrollen Sie zum Abschnitt **PDF Exports** unter den Projektmetadaten.
+  </Step>
+  <Step title="Click Generate PDF">
+    Die Schaltfläche wechselt zu **Generating…**, während Jamdesk die Website in einem Headless-Browser rendert und das PDF im Speicher ablegt. Die Dauer hängt von der Seitenanzahl und der enthaltenen Bildmenge ab. Die meisten Websites sind in wenigen Minuten fertig.
+  </Step>
+  <Step title="Watch for the email">
+    Sobald das PDF bereit ist, senden wir dem angemeldeten Benutzer eine E-Mail mit einem Link zurück zur Settings-Seite. Sie können die Seite auch einfach geöffnet lassen; der Status wird live aktualisiert.
+  </Step>
+  <Step title="Download">
+    Klicken Sie auf **Download PDF**. Informationen zu ablaufenden Links finden Sie unter [Gültigkeitsdauer des Download-Links](#gültigkeitsdauer-des-download-links).
+  </Step>
+</Steps>
+
+## Mehrsprachige Projekte
+
+Wenn in Ihrer `docs.json` mehr als eine Sprache konfiguriert ist, wird neben der Schaltfläche **Generate PDF** ein Dropdown-Menü für die Sprache angezeigt.
+
+```json docs.json
+{
+  "navigation": {
+    "languages": [
+      { "language": "en", "default": true },
+      { "language": "es" },
+      { "language": "fr" }
+    ]
+  }
+}
+```
+
+Jeder Export umfasst eine einzelne Sprache. Um alle drei Sprachen an einen Prüfer zu senden, wählen Sie `en`, exportieren Sie, wählen Sie anschließend `es`, exportieren Sie erneut und wiederholen Sie den Vorgang mit `fr`.
+
+## Caching und Regenerate
+
+Die Settings-Seite speichert pro Projekt nur den **zuletzt** abgeschlossenen Export. Wenn Sie auf **Regenerate** klicken, prüft Jamdesk, ob der letzte Export sowohl mit dem aktuellen Build als auch mit der angeforderten Sprache übereinstimmt:
+
+- **Gleicher Build und gleiche Sprache** → Das zwischengespeicherte PDF wird sofort zurückgegeben. Sie sehen einen Hinweis, dass sich seit dem letzten Export nichts geändert hat.
+- **Neuer Build oder andere Sprache** → Ein neuer Render-Vorgang wird gestartet. Ein Klick auf **Rebuild** zählt als neuer Build, auch wenn der Commit unverändert ist.
+
+Da der Cache nur einen einzigen Eintrag enthält, ersetzt der Export einer zweiten Sprache oder eines neuen Builds den bisherigen Eintrag. Das frühere PDF wird nicht gelöscht, ist aber auf der Settings-Seite nicht mehr als aktueller Export verfügbar.
+
+So erstellen Sie nach der Aktualisierung Ihrer Dokumentation ein neues PDF:
+
+<Steps>
+  <Step title="Ship new content">
+    Pushen Sie Ihre Änderungen zu GitHub oder verwenden Sie `jamdesk deploy` über die CLI.
+  </Step>
+  <Step title="Wait for the build to finish">
+    Die Builds-Liste im Dashboard zeigt beim neuen Commit **Completed** an.
+  </Step>
+  <Step title="Regenerate">
+    Klicken Sie auf der Settings-Seite auf **Regenerate**. Seit dem zwischengespeicherten Export wurde ein neuer Build abgeschlossen, daher startet Jamdesk einen neuen Render-Vorgang.
+  </Step>
+</Steps>
+
+Sie können bedenkenlos jederzeit auf **Regenerate** klicken. Wenn kein neuer Build abgeschlossen wurde, wird weder erneut gerendert noch eine weitere E-Mail versendet.
+
+## Ratenbegrenzung
+
+Jedes Projekt hat zwei Limits:
+
+- **3 abgeschlossene Exporte pro Tag.** Der Zähler wird um Mitternacht UTC zurückgesetzt. Das Dashboard zeigt an, wie viele Sie bereits verwendet haben.
+- **5 Minuten zwischen Exporten.** Anfragen innerhalb dieses Zeitraums geben `Try again in a few minutes` zurück.
+
+Cache-Treffer (gleicher Build und gleiche Sprache wie beim vorherigen Export) umgehen beide Limits. Wiederholte Downloads eines unveränderten PDFs stoßen daher nie an das Limit.
+
+Ein PDF, dessen Generierung länger als zwanzig Minuten dauert, wird als veraltet eingestuft. Sie können erneut auf **Generate PDF** klicken, um die Generierung wieder in die Warteschlange einzureihen.
+
+## Was exportiert wird
+
+Das PDF enthält jede Seite, die in der `docs.json`-Navigation für die ausgewählte Sprache aufgeführt ist, in der Reihenfolge ihrer Deklaration. Externe Links in der Navigation werden übersprungen. Verwaiste Seiten (Dateien in Ihrem Repository, die nicht mit der Navigation verknüpft sind) werden nicht einbezogen.
+
+Jede Seite wird über dieselbe URL gerendert, die auch ein Leser aufrufen würde (`https://<slug>.jamdesk.app/<path>`). Daher erscheint im PDF alles, was im Browser angezeigt wird.
+
+## Passwortgeschützte Websites
+
+Wenn Ihre Website [passwortgeschützt](/de/setup/password-protection) ist, wird kein PDF generiert. Deaktivieren Sie den Passwortschutz für den Export und aktivieren Sie ihn anschließend wieder.
+
+## E-Mail-Zustellung
+
+Sobald das PDF bereit ist, erhält die Person, die auf **Generate PDF** geklickt hat, eine E-Mail mit einem Link zurück zum Abschnitt Settings → PDF Exports sowie der Seitenanzahl, dem Zeitstempel und der Sprache (bei mehrsprachigen Projekten). Das Dashboard wechselt ebenfalls live in den Status „bereit“; Sie benötigen die E-Mail nicht zum Herunterladen.
+
+Nur der Anforderer erhält eine E-Mail. Andere Mitwirkende sehen das neue PDF, sobald sie die Settings-Seite erneut öffnen.
+
+<Warning>
+  Wenn die E-Mail nicht innerhalb weniger Minuten nach Abschluss eintrifft, überprüfen Sie Ihren Spam-Ordner. Das PDF ist unabhängig davon, ob die E-Mail zugestellt wurde, weiterhin im Dashboard verfügbar.
+</Warning>
+
+## Gültigkeitsdauer des Download-Links
+
+Download-Links aus E-Mails sind ab dem Zeitpunkt, an dem die PDF-Erstellung abgeschlossen ist, **72 Stunden** gültig. Das Dashboard erstellt bei jedem Öffnen der Settings-Seite eine neue URL, sodass Downloads aus dem Dashboard nicht ablaufen. Wenn ein Link aus einer E-Mail den Fehler 403 zurückgibt, öffnen Sie das Dashboard und klicken Sie dort auf **Download PDF**.
+
+## Fehlerbehebung
+
+<Accordion title="'No completed build found — trigger a build first'">
+  Der PDF-Export rendert eine gebaute Website, nicht Ihr Quell-MDX. Sie benötigen mindestens einen erfolgreichen Build auf Ihrem Standard-Branch. Pushen Sie einen Commit oder klicken Sie auf der Builds-Seite auf **Rebuild**, warten Sie den Abschluss ab und versuchen Sie es anschließend erneut.
+</Accordion>
+
+<Accordion title="'PDF export requires a paid plan'">
+  Ihr Projekt befindet sich in der kostenlosen Testphase. Führen Sie über **Settings → Billing** ein Upgrade durch.
+</Accordion>
+
+<Accordion title="'Daily PDF export limit reached (3/day). Try again tomorrow.'">
+  Jedes Projekt ist auf 3 abgeschlossene Exporte pro UTC-Tag begrenzt. Der Zähler wird um Mitternacht UTC zurückgesetzt.
+</Accordion>
+
+<Accordion title="'Try again in a few minutes'">
+  Sie haben das Intervall von fünf Minuten zwischen Exporten erreicht. Warten Sie und versuchen Sie es erneut.
+</Accordion>
+
+<Accordion title="Regenerate didn't produce a new file">
+  Das zwischengespeicherte PDF wurde wiederverwendet, da seit dem letzten Export kein neuer Build abgeschlossen wurde. Pushen Sie einen Commit oder klicken Sie auf der Builds-Seite auf **Rebuild**. Versuchen Sie anschließend erneut **Regenerate**, sobald der Build abgeschlossen ist. Weitere Informationen finden Sie unter [Caching und Regenerate](#caching-und-regenerate).
+</Accordion>
+
+<Accordion title="The PDF is missing pages that exist on my site">
+  Der Exporter ruft nur Seiten ab, die in der `docs.json`-Navigation und in der von Ihnen ausgewählten Sprache enthalten sind. Verwaiste Seiten (erstellt, aber nicht in der Navigation verknüpft) und externe Links werden nicht angezeigt. Prüfen Sie, ob die fehlenden Seiten im Browser unter `<slug>.jamdesk.app` fehlerfrei geladen werden.
+</Accordion>
+
+<Accordion title="The PDF is enormous">
+  Große Diagramme, Videos und nicht optimierte Bilder vergrößern PDFs schnell. Aktivieren Sie [Automatic Image Conversion](/de/builds/image-optimization), um die Bilddatenmenge um 60-80% zu reduzieren. Videos werden als Vorschaubild mit Wiedergabesymbol gerendert und vergrößern die Datei daher nicht unnötig.
+</Accordion>
+
+## Wie geht es weiter?
+
+<Columns cols={2}>
+  <Card title="Builds auslösen" icon="hammer" href="/de/builds/triggering">
+    Der PDF-Export verwendet den zuletzt abgeschlossenen Build. Starten Sie ihn manuell oder bei einem Push.
+  </Card>
+  <Card title="Bildoptimierung" icon="image" href="/de/builds/image-optimization">
+    Konvertieren Sie PNG/JPG beim Build in WebP, damit PDFs klein bleiben.
+  </Card>
+</Columns>

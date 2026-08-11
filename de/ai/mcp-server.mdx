@@ -1,0 +1,209 @@
+---
+title: MCP-Server
+sidebarTitle: MCP-Server
+description: Jede Jamdesk-Website enthält einen integrierten MCP-Server. KI-Assistenten wie Claude und Cursor können Ihre Dokumentation direkt durchsuchen und lesen.
+---
+
+Jede Jamdesk-Website enthält einen integrierten MCP-Server (Model Context Protocol). Während `llms.txt` KI-Tools eine statische Momentaufnahme Ihrer Dokumentation bereitstellt, können sie mit MCP interaktiv suchen und Abfragen ausführen – nützlich, wenn KI-Agenten bestimmte Antworten finden müssen, anstatt alles zu lesen.
+
+## Was ist MCP?
+
+Das [Model Context Protocol](https://modelcontextprotocol.io) ist ein offener Standard, der KI-Tools den Zugriff auf externe Datenquellen ermöglicht. Ihre Jamdesk-Dokumentation stellt über MCP zwei Tools bereit:
+
+| Tool | Zweck |
+|------|---------|
+| `searchDocs` | Dokumentation nach Schlüsselwörtern durchsuchen und sortierte Ergebnisse zurückgeben |
+| `getPage` | Den vollständigen Inhalt einer bestimmten Seite abrufen |
+
+## Ihre Endpoint-URL
+
+Ihr MCP-Endpoint ist Ihre Dokumentations-URL mit angehängtem `/_mcp`. Wenn Sie eine [benutzerdefinierte Domain](/de/deploy/custom-domains) aktiviert haben, verwenden Sie diese:
+
+| Einrichtung | Endpoint |
+|-------|----------|
+| Benutzerdefinierte Domain unter `docs.acme.com` | `https://docs.acme.com/_mcp` |
+| Keine benutzerdefinierte Domain | `https://my-project.jamdesk.app/_mcp` |
+
+<Note>
+  Verwenden Sie bevorzugt den Endpoint der benutzerdefinierten Domain, sobald eine solche verbunden ist – dadurch bleibt Ihr Branding in jeder URL erhalten, die KI-Tools sehen, und der Endpoint funktioniert auch weiterhin, wenn Sie Ihre `.jamdesk.app`-Subdomain später mit [Nur benutzerdefinierte Domain](/de/deploy/custom-domain-only) ausblenden.
+</Note>
+
+## Schnelle Einrichtung
+
+<Tabs>
+  <Tab title="Claude Code">
+    Fügen Sie Ihre Dokumentation als MCP-Server hinzu:
+
+    ```bash
+    claude mcp add --transport http my-docs https://docs.acme.com/_mcp
+    ```
+
+    Ersetzen Sie `docs.acme.com` durch Ihre Dokumentationsdomain – oder durch `my-project.jamdesk.app`, wenn Sie keine benutzerdefinierte Domain verbunden haben.
+
+    Wenn Sie Claude nun zu Ihrem Projekt befragen, kann Claude Ihre Dokumentation direkt durchsuchen und lesen.
+  </Tab>
+  <Tab title="Cursor">
+    Fügen Sie Folgendes zur `.cursor/mcp.json` Ihres Projekts hinzu:
+
+    ```json
+    {
+      "mcpServers": {
+        "my-docs": {
+          "url": "https://docs.acme.com/_mcp"
+        }
+      }
+    }
+    ```
+
+    Cursor verbindet sich automatisch mit Ihrer Dokumentation, sobald Sie das Projekt öffnen.
+  </Tab>
+</Tabs>
+
+## Verfügbare Tools
+
+### searchDocs
+
+Durchsuchen Sie Ihre Dokumentation und erhalten Sie sortierte Ergebnisse.
+
+**Parameter:**
+
+| Parameter | Typ | Erforderlich | Beschreibung |
+|-----------|------|----------|-------------|
+| `query` | string | Ja | Suchbegriffe (z. B. „authentication“, „getting started“) |
+| `limit` | number | Nein | Maximale Anzahl an Ergebnissen (Standard: 10, maximal: 50) |
+| `type` | string | Nein | Nach Inhaltstyp filtern: `all`, `api`, `guide`, `quickstart`, `help`, `component` |
+
+**Beispielanfrage:**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "tools/call",
+  "params": {
+    "name": "searchDocs",
+    "arguments": {
+      "query": "authentication",
+      "limit": 5
+    }
+  }
+}
+```
+
+**Beispielantwort:**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "content": [{
+      "type": "text",
+      "text": "{\"query\":\"authentication\",\"total\":1,\"results\":[{\"title\":\"Authentication\",\"description\":\"How to authenticate API requests\",\"url\":\"/docs/api/authentication\",\"type\":\"api\",\"score\":0.95}]}"
+    }]
+  }
+}
+```
+
+### getPage
+
+Rufen Sie den vollständigen Inhalt einer bestimmten Dokumentationsseite ab.
+
+**Parameter:**
+
+| Parameter | Typ | Erforderlich | Beschreibung |
+|-----------|------|----------|-------------|
+| `slug` | string | Ja | Seitenpfad ohne das Präfix `/docs` (z. B. `api/authentication`) |
+
+**Beispielanfrage:**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 2,
+  "method": "tools/call",
+  "params": {
+    "name": "getPage",
+    "arguments": {
+      "slug": "api/authentication"
+    }
+  }
+}
+```
+
+**Beispielantwort:**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 2,
+  "result": {
+    "content": [{
+      "type": "text",
+      "text": "{\"title\":\"Authentication\",\"description\":\"How to authenticate\",\"content\":\"## Overview\\n\\nUse API keys to authenticate...\",\"url\":\"/docs/api/authentication\"}"
+    }]
+  }
+}
+```
+
+## Den Endpoint testen
+
+Sie können Ihren MCP-Endpoint direkt mit curl testen:
+
+```bash
+# List available tools
+curl -X POST https://docs.acme.com/_mcp \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}'
+
+# Search for content
+curl -X POST https://docs.acme.com/_mcp \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"searchDocs","arguments":{"query":"getting started"}}}'
+```
+
+## Funktionsweise
+
+Der MCP-Endpoint verwendet einen Suchindex, der zusammen mit Ihrer Dokumentation erstellt wird:
+
+- **BM25-Ranking** – Sortiert Ergebnisse nach Relevanz
+- **Fuzzy Matching** – Behandelt Tippfehler (Toleranz von 1 Zeichen)
+- **Field Boosting** – Titel und Abschnittsüberschriften werden höher gewichtet als Inhalte im Fließtext
+- **Typfilterung** – Filtert Ergebnisse nach Inhaltstyp (API, Anleitung usw.)
+
+Der Index wird bei jedem Bereitstellen neu erstellt.
+
+## Ratenbegrenzungen
+
+Der MCP-Endpoint ist auf **60 Anfragen pro Minute** und IP-Adresse begrenzt. Dies ist für die normale Nutzung durch KI-Assistenten ausreichend. Wenn Sie das Limit überschreiten, erhalten Sie eine 429-Antwort.
+
+## Fehlerbehebung
+
+<Accordion title="MCP-Server verbindet sich nicht">
+  Überprüfen Sie, ob Ihre Endpoint-URL korrekt und erreichbar ist:
+
+  ```bash
+  curl https://docs.acme.com/_mcp
+  ```
+
+  Sie sollten eine JSON-Antwort mit Serverinformationen sehen. Falls nicht, prüfen Sie, ob Ihre Dokumentation mindestens einmal erstellt wurde.
+</Accordion>
+
+<Accordion title="Die Suche gibt keine Ergebnisse zurück">
+  Der Suchindex wird beim Build erstellt. Wenn Sie kürzlich Inhalte hinzugefügt haben, lösen Sie über Ihr Jamdesk-Dashboard einen erneuten Build aus, um den Index zu aktualisieren.
+</Accordion>
+
+<Accordion title="getPage gibt null zurück">
+  Stellen Sie sicher, dass der Slug exakt mit Ihrem Seitenpfad übereinstimmt (ohne die Erweiterung `.mdx`). Wenn sich Ihre Seite beispielsweise unter `api/authentication.mdx` befindet, verwenden Sie `api/authentication` als Slug.
+</Accordion>
+
+## Wie geht es weiter?
+
+<Columns cols={2}>
+  <Card title="Mit KI schreiben" icon="wand-magic-sparkles" href="/de/ai/writing-with-ai">
+    Tipps zur Nutzung von KI-Tools zum Schreiben von Dokumentation
+  </Card>
+  <Card title="llms.txt" icon="file-lines" href="/de/ai/llms-txt">
+    Automatisch generierter Seitenindex für KI-Tools
+  </Card>
+</Columns>

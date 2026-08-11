@@ -1,0 +1,118 @@
+---
+title: Markdown-Quelltext
+description: Greifen Sie auf den rohen Markdown-Quelltext jeder Dokumentationsseite zu, indem Sie .md an die URL anhängen – für KI-Tools, Skripte und Content-Pipelines.
+---
+
+KI-Tools verarbeiten Markdown effizienter als gerendertes HTML. Jamdesk stellt den rohen Markdown-Quelltext jeder Seite bereit, indem Sie `.md` an eine beliebige URL anhängen. Eine Authentifizierung ist nicht erforderlich.
+
+## `.md`-URL-Erweiterung
+
+Hängen Sie `.md` an die URL einer beliebigen Dokumentationsseite an, um den rohen Quelltext statt des gerenderten HTML abzurufen:
+
+```bash
+# Rendered page
+https://acme.jamdesk.app/getting-started
+
+# Raw Markdown source
+https://acme.jamdesk.app/getting-started.md
+```
+
+Dies funktioniert unabhängig von der Pfadtiefe. So sieht die Antwort aus:
+
+```bash
+curl https://acme.jamdesk.app/getting-started.md
+```
+
+```markdown
+---
+title: Getting Started
+description: Set up your first project in 5 minutes.
+---
+
+Welcome to the getting started guide.
+
+## Prerequisites
+
+<Note>You'll need Node.js 18 or later.</Note>
+```
+
+Die Antwort ist die exakte Quelldatei aus Ihrem Repository, einschließlich Frontmatter und Komponenten-Tags.
+
+### Benutzerdefinierte Domains
+
+Rohe Inhalte funktionieren auch auf benutzerdefinierten Domains. Verwenden Sie dieselbe URL, die Ihre Leser sehen, und hängen Sie `.md` an:
+
+```bash
+# Docs served at root
+curl https://docs.example.com/getting-started.md
+
+# Docs served at /docs subpath
+curl https://docs.example.com/docs/getting-started.md
+```
+
+## Inhaltsformat
+
+Der rohe Inhalt ist Markdown, erweitert um Komponenten-Tags wie `<Note>`, `<Steps>` und `<Tabs>`. Standardmäßige Markdown-Parser behandeln Komponenten-Tags als rohes HTML. Eine vollständige Syntaxreferenz finden Sie unter [Markdown-Grundlagen](/de/content/mdx-basics).
+
+## OpenAPI-Spezifikationen auf API-Referenzseiten
+
+Wenn Sie das Markdown einer API-Referenzseite abrufen (also einer Seite, deren Frontmatter eine `api:`- oder `openapi:`-Spezifikation enthält), hängt Jamdesk eine kurze Fußzeile an, die KI-Agenten auf jede OpenAPI-Spezifikation in Ihrem Projekt verweist, gebündelt als ein einziger Download:
+
+```markdown
+---
+
+📦 **OpenAPI specs:** Every OpenAPI specification referenced by this documentation is available as a single download — https://acme.jamdesk.app/api-specs.zip
+```
+
+Es handelt sich um dieselbe `api-specs.zip`, die von der Aktion [API-Spezifikation herunterladen](/de/ai/ai-actions#api-spezifikation-herunterladen) angeboten wird und bei jeder Anfrage neu zusammengestellt wird. Der Zweck ist eine größere Reichweite: Ein Agent, der eine einzelne Endpoint-Seite liest, erfährt, dass er den vollständigen maschinenlesbaren Vertrag mit einer einzigen Anfrage abrufen kann, statt jeden Endpoint einzeln auszulesen. Die Fußzeile erscheint nur auf API-Referenzseiten von Projekten mit mindestens einer Spezifikation; reguläre Anleitungen bleiben unverändert.
+
+## Details zur Antwort
+
+### Header
+
+| Header | Wert | Zweck |
+|--------|-------|---------|
+| `Content-Type` | `text/markdown; charset=utf-8` | Kennzeichnet den Inhalt als Markdown |
+| `Cache-Control` | `public, max-age=3600, s-maxage=86400` | Wird 1 Stunde im Browser und 1 Tag im CDN zwischengespeichert (`.md`-URLs) |
+| `Vary` | `Accept` | Dieselbe URL liefert je nach `Accept`-Header der Anfrage HTML oder Markdown |
+| `X-Robots-Tag` | `noindex, nofollow` | Verhindert die Indexierung durch Suchmaschinen |
+| `Content-Disposition` | `inline` | Zeigt den Inhalt im Browser an, statt ihn herunterzuladen |
+| `X-Frame-Options` | `DENY` | Verhindert die Einbettung in Iframes |
+| `Content-Security-Policy` | `default-src 'none'` | Blockiert die Skriptausführung |
+
+Wenn Sie die kanonische URL einer Seite (ohne `.md`) mit dem Header `Accept: text/markdown` anfordern, wird dasselbe Markdown zurückgegeben, jedoch mit `Cache-Control: private, no-store`. Die Antwort verwendet denselben Cache-Schlüssel wie die HTML-Seite und wird daher nie zwischengespeichert.
+
+### Fehlerantworten
+
+| Status | Bedeutung |
+|--------|---------|
+| `308` | Weiterleitung wegen abschließendem Schrägstrich (z. B. `/intro.md/` wird zu `/intro.md` weitergeleitet) |
+| `404` | Seite existiert nicht (gibt einen kurzen Nur-Text-Fehler zurück, kein Markdown) |
+| `500` | Serverfehler (gibt eine HTML-Fehlerseite zurück) |
+
+## Verwendung mit KI-Tools
+
+Markdown-Quelltext-URLs eignen sich gut in Verbindung mit dem [MCP-Server](/de/ai/mcp-server). Verwenden Sie `searchDocs`, um Seiten nach Schlüsselwörtern zu finden, und rufen Sie anschließend den rohen Quelltext der gefundenen Seite ab:
+
+```bash
+# 1. Search for a topic via MCP
+curl -X POST https://acme.jamdesk.app/_mcp \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"searchDocs","arguments":{"query":"authentication"}}}'
+
+# 2. Fetch the raw source of the top result
+curl https://acme.jamdesk.app/guides/authentication.md
+```
+
+Damit erhalten KI-Tools sowohl Zugriff auf die Suche als auch auf den vollständigen Quelltext Ihrer Dokumentation. Beide URLs funktionieren auch auf einer aktiven benutzerdefinierten Domain: `https://docs.acme.com/_mcp` und `https://docs.acme.com/guides/authentication.md`.
+
+## Wie geht es weiter?
+
+<Columns cols={2}>
+  <Card title="MCP-Server" icon="robot" href="/de/ai/mcp-server">
+    Verbinden Sie KI-Assistenten direkt mit Ihrer Dokumentation
+  </Card>
+  <Card title="Markdown-Grundlagen" icon="pen-nib" href="/de/content/mdx-basics">
+    MDX-Syntaxreferenz für Dokumentationsseiten
+  </Card>
+</Columns>

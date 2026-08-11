@@ -1,0 +1,139 @@
+---
+title: Cursor
+description: "Cursor IDE für Jamdesk-Dokumentation mit MDX-Regeln, Komponenten-Autovervollständigung und MCP-Serverzugriff für Live-Doku-Kontext einrichten."
+---
+
+[Cursor](https://cursor.com) ist ein KI-Codeeditor auf Basis von VS Code. Die Inline-Bearbeitung (Cmd+K) und der Chat (Cmd+L) eignen sich gut für iteratives Schreiben in MDX: Wählen Sie einen Absatz aus, beschreiben Sie Ihre gewünschte Änderung, und Cursor schreibt ihn direkt um.
+
+## Schnelle Einrichtung
+
+<Steps>
+  <Step title="Docs-Projekt öffnen">
+    Öffnen Sie Ihr Jamdesk-Dokumentationsverzeichnis in Cursor.
+  </Step>
+  <Step title="Cursor-Regeln hinzufügen">
+    Erstellen Sie `.cursor/rules/jamdesk-docs.mdc` mit Dokumentationsstandards, damit die KI von Cursor Ihre Konventionen befolgt.
+  </Step>
+  <Step title="MCP-Server verbinden">
+    Fügen Sie den MCP-Endpoint Ihrer Dokumentation zu `.cursor/mcp.json` hinzu, damit Cursor Ihre veröffentlichte Dokumentation durchsuchen kann.
+  </Step>
+</Steps>
+
+## Vorlage für Cursor-Regeln
+
+Erstellen Sie `.cursor/rules/jamdesk-docs.mdc` im Stammverzeichnis Ihres Projekts:
+
+```markdown .cursor/rules/jamdesk-docs.mdc
+---
+description: Rules for writing Jamdesk documentation in MDX
+globs: "**/*.mdx"
+---
+
+# Jamdesk MDX Rules
+
+## Page Structure
+
+Every page follows this pattern — no exceptions:
+
+1. Frontmatter with `title` and `description`
+2. Opening paragraph (no heading before it)
+3. Content sections with ## headings
+4. "What's Next?" section at the end with Card links inside Columns
+
+## Components
+
+Only use these — do not invent others:
+
+Layout: Card, Columns, Tabs, Tab, Accordion, AccordionGroup, Steps, Step, Expandable, Frame, CodeGroup
+Callouts: Note, Info, Warning, Tip, Check, Danger
+
+| Use | For |
+|-----|-----|
+| Tabs | Mutually exclusive choices (npm/yarn, OS variants) |
+| Steps | Ordered procedures the reader follows |
+| Accordion | Optional detail that would clutter the page |
+| Card + Columns | Navigation links and feature grids |
+| Note/Tip/Warning | Important context — use sparingly |
+
+Cards always go inside Columns: `<Columns cols={2}><Card ... /></Columns>`
+Icons are Font Awesome Light names: "rocket", "code", "terminal", "book-open"
+
+## Style
+
+- Active voice: "Run this command" not "This command should be run"
+- Start with why, then how
+- One idea per paragraph
+- Code examples must be complete and copy-pasteable
+- Write like a person — no filler ("It's important to note"), no hedging ("you might want to consider"). If it sounds like a chatbot, rewrite it shorter.
+
+## Common Mistakes
+
+- `<CodeBlock>`, `<Alert>`, `<Section>` don't exist — use the components listed above
+- `<Card>` without `<Columns>` wrapper won't render correctly
+- Missing `description` in frontmatter breaks search and link previews
+- Raw HTML tags should be MDX components instead
+
+## New Pages
+
+When creating a page, add it to `docs.json` navigation. Without this, the page won't appear in the sidebar. Read `docs.json` first to understand the group structure.
+```
+
+## MCP-Konfiguration
+
+Erstellen Sie `.cursor/mcp.json`, um Ihre veröffentlichte Dokumentation zu verbinden:
+
+```json .cursor/mcp.json
+{
+  "mcpServers": {
+    "my-docs": {
+      "url": "https://your-project.jamdesk.app/_mcp"
+    }
+  }
+}
+```
+
+Ersetzen Sie `your-project` durch Ihre Jamdesk-Subdomain – oder verwenden Sie stattdessen Ihre benutzerdefinierte Domain, wenn diese aktiv ist: `"url": "https://docs.acme.com/_mcp"`. Weitere Informationen zu den Endpoints finden Sie unter [MCP-Server](/de/ai/mcp-server).
+
+## Workflows
+
+<Tabs>
+  <Tab title="Inline-Bearbeitung (Cmd+K)">
+    Wählen Sie Text in einer MDX-Datei aus und drücken Sie **Cmd+K**, um zu beschreiben, was geändert werden soll. Das eignet sich gut für:
+    - Einen Abschnitt verständlicher umschreiben
+    - Ein Codebeispiel hinzufügen
+    - Text in eine Komponente umwandeln (z. B. Schritte in `<Steps>` einschließen)
+  </Tab>
+  <Tab title="Chat (Cmd+L)">
+    Öffnen Sie den Chat mit **Cmd+L** und stellen Sie Fragen im Kontext Ihrer Dokumentation:
+    - "What components are available for this page?"
+    - "Write a troubleshooting section for [feature]"
+    - "Review this page against our writing standards"
+  </Tab>
+  <Tab title="Composer">
+    Verwenden Sie Composer für Dokumentationsaufgaben über mehrere Dateien hinweg:
+    - Einen neuen Abschnitt mit mehreren Seiten erstellen
+    - Die Navigation über mehrere Dateien hinweg neu strukturieren
+    - Die Verwendung von Komponentenmustern gesammelt aktualisieren
+  </Tab>
+</Tabs>
+
+## Der Skill `/update-jamdesk`
+
+Für automatisierte Aktualisierungen der Dokumentation bei Codeänderungen installieren Sie den Skill `/update-jamdesk`:
+
+```bash
+npx skills add jamdesk/skills --skill update-jamdesk -a cursor
+```
+
+Die vollständige Anleitung finden Sie unter [Automatisierte Aktualisierungen](/de/ai/automated-updates).
+
+## Wie geht es weiter?
+
+<Columns cols={2}>
+  <Card title="Claude Code" icon="terminal" href="/de/ai/claude-code">
+    Vorlage für CLAUDE.md und Workflows mit Kontext für das gesamte Projekt
+  </Card>
+  <Card title="Mit KI schreiben" icon="wand-magic-sparkles" href="/de/ai/writing-with-ai">
+    Effektive Prompts, Checklisten für Reviews und häufige Fehler
+  </Card>
+</Columns>

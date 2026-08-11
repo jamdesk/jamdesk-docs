@@ -1,0 +1,205 @@
+---
+title: Hintergrund
+description: Wählen Sie eine Dekoration (Verlauf, Punktraster, Milchglasflächen oder flach), überschreiben Sie die Hintergrundfarbe je Modus oder passen Sie den Jam-Verlauf an.
+---
+
+Der Block `background` in `docs.json` steuert den Seitenhintergrund. Sie können eine von vier Dekorationsvarianten auswählen, die Grundfarbe je Modus überschreiben und den Standardverlauf anpassen.
+
+```json docs.json
+{
+  "theme": "jam",
+  "background": {
+    "decoration": "none",
+    "color": {
+      "light": "#faf7f2",
+      "dark": "#0a0a0d"
+    }
+  }
+}
+```
+
+Alle Felder sind optional. Lassen Sie den gesamten Block `background` weg, um die Theme-Standards zu verwenden.
+
+## Dekoration
+
+Wählen Sie die Hintergrunddarstellung für den hellen Modus des Jam-Themes. Jeder Wert rendert ein eigenes Muster über der Grundfarbe `--color-bg-primary`; im dunklen Modus wird unabhängig vom Wert immer eine einfarbige Darstellung verwendet.
+
+```json docs.json
+{
+  "background": {
+    "decoration": "grid"
+  }
+}
+```
+
+| Wert | Verhalten |
+|-------|----------|
+| `gradient` (Standard) | Radialer Verlauf, am oberen Rand verankert. Über den folgenden Block `gradient` anpassbar |
+| `grid` | Dezentes Punktraster: 1.5px große Punkte in `--color-primary` mit 8 % Deckkraft und 24px Abstand |
+| `windows` | Zwei weiche radiale Flächen in den oberen Ecken (Milchglaseffekt im Stil von Windows 11) |
+| `none` | Einfarbige Füllung mit `--color-bg-primary`, ohne Dekoration |
+
+<Note>
+`decoration` wirkt sich nur auf den hellen Modus des Jam-Themes aus. Nebula und Pulsar rendern unabhängig davon einfarbige Hintergründe. Im dunklen Modus von Jam werden alle Werte einfarbig dargestellt.
+</Note>
+
+## Farbe
+
+Überschreiben Sie die Hintergrundfarbe der Seite je Modus. Jede CSS-Farbe wird akzeptiert: Hexadezimalwerte, `rgb(...)`, `rgba(...)` oder `hsl(...)`.
+
+```json docs.json
+{
+  "background": {
+    "color": {
+      "light": "#faf7f2",
+      "dark": "#0a0a0d"
+    }
+  }
+}
+```
+
+| Feld | Gilt für |
+|-------|------------|
+| `color.light` | Hintergrund des Seiteninhalts im hellen Modus |
+| `color.dark` | Hintergrund des Seiteninhalts im dunklen Modus |
+
+Beide Felder sind optional. Setzen Sie nur `light`, um den hellen Modus zu überschreiben und den dunklen Standard des Themes beizubehalten, oder umgekehrt. Dies funktioniert mit allen Themes (Jam, Nebula, Pulsar).
+
+<Tip>
+Kombinieren Sie `decoration: "none"` mit einer Farbüberschreibung, um einen einfarbigen, markengerechten Hintergrund zu erstellen. Dies ist bei redaktionellen Dokumentationen oder Dokumentationen im Marketing-Stil üblich.
+</Tip>
+
+## Verlauf
+
+Passen Sie den radialen Verlauf im hellen Modus des Jam-Themes an. Alle vier Felder sind optional und werden unabhängig voneinander angewendet. Setzen Sie nur `color`, um die Farbe zu ändern, oder nur `size`, um den Verlauf zu verkleinern oder zu vergrößern.
+
+```json docs.json
+{
+  "background": {
+    "gradient": {
+      "color": "#a855f7",
+      "size": "800px",
+      "position": "top center",
+      "opacity": 0.25
+    }
+  }
+}
+```
+
+| Feld | Standard | Beschreibung |
+|-------|---------|-------------|
+| `color` | Übernimmt `colors.primary` | Verlaufsfarbe (jede CSS-Farbe) |
+| `size` | `500px` | Radius. Jede CSS-Längeneinheit (`px`, `rem`, `%`, `vh`) |
+| `position` | `top center` | Mittelpunkt. Schlüsselwörter wie `top`/`bottom`/`center`/`left`/`right`, Prozentwerte oder Pixelkoordinaten |
+| `opacity` | `0.12` | Maximale Deckkraft am Mittelpunkt. Zahl zwischen `0` und `1` |
+
+<Note>
+`gradient` wird nur angewendet, wenn `decoration` den Wert `gradient` hat oder nicht gesetzt ist. Die Dekorationen `grid`, `windows` und `none` ignorieren diesen Block: `grid` und `windows` lesen `--color-primary` als Musterfarbe. Passen Sie diese daher stattdessen über den Block `colors` an.
+</Note>
+
+### Browserunterstützung
+
+Der parametrische Verlauf (Verwendung von CSS-Variablen) nutzt `color-mix()`, das Folgendes voraussetzt:
+
+- Chrome / Edge 111+
+- Firefox 113+
+- Safari 16.2+
+
+Ältere Browser verwenden den ursprünglichen Jam-Verlauf als Fallback: Sie rendern den Markenstandard und ignorieren Ihre Überschreibungen für `gradient`. Der Fallback selbst sieht sauber aus, kann jedoch nicht angepasst werden.
+
+## Häufige Beispiele
+
+<AccordionGroup>
+  <Accordion title="Einfarbiger cremefarbener Hintergrund ohne Verlauf">
+    ```json docs.json
+    {
+      "background": {
+        "decoration": "none",
+        "color": {
+          "light": "#faf7f2",
+          "dark": "#0a0a0d"
+        }
+      }
+    }
+    ```
+    Häufig bei Dokumentationen im redaktionellen Stil. Funktioniert mit jedem Theme.
+  </Accordion>
+
+  <Accordion title="Dezenter violetter Verlauf">
+    ```json docs.json
+    {
+      "background": {
+        "gradient": {
+          "color": "#a855f7",
+          "opacity": 0.15
+        }
+      }
+    }
+    ```
+    Ändert die Farbe des Jam-Verlaufs, ohne seine Größe oder Position zu verändern.
+  </Accordion>
+
+  <Accordion title="Größerer, außermittiger Verlauf">
+    ```json docs.json
+    {
+      "background": {
+        "gradient": {
+          "size": "1200px",
+          "position": "top left",
+          "opacity": 0.2
+        }
+      }
+    }
+    ```
+    Breiterer, diffuserer Verlauf, der an der oberen linken Ecke verankert ist.
+  </Accordion>
+
+  <Accordion title="Dezentes Punktraster">
+    ```json docs.json
+    {
+      "background": {
+        "decoration": "grid"
+      }
+    }
+    ```
+    Zeichnet ein dezentes Punktraster mit 24px Abstand in der Primärfarbe Ihres Themes. Es liest `--color-primary`; ändern Sie daher die Punktfarbe, indem Sie `colors.primary` in `docs.json` festlegen.
+  </Accordion>
+
+  <Accordion title="Milchglaseffekt im Stil von Windows 11">
+    ```json docs.json
+    {
+      "background": {
+        "decoration": "windows"
+      }
+    }
+    ```
+    Zwei weiche radiale Flächen in den oberen Ecken, am Viewport verankert. Für die Farbe der Flächen wird `--color-primary` verwendet.
+  </Accordion>
+
+  <Accordion title="Nur Überschreibung für den dunklen Modus">
+    ```json docs.json
+    {
+      "background": {
+        "color": {
+          "dark": "#0d0d12"
+        }
+      }
+    }
+    ```
+    Behält die Theme-Standards im hellen Modus bei und verwendet einen benutzerdefinierten Hintergrund im dunklen Modus.
+  </Accordion>
+</AccordionGroup>
+
+## Wie geht es weiter?
+
+<Columns cols={3}>
+  <Card title="Themeing" icon="palette" href="/de/customization/theming">
+    Wählen Sie ein Basistheme und überschreiben Sie Farben
+  </Card>
+  <Card title="Benutzerdefiniertes CSS" icon="paintbrush" href="/de/customization/custom-css">
+    Überschreiben Sie alles, was CSS ändern kann
+  </Card>
+  <Card title="Branding" icon="image" href="/de/customization/branding">
+    Logos, Favicons und Marken-Assets
+  </Card>
+</Columns>

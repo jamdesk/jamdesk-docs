@@ -1,0 +1,231 @@
+---
+title: Benutzerdefiniertes CSS
+description: Fügen Sie benutzerdefiniertes CSS hinzu, um Theme-Stile zu überschreiben, Typografie anzupassen oder markenspezifische Stile hinzuzufügen.
+---
+
+Jamdesk-Themes bieten sinnvolle Standardwerte. Sie können jedoch benutzerdefiniertes CSS hinzufügen, um Ihre Marke abzubilden oder bestimmte Stile anzupassen.
+
+## Benutzerdefiniertes CSS hinzufügen
+
+Erstellen Sie eine Datei `style.css` im Stammverzeichnis Ihres Projekts (im selben Ordner wie Ihre `docs.json`). Jamdesk wendet sie automatisch auf jede Seite an; ein Eintrag in `docs.json` ist nicht erforderlich.
+
+Jede `.css`-Datei im Stammverzeichnis funktioniert, nicht nur `style.css`. Das ist praktisch, wenn Sie von einem anderen Tool migrieren. Wenn mehrere Dateien vorhanden sind, führt Jamdesk sie in alphabetischer Reihenfolge der Dateinamen zusammen.
+
+Führen Sie `jamdesk dev` aus, um das Ergebnis lokal in der Vorschau anzuzeigen. Ihr benutzerdefiniertes CSS wird dabei genauso dargestellt wie auf der veröffentlichten Website.
+
+```css style.css
+/* Your custom styles */
+.content h1 {
+  font-size: 2.5rem;
+}
+```
+
+## CSS-Variablen
+
+Jamdesk stellt CSS-Variablen für gängige Anpassungen bereit. Überschreiben Sie sie in Ihrem benutzerdefinierten CSS:
+
+```css style.css
+:root {
+  /* Typography */
+  --font-family-sans: 'Inter', system-ui, sans-serif;
+  --font-family-mono: 'JetBrains Mono', monospace;
+  
+  /* Spacing */
+  --content-max-width: 900px;
+  --sidebar-width: 280px;
+  
+  /* Border radius */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+}
+```
+
+### Farbvariablen
+
+Primärfarben werden in `docs.json` festgelegt. Für eine detaillierte Anpassung überschreiben Sie diese Variablen:
+
+```css style.css
+:root {
+  /* Light mode */
+  --color-background: #ffffff;
+  --color-text: #1a1a1a;
+  --color-text-muted: #666666;
+  --color-border: #e5e5e5;
+  --color-code-bg: #f5f5f5;
+}
+
+[data-theme="dark"] {
+  /* Dark mode */
+  --color-background: #0a0a0a;
+  --color-text: #fafafa;
+  --color-text-muted: #a3a3a3;
+  --color-border: #262626;
+  --color-code-bg: #171717;
+}
+```
+
+## Häufige Anpassungen
+
+### Inhaltsbreite anpassen
+
+```css
+:root {
+  --content-max-width: 1000px;  /* Default: 900px */
+}
+```
+
+### Schriftart für Codeblöcke ändern
+
+```css
+:root {
+  --font-family-mono: 'Fira Code', monospace;
+}
+
+/* Ensure ligatures work if your font supports them */
+pre code {
+  font-variant-ligatures: common-ligatures;
+}
+```
+
+### Link-Stile anpassen
+
+```css
+.content a:not([class]) {
+  color: var(--color-primary);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.content a:not([class]):hover {
+  text-decoration-thickness: 2px;
+}
+```
+
+### Abstände von Überschriften anpassen
+
+```css
+.content h2 {
+  margin-top: 3rem;
+  margin-bottom: 1rem;
+}
+
+.content h3 {
+  margin-top: 2rem;
+  margin-bottom: 0.75rem;
+}
+```
+
+### Callouts gestalten
+
+```css
+/* Make Note callouts more prominent */
+[data-callout="note"] {
+  border-left-width: 4px;
+  background: var(--color-primary-subtle);
+}
+```
+
+## Dunkler Modus
+
+Verwenden Sie den Selektor `[data-theme="dark"]` für Stile des dunklen Modus:
+
+```css
+/* Light mode */
+.custom-banner {
+  background: #f0f4ff;
+  color: #1e3a5f;
+}
+
+/* Dark mode */
+[data-theme="dark"] .custom-banner {
+  background: #1e293b;
+  color: #e2e8f0;
+}
+```
+
+## Komponenten ansprechen
+
+Überschreiben Sie Stile für bestimmte Komponenten:
+
+```css
+/* Card component */
+[data-component="card"] {
+  border-radius: 16px;
+}
+
+/* Code blocks */
+[data-component="code-block"] {
+  border-radius: 8px;
+}
+
+/* Tabs */
+[data-component="tabs"] [data-state="active"] {
+  border-bottom-width: 3px;
+}
+```
+
+## Externe Schriftarten
+
+Laden Sie benutzerdefinierte Schriftarten mit `@import` oder `@font-face`:
+
+```css
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+  --font-family-sans: 'Inter', system-ui, sans-serif;
+}
+```
+
+Oder hosten Sie Schriftarten selbst:
+
+```css
+@font-face {
+  font-family: 'CustomFont';
+  src: url('/fonts/custom-font.woff2') format('woff2');
+  font-weight: 400;
+  font-display: swap;
+}
+```
+
+## Responsive Stile
+
+Verwenden Sie Media Queries für responsive Anpassungen:
+
+```css
+/* Mobile adjustments */
+@media (max-width: 768px) {
+  .content h1 {
+    font-size: 1.75rem;
+  }
+  
+  :root {
+    --content-max-width: 100%;
+  }
+}
+```
+
+## Fehlerbehebung
+
+Verwenden Sie die Entwicklertools des Browsers, um Elemente zu untersuchen und die richtigen Selektoren zu finden. Jamdesk verwendet Datenattribute, um Komponenten anzusprechen:
+
+- `data-component="..."` – Komponententyp
+- `data-theme="light|dark"` – Aktuelles Theme
+- `data-state="..."` – Komponentenstatus (aktiv, deaktiviert usw.)
+
+## Einschränkungen
+
+- CSS wird global angewendet. Verwenden Sie spezifische Selektoren, um Konflikte zu vermeiden.
+- Einige interne Layout-Stile verwenden `!important` und erfordern möglicherweise ebenfalls `!important`, um überschrieben zu werden.
+- In der lokalen Vorschau (`jamdesk dev`) werden Änderungen an Ihren CSS-Dateien nach dem Aktualisieren des Browsers angewendet. Auf Ihrer veröffentlichten Website werden Änderungen beim nächsten Build wirksam.
+
+## Wie geht es weiter?
+
+<Columns cols={2}>
+  <Card title="Theming" icon="palette" href="/de/customization/theming">
+    Themes auswählen und konfigurieren
+  </Card>
+  <Card title="Branding" icon="image" href="/de/customization/branding">
+    Logos, Farben und Markenidentität
+  </Card>
+</Columns>

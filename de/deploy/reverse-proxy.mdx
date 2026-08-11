@@ -1,0 +1,326 @@
+---
+title: Reverse-Proxy
+description: "Stellen Sie Ihre Dokumentation unter /docs mit nginx, Apache, Caddy, Traefik oder HAProxy bereit – inklusive getesteter Konfigurationsbeispiele."
+---
+
+Wenn Sie bereits nginx, Apache, Caddy, Traefik oder HAProxy verwenden, fügen Sie einen Location-/Route-Block hinzu, der den `/docs`-Traffic an Ihre Jamdesk-Subdomain weiterleitet.
+
+## Voraussetzungen
+
+- Zugriff auf die Konfiguration Ihres Webservers
+- Ihre Jamdesk-Subdomain (in den Dashboard-Einstellungen zu finden)
+
+<Note>
+Wenn Sie anstelle des standardmäßigen `/docs` einen benutzerdefinierten Unterpfad verwenden, ersetzen Sie `/docs` in jedem unten aufgeführten Location-/Route-Block (nginx, Apache, Caddy, Traefik, HAProxy) durch Ihren Unterpfad. Aktualisieren Sie die Konfiguration nach jeder Umbenennung im Dashboard erneut.
+</Note>
+
+## nginx
+
+Fügen Sie einen Location-Block hinzu, um `/docs`-Anfragen an Jamdesk weiterzuleiten:
+
+```nginx nginx.conf
+server {
+    listen 443 ssl;
+    server_name yoursite.com;
+
+    # Your existing configuration...
+
+    # Proxy /docs to Jamdesk
+    location /docs {
+        proxy_pass https://YOUR_SLUG.jamdesk.app;
+        proxy_ssl_server_name on;
+
+        proxy_set_header Host YOUR_SLUG.jamdesk.app;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        # Required for domain verification
+        proxy_set_header X-Jamdesk-Forwarded-Host $host;
+    }
+
+    # Next.js static assets (JS, CSS)
+    location /_next/ {
+        proxy_pass https://YOUR_SLUG.jamdesk.app;
+        proxy_ssl_server_name on;
+        proxy_set_header Host YOUR_SLUG.jamdesk.app;
+    }
+
+    # Jamdesk assets (fonts, images, branding)
+    location /_jd/ {
+        proxy_pass https://YOUR_SLUG.jamdesk.app;
+        proxy_ssl_server_name on;
+        proxy_set_header Host YOUR_SLUG.jamdesk.app;
+    }
+
+}
+```
+
+<Note>
+Ersetzen Sie `YOUR_SLUG` durch Ihre tatsächliche Jamdesk-Subdomain.
+</Note>
+
+<Warning>
+**Die Pfadverarbeitung ist wichtig.** Die `proxy_pass`-URL enthält keinen abschließenden Pfad, daher bewahrt nginx den ursprünglichen Anfragepfad. Eine Anfrage an `/docs/page` wird an `jamdesk.app/docs/page` weitergeleitet. Wenn Sie einen abschließenden Schrägstrich hinzufügen (`proxy_pass https://...jamdesk.app/`), wird das Präfix `/docs` entfernt. Lassen Sie die Konfiguration genau wie oben dargestellt.
+</Warning>
+
+Laden Sie nginx nach der Aktualisierung Ihrer Konfiguration neu:
+
+```bash
+sudo nginx -t && sudo systemctl reload nginx
+```
+
+## Apache
+
+Verwenden Sie `mod_proxy`, um `/docs`-Anfragen an Jamdesk weiterzuleiten:
+
+```apache httpd.conf or .htaccess
+<VirtualHost *:443>
+    ServerName yoursite.com
+
+    # Your existing configuration...
+
+    # Enable proxy modules
+    ProxyRequests Off
+    SSLProxyEngine On
+
+    # Proxy /docs to Jamdesk
+    ProxyPass /docs https://YOUR_SLUG.jamdesk.app/docs
+    ProxyPassReverse /docs https://YOUR_SLUG.jamdesk.app/docs
+
+    # Next.js static assets (JS, CSS)
+    ProxyPass /_next https://YOUR_SLUG.jamdesk.app/_next
+    ProxyPassReverse /_next https://YOUR_SLUG.jamdesk.app/_next
+
+    # Jamdesk assets (fonts, images, branding)
+    ProxyPass /_jd https://YOUR_SLUG.jamdesk.app/_jd
+    ProxyPassReverse /_jd https://YOUR_SLUG.jamdesk.app/_jd
+
+    <Location /docs>
+        RequestHeader set X-Forwarded-Host "yoursite.com"
+        RequestHeader set X-Forwarded-Proto "https"
+        # Required for domain verification
+        RequestHeader set X-Jamdesk-Forwarded-Host "yoursite.com"
+    </Location>
+</VirtualHost>
+```
+
+Stellen Sie sicher, dass die erforderlichen Module aktiviert sind:
+
+```bash
+sudo a2enmod proxy proxy_http ssl headers
+sudo systemctl reload apache2
+```
+
+## Caddy
+
+[Caddy](https://caddyserver.com/) bietet eine einfache Konfiguration für Reverse-Proxys mit automatischem HTTPS:
+
+```caddy Caddyfile
+yoursite.com {
+    # Your existing configuration...
+
+    handle /docs* {
+        reverse_proxy https://YOUR_SLUG.jamdesk.app {
+            header_up Host {upstream_hostport}
+            header_up X-Forwarded-Host {host}
+            # Required for domain verification
+            header_up X-Jamdesk-Forwarded-Host {host}
+        }
+    }
+
+    # Next.js static assets and Jamdesk assets
+    handle /_next/* {
+        reverse_proxy https://YOUR_SLUG.jamdesk.app {
+            header_up Host {upstream_hostport}
+        }
+    }
+
+    handle /_jd/* {
+        reverse_proxy https://YOUR_SLUG.jamdesk.app {
+            header_up Host {upstream_hostport}
+        }
+    }
+
+    # Handle other routes
+    handle {
+        # Your main site configuration
+    }
+}
+```
+
+Laden Sie Caddy nach Änderungen neu:
+
+```bash
+sudo systemctl reload caddy
+```
+
+## Traefik
+
+Wenn Sie [Traefik](https://traefik.io/) verwenden, konfigurieren Sie einen Router und einen Service:
+
+```yaml traefik.yml
+http:
+  routers:
+    docs-router:
+      rule: "Host(`yoursite.com`) && (PathPrefix(`/docs`) || PathPrefix(`/_next`) || PathPrefix(`/_jd`))"
+      service: jamdesk-docs
+      middlewares:
+        - jamdesk-headers
+      tls: {}
+
+  middlewares:
+    jamdesk-headers:
+      headers:
+        customRequestHeaders:
+          # Required for domain verification
+          X-Jamdesk-Forwarded-Host: "yoursite.com"
+
+  services:
+    jamdesk-docs:
+      loadBalancer:
+        servers:
+          - url: "https://YOUR_SLUG.jamdesk.app"
+        passHostHeader: false
+```
+
+## HAProxy
+
+Für [HAProxy](https://www.haproxy.org/) fügen Sie Backend- und ACL-Regeln hinzu:
+
+```haproxy haproxy.cfg
+frontend https
+    bind *:443 ssl crt /etc/ssl/certs/yoursite.pem
+
+    # Route /docs and assets to Jamdesk backend
+    acl is_docs path_beg /docs
+    acl is_next path_beg /_next
+    acl is_jd path_beg /_jd
+    use_backend jamdesk_docs if is_docs or is_next or is_jd
+
+    # Default backend for other requests
+    default_backend main_site
+
+backend jamdesk_docs
+    server jamdesk YOUR_SLUG.jamdesk.app:443 ssl verify none
+    http-request set-header Host YOUR_SLUG.jamdesk.app
+    http-request set-header X-Forwarded-Host %[req.hdr(host)]
+    # Required for domain verification
+    http-request set-header X-Jamdesk-Forwarded-Host %[req.hdr(host)]
+```
+
+## Root-Dateien ebenfalls weiterleiten
+
+`robots.txt`, `sitemap.xml`, `llms.txt` und `llms-full.txt` werden im Domain-Root bereitgestellt, nicht unter `/docs`. Ein Proxy, der nur `/docs`, `/_next` und `/_jd` weiterleitet, lässt diese Dateien von Ihrer eigenen Website bereitstellen (oder überhaupt nicht bereitstellen). Dadurch wird die Erkennung durch KI-Agenten beeinträchtigt und SEO kostet Sie unabhängig von allen anderen Inhalten auf dieser Seite.
+
+Fügen Sie für jeden dieser vier Pfade dasselbe Location-/Route-Muster hinzu, das Sie oben für `/docs` verwendet haben. Für nginx:
+
+```nginx nginx.conf
+    location = /robots.txt {
+        proxy_pass https://YOUR_SLUG.jamdesk.app;
+        proxy_ssl_server_name on;
+        proxy_set_header Host YOUR_SLUG.jamdesk.app;
+        proxy_set_header X-Jamdesk-Forwarded-Host $host;
+    }
+
+    location = /sitemap.xml {
+        proxy_pass https://YOUR_SLUG.jamdesk.app;
+        proxy_ssl_server_name on;
+        proxy_set_header Host YOUR_SLUG.jamdesk.app;
+        proxy_set_header X-Jamdesk-Forwarded-Host $host;
+    }
+
+    location = /llms.txt {
+        proxy_pass https://YOUR_SLUG.jamdesk.app;
+        proxy_ssl_server_name on;
+        proxy_set_header Host YOUR_SLUG.jamdesk.app;
+        proxy_set_header X-Jamdesk-Forwarded-Host $host;
+    }
+
+    location = /llms-full.txt {
+        proxy_pass https://YOUR_SLUG.jamdesk.app;
+        proxy_ssl_server_name on;
+        proxy_set_header Host YOUR_SLUG.jamdesk.app;
+        proxy_set_header X-Jamdesk-Forwarded-Host $host;
+    }
+```
+
+Dieselben vier Blöcke – mit denselben Headern und demselben Upstream – gelten für Apache, Caddy, Traefik und HAProxy: Kopieren Sie den oben verwendeten `/docs`-Block und wiederholen Sie ihn einmal pro Pfad.
+
+<Warning>
+Leiten Sie diese Pfade nur weiter, wenn Jamdesk Ihr Domain-Root verwaltet. Wenn Ihre Hauptwebsite bereits eine eigene `robots.txt` oder `sitemap.xml` bereitstellt, führen Sie die beiden Konfigurationen zusammen, statt eine durch die andere zu überschreiben.
+</Warning>
+
+## Erforderliche Header
+
+Unabhängig vom verwendeten Proxy müssen Sie sicherstellen, dass diese Header gesetzt sind:
+
+| Header | Wert | Zweck |
+|--------|-------|---------|
+| `Host` | `YOUR_SLUG.jamdesk.app` | Identifiziert die Anfrage gegenüber Jamdesk |
+| `X-Forwarded-Host` | Ihre Domain | Teilt Jamdesk mit, welche Domain in URLs verwendet werden soll |
+| `X-Forwarded-Proto` | `https` | Stellt die Generierung sicherer URLs sicher |
+| `X-Jamdesk-Forwarded-Host` | Ihre Domain | Für die Domain-Verifizierung erforderlich |
+| `?jd_proxy=1` query marker | An die Upstream-URL angehängt | Alternative zum Header für Tools, die nur eine URL umschreiben, aber keine Anfrage-Header setzen können – siehe [Nur benutzerdefinierte Domain](/de/deploy/custom-domain-only) |
+
+<Warning>
+Der Header `X-Jamdesk-Forwarded-Host` (oder der Marker `?jd_proxy=1`) ist **erforderlich**. Wenn keiner von beiden vorhanden ist, schlägt die Anfrage unauffällig fehl.
+
+Die Anfragen sind weiterhin erfolgreich – es treten keine Fehler auf, was das Problem leicht zu übersehen macht. Die eigentlichen Auswirkungen sind subtiler:
+
+- **Wenn Sie noch keine benutzerdefinierte Domain im Dashboard registriert haben**, werden Ihre Dokumentationsseiten mit `<meta name="robots" content="noindex">` bereitgestellt, und die URLs für Canonical, Open Graph und Sitemap verweisen statt auf Ihre Domain auf `YOUR_SLUG.jamdesk.app`. Suchmaschinen werden Ihre Dokumentation niemals indexieren.
+- **Wenn Sie eine benutzerdefinierte Domain registriert haben**, verwendet Jamdesk ersatzweise die hinterlegte Domain, sodass Ihre URLs korrekt bleiben. Jamdesk kann den Proxy-Traffic jedoch weiterhin nicht von direktem Traffic zu Ihrer `*.jamdesk.app`-Subdomain unterscheiden, und die Vorabprüfung [Nur benutzerdefinierte Domain](/de/deploy/custom-domain-only) schlägt fehl.
+
+Ein **403** weist auf das umgekehrte Problem hin: Der Header ist *vorhanden*, enthält aber eine Domain, die für dieses Projekt nicht registriert und aktiv ist.
+</Warning>
+
+<Tip>
+Die Proxy-Konfiguration ist eine **einmalige Einrichtung**. Wenn Sie Ihre benutzerdefinierte Domain oder die Konfiguration später im Jamdesk-Dashboard ändern, muss der Proxy nicht aktualisiert werden – alle Routing-Entscheidungen werden serverseitig anhand Ihrer Dashboard-Einstellungen getroffen.
+</Tip>
+
+## Fehlerbehebung
+
+<Accordion title="502 Bad Gateway">
+Überprüfen Sie, ob der Proxy `YOUR_SLUG.jamdesk.app` über HTTPS erreichen kann. Prüfen Sie Firewall-Regeln und die DNS-Auflösung.
+</Accordion>
+
+<Accordion title="SSL certificate errors">
+Aktivieren Sie SSL/TLS für die Upstream-Verbindung. Fügen Sie bei nginx `proxy_ssl_server_name on;` hinzu. Aktivieren Sie bei Apache `SSLProxyEngine On`.
+</Accordion>
+
+<Accordion title="Assets loading from wrong domain">
+Stellen Sie sicher, dass der Header `X-Forwarded-Host` korrekt gesetzt ist. Dadurch wird Jamdesk mitgeteilt, welche Domain für Asset-URLs und interne Links verwendet werden soll.
+</Accordion>
+
+<Accordion title="Redirect loops">
+Prüfen Sie, ob Ihr Proxy Weiterleitungen folgt. Der Proxy sollte die Antwort unverändert weiterleiten, ohne zusätzliche Weiterleitungsverarbeitung.
+</Accordion>
+
+<Accordion title="403 Domain not authorized error">
+Wenn die Meldung „Domain is not authorized to serve this content“ angezeigt wird:
+
+1. Überprüfen Sie, ob Ihre Domain im Jamdesk-Dashboard registriert ist
+2. Schließen Sie die DNS-Verifizierung (TXT-Eintrag) für Ihre Domain ab
+3. Stellen Sie sicher, dass der Header `X-Jamdesk-Forwarded-Host` in Ihrer Proxy-Konfiguration gesetzt ist
+4. Prüfen Sie, ob Ihre Domain dem richtigen Projekt zugeordnet ist
+
+Die Domain muss verifiziert sein, bevor der Proxy Dokumentation bereitstellen kann.
+</Accordion>
+
+<Accordion title="The Custom domain only preflight check keeps failing">
+Die Vorabprüfung ruft `/_jd/preflight` auf Ihrer Live-Domain ab und überprüft, was tatsächlich bei Jamdesk angekommen ist. Wenn gemeldet wird, dass Ihr Proxy „sich nicht identifiziert“, hat eine Anfrage Jamdesk erreicht, jedoch ohne Header oder Marker. Überprüfen Sie erneut die Zeile `X-Jamdesk-Forwarded-Host` in jedem oben aufgeführten Location-/Route-Block. Unter [Nur benutzerdefinierte Domain](/de/deploy/custom-domain-only) erfahren Sie, was die einzelnen Meldungen der Vorabprüfung bedeuten.
+</Accordion>
+
+## Wie geht es weiter?
+
+<Columns cols={3}>
+  <Card title="Nur benutzerdefinierte Domain" icon="eye-slash" href="/de/deploy/custom-domain-only">
+    Verhindern Sie, dass Ihre Subdomain direkt antwortet
+  </Card>
+  <Card title="Benutzerdefinierte Domains" icon="globe" href="/de/deploy/custom-domains">
+    DNS überprüfen und Fehler beheben
+  </Card>
+  <Card title="Hosting unter einem Unterpfad" icon="folder-tree" href="/de/deploy/subpath-hosting">
+    Dokumentation unter /docs bereitstellen
+  </Card>
+</Columns>

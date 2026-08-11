@@ -1,0 +1,147 @@
+---
+title: KI-Chat
+sidebarTitle: KI-Chat
+description: Jede Jamdesk-Dokumentationsseite enthält einen integrierten KI-Chat, der Fragen mit Antworten und Quellenangaben aus Ihrer Dokumentation beantwortet.
+---
+
+Jede Jamdesk-Seite enthält einen Chat-Assistenten, der Besucherfragen anhand Ihrer Dokumentation beantwortet. Er ruft relevante Abschnitte ab, sendet sie an Claude und streamt eine Antwort mit Links zu den Quellseiten.
+
+Die Screenshots zeigen die Benutzeroberfläche auf Englisch.
+
+Hier sehen Sie den Chat-Assistenten in Aktion:
+
+<YouTube id="XphRq59HO9g" />
+
+
+## Anwendungsfälle
+
+<Tabs>
+  <Tab title="API-Einführung">
+    Ein Entwickler, der Ihre API integriert, fragt *„Wie authentifiziere ich Anfragen?“* und erhält die genauen Schritte mit einem Codebeispiel sowie einen Link zur Quellseite.
+  </Tab>
+  <Tab title="Fehlerbehebung">
+    *„Mein Build schlägt mit einem Timeout-Fehler fehl“*
+
+    Statt mehrere Seiten zu durchsuchen, erhält der Besucher innerhalb von Sekunden die relevante Lösung aus Ihrem Leitfaden zur Fehlerbehebung.
+  </Tab>
+  <Tab title="Kurzübersicht">
+    Wiederkehrende Nutzer stellen Fragen wie *„Welche Parameter akzeptiert der /users-Endpoint?“*, woraufhin der Chat die Endpoint-Dokumentation abruft und die Parametertabelle direkt zurückgibt.
+  </Tab>
+</Tabs>
+
+## So funktioniert es
+
+<Steps>
+  <Step title="Build erstellt Indizes Ihrer Dokumentation">
+    Bei jedem Build teilt Jamdesk Ihre Seiten in Abschnitte auf und speichert sie als durchsuchbare Embeddings.
+  </Step>
+  <Step title="Besucher stellt eine Frage">
+    Die Schaltfläche „Ask AI“ (oder Cmd+I / Ctrl+I) öffnet auf jeder Seite ein Chatfenster.
+  </Step>
+  <Step title="KI beantwortet Fragen anhand Ihrer Dokumentation">
+    Relevante Abschnitte werden abgerufen, als Kontext an Claude gesendet und die Antwort mit Quellenlinks zu den Quellseiten zurückgestreamt.
+  </Step>
+</Steps>
+
+## Funktionen
+
+| Funktion | Details |
+|---------|--------|
+| Gestreamte Antworten | Antworten treffen in Echtzeit ein |
+| Quellenlinks | Jede Antwort verlinkt auf die Dokumentationsseiten, aus denen sie stammt |
+| Disambiguierung | Wenn eine Frage zu mehreren Themen passt, fragt die KI, welches Thema der Besucher meint |
+| Gesprächskontext | Verlauf mit 10 Nachrichten, pro Browser-Tab gespeichert |
+| Startfragen | Automatisch aus Ihrer Dokumentation generiert oder in docs.json selbst festgelegt |
+| Tastaturkürzel | Cmd+I / Ctrl+I zum Ein- und Ausschalten, Escape zum Schließen |
+| Markdown-Darstellung | Codeblöcke, Tabellen und Listen werden innerhalb der Antworten dargestellt |
+
+![Leerer Zustand des Chatfensters mit Startfragen](/images/ai/chat-panel.webp)
+
+## Konfiguration
+
+Der Chat funktioniert ohne erforderliche Konfiguration sofort. Fügen Sie nur dann einen `chat`-Block zu Ihrer `docs.json` hinzu, wenn Sie die Startfragen anpassen oder den Chat deaktivieren möchten. Das Feld `chat` ist optional, und beide Einstellungen haben sinnvolle Standardwerte.
+
+```json docs.json
+{
+  "chat": {
+    "enabled": true,
+    "starterQuestions": [
+      "How do I get started?",
+      "What API endpoints are available?"
+    ]
+  }
+}
+```
+
+| Feld | Typ | Standardwert | Beschreibung |
+|-------|------|---------|-------------|
+| `enabled` | boolean | `true` | Auf `false` setzen, um die Schaltfläche „Ask AI“, das Chatfenster und das Tastaturkürzel von Ihrer Website zu entfernen |
+| `starterQuestions` | string[] | automatisch generiert | Bis zu 4 Fragen, die beim Öffnen des Fensters angezeigt werden (jeweils 5-200 Zeichen). Wenn das Feld fehlt, werden sie automatisch aus Ihrer Dokumentation generiert; auf `[]` setzen, um keine anzuzeigen |
+
+### Startfragen
+
+Startfragen sind vorgeschlagene Eingaben, die im Chatfenster angezeigt werden, bevor ein Besucher etwas eingibt: Beispiele, die mit einem Klick ausgewählt werden können und Hinweise darauf geben, was gefragt werden kann. Wenn Sie `starterQuestions` in Ihrer `docs.json` weglassen, generiert Jamdesk sie bei jedem Build automatisch aus Ihrer Dokumentation, damit sie relevant bleiben, wenn Ihre Dokumentation wächst.
+
+Um eigene Fragen festzulegen, tragen Sie sie in das Array `starterQuestions` ein. Das ist praktisch, wenn Ihr Supportteam immer wieder dieselben Fragen beantwortet und Sie diese zuerst anzeigen möchten:
+
+```json docs.json
+{
+  "chat": {
+    "starterQuestions": [
+      "How do notifications work?",
+      "Tell me more about analytics"
+    ]
+  }
+}
+```
+
+Sie können bis zu 4 Startfragen mit jeweils 5 bis 200 Zeichen festlegen. Um überhaupt keine Startfragen anzuzeigen, setzen Sie `starterQuestions` auf ein leeres Array (`[]`).
+
+### Chat deaktivieren
+
+Der Chat ist standardmäßig in jedem Tarif aktiviert. Um ihn zu deaktivieren, setzen Sie `enabled` auf `false`. Dadurch werden die Schaltfläche „Ask AI“, das Chatfenster und das Tastaturkürzel `Cmd+I` / `Ctrl+I` entfernt:
+
+```json docs.json
+{
+  "chat": {
+    "enabled": false
+  }
+}
+```
+
+<Note>
+Die Deaktivierung des Chats wirkt sich nicht auf die Suche aus. KI-Chat und Suche sind getrennte Funktionen, sodass Ihre Dokumentation auch bei deaktiviertem Chat vollständig durchsuchbar bleibt.
+</Note>
+
+## Einschränkungen
+
+| Einschränkung | Wert |
+|-------|-------|
+| Maximale Nachrichtenlänge | 2,000 Zeichen |
+| Maximale Antwortlänge | 2,048 Tokens |
+| Ratenbegrenzung | 10 Anfragen / 60 Sekunden pro Besucher und Website |
+| Gesprächsverlauf | 10 Nachrichten pro Tab |
+| Startfragen | maximal 4 |
+
+Der Chat funktioniert auf [benutzerdefinierten Domains](/de/deploy/custom-domains). Der `/_chat`-Endpoint ist same-origin und funktioniert daher auf jeder Domain, unter der Ihre Dokumentation bereitgestellt wird.
+
+<Accordion title="So funktioniert die Retrieval-Pipeline">
+  Bei jedem Build teilt Jamdesk Ihre Seiten in Abschnitte auf und speichert für jeden Abschnitt Vektor-Embeddings. Wenn ein Besucher eine Frage stellt, führt das System eine hybride Suche durch (eine Kombination aus Keyword-Abgleich und semantischer Ähnlichkeit), um die relevantesten Abschnitte in Ihrer gesamten Dokumentation zu finden. Diese Abschnitte werden mit Anweisungen, ausschließlich anhand der bereitgestellten Dokumentation zu antworten, als Kontext an Claude gesendet. Quellenangaben werden extrahiert, indem Seitenverweise in der Antwort von Claude mit den abgerufenen Abschnitten abgeglichen werden.
+</Accordion>
+
+## Wie geht es weiter?
+
+<Columns cols={2}>
+  <Card title="llms.txt" icon="file-lines" href="/de/ai/llms-txt">
+    Automatisch generierter Seitenindex für KI-Tools
+  </Card>
+  <Card title="MCP Server" icon="robot" href="/de/ai/mcp-server">
+    KI-Tools ermöglichen, Ihre Dokumentation programmgesteuert zu durchsuchen und abzufragen
+  </Card>
+  <Card title="docs.json-Referenz" icon="file-lines" href="/de/config/docs-json-reference">
+    Alle Konfigurationsfelder einschließlich der Chat-Einstellungen
+  </Card>
+  <Card title="So funktioniert Jamdesk" icon="gear" href="/de/how-jamdesk-works">
+    Die Build-Pipeline, die die Chat-Indizierung ermöglicht
+  </Card>
+</Columns>

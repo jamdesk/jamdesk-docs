@@ -1,0 +1,118 @@
+---
+title: KI-Aktionsmenü
+description: Ein Dropdown auf jeder Seite zum Kopieren von Markdown, Öffnen in ChatGPT, Claude oder Perplexity und Installieren Ihres MCP-Servers mit einem Klick.
+---
+
+Jede Seite Ihrer Jamdesk-Website enthält ein KI-Aktionsmenü: ein kleines Dropdown über dem Titel, das Lesern schnellen Zugriff auf KI-Tools bietet. Sie können beispielsweise die Seite als Markdown kopieren, sie in ChatGPT öffnen oder Ihren MCP-Server in Cursor installieren. Keine Konfiguration erforderlich.
+
+Die Screenshots zeigen die Benutzeroberfläche auf Englisch.
+
+<div style={{ display: 'flex', justifyContent: 'center' }}>
+  <img src="/images/ai-actions.webp" alt="KI-Aktions-Dropdown mit den Optionen Copy page, View as Markdown, Download API spec, Open in ChatGPT, Open in Claude, Open in Perplexity, Copy MCP config, Connect to Cursor und Connect to VS Code" style={{ width: '100%', maxWidth: '500px' }} />
+</div>
+
+## Integrierte Optionen
+
+Das Menü enthält acht Optionen, die standardmäßig alle aktiviert sind:
+
+| Option | Key | Funktion |
+|--------|-----|-------------|
+| **Copy page** | `copy` | Ruft das unformatierte Markdown ab und kopiert es in die Zwischenablage |
+| **View as Markdown** | `view` | Öffnet die `.md`-Datei in einem neuen Tab |
+| **Open in ChatGPT** | `chatgpt` | Öffnet ChatGPT mit einer Aufforderung, die aktuelle Seite zu lesen |
+| **Open in Claude** | `claude` | Öffnet Claude mit derselben Aufforderung |
+| **Open in Perplexity** | `perplexity` | Öffnet Perplexity mit derselben Aufforderung |
+| **Copy MCP config** | `mcp` | Kopiert die JSON-Konfiguration für den [MCP-Server](/de/ai/mcp-server) Ihrer Website |
+| **Add to Cursor** | `cursor` | Verknüpft direkt mit der Installation des MCP-Servers in Cursor |
+| **Add to VS Code** | `vscode` | Verknüpft direkt mit der Installation des MCP-Servers in VS Code |
+
+Gemini ist ebenfalls als `gemini` verfügbar, wird aber standardmäßig nicht eingeschlossen, da das zuverlässige Vorausfüllen von URL-Aufforderungen nicht unterstützt wird. Fügen Sie die Option explizit hinzu, wenn Ihre Leser Gemini verwenden.
+
+Wenn `copy` in der Optionsliste enthalten ist, wird sie zur primären Schaltfläche. Die übrigen Optionen erscheinen in einem durch einen Chevron geöffneten Dropdown. Ohne `copy` wird alles zu einem einzelnen Dropdown **AI Actions** zusammengefasst.
+
+### API-Spezifikation herunterladen
+
+Auf API-Referenzseiten enthält das Menü einen zusätzlichen Eintrag: **Download API spec**. Dieser bündelt jede OpenAPI-Spezifikation, auf die Ihre Website verweist (lokale Dateien in Ihrem Repository ebenso wie entfernte Spezifikations-URLs), in einer einzigen `api-specs.zip`, die Sie an Postman, einen Client-Generator oder Ihre eigenen Tools übergeben können. Bei Spezifikationen mit mehreren Dateien bleibt die Ordnerstruktur innerhalb der ZIP-Datei erhalten, sodass `$ref`-Verweise zwischen den Dateien weiterhin aufgelöst werden.
+
+Der Eintrag wird eigenständig angezeigt; es gibt nichts zu konfigurieren. Er erscheint nur auf Seiten, die auf einer OpenAPI-Spezifikation basieren, und nur, wenn Ihre Website tatsächlich eine solche enthält. Reguläre Anleitungen bleiben daher unverändert. Die ZIP-Datei wird bei jedem Download neu erstellt und entspricht somit immer Ihren aktuellen Spezifikationen.
+
+## Konfiguration
+
+Das Menü funktioniert ohne zusätzliche Einrichtung. Sie müssen `docs.json` nur ändern, wenn Sie die angezeigten Optionen anpassen oder das Menü vollständig deaktivieren möchten.
+
+### Eine Teilmenge der Optionen anzeigen
+
+```json docs.json
+{
+  "contextual": {
+    "options": ["copy", "claude", "mcp"]
+  }
+}
+```
+
+### Das Menü deaktivieren
+
+```json docs.json
+{
+  "contextual": {
+    "enabled": false
+  }
+}
+```
+
+### Benutzerdefinierte Optionen hinzufügen
+
+Sie können integrierte Optionen mit eigenen Optionen kombinieren. Benutzerdefinierte Optionen öffnen eine URL in einem neuen Tab.
+
+```json docs.json
+{
+  "contextual": {
+    "options": [
+      "copy",
+      "claude",
+      {
+        "title": "Ask on Discord",
+        "description": "Get help from the community",
+        "icon": "discord",
+        "href": "https://discord.gg/your-server"
+      }
+    ]
+  }
+}
+```
+
+Benutzerdefinierte Optionen unterstützen ein optionales Feld `icon`. Jeder [Font Awesome-Symbolname](/de/content/icons) funktioniert, einschließlich Markensymbolen wie `discord` oder `slack`. Ohne Symbol wird ein Link-Symbol angezeigt.
+
+Benutzerdefinierte Optionen unterstützen auch Abfrageparameter:
+
+```json docs.json
+{
+  "contextual": {
+    "options": [
+      "copy",
+      {
+        "title": "Search in Notion",
+        "description": "Find related internal docs",
+        "href": {
+          "base": "https://notion.so/search",
+          "query": [
+            { "key": "q", "value": "docs" }
+          ]
+        }
+      }
+    ]
+  }
+}
+```
+
+## Funktionsweise
+
+Das Menü läuft vollständig clientseitig. URLs werden bei jeder Seitennavigation aktualisiert. Der Link **Open in Claude** verweist daher immer auf die Seite, die Sie gerade ansehen, selbst wenn Sie ohne vollständiges Neuladen der Seite über die Seitenleiste navigieren.
+
+Die Links zu den KI-Diensten enthalten die `.md`-URL der Seite in der Aufforderung. ChatGPT, Claude und Perplexity können URLs abrufen und lesen Ihre Dokumentation daher direkt über den Link.
+
+MCP-Optionen verwenden den `/_mcp`-Endpoint, den jede Jamdesk-Website bereitstellt. **Copy MCP config** stellt Ihren Lesern die JSON-Datei zur Verfügung, die sie für jeden MCP-Client benötigen. **Add to Cursor** und **Add to VS Code** sind direkte Ein-Klick-Links, die den Installationsablauf des Editors unmittelbar öffnen. Weitere Informationen zu den Möglichkeiten von KI-Tools finden Sie unter [MCP-Server](/de/ai/mcp-server).
+
+<Card title="MCP-Server" icon="plug" href="/de/ai/mcp-server">
+  Ihre Dokumentation verfügt bereits über einen integrierten MCP-Server. Das KI-Aktionsmenü erleichtert lediglich die Verbindung.
+</Card>

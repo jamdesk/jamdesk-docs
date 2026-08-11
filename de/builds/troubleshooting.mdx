@@ -1,0 +1,95 @@
+---
+title: Build-Fehlerbehebung
+description: "Behebe häufige Build-Fehler anhand von Fehlermeldungen, Ursachen und Lösungen – inklusive Konfiguration, Abhängigkeiten, MDX-Syntax und Icons."
+---
+
+Wenn ein Build fehlschlägt, zeigt das Build-Log, was und an welcher Stelle etwas schiefgelaufen ist. Suchen Sie unten nach Ihrer Fehlermeldung und springen Sie direkt zur Lösung.
+
+## Fehlerdetails anzeigen
+
+1. Öffnen Sie den Tab **Deployments** Ihres Projekts.
+2. Klicken Sie auf den fehlgeschlagenen Build.
+3. Lesen Sie die Fehlermeldung und gehen Sie das Build-Log durch.
+
+Das Log verweist auf die genaue Datei und Zeile, die den Build angehalten hat.
+
+## Häufige Fehler
+
+### Konfigurationsfehler
+
+`Invalid docs.json` bedeutet, dass Ihre Konfigurationsdatei nicht geparst werden kann. Die Ursache ist fast immer geringfügig: ein überflüssiges Komma, eine nicht geschlossene Klammer oder ein fehlendes Anführungszeichen.
+
+<Steps>
+  <Step title="JSON-Syntax prüfen">
+    Suchen Sie nach fehlenden Kommas, Klammern oder Anführungszeichen.
+  </Step>
+  <Step title="Lokal validieren">
+    Führen Sie `jamdesk validate` aus, um die genauen Fehler anzuzeigen.
+  </Step>
+  <Step title="Beheben und pushen">
+    Korrigieren Sie die Fehler und pushen Sie die Änderungen, um einen neuen Build auszulösen.
+  </Step>
+</Steps>
+
+### Fehlende Seiten
+
+Der Fehler `Page not found` tritt auf, wenn Ihre Navigation auf eine nicht vorhandene Datei verweist. Prüfen Sie, ob der Dateiname mit dem Pfad in `docs.json` übereinstimmt, die Groß- und Kleinschreibung exakt stimmt und Sie die Erweiterung `.mdx` weggelassen haben.
+
+### MDX-Syntaxfehler
+
+`MDX compilation failed` weist auf fehlerhaftes MDX oder JSX auf einer Seite hin. Meist handelt es sich um ein nicht geschlossenes Tag (ein `<Card>` ohne passendes `</Card>`), ein nicht maskiertes Zeichen wie ein wörtliches `{`, wo Sie `\{` verwenden wollten, oder eine ungültige Prop-Syntax.
+
+### Build-Timeout
+
+`Build exceeded time limit` bedeutet genau das: Der Build lief länger als die zulässige Zeit. Große, nicht optimierte Bilder sind meist die Ursache. Komprimieren Sie sie, teilen Sie zu umfangreich gewordene Seiten auf und entfernen Sie Seiten, die Sie nicht mehr veröffentlichen.
+
+## Build-Warnungen
+
+Warnungen lassen einen Build nie fehlschlagen; Ihre Website wird in jedem Fall veröffentlicht. Sie weisen auf behebbare Probleme hin und erscheinen an drei Stellen: in der E-Mail zu Build-Warnungen, im Build-Eintrag im Tab **Deployments** und in Ihrem Terminal, wenn Sie `jamdesk validate` oder `jamdesk dev` ausführen.
+
+### Fehlende Bilder
+
+`Image not found` weist darauf hin, dass eine Seite auf ein Bild verweist, das Ihr Projekt nicht enthält.
+
+Jamdesk prüft jede Bildreferenz (Markdown `![alt](/images/photo.webp)` sowie das `src`-Attribut von `<img>`- und `<Image>`-Tags) anhand der Dateien in Ihrem Repository. Wenn das Ziel fehlt, nennt die Warnung die Seite, die Zeilennummer und den Pfad, der nicht aufgelöst werden konnte. So wird ein fehlerhaftes Bild nie als stiller 404-Fehler veröffentlicht.
+
+Laden Sie zur Behebung das Bild hoch oder verweisen Sie auf eine vorhandene Datei. Bei Pfaden wird zwischen Groß- und Kleinschreibung unterschieden. Sie werden entweder vom Projektstammverzeichnis aus aufgelöst (mit führendem `/`) oder relativ zur Seite. Auch eine Referenz auf `photo.png` funktioniert weiterhin, nachdem [die Bildoptimierung](/de/builds/image-optimization) sie in WebP konvertiert hat.
+
+Referenzen auf externe URLs, `data:`-URIs und Bildsyntax innerhalb von Codeblöcken werden übersprungen. Daher lösen Beispiele in Ihrer eigenen Dokumentation keine falschen Warnungen aus.
+
+## Schritte zur Fehlerbehebung
+
+<Accordion title="Schritt 1: Build-Log prüfen">
+  Das Log nennt die genaue Datei und Zeile, die den Fehler verursacht. Beginnen Sie dort.
+</Accordion>
+
+<Accordion title="Schritt 2: Lokal testen">
+  Führen Sie `jamdesk dev` aus, um den Fehler auf Ihrem eigenen Rechner zu reproduzieren.
+</Accordion>
+
+<Accordion title="Schritt 3: Konfiguration validieren">
+  Führen Sie `jamdesk validate` aus, um Ihre `docs.json` zu prüfen, und anschließend `jamdesk broken-links`, um fehlerhafte interne Links zu finden.
+</Accordion>
+
+<Accordion title="Schritt 4: Aktuelle Änderungen prüfen">
+  Sehen Sie sich Ihren letzten Commit an. Haben Sie eine Seite hinzugefügt oder die Konfiguration geändert?
+</Accordion>
+
+## Problem weiterhin nicht gelöst?
+
+Wenn keiner der obigen Schritte das Problem behebt:
+
+1. Kopieren Sie das vollständige Build-Log.
+2. Notieren Sie Ihre Projekt-ID (sie steht in der URL).
+3. [Kontaktieren Sie den Support](/de/help/support/contact).
+
+## Verwandte Artikel
+
+<Columns cols={2}>
+  <Card title="Fehlerreferenz" icon="book" href="/de/help/troubleshooting/error-reference">
+    Alle Fehlercodes erklärt
+  </Card>
+  <Card title="Builds überwachen" icon="chart-line" href="/de/builds/monitoring">
+    Build-Fortschritt verfolgen
+  </Card>
+</Columns>

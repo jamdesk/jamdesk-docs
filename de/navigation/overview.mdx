@@ -1,0 +1,234 @@
+---
+title: Navigation
+description: Navigation in Jamdesk organisiert Ihre Dokumentation mit Tabs, Gruppen und Seiten. Externe Links lassen sich über Anker hinzufügen.
+---
+
+Ihre Seitenleiste und obere Leiste werden vollständig in `docs.json` definiert. Die Navigationshierarchie umfasst drei Ebenen: Tabs für übergeordnete Bereiche, Gruppen für ausklappbare Ordner und Seiten für einzelne Einträge. Mit Ankern fügen Sie externe Links hinzu, die auf jeder Seite angezeigt werden.
+
+Die Screenshots zeigen die Benutzeroberfläche auf Englisch.
+
+## Strukturübersicht
+
+```json docs.json
+{
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "icon": "book-open",
+        "groups": [
+          {
+            "group": "Getting Started",
+            "pages": ["introduction", "quickstart"]
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+## Konzepte
+
+### Tabs
+
+Übergeordnete Navigationsbereiche. Mit der Einstellung `tabsPosition` legen Sie ihre Position fest:
+
+| Wert     | Position                  |
+| -------- | ------------------------- |
+| `"top"`  | In der Tab-Leiste des Headers |
+| `"left"` | Oben in der Seitenleiste |
+
+Die Standardposition hängt von Ihrem Theme ab:
+
+| Theme  | Standard |
+| ------ | -------- |
+| jam    | `"left"` |
+| nebula | `"left"` |
+| pulsar | `"top"`  |
+| halo   | `"left"` |
+
+```json
+{
+  "tabsPosition": "left",
+  "navigation": {
+    "tabs": [
+      { "tab": "Guides", "icon": "book", "groups": [...] },
+      { "tab": "API", "icon": "code", "groups": [...] }
+    ]
+  }
+}
+```
+
+<Note>
+  Symbole in der Seitenleiste werden standardmäßig in der Variante Font Awesome Solid dargestellt. Überschreiben Sie die Stärke eines Symbols mit einem Stilpräfix (`light/book`) oder der
+  [Objektform für Symbole](/de/content/icons#icon-object-form).
+</Note>
+
+### Externe Links (Anker)
+
+Fügen Sie externe Links hinzu, die auf allen Seiten oben in der Seitenleiste angezeigt werden:
+
+```json
+{
+  "anchors": [
+    { "name": "Blog", "href": "https://blog.example.com", "icon": "newspaper" },
+    { "name": "Status", "href": "https://status.example.com", "icon": "signal" }
+  ]
+}
+```
+
+| Feld   | Typ    | Erforderlich | Beschreibung                    |
+| ------ | ------ | ------------ | ------------------------------- |
+| `name` | string | Ja           | Anzeigetext für den Link        |
+| `href` | string | Ja           | URL (wird in einem neuen Tab geöffnet) |
+| `icon` | string | Nein         | Name des Font Awesome-Symbols   |
+
+### Gruppen
+
+Eine Gruppe ist eine beschriftete Sammlung von Seiteneinträgen innerhalb eines Tabs. Gruppen fügen Ihrer Seitenleiste eine zweite Hierarchieebene hinzu und ermöglichen es, tieferliegende Bereiche hinter Ordnern im Akkordeonstil auszublenden.
+
+```json
+{
+  "group": "Authentication",
+  "pages": ["auth/overview", "auth/tokens"]
+}
+```
+
+#### Verhalten von Bereichen und Akkordeons
+
+Übergeordnete Gruppen sind permanente Bereiche: Der Titel und die zugehörigen Seiten sind immer sichtbar, und ein Klick auf den Titel führt zur ersten Seite der Gruppe. Verschachtelte benannte Gruppen sind ausklappbare Akkordeons. Eine verschachtelte Gruppe ist zunächst geschlossen, sofern sie nicht die aktuelle Seite enthält oder `expanded: true` setzt. Beim erstmaligen Laden und bei Routenänderungen wird die vollständige übergeordnete Kette der aktuellen Seite automatisch geöffnet, sodass der aktive Link sichtbar wird. Besucher können die aktive verschachtelte Gruppe weiterhin manuell schließen.
+
+| Gruppentyp | Standardverhalten |
+| --- | --- |
+| **Übergeordnete Gruppe** | Immer geöffnet, kein Chevron. Ein Klick auf den Titel navigiert zur ersten Seite der Gruppe. |
+| **Verschachtelte benannte Gruppe** | Geschlossen, bis sie aktiv oder manuell geöffnet wird oder mit `expanded: true` konfiguriert ist. Ein Klick auf eine geschlossene Gruppe öffnet sie, ein Klick auf eine geöffnete Gruppe schließt sie. Die Navigation erfolgt nur beim Klicken auf eine Seite. |
+| **Unbenannter Container** | Rendert seine Seiten immer, da er keine Beschriftung oder Umschaltsteuerung besitzt. |
+
+Verwenden Sie übergeordnete Gruppen für die Hauptbereiche Ihrer Seitenleiste und verschachtelte Gruppen, damit längere Bereiche übersichtlich bleiben. Der Ausklappstatus bleibt während der Navigation innerhalb der App erhalten und wird bei einer vollständigen Aktualisierung der Seite zurückgesetzt.
+
+<Frame caption="Eine verschachtelte Gruppe in ihrem geschlossenen Zustand. Das Chevron zeigt nach rechts und die untergeordneten Seiten sind ausgeblendet.">
+  <img src="/images/navigation/sidebar-group-collapsed.webp" alt="Seitenleiste mit geschlossener Gruppe „Privacy & Access“: Chevron zeigt nach rechts, untergeordnete Seiten ausgeblendet" width="320" height="900" />
+</Frame>
+
+<Frame caption="Dieselbe Gruppe nach der Navigation zu einer ihrer untergeordneten Seiten. Das Chevron dreht sich und die untergeordneten Seiten werden darunter angezeigt.">
+  <img src="/images/navigation/sidebar-group-expanded.webp" alt="Seitenleiste mit geöffneter Gruppe „Privacy & Access“: Chevron nach unten gedreht, drei untergeordnete Seiten darunter sichtbar" width="320" height="900" />
+</Frame>
+
+#### Gruppenfelder
+
+| Feld | Typ | Erforderlich | Beschreibung |
+| --- | --- | --- | --- |
+| `group` | string | Ja | In der Seitenleiste angezeigte Beschriftung. |
+| `pages` | array | Ja | Liste von Seitenpfaden und/oder verschachtelten Gruppenobjekten (siehe [Verschachtelte Gruppen](#verschachtelte-gruppen) für die Struktur verschachtelter Gruppen). |
+| `icon` | string | Nein | Name des Font Awesome-Symbols, das neben der Gruppenbeschriftung angezeigt wird. |
+| `tag` | string | Nein | Kleines Abzeichen neben der Beschriftung (z. B. `"New"`, `"Beta"`). |
+| `root` | string | Nein | Seitenpfad, zu dem die Gruppe beim Klicken auf die Beschriftung verlinkt, statt zur ersten untergeordneten Seite zu springen. |
+| `hidden` | boolean | Nein | Gruppe standardmäßig in der Seitenleiste ausblenden. Die Seiten bleiben über direkte Links erreichbar. |
+| `public` | boolean | Nein | Gruppe als öffentlich zugänglich markieren. Standardmäßig wird die Einstellung des übergeordneten Tabs verwendet. |
+| `expanded` | boolean | Nein | Eine verschachtelte benannte Gruppe beim erstmaligen Laden der Seite standardmäßig öffnen. Übergeordnete Gruppen sind immer geöffnet, daher hat das Flag dort keine sichtbare Wirkung. Die übergeordneten Gruppen der aktuellen Seite werden beim erstmaligen Laden und bei Routenänderungen automatisch geöffnet. |
+
+### Seiten
+
+Einzelne Dokumentationsseiten, die über ihren Dateipfad ohne `.mdx` referenziert werden:
+
+```json
+"pages": ["introduction", "guides/quickstart", "api/endpoints"]
+```
+
+Standardmäßig wird der Titel der Seitenleiste aus dem Dateinamen generiert: Bindestriche werden in Leerzeichen umgewandelt und jedes Wort wird großgeschrieben. Beispielsweise wird `"api/getting-started"` als „Getting Started“ angezeigt.
+
+Um einen benutzerdefinierten Titel für die Seitenleiste festzulegen, verwenden Sie statt eines Strings ein Objekt:
+
+```json
+"pages": [
+  "guides/quickstart",
+  { "page": "deploy/aws", "title": "AWS Route 53 & CloudFront" },
+  { "page": "content/seo", "title": "SEO" },
+  { "page": "api/users", "title": "List Users", "method": "GET" }
+]
+```
+
+Dies ist nützlich für Akronyme, Eigennamen und Abzeichen für API-Endpunkte.
+
+| Feld | Typ | Erforderlich | Beschreibung |
+| --- | --- | --- | --- |
+| `page` | string | Ja | Dateipfad ohne `.mdx` |
+| `title` | string | Nein | Benutzerdefinierter Titel der Seitenleiste |
+| `icon` | string | Nein | Name des Font Awesome-Symbols |
+| `tag` | string | Nein | Kleines Abzeichen neben dem Titel (z. B. „New“, „Beta“) |
+| `method` | string | Nein | Abzeichen für die HTTP-Methode: GET, POST, PUT, PATCH oder DELETE |
+
+## Mehrere Tabs
+
+Erstellen Sie separate Bereiche für verschiedene Zielgruppen:
+
+```json
+{
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Guides",
+        "icon": "book",
+        "groups": [
+          { "group": "Getting Started", "pages": ["intro", "quickstart"] }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "icon": "code",
+        "groups": [{ "group": "Endpoints", "pages": ["api/auth", "api/users"] }]
+      }
+    ]
+  }
+}
+```
+
+## Externe Tab-Links
+
+Verlinken Sie direkt aus Tabs auf externe Dokumentationen oder Ressourcen:
+
+```json
+{
+  "navigation": {
+    "tabs": [
+      { "tab": "Docs", "icon": "book", "groups": [...] },
+      { "tab": "GitHub", "icon": "github", "href": "https://github.com/example/repo" }
+    ]
+  }
+}
+```
+
+Externe Tabs werden in einem neuen Browser-Tab geöffnet.
+
+## Verschachtelte Gruppen
+
+Organisieren Sie komplexe Dokumentationen mit verschachtelten Strukturen:
+
+```json
+{
+  "group": "SDKs",
+  "pages": [
+    "sdks/overview",
+    {
+      "group": "JavaScript",
+      "pages": ["sdks/js/install", "sdks/js/usage"]
+    },
+    {
+      "group": "Python",
+      "pages": ["sdks/python/install", "sdks/python/usage"]
+    }
+  ]
+}
+```
+
+## Wie geht es weiter?
+
+<Columns cols={2}>
+  <Card title="Connect GitHub" icon="github" href="/de/setup/connecting-github">
+    Verknüpfen Sie Ihr Repository für automatische Builds
+  </Card>
+  <Card title="Directory Structure" icon="folder-tree" href="/de/setup/directory-structure">
+    Organisieren Sie Ihre Dokumentation für eine skalierbare Struktur
+  </Card>
+</Columns>

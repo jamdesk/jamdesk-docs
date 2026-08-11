@@ -1,0 +1,163 @@
+---
+title: Builds API / Trigger
+description: Lösen Sie Dokumentations-Builds programmgesteuert aus – ohne Commits zu übertragen. Ideal für CI-Pipelines und geplante Aktualisierungen.
+---
+
+Verwenden Sie die Builds API, um Dokumentations-Builds auszulösen, ohne neue Commits zu übertragen. Dies ist nützlich für CI-Pipelines, geplante Builds oder Inhalte, die außerhalb Ihres Dokumentationsverzeichnisses generiert werden.
+
+## Authentifizierung
+
+Alle Anfragen verwenden einen API-Schlüssel des Projekts:
+
+```http
+Authorization: Bearer YOUR_API_KEY
+```
+
+Sie finden Ihren API-Schlüssel unter **Settings** → **API** für das Projekt.
+
+## Einen Build auslösen
+
+**POST** `https://api.jamdesk.com/projects/{project_id}/rebuild`
+
+### Beispielanfrage
+
+<CodeGroup>
+```bash cURL
+curl -X POST "https://api.jamdesk.com/projects/YOUR_PROJECT_ID/rebuild" \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+```javascript JavaScript
+const projectId = "YOUR_PROJECT_ID";
+const apiKey = "YOUR_API_KEY";
+
+const response = await fetch(
+  `https://api.jamdesk.com/projects/${projectId}/rebuild`,
+  {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${apiKey}`
+    }
+  }
+);
+const build = await response.json();
+console.log(build.buildId, build.status);
+```
+</CodeGroup>
+
+### Antwort
+
+Erfolgreiche Anfragen geben `200 OK` mit Build-Metadaten zurück, die Sie zur Fortschrittsverfolgung verwenden können.
+
+```json
+{
+  "buildId": "build_8f3k2j",
+  "status": "queued",
+  "createdAt": "2026-02-05T10:30:00Z",
+  "commit": {
+    "sha": "a1b2c3d",
+    "message": "Update API docs",
+    "author": "jane@example.com"
+  },
+  "project": {
+    "id": "proj_abc123",
+    "name": "My Docs"
+  }
+}
+```
+
+<Note>
+Wenn Sie eine `429`-Antwort erhalten, versuchen Sie es mit einem exponentiellen Backoff erneut. Wenden Sie sich an den Support, wenn Sie höhere Limits benötigen.
+</Note>
+
+### Antwortfelder
+
+<ResponseField name="buildId" type="string">
+  Eindeutiger Build-Bezeichner. Verwenden Sie ihn, um im Dashboard auf den Build zu verweisen.
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  Aktueller Build-Status. Einer von: `queued`, `building`, `deployed`, `failed`.
+</ResponseField>
+
+<ResponseField name="createdAt" type="string">
+  ISO-8601-Zeitstempel der Erstellung des Builds.
+</ResponseField>
+
+<ResponseField name="commit.sha" type="string">
+  Kurzer Commit-Hash, der den Build ausgelöst hat.
+</ResponseField>
+
+<ResponseField name="commit.message" type="string">
+  Commit-Nachricht aus dem Quellrepository.
+</ResponseField>
+
+<ResponseField name="commit.author" type="string">
+  E-Mail-Adresse des Commit-Autors.
+</ResponseField>
+
+<ResponseField name="project.id" type="string">
+  Projektbezeichner, der dem Projekt in Ihrem Dashboard entspricht.
+</ResponseField>
+
+<ResponseField name="project.name" type="string">
+  Anzeigename des Projekts.
+</ResponseField>
+
+## Build-Status verfolgen
+
+Der Build-Status ist im Dashboard unter **Deployments** sichtbar. Jeder Build durchläuft diese Phasen:
+
+1. **queued** -- Der Build wartet in der Warteschlange.
+2. **building** -- Der Build-Dienst kompiliert Ihre Dokumentation.
+3. **deployed** -- Der Build wurde abgeschlossen und Ihre Website ist live.
+4. **failed** -- Ein Fehler ist aufgetreten. Prüfen Sie die Build-Protokolle auf weitere Informationen.
+
+Wenn Ihr Repository mit GitHub verbunden ist, werden Statusprüfungen für Commits automatisch aktualisiert. Sobald der Build bereitgestellt wird, erscheint ein grünes Häkchen am Commit; bei einem fehlgeschlagenen Build ein rotes X. Sie müssen die API nicht regelmäßig nach Statusaktualisierungen abfragen.
+
+## Format von Fehlerantworten
+
+Fehlerantworten folgen einer einheitlichen Struktur:
+
+```json
+{
+  "error": {
+    "code": "unauthorized",
+    "message": "Invalid API key",
+    "status": 401
+  }
+}
+```
+
+<ResponseField name="error.code" type="string">
+  Maschinenlesbarer Fehlercode. In der folgenden Tabelle finden Sie mögliche Werte.
+</ResponseField>
+
+<ResponseField name="error.message" type="string">
+  Für Menschen lesbare Beschreibung des aufgetretenen Fehlers.
+</ResponseField>
+
+<ResponseField name="error.status" type="number">
+  HTTP-Statuscode, der dem Antwortstatus entspricht.
+</ResponseField>
+
+### Fehlercodes
+
+| Status | Code | Nachricht | Lösung |
+|--------|------|-----------|--------|
+| **401** | `unauthorized` | Ungültiger API-Schlüssel | Generieren Sie den Schlüssel unter **Settings** → **API** neu |
+| **403** | `forbidden` | Nicht autorisierter Projektzugriff | Bestätigen Sie, dass die Projekt-ID zum Projekt des API-Schlüssels passt |
+| **404** | `project_not_found` | Projekt nicht gefunden | Überprüfen Sie die Projekt-ID im Dashboard |
+| **429** | `rate_limited` | Zu viele Anfragen | Warten Sie länger und versuchen Sie es mit einem exponentiellen Backoff erneut |
+| **500** | `internal_error` | Interner Serverfehler | Versuchen Sie es nach einigen Sekunden erneut. Wenden Sie sich an den Support, falls der Fehler bestehen bleibt |
+
+## Verwandte Artikel
+
+<Columns cols={2}>
+  <Card title="Builds auslösen" icon="hammer" href="/de/builds/triggering">
+    Manuelle und automatische Build-Trigger
+  </Card>
+  <Card title="Builds überwachen" icon="chart-line" href="/de/builds/monitoring">
+    Build-Status und Warteschlange verfolgen
+  </Card>
+</Columns>

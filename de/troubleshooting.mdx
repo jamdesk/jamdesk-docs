@@ -1,0 +1,82 @@
+---
+title: Fehlerbehebung
+description: Schnelle Lösungen für häufige Jamdesk-Probleme, darunter Build-Fehler, DNS-Verifizierung, GitHub-Verbindungen und fehlende Analysedaten.
+---
+
+Beginnen Sie hier, wenn etwas nicht funktioniert. Jeder Abschnitt enthält eine schnelle Lösung und einen Link zur ausführlicheren Anleitung im Hilfezentrum.
+
+<Note>
+  Bei Konto-, Abrechnungs- oder Produktfragen, die hier nicht behandelt werden, gehen Sie direkt zum [Hilfezentrum](/de/help/faq).
+</Note>
+
+## Build-Fehler
+
+Ihr Dashboard zeigt einen Build mit dem Status „Failed“ an. Die meisten Fehler haben eine von drei Ursachen: eine MDX-Seite mit einem fehlerhaften Import oder einer fehlerhaften Komponente, eine ungültige Änderung an `docs.json` (nicht geschlossene Klammern, nach dem letzten Array-Element stehende Kommata) oder eine in der Navigation von `docs.json` aufgeführte Seite, die nicht als `.mdx`-Datei existiert. Die ersten beiden Fehler werden lokal mit `jamdesk dev` angezeigt, bevor sie überhaupt einen bereitgestellten Build erreichen. Wenn Sie den Befehl einmal vor dem Push ausführen, sparen Sie sich in der Regel einen zusätzlichen Durchlauf.
+
+<Tip>
+Das Build-Protokoll in Ihrem Dashboard zeigt die genaue Datei und Zeile, in der der Fehler aufgetreten ist. Beginnen Sie dort. Es weist fast immer auf das tatsächliche Problem hin, nicht nur auf das Symptom.
+</Tip>
+
+Spezifische Fehlercodes finden Sie unter [Build-Fehler](/de/help/troubleshooting/build-failures) und in der [Fehlerreferenz](/de/help/troubleshooting/error-reference).
+
+## Benutzerdefinierte Domain wird nicht verifiziert
+
+Die Domain bleibt nach dem Hinzufügen der DNS-Einträge auf „Pending“? Gehen Sie diese Punkte der Reihe nach durch:
+
+1. Vergewissern Sie sich, dass Sie den `_jamdesk.<hostname>`-**TXT**-Eintrag hinzugefügt haben. Ohne ihn wird das Routing nicht aktiviert. Ein fehlender TXT-Eintrag ist die häufigste Ursache für eine Domain mit dem Status „Pending“. Der Hostname ist die vollständige Domain, die Sie verifizieren (für `docs.example.com` lautet der Name des TXT-Eintrags `_jamdesk.docs.example.com`).
+2. Vergewissern Sie sich, dass Sie für Subdomains einen **CNAME**-Eintrag und keinen A-Eintrag hinzugefügt haben.
+3. Wenn Sie Cloudflare verwenden, setzen Sie den Proxy für beide Einträge auf **DNS only** (graue Wolke).
+4. Prüfen Sie die Ausbreitung unter [whatsmydns.net](https://www.whatsmydns.net/).
+
+```bash
+# Verify the TXT verification record
+dig TXT _jamdesk.docs.yourdomain.com
+
+# Verify your CNAME is resolving
+dig CNAME docs.yourdomain.com
+```
+
+Wichtig zu wissen: Selbst wenn `dig` anzeigt, dass Ihre Einträge aufgelöst werden, kann das Dashboard bis zu 30 Minuten lang weiterhin „Pending“ melden. Der Verifizierungsdienst sitzt hinter vorgeschalteten Resolvern, die negative DNS-Antworten zwischenspeichern. Dieses Cache-Zeitfenster muss ablaufen, bevor eine erneute Prüfung erfolgreich ist. Wenn lokal alles aufgelöst wird, das Dashboard aber noch nicht aktualisiert wurde, warten Sie eine halbe Stunde, bevor Sie von einem tieferliegenden Problem ausgehen.
+
+[DNS-Fehlerbehebung](/de/help/troubleshooting/dns-issues) behandelt Besonderheiten bestimmter Anbieter.
+
+## Gültige OpenAPI-Spezifikation lässt sich nicht validieren
+
+`jamdesk dev` weist eine Spezifikation zurück, von der Sie wissen, dass sie gültig ist, und meldet Fehler wie `#/servers/0/variables/host must NOT have unevaluated properties` — meist bei Servervariablen mit einer `description` oder bei einer Lizenz, die nur über einen `name` verfügt. Die Spezifikation ist in Ordnung; das Problem liegt in der Kopie des OpenAPI-3.1-Meta-Schemas in der CLI. npm 12 blockiert die Installationsskripte von Paketen standardmäßig, wodurch der Schritt zur Korrektur zweier bekannter Fehler in diesem Schema übersprungen wurde.
+
+Aktualisieren Sie die CLI — Version 1.1.167 und höher reparieren das Schema zum Zeitpunkt der Validierung, sodass der Installationsschritt nicht mehr relevant ist:
+
+```bash
+npm install -g jamdesk@latest
+```
+
+Wenn Sie an eine ältere Version gebunden sind, können Sie mit `npm install -g --allow-scripts=jamdesk jamdesk` stattdessen die Ausführung des Installationsschritts ermöglichen.
+
+## GitHub-Repository wird nicht angezeigt
+
+Wenn Ihr Repository beim Erstellen eines Projekts nicht in der Liste erscheint, ist die Jamdesk-GitHub-App wahrscheinlich nicht in der Organisation des Repositorys installiert oder der Repositoryzugriff ist auf „Selected repositories“ eingestellt, ohne dass Ihr Repository ausgewählt wurde. Autorisieren Sie die App unter [github.com/settings/installations](https://github.com/settings/installations) erneut und gewähren Sie Zugriff auf „All repositories“ oder auf das benötigte Repository.
+
+Unter [GitHub-Probleme](/de/help/troubleshooting/github-issues) finden Sie Informationen zu Webhook- und Berechtigungsproblemen.
+
+## Analysedaten fehlen
+
+Es gibt einige häufige Gründe dafür, dass Ihr Dashboard null Besucher anzeigt. Nach dem ersten Deploy einer Website kann es bis zu 24 Stunden dauern, bis Analysedaten erscheinen. Daher wirken ganz neue Projekte zunächst eine Weile leer. Werbeblocker und „Do Not Track“ verhindern, dass ein Teil der Besuche gezählt wird. Daher liegen Ihre Zahlen immer hinter den Serverprotokollen zurück. Wenn keiner dieser Fälle zutrifft, vergewissern Sie sich, dass Ihre Website tatsächlich bereitgestellt und öffentlich erreichbar ist.
+
+[Probleme mit Analysen](/de/help/troubleshooting/analytics-issues) enthält weitere Informationen zu verzögerten oder fehlenden Daten.
+
+## Anmeldeprobleme
+
+Sie können sich nicht anmelden oder werden immer wieder zum Anmeldebildschirm zurückgeleitet? Löschen Sie Cache und Cookies für `dashboard.jamdesk.com` und versuchen Sie es anschließend in einem Inkognito-Fenster. Wenn Sie sich mit GitHub anmelden, muss Ihre GitHub-E-Mail-Adresse mit der E-Mail-Adresse Ihres Jamdesk-Kontos übereinstimmen.
+
+Unter [Anmeldeprobleme](/de/help/troubleshooting/login-issues) finden Sie Schritte zur Kontowiederherstellung.
+
+## Kommen Sie noch immer nicht weiter?
+
+<Columns cols={2}>
+  <Card title="Hilfezentrum" icon="life-ring" href="/de/help/faq">
+    Alle Anleitungen zur Fehlerbehebung durchsuchen
+  </Card>
+  <Card title="Support kontaktieren" icon="headset" href="/de/help/support/contact">
+    Das Jamdesk-Team direkt erreichen
+  </Card>
+</Columns>

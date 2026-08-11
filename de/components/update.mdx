@@ -1,0 +1,207 @@
+---
+title: Update
+description: Timelineartige Changelog-Einträge mit Datum, Beschreibung und Kategorie-Tags, integriert in Ihr Inhaltsverzeichnis zur Navigation.
+---
+
+Die Update-Komponente erstellt Changelog-Einträge im Timeline-Stil, die automatisch in Ihr Inhaltsverzeichnis integriert werden. Jeder Eintrag kann ein Datumslabel, eine Beschreibung und Kategorie-Tags enthalten. Damit eignet sich die Komponente für „Was ist neu?“-Seiten, API-Changelogs und Versionshinweise.
+
+Verwenden Sie Update zum:
+- **Dokumentieren von Releases** mit Versionsnummern oder Datumsangaben
+- **Erstellen von Changelogs**, die Leser über das Inhaltsverzeichnis durchsuchen können
+- **Ankündigen von Funktionen** mit kategorisierten Tags (new, fix, breaking)
+
+<Tip>
+Sie haben aus diesen Einträgen einen Changelog erstellt? Mit einer „Was ist neu?“-Schaltfläche und einem Punkt für ungelesene Einträge können Sie ihn in Ihrem eigenen Produkt anzeigen. Siehe [Changelog einbetten](/de/development/embed-page).
+</Tip>
+
+## Grundlegende Verwendung
+
+<Update label="10. Januar 2025">
+Unterstützung für den Dark Mode in allen Themes hinzugefügt.
+</Update>
+
+```mdx
+<Update label="January 10, 2025">
+Added support for dark mode across all themes.
+</Update>
+```
+
+## Mit Beschreibung
+
+Fügen Sie unter dem Datum zusätzlichen Kontext hinzu:
+
+<Update label="5. Januar 2025" description="Breaking Change">
+Die Funktion `getData()` erfordert jetzt ein Optionsobjekt.
+</Update>
+
+```mdx
+<Update label="January 5, 2025" description="Breaking change">
+The `getData()` function now requires an options object.
+</Update>
+```
+
+## Mit Tags
+
+Kategorisieren Sie Einträge mit Tags:
+
+<Update label="20. Dezember 2024" tags={["breaking", "api"]}>
+- Veraltete Option `legacyMode` entfernt
+- Authentifizierungsablauf aktualisiert
+</Update>
+
+```mdx
+<Update label="December 20, 2024" tags={["breaking", "api"]}>
+- Removed deprecated `legacyMode` option
+- Updated authentication flow
+</Update>
+```
+
+## Mehrere Einträge
+
+Stapeln Sie Update-Komponenten für einen vollständigen Changelog:
+
+<Update label="15. Dezember 2024" tags={["feature"]}>
+Neue Exportfunktion für PDF- und CSV-Formate.
+</Update>
+
+<Update label="10. Dezember 2024" tags={["fix"]}>
+Zeitzonenverarbeitung in geplanten Beiträgen korrigiert.
+</Update>
+
+<Update label="1. Dezember 2024" tags={["deprecation"]}>
+Die `v1`-API-Endpoints sind jetzt veraltet. Migrieren Sie bis März 2025 zu `v2`.
+</Update>
+
+## Ankerlinks und Inhaltsverzeichnis
+
+Jedes Update generiert eine Anker-ID aus seinem Label (`label="January 10, 2025"` erstellt `#january-10-2025`). Labels werden außerdem zur schnellen Navigation im Inhaltsverzeichnis angezeigt.
+
+## Props
+
+<ParamField name="label" type="string">
+  Datums- oder Versionslabel (erstellt eine Anker-ID).
+</ParamField>
+
+<ParamField name="description" type="string">
+  Sekundärtext unter dem Label.
+</ParamField>
+
+<ParamField name="tags" type="string[]">
+  Als Badges angezeigte Kategorie-Tags.
+</ParamField>
+
+<ParamField name="date" type="string">
+  ISO-Datumszeichenfolge (z. B. `"2025-03-15"`), die für den RSS-Feed als `pubDate` verwendet wird. Wird nicht visuell dargestellt; das `label` bleibt Ihr Anzeigetext.
+</ParamField>
+
+## RSS-Feed
+
+Ermöglichen Sie Ihren Lesern, Changelog-Aktualisierungen zu abonnieren. Fügen Sie jeder Seite mit Update-Komponenten `rss: true` hinzu. Jamdesk generiert dann während des Builds automatisch eine `feed.xml`.
+
+```yaml
+---
+title: Changelog
+rss: true
+---
+```
+
+Wenn diese Option aktiviert ist:
+- Neben dem Seitentitel wird ein RSS-Symbol angezeigt, das auf den Feed verweist.
+- Für die automatische Erkennung wird dem `<head>` ein `<link rel="alternate">`-Tag hinzugefügt, sodass RSS-Reader und Browser den Feed automatisch finden können.
+- Jedes `<Update>` wird zu einem RSS-Element, dessen Titel dem Label entspricht und das einen Ankerlink zurück zum Eintrag enthält.
+
+### Veröffentlichungsdaten festlegen
+
+Verwenden Sie die `date`-Prop, um das `<pubDate>` für jeden Eintrag im Feed festzulegen. Ohne `date` erscheint der Eintrag im Feed, jedoch ohne Zeitstempel.
+
+```mdx
+<Update label="March 2025" date="2025-03-15" tags={["feature"]}>
+Added dark mode support across all themes.
+</Update>
+```
+
+### Feed-Inhalt
+
+RSS-Feeds enthalten ausschließlich Klartext. Markdown-Formatierung, MDX-Komponenten, Codeblöcke und HTML werden aus der Feed-Beschreibung entfernt. Formulieren Sie daher den ersten Satz als klare Zusammenfassung, die auch ohne Formatierung funktioniert.
+
+### Feed-URL
+
+Der Feed ist unter `/feed.xml` verfügbar (oder unter `/docs/feed.xml`, wenn Ihre Website [hostAtDocs](/de/deploy/custom-domains) verwendet).
+
+Der generierte Feed sieht folgendermaßen aus:
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Acme Docs Changelog</title>
+    <link>https://docs.acme.com</link>
+    <description>Updates and changelog for Acme Docs</description>
+    <item>
+      <title>March 2025 — New dashboard</title>
+      <link>https://docs.acme.com/changelog#march-2025</link>
+      <pubDate>Sat, 15 Mar 2025 00:00:00 GMT</pubDate>
+      <description>Added dark mode support across all themes.</description>
+    </item>
+  </channel>
+</rss>
+```
+
+### Integration mit anderen Tools
+
+Abonnenten können die Feed-URL mit jedem RSS-kompatiblen Dienst verwenden:
+
+- Slack: Fügen Sie den [RSS-App](https://slack.com/apps/A0F81R7U7-rss) `/feed` zu einem Channel hinzu.
+- Discord: Verwenden Sie [MonitoRSS](https://monitorss.xyz/) oder einen ähnlichen Bot, um Aktualisierungen automatisch zu veröffentlichen.
+- E-Mail: Verbinden Sie den Feed mit [Zapier](https://zapier.com/) oder [IFTTT](https://ifttt.com/), um Abonnenten über neue Einträge zu informieren.
+- Browser: Safari, Vivaldi und Firefox (über Erweiterungen) unterstützen RSS nativ.
+
+<Tip>
+  Sie können mehreren Seiten `rss: true` hinzufügen. Alle Update-Einträge auf RSS-aktivierten Seiten werden zu einer einzigen websiteweiten `feed.xml` zusammengeführt.
+</Tip>
+
+## Bewährte Vorgehensweisen
+
+<AccordionGroup>
+  <Accordion title="Eindeutige Labels verwenden" icon="fingerprint" defaultOpen>
+    Jedes Label erstellt eine Anker-ID. Verwenden Sie daher eindeutige Labels, um eine korrekte Verlinkung auf bestimmte Inhalte sicherzustellen:
+    - Verwenden Sie konkrete Datumsangaben: `January 10, 2025` (nicht nur `January 2025`)
+    - Fügen Sie Versionsnummern ein: `v2.1.0` gegenüber `v2.0.0`
+    - Doppelte Labels erstellen doppelte IDs und beeinträchtigen die Ankernavigation.
+  </Accordion>
+
+  <Accordion title="Konsistente Datumsformate verwenden" icon="calendar">
+    Wählen Sie ein Format und verwenden Sie es konsequent:
+    - `January 10, 2025` (empfohlen)
+    - `2025-01-10` (ISO-Format)
+    - `v2.0.0` (für versionsbasierte Changelogs)
+  </Accordion>
+
+  <Accordion title="Aussagekräftige Tags verwenden" icon="tags">
+    Häufige Tags mit automatischer Farbcodierung:
+
+    | Tag | Farbe | Verwendung |
+    |-----|-------|------------|
+    | `breaking` | Rot | Breaking Changes |
+    | `feature` / `new` | Grün | Neue Funktionen |
+    | `deprecation` / `deprecated` | Bernstein | Veraltete Funktionen |
+    | Andere Tags | Grau | Allgemeine Kategorien wie `api`, `fix` |
+  </Accordion>
+
+  <Accordion title="Einträge übersichtlich halten" icon="eye">
+    - Beginnen Sie mit der wichtigsten Änderung.
+    - Verwenden Sie Aufzählungen für mehrere Punkte.
+    - Verlinken Sie bei komplexen Änderungen auf eine ausführliche Dokumentation.
+  </Accordion>
+</AccordionGroup>
+
+## Wie geht es weiter?
+
+<Columns cols={2}>
+  <Card title="Komponentenübersicht" icon="puzzle-piece" href="/de/components/overview">
+    Alle verfügbaren Komponenten durchsuchen
+  </Card>
+  <Card title="MDX-Grundlagen" icon="file-code" href="/de/content/mdx-basics">
+    Erfahren Sie, wie Sie Komponenten in MDX verwenden.
+  </Card>
+</Columns>

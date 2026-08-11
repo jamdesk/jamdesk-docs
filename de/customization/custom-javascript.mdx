@@ -1,0 +1,120 @@
+---
+title: Benutzerdefiniertes JavaScript
+description: Fügen Sie Ihrer Dokumentationsseite benutzerdefiniertes JavaScript für Chat-Widgets, Analytics, Drittanbieterintegrationen und clientseitige Funktionen hinzu.
+---
+
+Mit Jamdesk können Sie benutzerdefiniertes JavaScript hinzufügen, das auf jeder Seite Ihrer Dokumentationsseite ausgeführt wird. Verwenden Sie es für Chat-Widgets, Analytics oder jedes andere clientseitige Skript, das Sie benötigen.
+
+## Benutzerdefiniertes JavaScript hinzufügen
+
+Erstellen Sie eine JavaScript-Datei in Ihrem Dokumentationsverzeichnis und verweisen Sie in `docs.json` darauf:
+
+```json docs.json
+{
+  "styling": {
+    "js": "/script.js"
+  }
+}
+```
+
+```javascript script.js
+// Your custom JavaScript runs on every page
+console.log('Hello from custom JS!');
+```
+
+Ihr Skript wird direkt in den HTML-Code der Seite eingebettet und daher beim Laden der Seite ausgeführt.
+
+## Automatische Erkennung
+
+Wenn Sie `styling.js` nicht konfigurieren, erkennt Jamdesk automatisch `.js`-Dateien in Ihrem Projektstammverzeichnis. Legen Sie einfach eine `script.js`-Datei neben Ihrer `docs.json` ab, und sie wird eingebunden.
+
+```bash
+my-docs/
+├── docs.json
+├── script.js      ← auto-detected
+├── introduction.mdx
+└── getting-started.mdx
+```
+
+Wenn `styling.js` in `docs.json` konfiguriert ist, wird die automatische Erkennung deaktiviert und nur die angegebenen Dateien werden verwendet.
+
+<Note>Die automatische Erkennung umfasst **alle** `.js`-Dateien in Ihrem Projektstammverzeichnis. Wenn sich neben Ihrer Dokumentation Hilfsskripte wie `eslint.config.js` oder `postcss.config.js` befinden, verwenden Sie `styling.js` in `docs.json`, um genau festzulegen, welche Dateien eingebunden werden sollen.</Note>
+
+## Mehrere Dateien
+
+Binden Sie mehrere Skripte ein, indem Sie ein Array übergeben:
+
+```json docs.json
+{
+  "styling": {
+    "js": ["/chat.js", "/analytics.js"]
+  }
+}
+```
+
+Bei der automatischen Erkennung werden alle `.js`-Dateien im Stammverzeichnis alphabetisch sortiert eingebunden. Wenn Sie `analytics.js` und `chat.js` haben, werden sie in dieser Reihenfolge geladen.
+
+## Beispiele
+
+### Chat-Widget (Crisp)
+
+```javascript script.js
+window.$crisp = [];
+window.CRISP_WEBSITE_ID = "your-website-id";
+(function () {
+  var d = document;
+  var s = d.createElement("script");
+  s.src = "https://client.crisp.chat/l.js";
+  s.async = 1;
+  d.getElementsByTagName("head")[0].appendChild(s);
+})();
+```
+
+### Benutzerdefiniertes Analytics
+
+```javascript script.js
+// Track outbound link clicks
+document.addEventListener('click', function (e) {
+  var link = e.target.closest('a[href^="http"]');
+  if (link && !link.href.includes(window.location.hostname)) {
+    console.log('Outbound click:', link.href);
+    // Send to your analytics service
+  }
+});
+```
+
+### Feedback-Widget
+
+```javascript script.js
+// Load a feedback widget after the page is ready
+window.addEventListener('load', function () {
+  var s = document.createElement('script');
+  s.src = 'https://your-feedback-tool.com/widget.js';
+  s.setAttribute('data-project', 'your-project-id');
+  document.body.appendChild(s);
+});
+```
+
+## Funktionsweise
+
+Ihre JavaScript-Dateien werden während des Build-Prozesses gelesen und direkt in den HTML-Code jeder Seite eingebettet. Das Script-Tag wird am Ende von `<body>` platziert, sodass das DOM verfügbar ist, wenn Ihr Code ausgeführt wird.
+
+Bei der lokalen Entwicklung (`jamdesk dev`) werden Skripte automatisch erkannt und beim Aktualisieren des Browsers per Hot Reload neu geladen.
+
+## Einschränkungen
+
+- Skripte werden auf **jeder Seite** ausgeführt – es gibt keine Möglichkeit, bestimmte Seiten anzusprechen
+- Änderungen erfordern einen **erneuten Build** (oder eine Browseraktualisierung bei der lokalen Entwicklung), damit sie wirksam werden
+- Skripte werden in den HTML-Code **eingebettet** und nicht als separate Dateien bereitgestellt
+- Für Analytics können Sie stattdessen die integrierten [Integrationen](/de/integrations/google-analytics) verwenden, die Einwilligung und Performance automatisch verwalten
+
+## Wie geht es weiter?
+
+<Columns cols={2}>
+  <Card title="Benutzerdefiniertes CSS" icon="paintbrush" href="/de/customization/custom-css">
+    Überschreiben Sie Theme-Stile mit benutzerdefiniertem CSS
+  </Card>
+  <Card title="Integrationen" icon="plug" href="/de/integrations/google-analytics">
+    Integrierte Analytics- und Drittanbieterintegrationen
+  </Card>
+</Columns>

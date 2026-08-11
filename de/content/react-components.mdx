@@ -1,0 +1,254 @@
+---
+title: Benutzerdefinierte React-Komponenten
+description: >-
+  Definieren und verwenden Sie benutzerdefinierte React-Komponenten in MDX-Dateien
+  mit serverseitigem Rendering, Tailwind-Styling und integrierten Jamdesk-Komponenten.
+---
+
+Definieren Sie benutzerdefinierte React-Komponenten direkt in MDX-Dateien. Exportieren Sie am Anfang der Datei eine Komponente als Arrow Function und verwenden Sie sie inline. Komponenten werden zur Build-Zeit serverseitig gerendert und haben Zugriff auf alle integrierten Jamdesk-Komponenten und Tailwind-Klassen.
+
+## Grundlegende Verwendung
+
+Definieren Sie eine Komponente mit `export const` am Anfang Ihrer MDX-Datei:
+
+```mdx
+export const Highlight = ({ children, color }) => (
+  <span style={{ backgroundColor: color, padding: '0.2em 0.4em', borderRadius: '4px' }}>
+    {children}
+  </span>
+);
+
+This text has a <Highlight color="#ffeb3b">yellow highlight</Highlight> in it.
+```
+
+<Note>
+Komponentennamen müssen PascalCase verwenden (mit einem Großbuchstaben beginnen).
+</Note>
+
+## Beispiel: Hero-Karte
+
+Hier ist ein komplexeres Beispiel mit mehreren Props und Tailwind-Klassen:
+
+```mdx
+export const HeroCard = ({ title, description, href, icon }) => (
+  <a
+    href={href}
+    className="group block p-6 rounded-lg border border-gray-200 hover:border-blue-500 transition-colors"
+  >
+    <div className="flex items-center gap-3 mb-2">
+      <Icon icon={icon} />
+      <h3 className="font-semibold text-lg">{title}</h3>
+    </div>
+    <p className="text-gray-600">{description}</p>
+  </a>
+);
+
+<div className="grid grid-cols-2 gap-4">
+  <HeroCard
+    title="Getting started"
+    description="Learn the basics"
+    href="/quickstart"
+    icon="rocket"
+  />
+  <HeroCard
+    title="Components"
+    description="Explore available components"
+    href="/components/overview"
+    icon="puzzle-piece"
+  />
+</div>
+```
+
+## Integrierte Komponenten verwenden
+
+Ihre benutzerdefinierten Komponenten haben Zugriff auf alle integrierten Jamdesk-Komponenten. Keine Imports erforderlich:
+
+```mdx
+export const FeatureCard = ({ title, children }) => (
+  <Card title={title} icon="star">
+    {children}
+    <Tip>This tip is inside a custom component!</Tip>
+  </Card>
+);
+
+<FeatureCard title="My Feature">
+  <Note>Notes work inside custom components too!</Note>
+</FeatureCard>
+```
+
+Integrierte Komponenten nach Kategorie:
+
+| Kategorie | Komponenten |
+|----------|-----------|
+| Hinweise | `Note`, `Tip`, `Info`, `Warning`, `Check`, `Danger` |
+| Layout | `Card`, `Columns`, `Tabs`, `Tab`, `Accordion`, `Steps`, `Step`, `View` |
+| Medien | `Frame`, `Icon`, `Badge`, `Tooltip` |
+| Code | `CodeGroup` |
+| API-Dokumentation | `ParamField`, `ResponseField`, `Expandable` |
+
+## Einschränkungen
+
+- **Nur Arrow Functions**: Verwenden Sie die Syntax `export const`. Die Syntax `export function` wird nicht unterstützt.
+- **Keine Imports**: Sie können keine externen Pakete oder andere Dateien importieren.
+- **Keine Hooks**: React-Hooks (`useState`, `useEffect`, `useRef` usw.) sind nicht verfügbar. Komponenten werden während des Builds serverseitig gerendert, Hooks funktionieren nur clientseitig. Verwenden Sie für interaktive Komponenten stattdessen Snippet-Dateien (siehe Fehlerbehebung unten).
+- **Nur serverseitig**: Komponenten werden auf dem Server gerendert. Clientseitige Interaktivität oder Event-Handler sind nicht verfügbar.
+- **Nur Tailwind**: Verwenden Sie Tailwind-CSS-Klassen für das Styling. CSS-in-JS ist nicht verfügbar.
+- **Strikte Syntax**: Syntaxfehler in Inline-Komponenten führen mit einer eindeutigen Fehlermeldung zu einem fehlgeschlagenen Build.
+- **PascalCase-Namen**: Komponentennamen müssen mit einem Großbuchstaben beginnen und dürfen nur Buchstaben und Zahlen enthalten (keine Unterstriche).
+
+<Warning>
+**Benötigen Sie React-Hooks?** Inline-Komponenten können `useState`, `useEffect` oder andere Hooks nicht verwenden, da sie während des Builds auf dem Server gerendert werden. Erstellen Sie für interaktive Komponenten, die State oder Effekte benötigen, eine Snippet-Datei mit der Direktive `'use client'` (siehe Abschnitt zur Fehlerbehebung unten).
+</Warning>
+
+## Best Practices
+
+<Steps>
+<Step title="Komponenten einfach halten">
+Inline-Komponenten sollten der Darstellung dienen. Fordern Sie für komplexe Logik eine integrierte Komponente an.
+</Step>
+<Step title="Semantisches HTML verwenden">
+Stellen Sie sicher, dass Ihre Komponenten mit geeigneten HTML-Elementen und ARIA-Attributen barrierefrei sind.
+</Step>
+<Step title="Gründlich testen">
+Zeigen Sie Ihre Dokumentation lokal in der Vorschau an, um zu überprüfen, ob Komponenten sowohl im hellen als auch im dunklen Modus korrekt gerendert werden.
+</Step>
+</Steps>
+
+## Fehlerbehebung
+
+<Accordion title="Fehler: Komponente nicht gefunden">
+**Fehler:** `Expected component 'MyComponent' to be defined`
+
+**Ursachen:**
+- Der Komponentenname verwendet kein PascalCase (muss mit einem Großbuchstaben beginnen).
+- Syntaxfehler in der Komponentendefinition
+- Fehlendes schließendes Tag oder fehlende schließende Klammer
+
+**Lösung:** Überprüfen Sie, ob Ihr Export diesem Muster folgt:
+```mdx
+export const MyComponent = ({ prop }) => (
+  <div>{prop}</div>
+);
+```
+</Accordion>
+
+<Accordion title="Build schlägt mit Syntaxfehler fehl">
+**Fehler:** Der Build schlägt mit einem Hinweis auf Babel oder JSX-Syntax fehl.
+
+**Ursachen:**
+- Ungültige JSX-Syntax in Ihrer Komponente
+- Nicht geschlossene Tags oder Klammern
+- Verwendung nicht unterstützter JavaScript-Funktionen
+
+**Lösung:** Überprüfen Sie, ob Ihr JSX gültig ist. Häufige Probleme:
+- Alle Tags müssen geschlossen werden (`<img />` statt `<img>`).
+- Verwenden Sie `className` statt `class`.
+- Umschließen Sie mehrere Elemente mit einem Fragment `<>...</>` oder einem übergeordneten Element.
+</Accordion>
+
+<Accordion title="Komponente überschreibt Warnung für integrierte Komponente">
+**Warnung:** `Inline component(s) override built-in: Note`
+
+**Ursache:** Ihre Inline-Komponente hat denselben Namen wie eine integrierte Komponente.
+
+**Lösung:** Benennen Sie Ihre Komponente um, um Konflikte zu vermeiden:
+```mdx
+// Instead of: export const Note = ...
+export const CustomNote = ({ children }) => (
+  <div className="my-note">{children}</div>
+);
+```
+</Accordion>
+
+<Accordion title="Stile werden nicht angewendet">
+**Problem:** Tailwind-Klassen funktionieren nicht.
+
+**Ursachen:**
+- Verwendung von CSS-in-JS oder Inline-Style-Objekten (eingeschränkte Unterstützung)
+- Die Tailwind-Klasse ist nicht im Build enthalten
+
+**Lösung:** Verwenden Sie standardmäßige Tailwind-Utility-Klassen. Verwenden Sie für benutzerdefinierte Stile die `style`-Prop mit einfachen Werten:
+```mdx
+export const Highlight = ({ children }) => (
+  <span style={{ backgroundColor: '#ffeb3b' }}>{children}</span>
+);
+```
+</Accordion>
+
+<Accordion title="Komponente wird nicht gerendert (export function)">
+**Problem:** Eine mit `export function` definierte Komponente wird nicht gerendert.
+
+**Ursache:** Nur die Syntax einer Arrow Function mit `export const` wird unterstützt.
+
+**Lösung:** Konvertieren Sie Ihre Funktion in die Syntax einer Arrow Function:
+```mdx
+// Instead of:
+export function MyComponent({ prop }) {
+  return <div>{prop}</div>;
+}
+
+// Use:
+export const MyComponent = ({ prop }) => (
+  <div>{prop}</div>
+);
+```
+</Accordion>
+
+<Accordion title="Komponentenname enthält ungültige Zeichen">
+**Problem:** Eine Komponente mit Unterstrichen oder Sonderzeichen funktioniert nicht.
+
+**Ursache:** Komponentennamen müssen gültige PascalCase-Bezeichner sein (nur Buchstaben und Zahlen).
+
+**Lösung:** Verwenden Sie im Komponentennamen nur Buchstaben und Zahlen:
+```mdx
+// Instead of: export const Hero_Card = ...
+// Instead of: export const my-component = ...
+export const HeroCard = ({ title }) => (
+  <div>{title}</div>
+);
+```
+</Accordion>
+
+<Accordion title="useState ist nicht definiert (oder useEffect, useRef usw.)">
+**Fehler:** `ReferenceError: useState is not defined`
+
+**Ursache:** React-Hooks sind in Inline-Komponenten nicht verfügbar. Inline-Komponenten werden während des Build-Prozesses serverseitig gerendert, Hooks funktionieren nur in clientseitigen React-Komponenten.
+
+**Lösung:** Erstellen Sie für interaktive Komponenten, die State oder Effekte benötigen, stattdessen eine Snippet-Datei:
+
+1. Erstellen Sie eine Datei in Ihrem Verzeichnis `/snippets` (z. B. `/snippets/counter.tsx`).
+2. Fügen Sie am Anfang der Datei `'use client'` ein.
+3. Importieren und verwenden Sie die Datei in Ihrer MDX-Datei.
+
+```tsx title="/snippets/counter.tsx"
+'use client';
+
+import { useState } from 'react';
+
+export function Counter() {
+  const [count, setCount] = useState(0);
+  return (
+    <button onClick={() => setCount(c => c + 1)}>
+      Count: {count}
+    </button>
+  );
+}
+```
+
+```mdx title="your-page.mdx"
+import { Counter } from '/snippets/counter';
+
+<Counter />
+```
+</Accordion>
+
+## Wie geht es weiter?
+
+<Columns cols={2}>
+  <Card title="Snippets" icon="scissors" href="/de/content/snippets">
+    Wiederverwendbare Komponenten für mehrere Seiten, einschließlich interaktiver Komponenten mit Hooks
+  </Card>
+  <Card title="Komponentenübersicht" icon="puzzle-piece" href="/de/components/overview">
+    Integrierte Komponenten erkunden
+  </Card>
+</Columns>
