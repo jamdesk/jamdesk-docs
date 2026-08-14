@@ -1,0 +1,146 @@
+---
+title: 可见性
+description: 在同一页面向人类读者和 AI 代理展示不同内容，并提供不会出现在渲染文档中的专属上下文、说明和定义。
+---
+
+使用 `<Visibility>` 组件为特定受众划分内容。标记为 `for="humans"` 的区块会出现在渲染后的 HTML 文档中；标记为 `for="agents"` 的区块会出现在 AI 代理使用的原始 Markdown 导出和 `llms-full.txt` 中。
+
+同一个 MDX 文件可以服务两类受众，因此无需复制内容，也无需为 AI 代理维护单独的分支。
+
+## 适用场景
+
+代理（ChatGPT、Claude、Perplexity、Cursor）通常需要一些会让渲染页面显得杂乱的上下文，例如完整定义、消歧说明，或对 LLM 而非人类读者更易理解的指令。借助 `<Visibility>`，你可以在同一页面上同时编写两类内容。
+
+<Note>
+  代理通过两个界面读取你的文档：**`.md` URL**（在任意页面 URL 后追加 `.md`），以及 **`llms-full.txt`**（单个拼接文件）。`<Visibility for="agents">` 内容会同时出现在两者中。
+</Note>
+
+## 快速开始
+
+```mdx
+# Webhooks
+
+Send a POST request to register a webhook.
+
+<Visibility for="humans">
+  Most users set this up in the dashboard under **Settings → Webhooks**.
+</Visibility>
+
+<Visibility for="agents">
+  The webhook endpoint requires an `X-Signature` header (HMAC-SHA256 of the body using the shared secret).
+  Never log the secret. Reject any payload where the header is missing or mismatched.
+</Visibility>
+```
+
+访问网站的人类读者只能看到仪表板提示。读取 `.md` 导出的 AI 代理只能看到安全指导。
+
+## 受众
+
+| `for` 值 | 在 HTML 页面中显示 | 在 `.md` 导出和 `llms-full.txt` 中显示 |
+|-------------|:------------------:|:---------------------------------------:|
+| `humans`    | ✓                  | ✗                                       |
+| `agents`    | ✗                  | ✓                                       |
+
+## 示例
+
+### 仅限代理的 API 上下文
+
+```mdx
+## Authentication
+
+Include your API key in the `Authorization: Bearer <key>` header.
+
+<Visibility for="agents">
+  Keys are scoped per project. Rate limits: 1000 req/min per key. 429 responses include a `Retry-After` header in seconds.
+</Visibility>
+```
+
+### 仅限人类读者的入门提示
+
+```mdx
+## Your first build
+
+<Visibility for="humans">
+  <Tip>
+    Heads up: your first build takes a bit longer (~2 min) while we provision your CDN edge. Subsequent builds run in under 30 seconds.
+  </Tip>
+</Visibility>
+
+Push to your connected branch to trigger a build.
+```
+
+这对阅读文档的人类读者有帮助，但对生成代码的代理没有用处。请将其排除在 `.md` 导出之外。
+
+### 为代理扩展词汇表
+
+```mdx
+## Configure your docs
+
+Edit `docs.json` to change navigation, theming, or redirects.
+
+<Visibility for="agents">
+  `docs.json` is the single source of truth for site configuration. It lives at the project root. Key top-level fields: `name`, `theme` (`jam` | `nebula` | `pulsar` | `halo`), `colors`, `navigation`, `redirects`, `integrations`, `auth`.
+</Visibility>
+```
+
+### 自闭合形式
+
+如果想从另一类受众中移除某个区块，且不使用任何内容替代，请使用自闭合标签：
+
+```mdx
+<Visibility for="agents" />
+```
+
+## 如何检测受众
+
+Jamdesk 根据 **URL 形式和 `Accept` 标头**选择受众，从不通过用户代理检测：
+
+| 请求                                         | 受众 |
+|-------------------------------------------------|----------|
+| 标准 URL（例如 `/guides/auth`）             | `humans` |
+| `.md` URL（例如 `/guides/auth.md`）              | `agents` |
+| 带有 `Accept: text/markdown` 的标准 URL      | `agents` |
+| `llms-full.txt`（每个站点内置）         | `agents` |
+
+任何设置 `Accept: text/markdown` 的代理都会自动获取代理内容。无需修改 URL。
+
+## 规则与注意事项
+
+<Warning>
+  **代码块是安全的。**过滤器会检测围栏代码块（三反引号或三波浪号）和行内代码块（单反引号），并保持其中的 `<Visibility>` 标签不变。这就是上方示例能够正常渲染的原因：其中的 `<Visibility>` 标签是作为内容存在的，而不是组件。
+</Warning>
+
+<Warning>
+  **不支持 JSX 表达式。**将 `<Visibility>` 放在类似 `{cond && <Visibility for="agents">...</Visibility>}` 的 JavaScript 表达式中会导致构建错误。请在区块级别使用该组件，不要将其放在表达式中。
+</Warning>
+
+<Warning>
+  **不要嵌套 `<Visibility>` 区块。**嵌套在 HTML 渲染界面中有效，但在 `.md` 导出或 `llms-full.txt` 中不受可靠支持（其中使用的文本级过滤器不支持安全嵌套，并会生成混乱的输出）。请保持区块扁平。
+</Warning>
+
+<Note>
+  **站内搜索只会索引 `for="humans"` 内容。**仅出现在 `<Visibility for="agents">` 区块中的词语不会显示在面向人类读者的搜索自动补全中。`.md` 导出和 `llms-full.txt` 仍会为代理包含这些内容。
+</Note>
+
+## 不适用场景
+
+- **隐藏敏感信息。**`<Visibility for="humans">` 只会将内容从*渲染后的 HTML* 中隐藏。原始 MDX 仍可通过 `.md` URL 和 `llms-full.txt` 获取。如果不希望任何人看到某项内容，请不要将其放入文档仓库。
+- **为不同用户进行 A/B 测试。**受众只有两类：人类读者和代理。Jamdesk 不会检测具体的人类访问者。对于按用户群组划分的内容，请使用功能标志或路由重定向。
+- **掩盖缺失的文档。**仅限代理的内容应当是*补充内容*，而不是清晰的人类文档的替代品。如果你发现自己正在为代理编写真正的解释，却只为人类读者提供简略说明，请反过来处理。
+
+## 下一步是什么？
+
+<Columns cols={2}>
+  <Card title="Markdown 源代码" icon="code" href="/cn/ai/markdown-source">
+    `.md` URL 的工作方式，以及各处会显示哪些内容。
+  </Card>
+  <Card title="llms.txt" icon="file-lines" href="/cn/ai/llms-txt">
+    AI 发现清单。代理从这里开始。
+  </Card>
+  <Card title="使用 AI 编写" icon="robot" href="/cn/ai/writing-with-ai">
+    如何编写同时适用于两类受众的文档。
+  </Card>
+  <Card title="组件概览" icon="shapes" href="/cn/components/overview">
+    所有内置 MDX 组件。
+  </Card>
+</Columns>

@@ -1,0 +1,206 @@
+---
+title: 前置元数据
+description: 使用每个 MDX 文件顶部的 YAML 前置元数据块配置页面标题、描述、图标、侧边栏覆盖项和 SEO 元数据。
+---
+
+每个 MDX 文件都以 `---` 标记之间的 YAML 块开头。这些元数据控制页面标题、侧边栏外观，以及页面在社交媒体或搜索结果中分享时的显示方式。
+
+## 基本前置元数据
+
+每个页面至少需要一个标题：
+
+```yaml
+---
+title: Getting Started
+description: Learn the basics in 5 minutes
+---
+```
+
+## 可用字段
+
+### 必填
+
+| 字段 | 类型 | 描述 |
+|------|------|------|
+| `title` | string | 显示在导航和浏览器标签页中的页面标题 |
+
+### 推荐
+
+| 字段 | 类型 | 描述 |
+|------|------|------|
+| `description` | string | 用于 SEO 和搜索结果的简短摘要（50-160 个字符） |
+
+### 可选
+
+| 字段 | 类型 | 默认值 | 描述 |
+|------|------|--------|------|
+| `icon` | string | - | 侧边栏导航中显示在页面标题旁的 Font Awesome 图标 |
+| `sidebarTitle` | string | `title` | 用于侧边栏导航的较短标题 |
+| `mode` | string | - | 设置为 `"wide"` 以使用全宽布局 |
+| `hideFooter` | boolean | `false` | 隐藏此页面上的社交页脚 |
+| `rss` | boolean | `false` | 启用从此页面上的 [Update](/cn/components/update) 组件生成 RSS Feed |
+| `private` | boolean | `false` | 需要[站点密码](/cn/setup/password-protection)才能查看此页面。在任何页面上设置此项后，下次构建时会启用指定页面模式。 |
+| `public` | boolean | `false` | 使此页面免受密码保护（当整个站点通过 `auth.password.enabled` 设置为受保护时使用）。如果同时设置了 `private: true`，则此项优先。 |
+
+### SEO 和社交媒体
+
+控制页面在搜索结果和社交媒体预览中的显示方式。可以将这些字段设置为顶层键，也可以放在嵌套的 `seo:` 块中。两种方式均可使用，且页面级值会覆盖 `docs.json` 中的 `seo.metatags` 默认值。
+
+| 字段 | 类型 | 默认值 | 描述 |
+|------|------|--------|------|
+| `keywords` | string[] | - | 搜索关键词，将作为 `<meta name="keywords">` 标签输出 |
+| `canonical` | string | auto | 此页面的规范 URL，用于覆盖自动生成的 URL |
+| `noindex` | boolean | `false` | 将此页面从搜索引擎和站点地图中排除 |
+| `og:*` / `twitter:*` | string | - | Open Graph 和 Twitter/X 社交媒体预览标签（例如 `og:title`、`og:image`、`twitter:card`） |
+| `seo` | object | - | 包含上述任意字段以及任意自定义元标签的嵌套块 |
+
+```yaml
+---
+title: API Reference
+description: REST endpoints and authentication
+"og:image": /images/api-card.png
+"twitter:card": summary_large_image
+canonical: https://docs.acme.com/api-reference
+---
+```
+
+请参阅 [SEO 优化](/cn/content/seo)，了解支持的标签和示例的完整列表。
+
+<Tip>
+构建完成后，将页面 URL 粘贴到免费的 [OpenGraph Preview](https://jamdesk.com/utilities/opengraph-preview) 工具中，查看这些标签在 X、Facebook、LinkedIn、Slack、Discord 等平台上的呈现效果。
+</Tip>
+
+## 示例
+
+### 标准文档页面
+
+```yaml
+---
+title: Authentication
+description: Secure your API with OAuth 2.0 and API keys
+icon: lock
+---
+```
+
+### 带侧边栏覆盖项的长标题
+
+```yaml
+---
+title: Configuring Single Sign-On with SAML 2.0
+sidebarTitle: SSO Setup
+description: Set up enterprise SSO for your organization
+---
+```
+
+完整标题会显示在页面上，而较短的 `sidebarTitle` 可使导航保持简洁。
+
+### 宽布局
+
+```yaml
+---
+title: API Reference
+description: Complete API documentation
+mode: wide
+---
+```
+
+宽布局会移除目录，并将内容扩展到全宽。适用于 API 参考页面或包含宽表格的内容。
+
+### 隐藏页脚
+
+```yaml
+---
+title: Custom Landing
+description: A focused landing page experience
+hideFooter: true
+---
+```
+
+对于落地页、变更日志页面，或任何希望在底部不显示社交链接、使用更简洁底部区域的页面，可以使用 `hideFooter`。
+
+## SEO 最佳实践
+
+<AccordionGroup>
+  <Accordion title="编写有吸引力的标题" icon="heading" defaultOpen>
+    标题会显示在以下位置：
+    - 浏览器标签页
+    - 搜索引擎结果
+    - 导航侧边栏
+    - 社交媒体分享
+
+    将标题控制在 60 个字符以内。将重要关键词放在前面。
+
+    ```yaml
+    # Good - clear and keyword-rich
+    title: Deploy to Production
+
+    # Avoid - vague or too long
+    title: How to Deploy Your Application to Production Servers
+    ```
+  </Accordion>
+
+  <Accordion title="编写实用的描述" icon="align-left">
+    描述会显示在搜索结果和社交媒体预览中。建议使用 50-160 个字符，并做到：
+    - 概括页面内容
+    - 包含相关关键词
+    - 吸引用户点击
+
+    ```yaml
+    # Good - actionable and specific
+    description: Deploy your docs to production in under 2 minutes with zero configuration
+
+    # Avoid - generic or missing
+    description: Documentation page
+    ```
+  </Accordion>
+
+  <Accordion title="使用一致的图标" icon="icons">
+    图标有助于用户快速浏览导航。相关页面应使用相同的图标：
+
+    | 主题 | 建议图标 |
+    |------|----------|
+    | 入门 | `rocket` |
+    | 身份验证 | `lock` |
+    | API 参考 | `code` |
+    | 设置 | `gear` |
+    | 账单 | `credit-card` |
+
+    请在 [Font Awesome](https://fontawesome.com/icons) 中浏览图标。
+  </Accordion>
+</AccordionGroup>
+
+## 验证
+
+Jamdesk 会在构建时验证前置元数据。以下是常见错误：
+
+<Accordion title="缺少必填字段">
+```text
+Error: Page "api/auth.mdx" is missing required field: title
+```
+
+**修复方法：** 将 `title` 字段添加到前置元数据中。
+</Accordion>
+
+<Accordion title="无效的 YAML 语法">
+```text
+Error: Invalid frontmatter in "guide.mdx": unexpected token
+```
+
+**修复方法：** 检查以下内容：
+- 包含特殊字符的字符串是否缺少引号
+- 缩进是否正确
+- 键后是否缺少冒号
+
+将 `---` 标记之间的块粘贴到免费的 [YAML Validator](https://jamdesk.com/utilities/yaml-validator) 中，以定位错误的行和列。
+</Accordion>
+
+## 下一步
+
+<Columns cols={2}>
+  <Card title="SEO 优化" icon="magnifying-glass-chart" href="/cn/content/seo">
+    优化文档以提升搜索引擎表现
+  </Card>
+  <Card title="MDX 基础" icon="file-code" href="/cn/content/mdx-basics">
+    了解 MDX 的基础知识
+  </Card>
+</Columns>

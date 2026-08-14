@@ -1,0 +1,354 @@
+---
+title: 迁移指南
+description: 从其他文档平台迁移？Jamdesk 可自动完成迁移，也支持手动迁移，让你完全掌控过程。
+---
+<Visibility for="agents">
+
+  See the clean markdown version of this page at https://jamdesk.com/docs/setup/migration.md
+
+</Visibility>
+
+
+
+Mintlify 项目支持一条命令完成迁移：`jamdesk migrate` 会读取 `mint.json`、写入 `docs.json`，并直接重写 MDX 文件。要从 GitBook、Docusaurus、ReadMe、Confluence 或其他平台迁移？“Other Platforms”选项卡会介绍手动迁移步骤。如果你能将内容导出为 Markdown，整个过程会很简短。
+
+<YouTube id="DvIHWeBliK0" />
+
+<Info>
+**如果可以，请先导出为 Markdown。** Jamdesk 基于 MDX 构建，因此已有的 Markdown 文件只需重命名为 `.mdx` 并添加几行 frontmatter 即可使用。
+</Info>
+
+## 选择迁移方式
+
+<Tabs>
+  <Tab title="From Mintlify">
+    CLI 会为你完成大部分工作。
+
+    <Card title="Mintlify 到 Jamdesk 指南" icon="book-open" href="https://jamdesk.com/blog/migrating-from-mintlify-to-jamdesk">
+      阅读迁移指南，了解背景信息、示例和迁移技巧。
+    </Card>
+
+    ### 自动迁移
+
+    <Steps>
+      <Step title="安装 CLI">
+        ```bash
+        npm install -g jamdesk
+        ```
+      </Step>
+      <Step title="运行迁移">
+        ```bash
+        jamdesk migrate
+        ```
+
+        在项目根目录中运行时，该命令会一次性完成以下操作：
+
+        - 读取 `mint.json` 并写入 `docs.json`
+        - 重命名 MDX 文件中的弃用组件（例如将 `CardGroup` → `Columns`）
+        - 将孤立的片段 MDX 文件移动到 `/snippets/`，并将所有相对于父目录的导入（`../foo/bar.mdx`）重写为相对于根目录的导入（`/snippets/foo/bar.mdx`）
+        - 将使用 React hooks 的内联组件提取到 `/snippets/<name>.tsx`，并添加 `'use client'` 指令，然后重写原始 MDX，使其从 `/snippets/` 导入
+        - 自动修复可能导致构建失败的机械性 MDX 语法问题
+
+        该命令具有幂等性：编辑后重新运行即可，它只会处理新增内容。对于无法安全自动处理的内容，命令会输出警告，并列出相关文件、导入项以及需要执行的操作。
+      </Step>
+      <Step title="检查并调整">
+        检查生成的 `docs.json` 和 MDX 文件。确认导航结构，以及 CLI 输出的所有警告。
+      </Step>
+    </Steps>
+
+    ### 配置映射
+
+    CLI 会自动将 `mint.json` 转换为 `docs.json`。以下是主要差异，便于你检查输出结果。
+
+    **Mintlify（`mint.json`）：**
+    ```json
+    {
+      "name": "My Docs",
+      "navigation": [
+        { "group": "Getting Started", "pages": ["introduction", "quickstart"] }
+      ],
+      "colors": { "primary": "#0D9373" },
+      "topbarLinks": [{ "name": "Blog", "url": "https://example.com/blog" }]
+    }
+    ```
+
+    **Jamdesk（`docs.json`）：**
+    ```json
+    {
+      "$schema": "https://jamdesk.com/docs.json",
+      "name": "My Docs",
+      "theme": "jam",
+      "colors": { "primary": "#0D9373" },
+      "navbar": {
+        "links": [{ "label": "Blog", "href": "https://example.com/blog" }]
+      },
+      "navigation": {
+        "groups": [
+          { "group": "Getting Started", "pages": ["introduction", "quickstart"] }
+        ]
+      }
+    }
+    ```
+
+    ### 组件兼容性
+
+    大多数 Mintlify 组件在 Jamdesk 中都有直接对应项，少数组件的名称或语法有所不同。
+
+    | Mintlify 组件 | Jamdesk 等效组件 | 说明 |
+    |---|---|---|
+    | `<Card>` | `<Card>` | 语法相同 |
+    | CardGroup | `<Columns>` | 使用 `cols` 属性指定列数 |
+    | `<Columns>` | `<Columns>` | 语法相同 |
+    | `<Accordion>` | `<Accordion>` | 语法相同 |
+    | `<Tabs>` / `<Tab>` | `<Tabs>` / `<Tab>` | 语法相同 |
+    | `<Steps>` / `<Step>` | `<Steps>` / `<Step>` | 语法相同 |
+    | `<CodeGroup>` | `<CodeGroup>` | 语法相同 |
+    | `<Tip>`、`<Note>`、`<Warning>` | `<Tip>`、`<Note>`、`<Warning>` | 语法相同 |
+    | `<ResponseField>` | `<ParamField>` | 名称不同 |
+    | `<Snippet>` | 从 `/snippets/` 导入 | 使用方式不同 |
+
+    ### 常见问题
+
+    <AccordionGroup>
+      <Accordion title="CardGroup 会变为 Columns">
+        `jamdesk migrate` 会在所有 MDX 文件中将 `CardGroup` 重命名为 `Columns`。`cols` 属性会保持不变。运行迁移后，请检查编辑过的文件。
+      </Accordion>
+      <Accordion title="ResponseField 会变为 ParamField">
+        将 `<ResponseField>` 重命名为 `<ParamField>`。属性保持不变。
+
+        ```mdx
+        {/* Before */}
+        <ResponseField name="id" type="string" required>
+          The unique identifier
+        </ResponseField>
+
+        {/* After */}
+        <ParamField name="id" type="string" required>
+          The unique identifier
+        </ParamField>
+        ```
+      </Accordion>
+      <Accordion title="片段会自动重新定位并重写导入">
+        Jamdesk 只解析相对于根目录的 `/snippets/*` 导入。Mintlify 项目通常会将片段 MDX 文件放在目录树中的任意位置，并使用相对于父目录的路径导入（`import X from '../shared/x.mdx'`）。
+
+        `jamdesk migrate` 会在一次运行中完成以下三项操作：
+
+        - 检测作为片段导入但位于 `/snippets/` 之外的 MDX 文件，并将其移动到 `/snippets/` 下，同时保留相对路径（因此带有语言区域前缀的片段，如 `de/foo.mdx`，不会发生冲突）。
+        - 将所有 MDX 文件中的相对于父目录的片段导入重写为新的相对于根目录的路径。
+        - 将使用 React hooks 的内联组件提取到 `/snippets/<name>.tsx` 中的 `'use client'` 文件，并将内联导出替换为从 `/snippets/` 导入。
+
+        如果你使用了 Mintlify 的 `<Snippet file="my-snippet.mdx" />` JSX 元素，请将其替换为 MDX 导入。该元素不会被自动重写：
+
+        ```mdx
+        {/* Before (Mintlify) */}
+        <Snippet file="my-snippet.mdx" />
+
+        {/* After (Jamdesk) */}
+        import MySnippet from '/snippets/my-snippet.mdx'
+
+        <MySnippet />
+        ```
+
+        重定位器采取保守策略。如果项目没有已解析的导航，或者计划移动的文件超过所有 MDX 文件的 `max(5, 25%)`，它会在不修改任何内容的情况下中止，并说明原因。修复中止原因后重新运行。
+      </Accordion>
+      <Accordion title="topbarLinks 会映射到 navbar.links">
+        Mintlify 的 `topbarLinks` 和 `topbarCtaButton` 都会映射到 `docs.json` 中的 `navbar.links`。`name` 字段会变为 `label`，`url` 会变为 `href`。
+      </Accordion>
+    </AccordionGroup>
+  </Tab>
+
+  <Tab title="From Other Platforms">
+    适用于 GitBook、ReadMe、Docusaurus、Confluence、Notion 或其他文档工具。
+
+    <Card title="HTML 转 MDX 转换器" icon="file-code" href="https://jamdesk.com/utilities/html-to-mdx" horizontal>
+      如果使用的平台提供 HTML 导出（例如 Confluence、Notion 以及许多其他平台），可以将内容粘贴到免费的 HTML 转 MDX 转换器中，获得可直接放入项目的整洁 MDX。
+    </Card>
+
+    <Tip>
+      需要迁移帮助？[联系我们](mailto:contact@jamdesk.com)，我们会协助你完成设置。
+    </Tip>
+
+    ### 从 GitBook 迁移
+
+    GitBook 使用 Markdown 存储内容，并通过 `SUMMARY.md` 文件定义导航。
+
+    <Steps>
+      <Step title="导出内容">
+        将 GitBook 空间导出为 Markdown。如果使用 GitBook 的 Git 同步功能，内容已经作为 `.md` 文件存储在 Git 仓库中。
+      </Step>
+      <Step title="将文件转换为 MDX">
+        将 `.md` 文件重命名为 `.mdx`，并为每个文件添加 frontmatter：
+
+        ```mdx
+        ---
+        title: Your Page Title
+        description: A short description of the page
+        ---
+
+        Your existing Markdown content here.
+        ```
+      </Step>
+      <Step title="从 SUMMARY.md 映射导航">
+        GitBook 使用 `SUMMARY.md` 定义侧边栏。将其转换为 `docs.json` 导航组。
+
+        **GitBook（`SUMMARY.md`）：**
+        ```markdown
+        # Summary
+
+        ## Getting Started
+        * [Introduction](introduction.md)
+        * [Quick Start](quickstart.md)
+
+        ## API Reference
+        * [Authentication](api/auth.md)
+        ```
+
+        **Jamdesk（`docs.json`）：**
+        ```json
+        {
+          "navigation": {
+            "groups": [
+              {
+                "group": "Getting Started",
+                "pages": ["introduction", "quickstart"]
+              },
+              {
+                "group": "API Reference",
+                "pages": ["api/auth"]
+              }
+            ]
+          }
+        }
+        ```
+      </Step>
+      <Step title="移动图片">
+        将所有图片移动到 `/images` 目录，并更新 MDX 文件中的引用，使用绝对路径（例如 `/images/screenshot.png`）。
+      </Step>
+      <Step title="在本地测试">
+        ```bash
+        jamdesk dev
+        ```
+      </Step>
+    </Steps>
+
+    ### 从 Docusaurus 迁移
+
+    Docusaurus 项目已经使用 MDX，因此大多数内容可以直接迁移。
+
+    <Steps>
+      <Step title="复制 MDX 文件">
+        将 Docusaurus 的 `docs/` 目录内容复制到 Jamdesk 项目根目录。保留现有目录结构。
+      </Step>
+      <Step title="清理 frontmatter">
+        删除 Docusaurus 专用的 frontmatter 字段。保留 `title` 和 `description`，删除其余字段。
+
+        ```yaml
+        ---
+        # Remove these Docusaurus fields
+        sidebar_position: 3
+        sidebar_label: "Custom Label"
+        slug: /custom-url
+        pagination_next: null
+
+        # Keep these
+        title: Your Page Title
+        description: A short description
+        ---
+        ```
+      </Step>
+      <Step title="将 sidebars.js 映射到 docs.json">
+        将 `sidebars.js` 的分类结构转换为 `docs.json` 导航组。
+
+        **Docusaurus（`sidebars.js`）：**
+        ```javascript
+        module.exports = {
+          docs: [
+            {
+              type: 'category',
+              label: 'Getting Started',
+              items: ['intro', 'installation'],
+            },
+          ],
+        };
+        ```
+
+        **Jamdesk（`docs.json`）：**
+        ```json
+        {
+          "navigation": {
+            "groups": [
+              {
+                "group": "Getting Started",
+                "pages": ["intro", "installation"]
+              }
+            ]
+          }
+        }
+        ```
+      </Step>
+      <Step title="替换 Docusaurus 组件">
+        将 Docusaurus 专用组件替换为 Jamdesk 等效组件。
+
+        | Docusaurus | Jamdesk | 示例 |
+        |---|---|---|
+        | `:::note` / `:::tip` / `:::warning` | `<Note>` / `<Tip>` / `<Warning>` | 查看[提示组件](/cn/components/overview) |
+        | `import Tabs from '@theme/Tabs'` | `<Tabs>`（全局可用） | 无需导入 |
+        | `import TabItem from '@theme/TabItem'` | `<Tab>`（全局可用） | 使用 `title` 替代 `label` |
+      </Step>
+      <Step title="在本地测试">
+        ```bash
+        jamdesk dev
+        ```
+      </Step>
+    </Steps>
+
+    ### 从其他工具迁移
+
+    对于 Confluence、Notion、ReadMe 或其他平台，流程都相同：先将内容导出为 Markdown，然后设置 Jamdesk 项目结构。
+
+    <Steps>
+      <Step title="导出为 Markdown">
+        大多数平台都提供 Markdown 或 HTML 导出选项。如果可用，请使用 Markdown。对于 HTML，可以使用 [Pandoc](https://pandoc.org/) 等工具将其转换为 Markdown。
+
+        ```bash
+        # Convert HTML to Markdown with Pandoc
+        pandoc input.html -f html -t markdown -o output.md
+        ```
+      </Step>
+      <Step title="创建 docs.json">
+        从最小配置开始，并在添加页面时逐步完善导航。
+      </Step>
+      <Step title="将文件转换为 MDX">
+        将 `.md` 文件重命名为 `.mdx`，并为每个文件添加 frontmatter（`title`、`description`）。
+      </Step>
+      <Step title="移动资源">
+        将图片和其他资源移动到 `/images` 目录。更新文件引用，使用绝对路径。
+      </Step>
+      <Step title="在本地测试">
+        ```bash
+        jamdesk dev
+        ```
+      </Step>
+    </Steps>
+  </Tab>
+</Tabs>
+
+## 迁移后检查清单
+
+<Check>所有页面均可正常渲染且无错误</Check>
+<Check>导航结构与原网站一致</Check>
+<Check>内部链接均可正常使用</Check>
+<Check>图片和资源均可正常显示</Check>
+<Check>代码块使用正确的语法高亮</Check>
+<Check>搜索已为内容建立索引</Check>
+
+## 接下来做什么？
+
+<Columns cols={2}>
+  <Card title="目录结构" icon="folder-tree" href="/cn/setup/directory-structure">
+    了解如何组织文档
+  </Card>
+  <Card title="docs.json 参考" icon="gear" href="/cn/config/docs-json-reference">
+    配置网站设置
+  </Card>
+</Columns>

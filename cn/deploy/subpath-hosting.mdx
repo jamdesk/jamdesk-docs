@@ -1,0 +1,116 @@
+---
+title: 子路径托管
+description: 将文档托管在域名的子路径下，默认使用 yoursite.com/docs，也可自定义路径。支持 Vercel、CloudFront、Cloudflare 和反向代理配置。
+---
+
+将文档托管在域名的子路径下，而不是单独的子域名中：默认使用 `yoursite.com/docs`，也可以使用 `yoursite.com/help` 等自定义路径。有关所有部署选项，请参阅[部署概览](/cn/deploy/overview)。
+
+屏幕截图显示的是英文界面。
+
+## 为什么使用子路径？
+
+与 `docs.yoursite.com` 这样的子域名相比，子路径可以让读者始终留在您的主域名下，并且您的文档页面会提升该域名的搜索权重，而不是将排名信号分散到两个主机上。
+
+## 工作原理
+
+您的 Web 服务器或 CDN 会将 `/docs/*` 的请求代理到您的 Jamdesk 网站，同时保留浏览器中的原始 URL：
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant Proxy as Your Proxy
+    participant Jamdesk as [slug].jamdesk.app
+
+    User->>Proxy: GET yoursite.com/docs/getting-started
+    Proxy->>Jamdesk: Forward with X-Jamdesk-Forwarded-Host: yoursite.com
+    Jamdesk-->>Proxy: HTML response
+    Proxy-->>User: Served with yoursite.com/docs URLs
+```
+
+代理会将 `X-Jamdesk-Forwarded-Host` 标头与您的域名一同传递。Jamdesk 使用此标头来：
+
+1. **验证您的域名**是否有权提供内容
+2. 从**仪表板应用您的配置**
+
+因此，代理配置只需设置一次：如果您在仪表板中更改设置，则无需更新代理。
+
+## 按提供商配置
+
+选择您的托管提供商以开始使用：
+
+<Columns cols={2}>
+  <Card title="Cloudflare" icon="cloud" href="/cn/deploy/cloudflare">
+    使用 Cloudflare Workers 代理 /docs 流量
+  </Card>
+  <Card title="AWS" icon="aws" href="/cn/deploy/aws">
+    使用 Route 53 配置 CloudFront
+  </Card>
+  <Card title="Vercel" icon="triangle" href="/cn/deploy/vercel">
+    向 vercel.json 添加重写规则
+  </Card>
+  <Card title="反向代理" icon="server" href="/cn/deploy/reverse-proxy">
+    nginx、Apache 或其他代理服务器
+  </Card>
+</Columns>
+
+## 前提条件
+
+配置代理前：
+
+1. 在 [Jamdesk 仪表板](https://dashboard.jamdesk.com)的 Settings → Custom Domain 中**添加您的域名**
+2. 打开 **"Host at a subpath"**
+3. **选择您的子路径**（可选；请参阅下方的[选择子路径](#选择子路径)），然后点击 **Save**
+
+您的 Jamdesk 子域名（例如 `acme.jamdesk.app`）会显示在仪表板中。您将在代理配置中用到它。
+
+<Note>
+保存子路径托管设置的更改（开启或关闭该功能，或更改子路径本身）会触发文档的完整构建。这是必需的，因为 URL 结构发生了变化（例如，从 `/introduction` 变为 `/docs/introduction`）。
+</Note>
+
+## 选择子路径
+
+默认情况下，您的文档通过 `/docs` 提供。若要使用其他路径（例如 `/help` 或 `/support`），请在切换开关旁的子路径字段中输入该路径。字段留空时，切换开关显示为 `Host at a subpath (e.g. /docs)`；输入值后，它会实时更新为即将启用的路径（例如 `Host at /help`）。
+
+<Frame>
+  <img src="/images/dashboard/custom-domain-subpath-field.webp" alt="Custom Domain 卡片中已输入 docs.example.com，子路径字段设置为 help，且 Host at /help 切换开关已打开" />
+</Frame>
+
+该字段仅接受单个小写路径段：只能包含字母、数字和中间连字符，不能以连字符开头或结尾，最多 63 个字符。部分路径段为保留值，会直接被拒绝，包括 `api`、`jd`、`wp-admin` 等常见管理路径，以及文档可能使用的任何区域代码（`fr`、`es`、`de` 等）。保留这些路径段可避免您的子路径与 Jamdesk 已提供的路由发生冲突。
+
+将字段留空可继续使用默认路径 `/docs`。
+
+## 重命名或移除子路径
+
+更改子路径，或清除子路径以恢复默认设置，不会破坏已经被索引或加入书签的链接：
+
+- **`/docs` 永远不会停止提供服务。** 即使您切换到 `/help` 等自定义子路径，原始的 `/docs/*` 路径仍会在您的 `[slug].jamdesk.app` 子域名上响应，也会通过任何仍指向这些路径的代理响应。规范链接会立即转移到新的子路径，搜索引擎也会在那里重新编入索引。任何现有的 `/docs` 链接都不会失效，因此您可以按照自己的节奏更新代理配置，而无需争分夺秒。
+- **重命名自定义子路径时，旧路径会转发一次。** 如果将 `/help` 重命名为 `/guide`，对 `/help/*` 的请求会通过 308 重定向到对应的 `/guide/*` 路径。此历史记录只有一层：如果再次将 `/guide` 重命名为 `/support`，`/guide/*` 会重定向到 `/support/*`，但两次重命名之前的路径段 `/help/*` 不再被跟踪，因此这些链接将停止解析——它们会跳转到“未找到”页面，有时还会先重定向到看起来异常的组合路径。如果您依赖重定向来保留旧链接，请不要连续重命名；请改为将外部链接更新为当前子路径。
+- **恢复到 `/docs`** 的工作方式相同：之前的自定义子路径（保留一层历史记录）会重定向到 `/docs/*`。
+
+<Warning>
+这**并不**意味着 `/docs` 会重定向到您选择的任何子路径。由于 `/docs` 会持续直接提供服务，因此不需要这样做。单层重定向仅适用于您正在弃用的*自定义*子路径。
+</Warning>
+
+配置代理后，请访问 `https://yoursite.com/docs`（或您配置的子路径）进行测试。您的文档应能正常加载，所有资源和链接也应正常工作。
+
+## 是否需要隐藏 jamdesk.app 子域名？
+
+不需要。您的 `[slug].jamdesk.app` 子域名仍可访问（它是代理转发到的上游
+源站），但它不会在搜索结果中与您的网站竞争：
+
+- **注册您的域名后**，直接从该子域名提供的每个页面都会包含一个规范链接，指向您域名上的同一页面，因此搜索引擎会将所有排名信号集中到您的域名。
+- **在注册域名之前**，子路径模式下的子域名页面会标记为
+  `noindex`，因此完全不会进入索引。
+
+如果您还希望让子域名上的内容本身无法访问（而不仅仅是不被索引），请启用[密码保护](/cn/setup/password-protection)：此时子域名会显示解锁页面，而不是您的文档。
+
+## 接下来做什么？
+
+<Columns cols={2}>
+  <Card title="部署概览" icon="cloud-arrow-up" href="/cn/deploy/overview">
+    比较子域名、自定义域名和子路径托管
+  </Card>
+  <Card title="自定义域名" icon="globe" href="/cn/deploy/custom-domains">
+    验证 DNS 并排查域名配置问题
+  </Card>
+</Columns>

@@ -1,0 +1,308 @@
+---
+title: 多语言支持
+description: 使用语言切换器提供多语言文档。每种语言都可以拥有独立的导航结构和翻译内容。
+---
+
+如果您的文档需要覆盖多个语言的用户，可以为每个区域设置定义独立的导航树，并让读者通过顶部栏中的下拉菜单切换语言。
+
+<Note>
+  Jamdesk 不会为您翻译内容。您需要提供翻译后的 MDX 文件；Jamdesk 负责路由、导航、语言切换器和 RTL 样式。您可以通过自己的工作流（人工翻译、机器翻译或 LLM）生成翻译，然后将其放入带语言前缀的目录中。
+</Note>
+
+## 配置
+
+将导航包装在 `languages` 数组中，并为每种语言提供独立的导航结构：
+
+```json docs.json
+{
+  "navigation": {
+    "languages": [
+      {
+        "language": "en",
+        "tabs": [
+          {
+            "tab": "Documentation",
+            "groups": [
+              {
+                "group": "Getting Started",
+                "pages": ["introduction", "quickstart"]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "language": "es",
+        "tabs": [
+          {
+            "tab": "Documentación",
+            "groups": [
+              {
+                "group": "Comenzar",
+                "pages": ["es/introduction", "es/quickstart"]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+## 支持的语言
+
+| 代码 | 语言 | 代码 | 语言 |
+|------|------|------|------|
+| `en` | 英语 | `ko` | 韩语 |
+| `es` | 西班牙语 | `pt-BR` | 葡萄牙语（巴西） |
+| `fr` | 法语 | `ru` | 俄语 |
+| `de` | 德语 | `ar` | 阿拉伯语 |
+| `it` | 意大利语 | `hi` | 印地语 |
+| `jp` | 日语 | `id` | 印度尼西亚语 |
+| `cn` | 简体中文 | `tr` | 土耳其语 |
+| `zh-Hant` | 繁体中文 | `vi` | 越南语 |
+| `nl` | 荷兰语 | `pl` | 波兰语 |
+| `sv` | 瑞典语 | `cs` | 捷克语 |
+| `no` | 挪威语 | `ro` | 罗马尼亚语 |
+| `he` | 希伯来语 | `ua` | 乌克兰语 |
+| `lv` | 拉脱维亚语 | `uz` | 乌兹别克语 |
+
+## 目录结构
+
+将翻译后的内容组织到带语言前缀的目录中：
+
+```bash
+my-docs/
+├── docs.json
+├── introduction.mdx          # English (default)
+├── quickstart.mdx
+├── es/
+│   ├── introduction.mdx      # Spanish
+│   └── quickstart.mdx
+├── fr/
+│   ├── introduction.mdx      # French
+│   └── quickstart.mdx
+└── de/
+    ├── introduction.mdx      # German
+    └── quickstart.mdx
+```
+
+在导航中使用完整路径引用页面（包含语言前缀）：
+
+```json
+{
+  "language": "es",
+  "tabs": [
+    {
+      "tab": "Documentación",
+      "groups": [
+        {
+          "group": "Comenzar",
+          "pages": ["es/introduction", "es/quickstart"]
+        }
+      ]
+    }
+  ]
+}
+```
+
+## 特定语言的设置
+
+每种语言都可以拥有自己的配置：
+
+```json
+{
+  "navigation": {
+    "languages": [
+      {
+        "language": "en",
+        "tabs": [...]
+      },
+      {
+        "language": "es",
+        "tabs": [...]
+      }
+    ]
+  }
+}
+```
+
+<Note>
+横幅在 `docs.json` 顶层全局设置（参见 [横幅](/cn/config/docs-json-reference#横幅)），而不是按语言设置。所有语言的每个页面都会显示同一个横幅。
+</Note>
+
+## 翻译导航栏标签
+
+顶部导航链接和主要 CTA 接受可选的 `labels` 对象，用于按语言覆盖标签。当读者访问带语言前缀的 URL（例如 `/fr/...`）时，将使用匹配的覆盖标签；否则显示默认的 `label`。
+
+```json docs.json
+{
+  "navbar": {
+    "links": [
+      {
+        "label": "Blog",
+        "labels": { "fr": "Blog", "es": "Blog" },
+        "href": "/blog"
+      },
+      {
+        "label": "Pricing",
+        "labels": { "fr": "Tarifs", "es": "Precios" },
+        "href": "/pricing"
+      }
+    ],
+    "primary": {
+      "type": "button",
+      "label": "Dashboard",
+      "labels": { "fr": "Tableau de bord", "es": "Panel" },
+      "href": "https://app.example.com"
+    }
+  }
+}
+```
+
+内置 UI 字符串（**Search** 按钮、**Ask AI** 按钮和 **More** 标签下拉菜单）会自动翻译为每种受支持的语言。您无需配置这些内容。
+
+## 默认语言
+
+数组中的第一种语言是默认语言。用户访问您的文档时会首先看到这种语言。语言切换器允许用户进行切换。
+
+## URL 结构
+
+语言前缀会显示在 URL 中：
+
+| 语言 | URL |
+|------|-----|
+| 英语（默认） | `docs.example.com/introduction` |
+| 西班牙语 | `docs.example.com/es/introduction` |
+| 法语 | `docs.example.com/fr/introduction` |
+
+## 部分翻译
+
+您不必翻译每个页面。如果某种语言中不存在某个页面，用户会看到一条回退消息，其中包含指向英文版本的链接。
+
+对于不应翻译的页面（例如 API 参考），您可以让不同语言引用同一个页面：
+
+```json
+{
+  "language": "es",
+  "tabs": [
+    {
+      "tab": "API",
+      "groups": [
+        {
+          "group": "Endpoints",
+          "pages": ["api/users", "api/posts"]  // Same as English
+        }
+      ]
+    }
+  ]
+}
+```
+
+## 翻译 OpenAPI 规范
+
+由 OpenAPI 驱动的端点页面（包含 `openapi:` frontmatter 指令的页面）会从 YAML 或 JSON 规范文件中渲染内容。要翻译端点摘要、描述、参数提示和架构字段描述，请在英文规范文件旁提供特定语言的规范文件。
+
+### 文件命名
+
+将翻译后的规范放在源文件旁边，并在扩展名前插入语言代码：
+
+```bash
+openapi/
+├── api.yaml           # English (default)
+├── api.fr.yaml        # French
+├── api.es.yaml        # Spanish
+└── api.zh.yaml        # Simplified Chinese
+```
+
+无需修改配置或 `docs.json`。Jamdesk 会根据 URL 的语言前缀，在渲染时解析匹配的规范。对于 `/fr/api-reference/create-ticket` 页面，Jamdesk 会优先查找 `api.fr.yaml`；如果不存在翻译，则回退到 `api.yaml`。
+
+### 规范中需要翻译的内容
+
+翻译可读文本。不同语言之间的所有结构性值都必须保持一致。
+
+| 翻译 | 保持一致 |
+|-----------|-----------|
+| `info.title`、`info.description` | `openapi` / `swagger` 版本、`servers[*].url` |
+| 每个操作的 `summary`、`description` | URL 路径、HTTP 方法、`operationId`、`tags` |
+| 每个参数的 `description` | 参数名称（`name`）、字段名称、架构属性键 |
+| 每个响应的 `description` | 状态代码键（`"200"`、`"400"` 等） |
+| `requestBody.description` | `enum` 值（`low`、`normal`、`high`）、`type`、`format` |
+| 架构的 `description`、属性的 `description` | `$ref` 指针、`example` / `examples` 负载内容 |
+
+### 回退行为
+
+如果在本地化 URL 下请求页面，但不存在翻译后的规范，Jamdesk 会在翻译后的页面外壳中渲染英文规范。用户会看到混合语言的端点区块，而不是 404。这与 MDX 页面的部分翻译行为一致。
+
+<Note>
+  `jamdesk` CLI 的本地预览（`jamdesk dev`）仅根据文件名解析 OpenAPI 规范。目前不会应用语言后缀查找。在本地迭代翻译时，请使用生产环境的 Jamdesk 预览 URL（`<project>.jamdesk.app/<lang>/...`），或临时替换源文件。这只影响本地开发；托管环境和 ISR 渲染会正确使用翻译后的规范。
+</Note>
+
+### 删除特定语言的规范
+
+删除 `api.<lang>.yaml` 后，页面会在下一次渲染时回退到英文规范（无需重新构建）。要从头开始重新翻译，请删除该文件并重新生成。无需修改 `docs.json`——规范解析完全基于文件名。
+
+### 示例
+
+源文件 `openapi/tickets.yaml`：
+
+```yaml
+info:
+  title: Tickets API
+  description: Manage support tickets.
+paths:
+  /tickets:
+    post:
+      summary: Create a ticket
+      description: Create a new support ticket.
+      operationId: createTicket
+```
+
+法语翻译文件 `openapi/tickets.fr.yaml`：
+
+```yaml
+info:
+  title: API Tickets
+  description: Gérez les tickets de support.
+paths:
+  /tickets:
+    post:
+      summary: Créer un ticket
+      description: Créer un nouveau ticket de support.
+      operationId: createTicket
+```
+
+请注意，`/tickets`、`post` 和 `createTicket` 保持不变。只有文本内容发生变化。
+
+## 翻译工作流
+
+<Steps>
+  <Step title="从英文开始">
+    首先用英文编写文档。这将成为您的事实来源。
+  </Step>
+  <Step title="添加语言目录">
+    为每种目标语言创建目录（`es/`、`fr/` 等）。
+  </Step>
+  <Step title="翻译内容">
+    将英文文件复制到语言目录并进行翻译。保持文件名不变。
+  </Step>
+  <Step title="更新 docs.json">
+    在导航配置中添加语言条目。
+  </Step>
+</Steps>
+
+## RTL 语言
+
+支持阿拉伯语和希伯来语等从右到左的语言。启用这些语言后，Jamdesk 会自动应用 RTL 样式。
+
+## 接下来做什么？
+
+<Columns cols={2}>
+  <Card title="导航概览" icon="sitemap" href="/cn/navigation/overview">
+    配置标签、分组和页面结构
+  </Card>
+  <Card title="docs.json 参考" icon="gear" href="/cn/config/docs-json-reference">
+    完整配置选项
+  </Card>
+</Columns>

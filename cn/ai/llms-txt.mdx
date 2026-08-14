@@ -1,0 +1,134 @@
+---
+title: llms.txt
+sidebarTitle: llms.txt
+description: 每个 Jamdesk 网站都会自动生成 llms.txt 和 llms-full.txt，帮助 AI 工具理解您的文档。
+---
+
+如果您希望 ChatGPT、Claude 或 Copilot 等 AI 工具准确回答有关产品的问题，它们需要结构化访问您的文档，而不仅仅是依赖训练数据中的内容。
+
+每个 Jamdesk 网站都会根据 [llmstxt.org](https://llmstxt.org) 规范生成 `llms.txt` 和 `llms-full.txt`。AI 工具会读取这些文件，而不是逐个抓取页面。
+
+<Note>
+  Google 现在会将 `llms.txt` 纳入 [Lighthouse 的代理浏览检查](https://developer.chrome.com/docs/lighthouse/agentic-browsing/llms-txt)。发布有效 `llms.txt` 的网站更容易被 AI 代理发现，Google 在为 AI 生成的答案排名内容时也越来越重视这一点。Jamdesk 免费提供此功能。
+</Note>
+
+<Tip>
+  **查看您的评分。** 使用免费的 [AI Score](https://jamdesk.com/ai-score) 工具，了解任何文档网站的 AI 代理就绪程度。发布有效的 `llms.txt` 是该工具检查的首要项目之一。此外，还有一个 [AI Score Chrome 扩展程序](https://chromewebstore.google.com/detail/jamdesk-ai-score/mhihkkgpcbmapmojnakhjfhjmiagkhlj)，可在您浏览网站时为其评分。
+</Tip>
+
+## Jamdesk 生成的文件
+
+| 文件 | 内容 |
+|------|---------|
+| `llms.txt` | 页面标题、描述和 URL（结构化目录） |
+| `llms-full.txt` | 单个文件中的完整文档内容 |
+
+Jamdesk 会在构建时生成这两个文件，并通过与文档相同的 CDN 提供服务。
+
+## 验证文件
+
+首次构建后，检查文件是否存在：
+
+<Tabs>
+  <Tab title="根域名">
+    如果文档位于域名根目录（例如 `docs.acme.com` 或 `acme.jamdesk.app`）：
+
+    ```bash
+    curl https://docs.acme.com/llms.txt
+    curl https://docs.acme.com/llms-full.txt
+    ```
+  </Tab>
+  <Tab title="/docs 子路径">
+    如果文档位于主站点的 `/docs` 路径下（例如本站点 `jamdesk.com/docs`）：
+
+    ```bash
+    curl https://jamdesk.com/docs/llms.txt
+    curl https://jamdesk.com/docs/llms-full.txt
+    ```
+  </Tab>
+</Tabs>
+
+## 文件格式
+
+`llms.txt` 会列出每个页面的标题、描述和 URL，并按照与导航对应的分组归入各个章节：
+
+```text
+# Your Project Documentation
+
+> Documentation for Your Project
+
+## Get Started
+
+- [Getting Started](https://your-project.jamdesk.app/getting-started): Set up your first project in 5 minutes
+- [Configuration](https://your-project.jamdesk.app/configuration): Configure your project settings
+
+## API Reference
+
+- [Authentication](https://your-project.jamdesk.app/authentication): How to authenticate API requests
+```
+
+`llms-full.txt` 包含每个页面的完整 Markdown 内容，并以标题标记页面边界后连接在一起。
+
+## 结构
+
+`llms.txt` 遵循 [llmstxt.org](https://llmstxt.org/) 提案：包含 H1 标题、块引用摘要，以及以 Markdown 链接形式呈现的导航选项卡和分组，每个分组使用 `##` 作为章节标题。
+
+多语言网站会为每种语言生成一个索引。根目录下的 `llms.txt` 会列出默认语言，并在末尾链接到每个翻译后的索引，例如法语索引 `/fr/llms.txt`。每个语言文件也会链接回其他语言的索引。
+
+## 每个页面上的代理指令
+
+每个页面还包含一条不可见且屏幕阅读器不会朗读的备注，指向 `llms.txt` 以供 AI 代理使用；每个 Markdown 导出文件也会以链接到该索引的块引用开头。访问 HTML 页面的代理无需抓取即可找到 Markdown 路径。
+
+## 构建方式
+
+- 在构建时与 HTML 一起生成
+- 通过 CDN 提供服务，并使用与文档相同的缓存策略
+- 每次构建时自动更新
+- 无需配置；默认包含所有页面
+
+## 停用 llms.txt
+
+默认情况下会发布 `llms.txt` 和 `llms-full.txt`。如果您想停止生成这些文件（例如不希望 AI 工具获取您的内容），请在 `docs.json` 中将 `seo.ai.llmsTxt` 设置为 `false`：
+
+```json docs.json
+{
+  "seo": {
+    "ai": {
+      "llmsTxt": false
+    }
+  }
+}
+```
+
+下次构建时，Jamdesk 会跳过这两个文件，线上 `/llms.txt` 和 `/llms-full.txt` URL 将返回 `404`。
+
+<Note>
+  **AI 获取内容与搜索索引是两个独立的控制项。** `seo.ai.llmsTxt` 仅控制 AI 工具读取的 `llms.txt`/`llms-full.txt` 文件。它不会改变搜索引擎为网站建立索引的方式；该方式由 [`robots` 元数据和每页的 `noindex`](/cn/content/seo#控制索引) 控制。页面可以被 Google 编入索引，同时排除在 AI 内容获取范围之外，反之亦然。
+</Note>
+
+## AI 爬虫
+
+Jamdesk 默认的 `robots.txt` 允许所有主要 AI 爬虫（Claude、ChatGPT、Copilot、Gemini）访问。您的文档开箱即用即可被 AI 工具访问。
+
+<Accordion title="llms.txt 与 sitemap.xml 的区别">
+  `sitemap.xml` 会列出供搜索引擎抓取和编入索引的 URL。它不包含任何内容，只有链接和最后修改日期等元数据。
+
+  `llms.txt` 专为 AI 模型设计。它包含页面标题、描述以及（在 `llms-full.txt` 中）实际内容。AI 工具可以读取完整文件来理解您的文档，而无需发出多个 HTTP 请求。
+</Accordion>
+
+## 接下来做什么？
+
+<Columns cols={2}>
+  <Card title="AI Score" icon="gauge-high" href="/cn/ai/ai-score">
+    查看文档的 AI 代理就绪程度，每次构建都会获得评分
+  </Card>
+  <Card title="AI Chat" icon="comment" href="/cn/ai/chat">
+    用于回答访客问题的内置聊天助手
+  </Card>
+  <Card title="MCP Server" icon="robot" href="/cn/ai/mcp-server">
+    让 AI 工具以交互方式搜索和查询您的文档
+  </Card>
+  <Card title="Markdown Source" icon="file-code" href="/cn/ai/markdown-source">
+    获取单个页面的原始 Markdown
+  </Card>
+</Columns>

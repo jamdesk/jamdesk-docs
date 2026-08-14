@@ -1,0 +1,89 @@
+---
+title: 视频
+description: >-
+  了解如何在 Jamdesk 中使用 Markdown 或 Video 组件嵌入 MP4 和 WebM 视频，并通过 props 设置自动播放、循环播放和控件。
+---
+
+将 `.mp4` 或 `.webm` 文件存放在项目内的 `/videos` 目录中，然后直接引用这些文件。Jamdesk 会渲染带控件、圆角和统一间距的 HTML5 播放器。
+
+屏幕截图显示的是英文界面。
+
+## Markdown 语法
+
+用于图像的 `![alt](path)` 模式同样适用于视频文件。Jamdesk 会检查文件扩展名，并渲染视频播放器，而不是 `<img>` 标签：
+
+```markdown
+![Never Gonna Give You Up](/videos/never-gonna-give-you-up.mp4)
+```
+
+![Never Gonna Give You Up](/videos/never-gonna-give-you-up.mp4)
+
+这是将视频添加到页面中最快的方法。你会获得一个标准播放器，其中包含播放/暂停、音量、进度条和全屏功能。不需要额外的 props。如果你想控制播放行为（自动播放、循环播放、静音），请改用 `<Video>` 组件。
+
+## Video 组件
+
+`<Video>` 组件将 HTML5 视频属性作为 props 提供，让你可以控制播放器的行为：
+
+```mdx
+<Video src="/videos/never-gonna-give-you-up.mp4" title="Rick Astley" />
+```
+
+<Video src="/videos/never-gonna-give-you-up.mp4" title="Rick Astley" />
+
+`title` prop 会在视频元素上设置 `aria-label`，屏幕阅读器在用户导航到该元素时会读出此标签。为确保无障碍访问，请始终设置该属性。
+
+## Props
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `src` | `string` | none | **必填。** 视频文件的路径。 |
+| `title` | `string` | none | 提供给屏幕阅读器的无障碍标签。 |
+| `controls` | `boolean` | `true` | 显示浏览器内置的播放器控件。 |
+| `autoPlay` | `boolean` | `false` | 视频可见后立即开始播放。 |
+| `muted` | `boolean` | `false` | 初始以静音状态播放。 |
+| `loop` | `boolean` | `false` | 视频结束后从头重新播放。 |
+| `width` | `string` | none | CSS 宽度值（例如 `"400px"`、`"100%"`）。 |
+| `height` | `string` | none | CSS 高度值。 |
+
+## 替换 GIF
+
+动画 GIF 的文件大小会快速膨胀：5 秒的 UI 录制内容作为 GIF 很容易达到 10MB，而作为 MP4 则可以保持在 500KB 以下。你可以使用静音循环视频替换 GIF，并隐藏播放器控件：
+
+```mdx
+<Video src="/videos/ui-demo.mp4" autoPlay muted loop controls={false} />
+```
+
+最终效果和 GIF 类似（内嵌播放、无限循环且不显示控件），但加载速度快得多，并且在任何分辨率下都能保持清晰。
+
+<Note>
+浏览器会阻止未静音的自动播放。如果设置了 `autoPlay` 却没有设置 `muted`，视频将不会播放；它会停留在第一帧，且不会显示错误。请始终将这两个属性配对使用。
+</Note>
+
+## 支持的格式
+
+| Format | Extension | Browser Support |
+|--------|-----------|-----------------|
+| MP4 (H.264) | `.mp4` | 所有浏览器，包括 Safari 和 iOS |
+| WebM (VP9) | `.webm` | Chrome、Firefox、Edge。相同质量下文件更小 |
+
+MP4 是安全的默认选择。所有浏览器和设备都能处理它。WebM 生成的文件更小，但 Safari 和 iOS 不支持它，这意味着使用 Apple 设备的移动端读者将无法看到内容。
+
+视频文件大小最多可达 **100MB**。对于时长超过几分钟的视频，请将其托管在 YouTube 上，并改用 [`<YouTube>` component](/cn/content/youtube)，因为从专为视频构建的 CDN 流式传输，始终比从文档中提供大型文件更快。
+
+<Tip>
+在提交视频前先进行压缩。使用 [FFmpeg](https://ffmpeg.org/) 和 [Handbrake](https://handbrake.fr/) 等工具可以大幅缩小文件大小，同时不会产生明显的质量损失：`ffmpeg -i input.mp4 -crf 28 -preset slow output.mp4`
+</Tip>
+
+## 接下来
+
+<Columns cols={3}>
+  <Card title="图像" icon="image" href="/cn/content/images">
+    Markdown 图像、尺寸和标题
+  </Card>
+  <Card title="YouTube 嵌入" icon="youtube" href="/cn/content/youtube">
+    YouTube 视频和 Shorts
+  </Card>
+  <Card title="iFrames" icon="code" href="/cn/content/iframes">
+    Vimeo、CodePen、Figma 等
+  </Card>
+</Columns>

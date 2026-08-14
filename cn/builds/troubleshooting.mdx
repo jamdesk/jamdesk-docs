@@ -1,0 +1,95 @@
+---
+title: 构建故障排查
+description: "通过将错误消息与原因和解决方案匹配，修复常见的构建失败问题，涵盖配置错误、缺少依赖、MDX 语法和图标问题。"
+---
+
+构建失败时，构建日志会告诉你哪里出了问题以及问题所在位置。在下面找到相应的错误消息，直接查看修复方法。
+
+## 查看错误详情
+
+1. 打开项目的 **Deployments** 标签页
+2. 点击失败的构建
+3. 阅读错误消息，并滚动查看构建日志
+
+日志会指出导致构建停止的具体文件和行号。
+
+## 常见错误
+
+### 配置错误
+
+`Invalid docs.json` 表示配置文件无法解析。原因通常很简单：多余的逗号、未闭合的括号或缺少引号。
+
+<Steps>
+  <Step title="检查 JSON 语法">
+    查找缺少的逗号、括号或引号。
+  </Step>
+  <Step title="在本地验证">
+    运行 `jamdesk validate` 查看具体错误。
+  </Step>
+  <Step title="修复并推送">
+    修正错误并推送，以触发新的构建。
+  </Step>
+</Steps>
+
+### 缺少页面
+
+当导航指向不存在的文件时，会出现 `Page not found` 错误。检查文件名是否与 `docs.json` 中的路径匹配、大小写是否完全一致，以及是否省略了 `.mdx` 扩展名。
+
+### MDX 语法错误
+
+`MDX compilation failed` 表示页面中的 MDX 或 JSX 格式错误。通常是标签未闭合（例如没有匹配的 `</Card>` 的 `<Card>`）、未转义的字符（例如本应写成 `\{` 却使用了字面量 `{`），或 prop 语法无效。
+
+### 构建超时
+
+`Build exceeded time limit` 的含义正如其名：构建运行时间超过了允许的时长。大型且未优化的图片通常是罪魁祸首。压缩这些图片，拆分过于庞大的页面，并删除不再发布的页面。
+
+## 构建警告
+
+警告不会导致构建失败；无论是否存在警告，网站仍会发布。警告会标记值得修复的问题，并显示在三个位置：构建警告邮件、**Deployments** 标签页中的构建记录，以及运行 `jamdesk validate` 或 `jamdesk dev` 时的终端。
+
+### 缺少图片
+
+`Image not found` 表示页面引用了项目中不存在的图片。
+
+Jamdesk 会将每个图片引用（Markdown `![alt](/images/photo.webp)`，以及 `<img>` 和 `<Image>` 标签上的 `src`）与代码库中的文件进行比对。当目标文件缺失时，警告会提供页面、行号和无法解析的路径，因此损坏的图片不会以静默 404 的形式发布。
+
+要修复此问题，请上传图片，或将路径重新指向现有文件。路径区分大小写，并且可以从项目根目录（以 `/` 开头）或相对于页面进行解析。将 `photo.png` 转换为 WebP 的[图片优化](/cn/builds/image-optimization)完成后，对它的引用仍然有效。
+
+外部 URL、`data:` URI 以及代码块中显示的图片语法会被跳过，因此你自己文档中的示例不会触发误报。
+
+## 调试步骤
+
+<Accordion title="步骤 1：检查构建日志">
+  日志会指出导致错误的具体文件和行号。先从这里开始。
+</Accordion>
+
+<Accordion title="步骤 2：在本地测试">
+  运行 `jamdesk dev`，在自己的计算机上重现此故障。
+</Accordion>
+
+<Accordion title="步骤 3：验证配置">
+  运行 `jamdesk validate` 检查 `docs.json`，然后运行 `jamdesk broken-links` 检查损坏的内部链接。
+</Accordion>
+
+<Accordion title="步骤 4：检查最近的更改">
+  查看最近一次提交。你是否添加了页面或更改了配置？
+</Accordion>
+
+## 仍然无法解决？
+
+如果以上方法都无法解决问题：
+
+1. 复制完整的构建日志
+2. 记下项目 ID（位于 URL 中）
+3. [联系支持团队](/cn/help/support/contact)
+
+## 相关文章
+
+<Columns cols={2}>
+  <Card title="错误参考" icon="book" href="/cn/help/troubleshooting/error-reference">
+    解释所有错误代码
+  </Card>
+  <Card title="监控构建" icon="chart-line" href="/cn/builds/monitoring">
+    跟踪构建进度
+  </Card>
+</Columns>

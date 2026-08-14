@@ -1,0 +1,182 @@
+---
+title: 更新日志
+description: Jamdesk 的最新动态：面向 MDX、GitHub 和 API 文档的文档即代码平台，涵盖功能发布、CLI 更新和平台变更。
+rss: true
+---
+
+<Update label="2026 年 8 月" date="2026-08-01">
+**自定义文档 URL。** 子路径托管不再将你锁定在 `/docs`：在仪表板的 Custom Domain 卡片中选择任意单段路径（`/help`、`/guide`，或适合你网站的其他路径）。重命名很安全：`/docs` 本身始终继续提供服务，规范 URL 会立即迁移到新的子路径，之前的自定义子路径也会在一次重命名期间转发到新路径，因此已经被索引或链接的内容不会失效。准备好后，将代理中的 `/docs` 引用更新为新路径。[子路径托管 →](/cn/deploy/subpath-hosting)
+
+**AI 修复，速度更快。** 扫描完成得更快、更可靠，包括大型文档网站也一样；重新打开修复预览几乎是即时的，因为 Jamdesk 会缓存扫描结果，直到文档发生变化前一直复用这些结果。从构建警告到提交修复只需几秒。[使用 AI 修复 →](/cn/builds/fix-with-ai)
+
+**第四个主题：Halo。** 在 `docs.json` 中设置 `"theme": "halo"`，即可获得温暖、柔和圆润的外观。这是第四个精美的内置主题，采用沙色背景、焦糖色强调色、Figtree 字体，以及比其他三个主题更加圆润的边角。[主题 →](/cn/customization/theming)
+
+**仅从你自己的域名提供文档。** 在项目的自定义域名设置中启用 **Custom domain only**，`YOUR_SLUG.jamdesk.app` 将不再直接响应请求——你的文档只能通过自有域名访问。开关启用前，系统会针对你的线上域名运行预检，因此配置错误的代理不会意外阻断读者；如果 DNS 出现故障，子域名会重新开始提供服务，而不是让文档下线。纯 CNAME 域名无需任何配置；已经发送 `X-Jamdesk-Forwarded-Host` 的代理也无需配置；Vercel `rewrites` 用户只需为每个目标添加 `?jd_proxy=1`。这会让搜索引擎和普通访客看不到你的 Jamdesk 地址——它不是密码；如果你想控制谁可以阅读文档，请同时启用密码保护。[仅限自定义域名 →](/cn/deploy/custom-domain-only)
+
+</Update>
+
+
+
+<Update label="2026 年 7 月" date="2026-07-29">
+<iframe width="100%" height="180" frameborder="no" scrolling="no" seamless="" src="https://share.transistor.fm/e/4c5e31f5"></iframe>
+**直接在仪表板编辑文档。** Web 编辑器现已向所有人开放，无需设置。在侧边栏打开 **Editor**，浏览已连接的代码仓库，使用实时预览编辑 MDX，并直接提交到 GitHub 分支，随后自动触发构建。[Web 编辑器 →](/cn/development/web-editor)
+
+**在仪表板中使用 AI 修复构建警告。** 当构建因链接失效或页面缺少描述而完成时，构建页面现在会显示 **Fix with AI** 横幅，并标明可以修复的问题数量。打开横幅即可预览每项建议的编辑内容（重写后的锚点和建议的页面描述），然后应用你批准的修改。Jamdesk 会将修改提交到你的 GitHub 分支并启动新的构建。无法明确解决的问题会单独列出，供你手动修复。[使用 AI 修复 →](/cn/builds/fix-with-ai)
+
+**无限团队成员。** 现在所有计划的每个项目都包含不限数量的团队成员，无需额外付费。之前 10 人的上限和按席位计费均已取消——邀请整个团队加入即可。
+
+**让受信任的机器人发布文档。** Dependabot、Renovate 或 CMS 发布机器人等自动化账户不是 Jamdesk 成员，因此默认情况下，它们的推送不会触发构建。现在，当某个账户被拒绝时，构建会显示一个一键式 **Authorize Bot Account** 按钮。批准后，该账户的推送就会发布到线上站点，与团队成员的推送一样。只有项目成员可以授权账户；你可以随时在项目 GitHub 设置中的 **Allowed automation accounts** 下查看或撤销访问权限。
+
+**每次构建都会获得 AI Score。** Jamdesk 现在会根据开放的 AFDocs 标准，在每次构建后自动评估 AI 代理阅读已发布文档的效果，并直接在仪表板中显示结果。查看 0–100 分和字母等级，观察不同构建之间的趋势，并为每个问题获取通俗易懂的修复建议；每条建议都带有 **Copy prompt to fix** 按钮，可将问题交给你的 AI 编码代理。启用 **Email team when score changes**，当构建导致分数发生显著变化时接收通知。[AI Score →](/cn/ai/ai-score)
+</Update>
+
+<Update label="2026 年 6 月" date="2026-06-24">
+<iframe width="100%" height="180" frameborder="no" scrolling="no" seamless="" src="https://share.transistor.fm/e/13dc9855"></iframe>
+**自动修复失效链接。** 现在，具有明确目标的内部链接警告——例如拼写错误的锚点和跨语言锚点漂移——可以通过一条命令修复。运行 `jamdesk fix --dry-run` 预览计划中的更改，然后运行 `jamdesk fix` 应用更改；只有正确锚点能够解析到真实标题的警告会被处理，存在歧义的情况将保留供手动检查。[CLI 概览 →](/cn/cli/overview)
+
+**使用横幅发布任何通知。** 在 `docs.json` 中添加 `banner`，消息栏就会固定在每个页面顶部、页眉上方，并使用主题的强调色。可以在行内使用链接、**粗体**和*斜体*；设置 `dismissible: true` 后，读者会看到关闭按钮（除非消息发生变化，否则横幅会保持关闭状态）。[横幅 →](/cn/config/docs-json-reference#横幅)
+
+**显示每个页面的最近更新时间。** 在 `docs.json` 中设置 `metadata.timestamp: true`，每个页面的页脚都会显示类似“Last updated on June 15, 2026”的行。日期来自最后一次修改该页面的 Git 提交，因此每次构建都会保持准确，无需手动维护日期。[页面元数据 →](/cn/config/docs-json-reference#metadata)
+
+**设置导航图标样式。** 侧边栏、分组、标签、锚点和搜索图标现在支持图标对象中的 `style`（`{ "name": "rocket", "style": "duotone" }`）或样式前缀（`duotone/rocket`），可使用 light、thin、duotone 和 sharp 系列，而不再只有 solid。[图标 →](/cn/content/icons#图标对象形式)
+
+**自定义搜索栏。** 使用 `search.prompt` 设置自定义占位文本，并通过 `search.popularPages` 管理访客在空搜索面板中看到的快捷链接；每个链接包含标题、页面 slug 和 Font Awesome 图标。[搜索配置 →](/cn/config/docs-json-reference#搜索)
+
+**无需嵌入即可收集邮箱注册。** 在 **Integrations → Email Signups** 中连接 Resend、Mailchimp、Kit、Loops、beehiiv、Brevo 或 SendGrid，Jamdesk 托管的表单就会将读者直接添加到你自己的受众列表中——API 密钥保留在我们的后端，绝不会出现在已发布的网站中。在任意页面添加 [`EmailSubscribe`](/cn/components/email-subscribe) 组件，或设置 `placement: changelog`，自动在每个更新日志页面上放置注册框。[邮箱注册 →](/cn/integrations/email-signups)
+
+**在 Cookie 同意机制后加载分析功能。** 在 `docs.json` 中添加 `integrations.cookies` 键，Jamdesk 会暂停所有分析和跟踪脚本——Google Analytics、GTM、Plausible、Crisp、自定义 JavaScript 以及内置分析功能——直到访客同意；同意状态读取自同意横幅设置的 `localStorage` 标志。也可以直接从 `docs.json` 加载 Osano 或 Termly 横幅；简短的桥接代码片段会在读者接受时立即切换标志，脚本无需重新加载页面即可启动。[Cookie 同意 →](/cn/integrations/cookie-consent)
+
+**井然有序的 llms.txt。** 每个网站的 `llms.txt` 现在都遵循 llmstxt.org 结构——导航标签和分组会变成 `##` 节，使 AI 代理能够按照侧边栏组织方式查看文档。多语言网站每种语言都有一个索引：根文件列出默认语言，并链接到每个翻译后的索引（例如 `/fr/llms.txt`），确保每个索引足够小，不会被代理截断。[llms.txt →](/cn/ai/llms-txt)
+
+**让代理更快找到文档。** 每个页面现在都包含一个不可见且屏幕阅读器不会朗读的指令，指向 `llms.txt` 和页面的 `.md` 版本；每个 Markdown 导出文件开头也会包含一个链接到索引的引用块。获取 HTML 的代理不再需要猜测 Markdown 路径是否存在。[AI 概览 →](/cn/ai/overview)
+
+**在任意位置嵌入更新日志。** 只需一个 `<script>` 标签，就能将“What's new?”启动器添加到自己的应用中，并在模态窗口中打开 Jamdesk 更新日志，同时显示每位访客的未读提示点。在 **Integrations → What's New widget** 中生成代码片段，然后使用 `data-` 属性调整启动器模式、角落位置、模态窗口大小和提示点颜色。在自己的 Jamdesk 文档中， [`<Widget>`](/cn/components/widget) MDX 组件只需一个标签即可将相同的实时启动器添加到任意页面，无需脚本。[嵌入更新日志 →](/cn/development/embed-page)
+
+**将 API 规范下载为 zip。** 在任意 API reference 页面中，AI Actions 菜单现在提供 **Download API spec** 选项，可将网站引用的所有 OpenAPI 规范——包括本地文件和远程 URL——打包为一个 `api-specs.zip`。多文件规范会保留其 `$ref` 文件夹结构，因此下载内容可以直接用于 Postman、客户端生成器或你自己的工具。[AI Actions →](/cn/ai/ai-actions)
+
+**构建时验证 OpenAPI 规范。** 每次部署现在都会严格验证 `docs.json` 引用的 OpenAPI 规范，并将任何问题显示为**非致命构建警告**，而不是使构建失败。文档仍会发布，但你会通过邮件和仪表板构建列表准确获知问题所在（YAML 解析错误及行列号、无法解析的 `$ref` 或重复的 `operationId`）。在本地，`jamdesk dev` 仍会在规范无效时停止，以便你在推送前发现问题。[CLI 概览 →](/cn/cli/overview)
+</Update>
+
+
+<Update label="2026 年 5 月" date="2026-05-30">
+<iframe width="100%" height="180" frameborder="no" scrolling="no" seamless="" src="https://share.transistor.fm/e/1dde3139"></iframe>
+**直接从搜索中询问 AI。** 开始在搜索框中输入内容，然后将问题交给 AI 聊天，而不是打开搜索结果——按 ⌘/Ctrl+Enter，或点击搜索页脚中的 **Ask AI**。问题会追加到聊天对话中，你可以继续同一主题；普通 Enter 仍会跳转到首个结果。[AI 聊天 →](/cn/ai/chat)
+
+**复制答案和聊天记录。** 每条 AI 聊天答案都有复制按钮，可获取 Markdown 源码；聊天标题栏中的 **Copy transcript** 操作则会将完整对话复制为带角色标记的 Markdown，方便粘贴到 issue 或文档中。[AI 聊天 →](/cn/ai/chat)
+
+**更智能的聊天自动滚动。** 只有当你已经位于底部时，聊天才会跟随流式答案。向上滚动重新阅读较早的回复时，页面会保持当前位置，不会强行滚到底部；滚回底部后，聊天会重新固定跟随。
+
+**本地预览中的自定义 CSS（CLI）。** `jamdesk dev` 现在会像已发布构建一样应用自定义 CSS，因此你可以在部署前检查样式。将任意 `.css` 文件放在项目根目录中——例如 `style.css`，或多个按字母顺序合并的文件——浏览器刷新时就会加载。无需在 `docs.json` 中添加配置，与 Mintlify 引入根目录样式表的方式一致。[自定义 CSS →](/cn/customization/custom-css)
+
+{/* Not released yet — saved for a future changelog entry.
+**Dashboard Single Sign-On.** Your team can sign in to the Jamdesk dashboard with your own identity provider instead of a Jamdesk password. Set up SAML or OIDC yourself from **Settings → Single Sign-On** — verify your domain with a DNS TXT record, connect your IdP, and optionally require everyone on the domain to use it. Available on all paid plans, with break-glass emails so admins keep a password fallback. [Single Sign-On →](/cn/setup/sso)
+*/}
+
+**从 frontmatter 自定义社交预览。** 可直接在页面 frontmatter 中设置任意 Open Graph 或 Twitter/X 元标签——`og:title`、`og:description`、`og:image`、`twitter:card`、`keywords` 以及完整的 metatag 集合。可以使用扁平的顶层键，也可以使用嵌套的 `seo:` 块；两种方式都有效，页面级值会覆盖 `docs.json` 中的默认值。[SEO →](/cn/content/seo)
+
+**隐藏页面。** 无需删除草稿、内部手册或已弃用指南，即可将它们从侧边栏和搜索结果中移除。在页面 frontmatter，或 `docs.json` 中的分组或标签上添加 `hidden: true`。隐藏页面仍可通过直接 URL 访问，但会从导航、站点地图、站内搜索和 AI 上下文中消失，并自动添加 `noindex` 标签。想让隐藏分组中的页面仍出现在搜索结果中？同时添加 `searchable: true`。[隐藏页面 →](/cn/content/hidden-pages)
+
+**网格和窗口装饰。** 两种新的背景图案加入 Jam 主题默认的渐变效果。将 `background.decoration` 设置为 `"grid"`，使用细微的 24px 点阵网格；设置为 `"windows"`，则在上方两个角落显示 Windows 11 风格的磨砂光斑。渐变和 `"none"` 平面填充仍按原方式工作，可选择适合品牌的外观。[背景 →](/cn/customization/background)
+
+**背景自定义。** `docs.json` 中新增的 `background` 块可以禁用 Jam 浅色模式渐变、按模式覆盖页面颜色，或调整渐变的颜色、大小、位置和透明度。无需自定义 CSS。[背景 →](/cn/customization/background)
+
+**D2 图表。** Mermaid 之外现在又支持一种图表语言。将围栏代码块标记为 `d2`，Jamdesk 就会在构建时将其渲染为 SVG，并内置浅色和深色主题。工作流程与 Mermaid 相同——选择适合当前图表的语言即可。[D2 图表 →](/cn/components/d2)
+
+**分组显示搜索结果。** 搜索不再因同一页面匹配多个分区而重复显示该页面。搜索模态窗口会将命中结果归入父页面下，默认显示最多三个分区，其余内容可通过行内展开器查看。摘要高亮仍会保留，让你用更少的浏览次数找到正确分区。
+
+**连接时自动检测 `docs.json`。** 连接 GitHub 代码仓库时，无论 `docs.json` 位于何处，系统都能找到它。连接流程会扫描整个文件树；如果发现 Mintlify 的 `mint.json`，还会提示你。Monorepo 和嵌套配置无需手动设置即可工作。[连接 GitHub →](/cn/setup/connecting-github)
+
+**CLI 中的 `docs.json` 位置提示。** 错放的配置更容易发现。`jamdesk validate`、`jamdesk dev` 和 `jamdesk doctor` 会报告 `docs.json` 实际所在的位置，或它应当放置的位置，而不是显示笼统的“not found”错误。几秒内即可修复，无需解读堆栈跟踪。[CLI 概览 →](/cn/cli/overview)
+
+**符合标准的 hreflang。** hreflang 标签现在会输出有效的 BCP 47 代码。`cn`、`jp` 和 `ja-jp` 等语言目录会映射到搜索引擎实际要求的代码（`zh`、`ja`），站点地图 URL 也会进行 XML 转义。每个本地化页面都会在对应区域获得排名，而不会被视为重复内容。[语言 →](/cn/setup/languages)
+</Update>
+
+
+<Update label="2026 年 4 月" date="2026-04-01">
+<iframe width="100%" height="180" frameborder="no" scrolling="no" seamless="" src="https://share.transistor.fm/e/c526d202"></iframe>
+
+**PDF 导出。** 在仪表板的 **Settings → PDF Exports** 中，将整个文档网站渲染为单个 [PDF](/cn/builds/pdf-export)。仅限付费计划。多语言项目可以为每次导出选择语言环境，结果会按提交缓存，渲染完成后你会收到包含下载链接的邮件。
+
+**多语言 OpenAPI 规范。** 端点页面会在翻译后的 MDX 旁显示翻译后的 OpenAPI 规范。在源规范旁放置一个 `<spec>.<lang>.<ext>` 文件（例如 `openapi/api.fr.yaml`），Jamdesk 就会在对应语言的 URL 上使用它；如果缺少语言变体，则回退到英文规范。操作摘要、参数描述、响应描述和 schema 描述都会本地化。设置方法：[翻译 OpenAPI 规范](/cn/setup/languages#翻译-openapi-规范)。
+
+**Visibility 组件。** 新的 [`<Visibility for="humans|agents">`](/cn/components/visibility) 组件可以在同一页面中为人类读者或 AI 代理划分内容。仅面向人类的区块会在浏览器中渲染，但会从 `.md` 导出和 `llms-full.txt` 中移除；仅面向代理的区块则相反。代理通过规范 URL 请求 `Accept: text/markdown` 时，会自动获得代理视图。
+
+**重新打造的密码保护。** 可以使用共享密码锁定整个网站，也可以只保护少数页面，同时让其余页面保持公开。将 `auth.password.enabled: true` 设置为全站模式；对于指定页面模式，可在页面 frontmatter 中标记 `private: true`，或将页面列在 `auth.password.private` 下。仪表板的 Settings 页面会引导你设置、轮换和撤销密码。访客会看到带品牌样式的解锁页面，其中包含网站徽标、主色和你在 `docs.json` 中定义的可选提示。设置指南：[密码保护](/cn/setup/password-protection)。
+
+**自动转换 WebP 图片。** Jamdesk 可以在构建时将 PNG 和 JPG 图片转换为 WebP。转换后的文件通常比原文件小 60–80%，且不会出现可见的质量损失，因此页面加载更快，无需手动处理图片。通过 `docs.json` 中的 `images.convertToWebp: true` 启用。Favicons、`og:image` 和 `twitter:image` 会保留原格式，以兼容社交爬虫。新的 **Optimizing images** 步骤会在每次构建期间，在仪表板和 CLI 中显示实时进度。[自动图片转换 →](/cn/builds/image-optimization)
+
+**API Playground。** 端点页面现在包含交互式 ["Try it" button](/cn/api-reference/playground)。填写参数，实时查看代码示例更新，并且无需离开文档即可发送实时请求。默认对所有 API 页面启用，同时支持 OpenAPI 和 MDX 编写的端点。
+
+**Claude Code 插件。** 安装 [Jamdesk 的 Claude Code 插件](/cn/claude-code-plugin)，让 Claude 深入了解 MDX 组件、`docs.json` 配置、导航模式和 CLI 命令。插件市场提供两步安装流程。该插件可与 [CLAUDE.md](/cn/ai/claude-code) 和 [MCP 服务器](/cn/ai/mcp-server) 配合使用，辅助编写文档。
+
+**缺少品牌资源的构建警告。** 如果 `docs.json` 中的 `favicon` 或 `logo` 路径引用了项目中不存在的文件，构建现在会发出警告。警告会出现在仪表板构建详情中，也会通过 `jamdesk dev` 和 `jamdesk validate` 显示在 CLI 中。不发送邮件；该警告仅供参考。
+
+**YouTube Shorts。** [`<YouTube>` 组件](/cn/content/youtube#youtube-shorts) 现在通过 `short` 属性支持竖屏 Shorts，渲染居中的 9:16 播放器且不显示黑边。使用 `<YouTube id="VIDEO_ID" short />`。
+</Update>
+
+
+<Update label="2026 年 3 月" date="2026-03-01">
+<iframe width="100%" height="180" frameborder="no" scrolling="no" seamless="" src="https://share.transistor.fm/e/333b9580"></iframe>
+**AI Actions 菜单。** [每个页面上的下拉菜单](/cn/ai/ai-actions)允许读者复制 Markdown、在 ChatGPT/Claude/Perplexity 中打开页面、获取 MCP 服务器配置，或一键将其安装到 Cursor 或 VS Code 中。默认启用；通过 `docs.json` 中的 `contextual` 选择要显示的选项。
+
+**分析。** 无需 Cookie 即可进行页面分析，跟踪浏览量、流量来源和访客趋势，并提供[逐页细分](/cn/setup/project-analytics)。无需同意横幅。概览：[分析](/cn/setup/analytics-overview)。
+
+**集成。** [Google Analytics 4](/cn/integrations/google-analytics)、[Google Tag Manager](/cn/integrations/google-tag-manager)、[Plausible Analytics](/cn/integrations/plausible-analytics) 和 [Slack 构建通知](/cn/integrations/slack)（Pro）。
+
+**更新日志 RSS Feed。** frontmatter 中设置 `rss: true` 的页面现在会自动生成可订阅的 RSS feed。RSS 图标会显示在页面标题旁，并且每次构建都会根据 [Update](/cn/components/update#rss-feed) 组件生成 `feed.xml`。在 Update 上使用新的 `date` 属性即可获得正确的 feed 日期。
+
+**CLI 登录与部署。** [`jamdesk login`](/cn/cli/authentication) 通过浏览器完成身份验证。[`jamdesk deploy`](/cn/cli/deploy) 会打包项目并从终端触发构建。无需连接 GitHub。CLI 遵循 `.gitignore`，会警告包含机密信息的文件，并在终端内实时显示构建进度。
+
+**CLI 拼写检查。** `jamdesk spellcheck` 使用 180 多个内置技术术语检查文档中的拼写错误（仅支持英文）。`jamdesk spellcheck --fix` 会启动交互模式，用于修复拼写错误或将单词添加到忽略列表。
+
+**视频嵌入。** 可直接在文档中嵌入 `.mp4` 和 `.webm` 文件。将文件放入 `/videos` 目录，然后使用 Markdown 语法（`![Demo](/videos/demo.mp4)`）或 [`<Video>` 组件](/cn/content/videos)实现自动播放、循环播放和其他控制功能。
+
+**自定义 JavaScript。** 通过 `docs.json` 中的 `styling.js` 添加[客户端脚本](/cn/customization/custom-javascript)，用于聊天小组件、分析功能或第三方集成。
+</Update>
+
+<Update label="2026 年 2 月" date="2026-02-01">
+**AI 聊天。** 每个文档网站都内置[聊天助手](/cn/ai/chat)。访客可以提问，并获得带有指向源页面引用链接的答案。由 Claude 提供支持，所有计划均可启用。
+
+**AI 集成。** 每个网站都会生成用于 LLM 上下文窗口的 [`llms.txt`](/cn/ai/llms-txt)，通过 [`.md` URL](/cn/ai/markdown-source) 提供原始 Markdown，并在 `/_mcp` 提供带有 `searchDocs` 和 `getPage` 工具的 [MCP 服务器](/cn/ai/mcp-server)。提供 [Claude Code](/cn/ai/claude-code)、[Cursor](/cn/ai/cursor) 和 [Codex](/cn/ai/codex) 的设置指南。此外还有：[使用 AI 编写](/cn/ai/writing-with-ai)和[自动更新](/cn/ai/automated-updates)。
+
+**CLI。** 使用 `jamdesk dev` 进行支持热重载的本地预览，使用 `jamdesk validate` 检查失效链接，使用 `jamdesk migrate` 从 Mintlify/GitBook/Docusaurus 转换，使用 `jamdesk doctor` 排查设置问题。可通过 npm、curl 或 Homebrew 安装。[完整参考 →](/cn/cli/overview)
+
+**VS Code 扩展。** 从 VS Code 状态栏[启动、停止和重启开发服务器](/cn/development/vscode-extension)，无需终端。
+
+**自定义域名 TXT 验证。** 所有自定义域名现在都必须先拥有 TXT 记录（`_jamdesk.yourdomain.com`），路由才会启用。这可以防止未认领子域名遭到域名劫持。新添加的域名会在仪表板设置流程中显示 TXT 记录。请参阅[自定义域名指南](/cn/deploy/custom-domains)。
+
+**多语言支持。** 为每种语言环境定义[独立的导航树和内容目录](/cn/setup/languages)。读者可以从顶部栏的下拉菜单切换语言。
+
+**搜索分析。** 查看[读者搜索的内容](/cn/setup/search-analytics)、哪些查询没有返回结果，以及哪些结果实际被点击。适合用来发现内容缺口。
+</Update>
+
+<Update label="2026 年 1 月" date="2026-01-15">
+Jamdesk 正式发布。使用 MDX 编写文档，推送到 GitHub，即可在全球 CDN 上获得网站。构建在 60 秒内完成。
+
+**MDX 和组件。** 提供 20 多个内置组件：标签页、折叠面板、步骤、代码组、Mermaid 图表、KaTeX 数学公式和图标。[代码块](/cn/content/code-blocks)支持带行号的语法高亮。使用 Tailwind 和 hooks 构建[自定义 React 组件](/cn/content/react-components)，并通过[代码片段](/cn/content/snippets)复用内容。[组件概览 →](/cn/components/overview)
+
+**OpenAPI 文档。** 通过 `docs.json` 中的 `api.openapi`，根据 OpenAPI 规范生成 [API reference 页面](/cn/api-reference/openapi-example)。
+
+**部署。** 推送时从 GitHub[自动部署](/cn/how-jamdesk-works)，延迟 10 秒。支持带自动 SSL 的[自定义域名](/cn/deploy/custom-domains)、位于 `/docs` 的[子路径托管](/cn/deploy/subpath-hosting)（Vercel、CloudFront、Cloudflare、nginx）以及[Monorepo 支持](/cn/setup/monorepo-support)。
+
+**自定义。** 三种[主题](/cn/customization/theming)（`jam`、`nebula`、`pulsar`），支持自定义颜色、徽标和页脚。[自定义 CSS](/cn/customization/custom-css)用于样式覆盖。灵活的[导航](/cn/navigation/overview)支持标签、分组和图标。[重定向](/cn/setup/redirects)支持精确匹配和通配符匹配。
+
+**搜索与 SEO。** Cmd+K 全文搜索，零配置即可使用。开箱即用地提供[站点地图、OG 图片和逐页元数据](/cn/content/seo)。
+
+**[docs.json 参考](/cn/config/docs-json-reference)。** 所有设置和选项的完整配置参考。
+
+**[帮助中心](/cn/help/overview)。** 提供账户管理、账单和故障排除指南。
+</Update>
+
+---
+
+## 保持更新
+
+<Columns cols={2}>
+  <Card title="Jamdesk Blog" icon="newspaper" href="https://jamdesk.com/blog">
+    详细公告和教程
+  </Card>
+  <Card title="GitHub Releases" icon="code-branch" href="https://github.com/jamdesk/jamdesk/releases">
+    CLI 发布说明
+  </Card>
+</Columns>

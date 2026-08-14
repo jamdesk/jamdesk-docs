@@ -1,0 +1,189 @@
+---
+title: 重定向
+description: 为已移动页面、重命名路由和旧 URL 设置重定向。支持精确匹配和基于模式的重定向。
+---
+
+重定向会将用户从旧 URL 转到新 URL。在重组文档、重命名页面或维护来自旧版文档的链接时，可以使用重定向。
+
+## 配置
+
+将重定向添加到你的 `docs.json`：
+
+```json docs.json
+{
+  "redirects": [
+    {
+      "source": "/old-page",
+      "destination": "/new-page"
+    },
+    {
+      "source": "/guides/setup",
+      "destination": "/getting-started"
+    }
+  ]
+}
+```
+
+## 重定向类型
+
+### 精确匹配
+
+重定向特定 URL：
+
+```json
+{
+  "source": "/api/v1/users",
+  "destination": "/api/v2/users"
+}
+```
+
+`/api/v1/users` → `/api/v2/users`
+
+### 通配符匹配
+
+使用 `*` 匹配路径段：
+
+```json
+{
+  "source": "/blog/*",
+  "destination": "/articles/*"
+}
+```
+
+`/blog/hello-world` → `/articles/hello-world`
+
+### 前缀匹配
+
+重定向前缀下的所有路径：
+
+```json
+{
+  "source": "/v1/*",
+  "destination": "/v2/*"
+}
+```
+
+`/v1/api/users` → `/v2/api/users`
+
+## HTTP 状态码
+
+默认情况下，重定向返回 `308`（永久重定向）。可以指定其他状态：
+
+```json
+{
+  "source": "/old-page",
+  "destination": "/new-page",
+  "statusCode": 307
+}
+```
+
+| 状态 | 类型 | 使用场景 |
+|--------|------|----------|
+| `301` | 永久（GET） | 永久移动，将 POST 更改为 GET |
+| `302` | 临时（GET） | 临时移动，将 POST 更改为 GET |
+| `307` | 临时 | 临时移动，保留 HTTP 方法 |
+| `308` | 永久 | 永久移动，保留 HTTP 方法 |
+
+对于大多数文档重定向，请使用 `308`。迁移期间的临时移动，请使用 `307`。
+
+## 常见模式
+
+### 重组文档
+
+重构导航时：
+
+```json
+{
+  "redirects": [
+    { "source": "/setup", "destination": "/getting-started" },
+    { "source": "/setup/install", "destination": "/getting-started/installation" },
+    { "source": "/setup/config", "destination": "/getting-started/configuration" }
+  ]
+}
+```
+
+### API 版本迁移
+
+弃用某个 API 版本时：
+
+```json
+{
+  "redirects": [
+    { "source": "/api/v1/*", "destination": "/api/v2/*" }
+  ]
+}
+```
+
+### 外部重定向
+
+重定向到外部 URL：
+
+```json
+{
+  "source": "/community",
+  "destination": "https://discord.gg/your-server"
+}
+```
+
+### 保留 SEO
+
+页面已有搜索排名时：
+
+```json
+{
+  "redirects": [
+    {
+      "source": "/tutorials/getting-started-with-api",
+      "destination": "/quickstart",
+      "statusCode": 301
+    }
+  ]
+}
+```
+
+## 重定向顺序
+
+重定向按顺序进行评估。更具体的规则应放在通配符规则之前：
+
+```json
+{
+  "redirects": [
+    { "source": "/api/v1/special-endpoint", "destination": "/api/special" },
+    { "source": "/api/v1/*", "destination": "/api/v2/*" }
+  ]
+}
+```
+
+第一个匹配的规则优先。
+
+## 限制
+
+- 重定向仅适用于文档路径
+- 查询参数会自动保留
+- Hash 片段会自动保留
+- 每个项目最多支持 1000 个重定向
+
+## 测试重定向
+
+添加重定向后：
+
+1. 部署更改
+2. 直接访问旧 URL
+3. 确认页面跳转到新的目标地址
+4. 在浏览器开发者工具中检查 HTTP 状态码
+
+```bash
+# Check redirect with curl
+curl -I https://docs.example.com/old-page
+```
+
+## 接下来？
+
+<Columns cols={2}>
+  <Card title="自定义域名" icon="globe" href="/cn/deploy/custom-domains">
+    设置你自己的域名
+  </Card>
+  <Card title="导航" icon="sitemap" href="/cn/navigation/overview">
+    组织文档结构
+  </Card>
+</Columns>

@@ -1,0 +1,231 @@
+---
+title: 自定义 CSS
+description: 添加自定义 CSS 以覆盖主题样式、调整排版或应用品牌样式。Jamdesk 提供常用自定义项的 CSS 变量。
+---
+
+Jamdesk 主题提供合理的默认样式，但你可以添加自定义 CSS，以匹配品牌风格或调整特定样式。
+
+## 添加自定义 CSS
+
+在项目根目录中创建 `style.css` 文件（与 `docs.json` 位于同一文件夹）。Jamdesk 会自动将其应用到每个页面，无需在 `docs.json` 中添加配置。
+
+项目根目录中的任何 `.css` 文件都可以使用，不必限定为 `style.css`。从其他工具迁移时，这一特性非常方便。如果有多个文件，Jamdesk 会按文件名的字母顺序合并它们。
+
+运行 `jamdesk dev` 在本地预览结果。它渲染自定义 CSS 的方式与已发布的网站相同。
+
+```css style.css
+/* Your custom styles */
+.content h1 {
+  font-size: 2.5rem;
+}
+```
+
+## CSS 变量
+
+Jamdesk 提供用于常见自定义项的 CSS 变量。请在自定义 CSS 中覆盖这些变量：
+
+```css style.css
+:root {
+  /* Typography */
+  --font-family-sans: 'Inter', system-ui, sans-serif;
+  --font-family-mono: 'JetBrains Mono', monospace;
+  
+  /* Spacing */
+  --content-max-width: 900px;
+  --sidebar-width: 280px;
+  
+  /* Border radius */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+}
+```
+
+### 颜色变量
+
+主要颜色在 `docs.json` 中设置。如需精细控制，请覆盖以下变量：
+
+```css style.css
+:root {
+  /* Light mode */
+  --color-background: #ffffff;
+  --color-text: #1a1a1a;
+  --color-text-muted: #666666;
+  --color-border: #e5e5e5;
+  --color-code-bg: #f5f5f5;
+}
+
+[data-theme="dark"] {
+  /* Dark mode */
+  --color-background: #0a0a0a;
+  --color-text: #fafafa;
+  --color-text-muted: #a3a3a3;
+  --color-border: #262626;
+  --color-code-bg: #171717;
+}
+```
+
+## 常见自定义项
+
+### 调整内容宽度
+
+```css
+:root {
+  --content-max-width: 1000px;  /* Default: 900px */
+}
+```
+
+### 更改代码块字体
+
+```css
+:root {
+  --font-family-mono: 'Fira Code', monospace;
+}
+
+/* Ensure ligatures work if your font supports them */
+pre code {
+  font-variant-ligatures: common-ligatures;
+}
+```
+
+### 自定义链接样式
+
+```css
+.content a:not([class]) {
+  color: var(--color-primary);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.content a:not([class]):hover {
+  text-decoration-thickness: 2px;
+}
+```
+
+### 调整标题间距
+
+```css
+.content h2 {
+  margin-top: 3rem;
+  margin-bottom: 1rem;
+}
+
+.content h3 {
+  margin-top: 2rem;
+  margin-bottom: 0.75rem;
+}
+```
+
+### 设置提示框样式
+
+```css
+/* Make Note callouts more prominent */
+[data-callout="note"] {
+  border-left-width: 4px;
+  background: var(--color-primary-subtle);
+}
+```
+
+## 深色模式
+
+使用 `[data-theme="dark"]` 选择器设置深色模式样式：
+
+```css
+/* Light mode */
+.custom-banner {
+  background: #f0f4ff;
+  color: #1e3a5f;
+}
+
+/* Dark mode */
+[data-theme="dark"] .custom-banner {
+  background: #1e293b;
+  color: #e2e8f0;
+}
+```
+
+## 定位组件
+
+为特定组件覆盖样式：
+
+```css
+/* Card component */
+[data-component="card"] {
+  border-radius: 16px;
+}
+
+/* Code blocks */
+[data-component="code-block"] {
+  border-radius: 8px;
+}
+
+/* Tabs */
+[data-component="tabs"] [data-state="active"] {
+  border-bottom-width: 3px;
+}
+```
+
+## 外部字体
+
+使用 `@import` 或 `@font-face` 加载自定义字体：
+
+```css
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+  --font-family-sans: 'Inter', system-ui, sans-serif;
+}
+```
+
+或者自行托管字体：
+
+```css
+@font-face {
+  font-family: 'CustomFont';
+  src: url('/fonts/custom-font.woff2') format('woff2');
+  font-weight: 400;
+  font-display: swap;
+}
+```
+
+## 响应式样式
+
+使用媒体查询进行响应式调整：
+
+```css
+/* Mobile adjustments */
+@media (max-width: 768px) {
+  .content h1 {
+    font-size: 1.75rem;
+  }
+  
+  :root {
+    --content-max-width: 100%;
+  }
+}
+```
+
+## 调试
+
+使用浏览器开发者工具检查元素并查找正确的选择器。Jamdesk 使用数据属性定位组件：
+
+- `data-component="..."` - 组件类型
+- `data-theme="light|dark"` - 当前主题
+- `data-state="..."` - 组件状态（active、disabled 等）
+
+## 限制
+
+- CSS 会全局应用；请使用具体的选择器以避免冲突
+- 某些内部布局样式使用了 `!important`，覆盖它们时可能也需要使用相同声明
+- 在本地预览（`jamdesk dev`）中，编辑 CSS 文件后刷新浏览器即可应用更改；在已发布的网站上，更改会在下一次构建时生效
+
+## 接下来做什么？
+
+<Columns cols={2}>
+  <Card title="主题" icon="palette" href="/cn/customization/theming">
+    选择并配置主题
+  </Card>
+  <Card title="品牌" icon="image" href="/cn/customization/branding">
+    徽标、颜色和品牌标识
+  </Card>
+</Columns>

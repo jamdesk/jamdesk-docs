@@ -1,0 +1,310 @@
+---
+title: JWT 身份验证
+description: >-
+  使用自己的登录系统保护文档。​​在 docs.json 中启用 JWT 身份验证，并为每个用户会话签发短期令牌。
+---
+
+<Note>
+  JWT 身份验证需要付费套餐，以及一个[已连接 Git 仓库的 Jamdesk 项目](/cn/setup/connecting-github)。配置位于 `docs.json` 中，因此会随常规构建和部署流程一起生效。
+</Note>
+
+如果您的产品已有自己的登录系统，JWT 身份验证可以让您使用该系统保护文档，而不必分发共享密码短语。登录用户点击进入文档时，您的后端会签发一个短期令牌。Jamdesk 验证令牌一次，创建会话，此后访客即可正常浏览。访客无需 Jamdesk 账户或共享密码。
+
+## 这与密码保护有何不同
+
+[密码保护](/cn/setup/password-protection)为每位访客提供相同的共享密码短语，适用于内部文档、暂存预览或单个合作伙伴群体。JWT 身份验证则按用户区分：每位访客的身份、会话时长和页面访问权限，都来自由*您的*后端签发的令牌。文档访问权限可以遵循现有的客户账户、套餐或角色，而不是使用一个共享密钥。
+
+这两种模式互斥：`auth.password` 和 `auth.jwt` 不能同时启用。如果要从一种模式切换到另一种，请参阅下方的[从密码保护迁移](#从密码保护迁移)。
+
+## 设置步骤
+
+<Steps>
+  <Step title="在 docs.json 中启用 auth.jwt">
+    ```json docs.json
+    {
+      "$schema": "https://jamdesk.com/docs.json",
+      "name": "Acme Docs",
+      "theme": "jam",
+      "auth": {
+        "jwt": {
+          "enabled": true,
+          "loginUrl": "https://app.example.com/docs-login",
+          "public": ["/changelog/*"]
+        }
+      }
+    }
+    ```
+
+    当 `enabled: true` 时，必须设置 `loginUrl`，并且它必须是绝对 `https://` URL。未通过身份验证的访客会被重定向到此 URL，并附带 `?redirect=<path>`，这样您的登录流程就知道应将访客送回何处。`public` 为可选项：用于指定无需登录即可访问的路径或 glob（`*` 表示一个层级，`**` 表示任意深度）。
+  </Step>
+
+  <Step title="生成签名密钥">
+    在仪表板中打开 **Project Settings**，找到 **JWT authentication** 卡片。点击 **Generate signing key**。
+
+    Jamdesk 会创建一个 Ed25519 密钥对，仅保留*公钥*，并且只显示一次*私钥*。请立即将其复制到您的密钥管理器中。Jamdesk 永不存储或通过电子邮件发送私钥；如果您丢失私钥，也无法恢复。此时请生成新密钥（这会使旧密钥失效，因此请同时更新后端的签名密钥）。
+  </Step>
+
+  <Step title="提交并重新构建">
+    ```bash
+    git add docs.json
+    git commit -m "Turn on JWT authentication"
+    git push
+    ```
+
+    构建发布后，网站会保护所有页面。没有有效会话的请求会重定向到您的 `loginUrl`。
+  </Step>
+</Steps>
+
+## 集成登录流程
+
+登录用户点击进入文档时，您的后端会签发 JWT，并将浏览器重定向到文档站点的回调 URL，同时将令牌放在 URL 片段中（`#` 后面）。片段永远不会出现在服务器日志或任何反向代理中，因为浏览器不会在请求中发送片段。
+
+令牌必须使用 EdDSA 签名（Ed25519，与您在仪表板中生成的密钥匹配），其 `exp` 声明应设置为未来不超过约 10 秒的时间。这是握手窗口，而不是会话时长。实际会话时长由负载中的 `expiresAt` 字段单独控制（请参阅下方的[负载参考](#负载参考)）。
+
+<CodeGroup>
+```typescript TypeScript (jose)
+import { SignJWT, importPKCS8 } from "jose";
+
+// Store this in your secret manager. It's the private key Jamdesk showed
+// you once when you generated it in Project Settings.
+const privateKey = await importPKCS8(process.env.JAMDESK_JWT_PRIVATE_KEY!, "EdDSA");
+
+async function signDocsToken(user: { groups: string[] }) {
+  return new SignJWT({
+    host: "acme.jamdesk.app", // or your custom domain, e.g. "docs.example.com"
+    expiresAt: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7, // 7-day session
+    groups: user.groups,
+    apiPlaygroundInputs: {
+      header: { Authorization: `Bearer ${user.apiToken}` },
+    },
+  })
+    .setProtectedHeader({ alg: "EdDSA" })
+    .setExpirationTime("10s") // handshake window, not session length
+    .sign(privateKey);
+}
+
+// In your "open docs" route/button handler:
+app.get("/docs-login", requireAuth, async (req, res) => {
+  const token = await signDocsToken(req.user);
+  const redirect = req.query.redirect ?? "/";
+  res.redirect(
+    `https://acme.jamdesk.app/_jd/auth/callback?redirect=${encodeURIComponent(
+      String(redirect)
+    )}#${token}`
+  );
+});
+```
+
+```python Python (pyjwt)
+import time
+import jwt  # PyJWT >= 2.4, with the cryptography extra installed
+
+with open("jamdesk_jwt_private_key.pem", "rb") as f:
+    PRIVATE_KEY = f.read()
+
+def sign_docs_token(user):
+    payload = {
+        "host": "acme.jamdesk.app",  # or your custom domain
+        "exp": int(time.time()) + 10,  # handshake window, not session length
+        "expiresAt": int(time.time()) + 60 * 60 * 24 * 7,  # 7-day session
+        "groups": user.groups,
+        "apiPlaygroundInputs": {
+            "header": {"Authorization": f"Bearer {user.api_token}"},
+        },
+    }
+    return jwt.encode(payload, PRIVATE_KEY, algorithm="EdDSA")
+
+@app.route("/docs-login")
+def docs_login():
+    token = sign_docs_token(current_user)
+    redirect_path = request.args.get("redirect", "/")
+    return redirect(
+        f"https://acme.jamdesk.app/_jd/auth/callback"
+        f"?redirect={quote(redirect_path)}#{token}"
+    )
+```
+</CodeGroup>
+
+<Warning>
+  只能在服务器端签发令牌。私钥绝不能发送到浏览器或公开仓库中。持有私钥的任何人都可以为您的文档站点创建会话。
+</Warning>
+
+## 重定向流程
+
+1. 访客在没有有效会话的情况下请求受保护页面（例如 `/quickstart`）。Jamdesk 会将其重定向到 `{loginUrl}?redirect=%2Fquickstart`。
+2. 您的登录流程对访客进行身份验证（使用您通常采用的方式），签发 JWT，并将其重定向到 `https://<your-docs-host>/_jd/auth/callback?redirect=%2Fquickstart#<jwt>`。
+3. 回调页面在客户端从片段中读取令牌，并将其发送到 Jamdesk 的令牌交换端点。Jamdesk 验证签名和声明，成功后设置签名会话 Cookie。
+4. 浏览器将访客重定向到原始目标 `/quickstart`，此时已拥有有效会话。`redirect` 值会在整个流程中保留，因此访客会准确返回最初访问的位置。
+
+如果您的后端无法确定 `redirect` 值（例如有人直接将登录页面加入书签），请省略该值，Jamdesk 会回退到 `/`。
+
+## 公开页面
+
+某些页面应保持无需登录即可访问，例如状态页面或公开的更新日志。有三种方式可以将页面标记为公开，最终都会合并到一个允许列表中：
+
+**Frontmatter**，一次设置一个页面：
+
+```yaml
+---
+title: Changelog
+public: true
+---
+```
+
+**导航群组**，设置整个分区：
+
+```json docs.json
+{
+  "navigation": {
+    "groups": [
+      { "group": "Changelog", "public": true, "pages": ["changelog"] }
+    ]
+  }
+}
+```
+
+**显式 glob**，位于 `auth.jwt.public[]` 下：
+
+```json docs.json
+{
+  "auth": {
+    "jwt": {
+      "enabled": true,
+      "loginUrl": "https://app.example.com/docs-login",
+      "public": ["/changelog/*", "/status"]
+    }
+  }
+}
+```
+
+## 基于群组的访问
+
+某些页面可能只应对特定的已认证用户可见，例如管理员操作手册或仅供企业用户使用的参考文档。请将 `groups` 添加到页面的 frontmatter 中：
+
+```yaml
+---
+title: Admin API Keys
+groups: ["admin"]
+---
+```
+
+访客的会话会携带后端放入 JWT 负载中的 `groups` 数组。如果页面声明了 `groups`，而访客会话中的群组与该列表没有交集，访客会收到 404，而不是 401 或解锁屏幕。这是有意设计的：受群组限制的页面不会向群组外用户透露其存在。
+
+以下细节会影响您对 `groups` 的使用：
+
+- 群组页面会从站点地图、搜索、AI 聊天和 MCP 中排除，即使用户属于该群组也是如此。这些发现入口的排除是构建时决定的，而不是针对单个访客的决定。`admin` 群组成员仍可直接打开 `/admin/api-keys`（通过 URL 或内部链接），但该页面不会出现在搜索结果、聊天回答或 `llms.txt` 中。如果您需要让受限页面可被其目标用户发现，请从该用户已经能够访问的其他页面链接到它。
+- 空的 `groups: []` 表示完全不限制，而不是“无人可见”。要移除页面的群组限制，请完全删除 `groups` 字段，而不是将其设置为空数组。
+- 如果要限制任何人访问某个页面，请取消发布该页面。没有任何 `groups` 值表示“无人可见”：群组成员资格是累加的，只要存在交集即可授予访问权限。
+- 本地化副本会自动继承基础页面的 `groups`，除非翻译页面在其 frontmatter 中声明了自己的 `groups`。翻译受限页面不会意外变为公开页面。
+- 请保持群组名称简短。群组会存储在会话 Cookie 中：每个会话最多 32 个群组，每个群组最多 64 个字符。超过任一限制时，Jamdesk 不会截断列表，而是以 401 拒绝整个令牌，不授予会话。
+
+## API 调试器预填充
+
+如果您的文档包含 [API 调试器](/cn/api-reference/playground)，可以为已登录访客预填充内容，使其无需粘贴自己的 API 密钥。在 JWT 负载中加入 `apiPlaygroundInputs`：
+
+```json
+{
+  "host": "acme.jamdesk.app",
+  "apiPlaygroundInputs": {
+    "header": { "Authorization": "Bearer sk_live_user_specific_token" },
+    "query": { "org_id": "acme-corp" },
+    "path": { "workspace_id": "ws_123" }
+  }
+}
+```
+
+- `header.Authorization` 会预填充调试器的身份验证字段。如果存在 `Bearer ` 前缀，系统会自动将其移除。
+- `query` 和 `path` 会预填充当前端点中名称匹配的参数。
+- 不支持 `server` 和 `cookie` 部分。系统只会应用 `header`、`query` 和 `path`。
+- 预填充绝不会覆盖访客已经在调试器中输入的值。
+
+## 负载参考
+
+| 字段 | 必填 | 说明 |
+|---|---|---|
+| `host` | 是 | 必须与请求主机完全匹配（不区分大小写）：您的 `*.jamdesk.app` 子域名或自定义域名。为一个主机签名的令牌在任何其他主机上都会被拒绝。 |
+| `expiresAt` | 否 | 生成的*会话*应持续多长时间的 Unix 时间戳（秒）。上限为 30 天；省略时默认为 7 天。该值独立于令牌自身的短期 `exp` 声明。 |
+| `groups` | 否 | 会话应携带的群组名称数组，最多 32 项，每项最多 64 个字符。超过任一限制时，系统会拒绝整个令牌（401，不创建会话），而不是截断列表。 |
+| `apiPlaygroundInputs` | 否 | API 调试器的预填充值。序列化大小上限为 2KB。如果超出限制，系统会静默丢弃该值，但不会报错，且仍会授予会话。 |
+
+## 登出
+
+已登录访客会在文档页眉中看到 **Log out** 链接。该链接会将其发送到 `/_jd/auth/logout`，清除会话 Cookie，并重定向到您的 `loginUrl`。如果您希望在自己的应用其他位置提供“退出文档”链接，也可以直接链接到该地址。这是一个不需要请求正文或请求标头的普通 `GET` 请求。
+
+## 身份验证下的功能行为
+
+| 功能 | 行为 |
+|---|---|
+| `llms.txt` / `llms-full.txt` / 站点地图 | 与站点其他部分一样受到保护：没有有效会话时无法访问。 |
+| 受群组限制的页面 | 从上述所有产物以及搜索和 AI 聊天中排除，不受请求会话群组影响（请参阅[基于群组的访问](#基于群组的访问)）。 |
+| `robots.txt` | 始终公开。搜索引擎可以看到文档站点存在且受到保护，但无法看到其内容。 |
+
+## 故障排除
+
+<Accordion title="我轮换了签名密钥，但旧会话似乎仍然有效">
+  轮换和撤销会在约 15 秒内生效，而不是立即生效，因为边缘网关会短暂缓存身份验证配置，以确保每次页面请求都能快速处理。仪表板中的 **Rotate** 确实会使所有现有会话失效；请等待最多 15 秒，再将仍然有效的旧会话视为故障。
+</Accordion>
+
+<Accordion title="仪表板显示 &quot;Runtime out of sync&quot; 横幅">
+  这意味着最新的签名密钥尚未到达运行时缓存，通常是因为临时写入失败中断了密钥生成或轮换。每当您打开设置页面时，Jamdesk 都会自动重新尝试同步；如果横幅仍然存在，请点击其中的 **Retry sync**。如果重试后仍无法清除，请从同一个卡片中轮换密钥。
+</Accordion>
+
+<Accordion title="即使令牌确定有效，访客仍收到 401">
+  请检查 `host` 声明是否与实际请求的主机完全匹配。如果您的文档既可通过自定义域名（`docs.example.com`）访问，也可通过底层的 `*.jamdesk.app` 子域名访问，则为其中一个主机签名的令牌在另一个主机上会被拒绝：`host` 绑定要求完全匹配、不区分大小写，但不识别别名。请为实际链接到的主机签发令牌；如果同时链接到两个主机，请签发两个版本。
+</Accordion>
+
+<Accordion title="我卡在登录页面和文档站点之间的重定向循环中">
+  Jamdesk 的回调路由拒绝重定向回自身：指向 `/_jd/auth/callback`（或其下的解锁样式页面）的 `redirect` 值会被改写为 `/`，而不会按原值执行。如果仍然看到循环，请检查您的登录流程是否自身循环重定向到了文档的 `loginUrl`（例如，登录页面找不到文档会话时立即跳回 `/docs-login`）。文档一侧已设有循环保护；循环几乎总是出现在登录流程中。
+</Accordion>
+
+<Accordion title="auth.password 和 auth.jwt 同时启用">
+  这是一个 `config_error`，会阻止构建。请选择其中一种；如果要切换，请参阅[从密码保护迁移](#从密码保护迁移)了解安全的操作顺序。
+</Accordion>
+
+## 安全提示
+
+`apiPlaygroundInputs`（包括您放入其中的任何 Authorization 值）可由文档站点上运行的 JavaScript 读取，读取入口是为调试器预填充提供支持的会话信息端点。预填充很方便，但不适合存放高权限密钥。
+
+请发送权限最小化且仅限于该访客允许执行操作的用户凭据，绝不要发送组织范围的管理员密钥。请将放入 `apiPlaygroundInputs` 的任何内容视为对浏览文档的用户可见，因为它确实可见。
+
+## 从密码保护迁移
+
+从共享密码切换到 JWT 身份验证无需停机，网站会始终保持受保护状态。请按以下顺序操作：
+
+<Steps>
+  <Step title="生成 JWT 签名密钥">
+    首先执行此步骤，此时密码保护仍处于启用状态。生成密钥不会改变受保护的内容；整个过程中密码始终有效。
+  </Step>
+  <Step title="修改 docs.json 并重新构建">
+    ```json docs.json
+    {
+      "auth": {
+        "password": { "enabled": false },
+        "jwt": { "enabled": true, "loginUrl": "https://app.example.com/docs-login" }
+      }
+    }
+    ```
+
+    提交并推送。此构建发布的瞬间，保护机制会从密码原子切换到 JWT，不会出现网站未受保护的窗口。现有通过密码解锁的会话会在切换时结束；此后访客将通过您的登录流程进行身份验证。
+  </Step>
+  <Step title="清除密码">
+    确认 JWT 流程端到端运行正常后，返回 **Project Settings** 并清除存储的密码。此时密码已不起作用（`docs.json` 中的密码模式已关闭），但清除密码会完全移除存储的哈希值。
+  </Step>
+</Steps>
+
+## 接下来做什么？
+
+<Columns cols={2}>
+  <Card title="访问控制概览" icon="shield" href="/cn/setup/access-control">
+    对比 JWT 身份验证与密码保护、SSO 以及多项目模式。
+  </Card>
+  <Card title="密码保护" icon="lock" href="/cn/setup/password-protection">
+    共享密码短语方案：设置更简单，无需后端集成。
+  </Card>
+  <Card title="SSO（企业版）" icon="key" href="/cn/setup/sso">
+    由身份提供商驱动的企业客户登录方式。
+  </Card>
+  <Card title="自定义域名" icon="globe" href="/cn/deploy/custom-domains">
+    在接入登录流程前，先将文档部署到您自己的域名。
+  </Card>
+</Columns>

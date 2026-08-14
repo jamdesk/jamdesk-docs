@@ -1,0 +1,141 @@
+---
+title: CLI 部署
+description: >-
+  了解 jamdesk deploy CLI 命令如何打包、上传和构建文档，包括标志、构建阶段和错误代码。
+---
+
+`deploy` 命令会打包您的文档，将其上传到 Jamdesk，并从终端触发构建。您可以使用它快速迭代、测试更改，或部署未连接 GitHub 仓库的项目。
+
+## 快速开始
+
+```bash
+jamdesk login        # First time only
+jamdesk deploy       # From your project directory
+```
+
+## 选项
+
+| 标志 | 描述 |
+|------|-------------|
+| `--detach` | 将构建加入队列后立即退出（打印仪表板链接） |
+| `--full-rebuild` | 强制完整重新构建，绕过构建缓存 |
+| `--project <id>` | 部署到指定项目 ID（跳过交互式选择） |
+| `--allow-empty` | 允许在没有 `.mdx` 内容页面的情况下部署。默认情况下，CLI 拒绝部署空项目，以防错误的工作目录意外发布空站点（代码片段不计为内容页面） |
+
+`jamdesk push` 是 `jamdesk deploy` 的别名。
+
+## 工作原理
+
+<Steps>
+  <Step title="身份验证">
+    验证您的会话是否有效。如果令牌已过期，系统会提示您运行 `jamdesk login`。
+  </Step>
+  <Step title="加载配置">
+    从当前目录读取并验证 `docs.json`。
+  </Step>
+  <Step title="解析项目">
+    从 `docs.json` 读取 `projectId`。如果缺少该字段（首次部署时），CLI 会提示您从项目列表中选择。您的选择会保存回 `docs.json`，因此下次部署时会跳过提示。
+
+    使用 `--project <id>` 可覆盖此设置。
+  </Step>
+  <Step title="打包文件">
+    创建文档的压缩 tarball，并遵循 `.gitignore`。如果某些文件看起来可能包含机密信息，CLI 会打印警告（但不会阻止上传）。
+  </Step>
+  <Step title="上传">
+    通过预签名 URL 将 tarball 发送到 Jamdesk。最大上传大小为 100 MB。
+  </Step>
+  <Step title="构建">
+    将构建加入队列并轮询状态，在每个阶段完成时打印该阶段。按 Ctrl+C 可停止轮询；构建会在后台继续运行。
+  </Step>
+  <Step title="完成">
+    构建完成后打印线上 URL。
+  </Step>
+</Steps>
+
+## 构建阶段
+
+轮询期间，您会看到每个阶段按顺序完成：
+
+| 阶段 | 描述 |
+|-------|-------------|
+| 正在提取文件 | 解压上传的 tarball |
+| 正在验证配置 | 检查 `docs.json` 架构和内容 |
+| 正在准备内容 | 处理 MDX 文件和资源 |
+| 正在构建文档 | 编译页面并生成静态构件 |
+| 正在上传到 CDN | 将构建输出推送到边缘网络 |
+| 正在刷新缓存 | 清除 CDN 中的过期内容 |
+
+## 文件排除
+
+无论您的 `.gitignore` 如何配置，以下内容始终不会上传：
+
+`.git`, `node_modules`, `.next`, `.env`, `.env.*`, `*.pem`, `*.key`, `credentials.json`, `.gcloud`, `.DS_Store`, `Thumbs.db`
+
+`.gitignore` 中的所有内容也会被排除。
+
+### 机密文件警告
+
+CLI 检测到看起来像机密文件的内容时会发出警告（但不会阻止上传）：
+
+- `.env` 和 `.env.*` 文件
+- `*.pem` 和 `*.key` 文件
+- `credentials.json`
+- `service_account*.json`
+- 以 `secret` 开头的文件
+
+将这些文件添加到 `.gitignore`，即可抑制警告并将其排除在上传内容之外。
+
+## 错误参考
+
+| 错误 | 代码 | 原因 | 修复方法 |
+|-------|------|-------|-----|
+| 未登录 | `AUTH_REQUIRED` | 没有已存储的凭据 | `jamdesk login` |
+| 会话已过期 | `AUTH_EXPIRED` | 令牌刷新失败 | `jamdesk login` |
+| 访问被拒绝 | `FORBIDDEN` | 不是此项目的成员 | 在仪表板中检查项目成员资格 |
+| 找不到项目 | `NOT_FOUND` | 项目 ID 无效 | 验证 ID，或从 docs.json 中移除 `projectId` |
+| 构建进行中 | `BUILD_IN_PROGRESS` | 另一个构建正在运行 | 等待或检查仪表板 |
+| 上传过大 | `TOO_LARGE` | 服务器拒绝上传（100 MB 限制） | 通过 `.gitignore` 排除大文件 |
+| 项目过大 | `PROJECT_TOO_LARGE` | 打包期间 tarball 超过 100 MB | 通过 `.gitignore` 排除大文件 |
+| 没有项目 | `NO_PROJECTS` | 您的帐户中没有项目 | 先在仪表板中创建项目 |
+| 没有文件 | `EMPTY_PROJECT` | 所有文件都被排除 | 检查 `.gitignore` |
+| 没有内容页面 | `NO_CONTENT` | 找不到 `.mdx` 内容页面（代码片段不计入） | 从文档目录运行，或在有意发布空项目时传递 `--allow-empty` |
+| 配置无效 | `CONFIG_NOT_FOUND` | 缺少或无效的 `docs.json` | 从项目根目录运行，并检查配置 |
+| 上传失败 | `UPLOAD_FAILED` | 上传期间出现网络问题 | 检查网络连接，然后重试 |
+| 构建失败 | `BUILD_FAILED` | 构建服务错误 | 在仪表板中检查构建日志 |
+
+## 故障排除
+
+<AccordionGroup>
+  <Accordion title='"构建已在进行中"'>
+    每个项目一次只能运行一个构建。请等待当前构建完成，并在仪表板的 **Deployments** 下检查状态。
+  </Accordion>
+
+  <Accordion title='"找不到或无效的 docs.json"'>
+    确保您从包含 `docs.json` 的目录运行命令。运行 `jamdesk validate` 检查配置错误。
+  </Accordion>
+
+  <Accordion title='"上传过大"'>
+    100 MB 限制适用于所有未排除文件压缩后的 tarball。请检查包含了哪些文件。大图片、视频或数据文件是常见原因；将其添加到 `.gitignore` 以排除。
+  </Accordion>
+
+  <Accordion title="部署在轮询期间卡住">
+    按 Ctrl+C 退出；构建会在后台继续运行。在仪表板中检查状态。如果问题持续发生，您的网络可能会中断轮询请求。
+  </Accordion>
+
+  <Accordion title='"找不到项目"'>
+    您的 Jamdesk 帐户中至少需要有一个项目。请在 [dashboard.jamdesk.com](https://dashboard.jamdesk.com) 创建项目。
+  </Accordion>
+</AccordionGroup>
+
+如需了解更多 CLI 故障排除信息，请参阅 [帮助中心 CLI 指南](/cn/help/troubleshooting/cli-issues)。
+
+## 接下来做什么？
+
+<Columns cols={2}>
+  <Card title="部署工作流" icon="rotate" href="/cn/development/deployment">
+    GitHub 自动部署和部署状态
+  </Card>
+  <Card title="身份验证" icon="key" href="/cn/cli/authentication">
+    登录流程、会话和故障排除
+  </Card>
+</Columns>

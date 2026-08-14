@@ -1,0 +1,148 @@
+---
+title: GitHub 问题
+description: 解决 Jamdesk GitHub 集成中的组织缺失、仓库未显示、Webhook 失败、权限错误和分支不匹配问题。
+---
+
+大多数 GitHub 集成问题都源于权限、Webhook 失败或分支不匹配。
+
+## 设置过程中未显示组织
+
+在入门文档流程中，Jamdesk 会显示你的 GitHub 组织，以便你选择创建仓库的位置。组织列表来自 GitHub 的 OAuth API，而在以下两种情况下，GitHub 不会在其中显示组织：
+
+- OAuth 应用限制：你的组织限制第三方应用访问（这是新组织在 GitHub 中的默认设置），并且尚未批准 Jamdesk。
+- SAML SSO：你的组织要求先通过 SAML 身份验证，API 才会返回该组织。
+
+<Accordion title="自行授予访问权限（组织所有者）">
+  如果你是组织所有者，可以立即批准 Jamdesk：
+
+  1. 在组织选择器下方点击 **grant Jamdesk access on GitHub**（或前往 GitHub → **Settings** → **Applications** → **Authorized OAuth Apps** → **Jamdesk**）
+  2. 在 **Organization access** 下，点击组织旁边的 **Grant**
+  3. 返回 Jamdesk 设置流程，点击 **refresh the list**。你的组织会立即显示
+
+  如果你是成员而不是所有者，则会看到 **Request** 按钮；点击该按钮会向组织管理员发送批准请求。
+</Accordion>
+
+<Accordion title="请组织管理员批准 Jamdesk（成员）">
+  如果你是没有所有者权限的成员，请先向管理员发送批准请求：
+
+  1. 前往 GitHub → **Settings** → **Applications** → **Authorized OAuth Apps** → **Jamdesk**
+  2. 在 **Organization access** 下，点击组织旁边的 **Request**。这会通知组织管理员
+  3. 管理员可以在组织的 **Settings** → **Third-party access** → **OAuth application policy** 中批准请求（待处理请求会显示 **Approve** 按钮）
+  4. 返回 Jamdesk 设置流程并点击 **refresh the list**；此时你的组织应该会显示
+
+  如需详细步骤，请参阅 GitHub 的[批准组织 OAuth 应用指南](https://docs.github.com/en/organizations/managing-oauth-access-to-your-organizations-data/approving-oauth-apps-for-your-organization)。
+</Accordion>
+
+<Accordion title="先在个人账户中创建，之后再转移">
+  不想等待管理员批准？在设置过程中选择个人账户，然后将仓库转移到组织：
+
+  1. 使用个人账户完成 Jamdesk 设置
+  2. 前往 GitHub 中创建的仓库
+  3. 转到 **Settings** → **General** → **Danger Zone**
+  4. 点击 **Transfer**，然后选择你的组织作为目标位置
+  5. 在 Jamdesk 中，前往项目的 **Settings** 页面，断开并重新连接仓库
+
+  <Warning>
+    断开并重新连接会生成新的文档 URL（例如，`your-project.jamdesk.app` 可能会发生变化）。如果你已经分享了该 URL 或设置了自定义域名，请在断开连接前联系 [支持团队](/cn/help/support/contact)，以便我们保留你的配置。
+  </Warning>
+</Accordion>
+
+## 未显示仓库
+
+如果列表中没有显示你的仓库：
+
+<Accordion title="检查仓库权限">
+  1. 前往 GitHub → Settings → Applications → Jamdesk
+  2. 确认已授予该仓库访问权限
+  3. 点击 **Configure** 以添加更多仓库
+</Accordion>
+
+<Accordion title="组织仓库">
+  对于组织仓库：
+  1. 组织管理员必须批准 Jamdesk
+  2. 前往组织设置 → Third-party access
+  3. 批准 Jamdesk 的访问请求
+</Accordion>
+
+<Accordion title="私有仓库">
+  私有仓库需要 GitHub 授权。如果需要，请重新授权 Jamdesk。
+</Accordion>
+
+## 未触发构建
+
+如果推送没有触发构建：
+
+<Steps>
+  <Step title="检查 Webhook">
+    1. 前往 GitHub 上的仓库
+    2. 转到 Settings → Webhooks
+    3. 找到 Jamdesk Webhook
+    4. 在 "Recent Deliveries" 中检查错误
+  </Step>
+  <Step title="验证分支">
+    构建只会在你配置的分支上触发。请在 Jamdesk 中检查 **Settings**。
+  </Step>
+  <Step title="重新同步连接">
+    1. 在 Jamdesk 中前往项目的 **Settings**
+    2. 点击 **Re-sync GitHub**
+  </Step>
+</Steps>
+
+## Webhook 错误
+
+### 404 Not Found
+
+无法访问 Webhook 端点。
+
+**修复方法：** 在项目设置中重新同步 GitHub 连接。
+
+### 401 Unauthorized
+
+身份验证失败。
+
+**修复方法：**
+1. 前往你的 GitHub 账户设置
+2. 转到 Applications → Authorized OAuth Apps
+3. 撤销 Jamdesk
+4. 在 Jamdesk 设置中重新授权
+
+### 500 Server Error
+
+Jamdesk 暂时出现问题。
+
+**修复方法：** 等待几分钟后再次推送，或手动触发重新构建。
+
+## 权限错误
+
+构建期间出现 **"Repository not found"**：
+
+- 仓库可能已被删除或重命名
+- Jamdesk 可能已失去访问权限
+- 重新授权 GitHub 连接
+
+## 分支问题
+
+### 构建使用了错误的分支
+
+在 **Settings** → **Repository** 中检查配置的分支。
+
+### 分支已重命名或删除
+
+更新分支设置，使其与新的分支名称匹配。
+
+## 问题仍未解决？
+
+<Card title="联系支持团队" icon="headset" href="/cn/help/support/contact">
+  请提供仓库 URL 和错误消息
+</Card>
+
+## 相关文章
+
+<Columns cols={2}>
+  <Card title="错误参考" icon="book" href="/cn/help/troubleshooting/error-reference">
+    完整的错误代码列表
+  </Card>
+  <Card title="联系支持团队" icon="headset" href="/cn/help/support/contact">
+    升级处理未解决的问题
+  </Card>
+</Columns>

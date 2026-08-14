@@ -1,0 +1,118 @@
+---
+title: AI 操作菜单
+description: 每个页面上的下拉菜单，支持复制 Markdown、在 ChatGPT/Claude/Perplexity 中打开页面，或一键安装 MCP 服务器。
+---
+
+Jamdesk 站点的每个页面都包含 AI Actions 菜单：标题上方的小型下拉菜单，让读者可以快速访问 AI 工具。例如，读者可以将页面复制为 Markdown，在 ChatGPT 中打开页面，或在 Cursor 中安装你的 MCP 服务器。无需配置。
+
+屏幕截图显示的是英文界面。
+
+<div style={{ display: 'flex', justifyContent: 'center' }}>
+  <img src="/images/ai-actions.webp" alt="显示 Copy page、View as Markdown、Download API spec、Open in ChatGPT、Open in Claude、Open in Perplexity、Copy MCP config、Connect to Cursor 和 Connect to VS Code 选项的 AI Actions 下拉菜单" style={{ width: '100%', maxWidth: '500px' }} />
+</div>
+
+## 内置选项
+
+该菜单提供八个选项，默认全部启用：
+
+| 选项 | 键 | 功能 |
+|--------|-----|-------------|
+| **Copy page** | `copy` | 获取原始 Markdown 并将其复制到剪贴板 |
+| **View as Markdown** | `view` | 在新标签页中打开 `.md` 文件 |
+| **Open in ChatGPT** | `chatgpt` | 在 ChatGPT 中打开页面，并附带读取当前页面的提示 |
+| **Open in Claude** | `claude` | 使用相同的提示在 Claude 中打开页面 |
+| **Open in Perplexity** | `perplexity` | 使用相同的提示在 Perplexity 中打开页面 |
+| **Copy MCP config** | `mcp` | 复制站点 [MCP 服务器](/cn/ai/mcp-server) 的 JSON 配置 |
+| **Add to Cursor** | `cursor` | 使用深层链接在 Cursor 中安装 MCP 服务器 |
+| **Add to VS Code** | `vscode` | 使用深层链接在 VS Code 中安装 MCP 服务器 |
+
+Gemini 也可通过 `gemini` 使用，但由于它无法可靠地支持 URL 提示预填充，因此未包含在默认选项中。如果读者使用 Gemini，可以显式添加它。
+
+当选项列表中包含 `copy` 时，它会成为主按钮。其余选项会显示在由箭头触发的下拉菜单中。如果不包含 `copy`，整个菜单会折叠为一个“AI Actions”下拉菜单。
+
+### Download API spec
+
+在 API 参考页面上，菜单会增加一个选项：**Download API spec**。它会将站点引用的所有 OpenAPI 规范（包括仓库中的本地文件和远程规范 URL）打包到单个 `api-specs.zip` 文件中，方便交给 Postman、客户端生成器或你自己的工具使用。多文件规范会在 zip 中保留其文件夹结构，因此文件之间的 `$ref` 链接仍可正常解析。
+
+该选项会单独显示，无需配置。它只会显示在由 OpenAPI 规范支持的页面上，并且仅在站点确实包含规范时显示，因此不会影响普通指南。每次下载时都会重新生成 zip，所以其中内容始终与当前规范一致。
+
+## 配置
+
+该菜单开箱即用。只有在需要自定义显示哪些选项，或完全关闭菜单时，才需要修改 `docs.json`。
+
+### 显示部分选项
+
+```json docs.json
+{
+  "contextual": {
+    "options": ["copy", "claude", "mcp"]
+  }
+}
+```
+
+### 禁用菜单
+
+```json docs.json
+{
+  "contextual": {
+    "enabled": false
+  }
+}
+```
+
+### 添加自定义选项
+
+你可以将内置选项与自定义选项混合使用。自定义选项会在新标签页中打开 URL。
+
+```json docs.json
+{
+  "contextual": {
+    "options": [
+      "copy",
+      "claude",
+      {
+        "title": "Ask on Discord",
+        "description": "Get help from the community",
+        "icon": "discord",
+        "href": "https://discord.gg/your-server"
+      }
+    ]
+  }
+}
+```
+
+自定义选项支持可选的 `icon` 字段。任何 [Font Awesome 图标名称](/cn/content/icons) 都可以使用，包括 `discord` 或 `slack` 等品牌图标。如果未设置图标，则会显示链接图标。
+
+自定义选项还支持查询参数：
+
+```json docs.json
+{
+  "contextual": {
+    "options": [
+      "copy",
+      {
+        "title": "Search in Notion",
+        "description": "Find related internal docs",
+        "href": {
+          "base": "https://notion.so/search",
+          "query": [
+            { "key": "q", "value": "docs" }
+          ]
+        }
+      }
+    ]
+  }
+}
+```
+
+## 工作原理
+
+该菜单完全在客户端运行。每次页面导航时都会更新 URL，因此即使在未完全重新加载页面的情况下通过侧边栏导航，“Open in Claude”链接也始终指向当前查看的页面。
+
+AI 服务链接会在提示中包含页面的 `.md` URL。ChatGPT、Claude 和 Perplexity 都可以获取 URL，因此它们可以直接从链接读取你的文档。
+
+MCP 选项使用每个 Jamdesk 站点公开的 `/_mcp` 端点。“Copy MCP config”会为读者提供任何 MCP 客户端所需的 JSON。“Add to Cursor”和“Add to VS Code”是一键深层链接，可直接打开编辑器的安装流程。有关 AI 工具可以如何使用 MCP 服务器的详细信息，请参阅 [MCP 服务器](/cn/ai/mcp-server)。
+
+<Card title="MCP 服务器" icon="plug" href="/cn/ai/mcp-server">
+  你的文档已经内置 MCP 服务器。AI Actions 菜单只是让连接过程更加简单。
+</Card>

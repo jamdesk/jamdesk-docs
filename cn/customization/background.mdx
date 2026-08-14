@@ -1,0 +1,205 @@
+---
+title: 背景
+description: 选择装饰样式、按模式覆盖页面背景色，或调整 Jam 渐变的颜色、大小、位置和不透明度。
+---
+
+`background` 块位于 `docs.json` 中，用于控制页面背景。你可以选择四种装饰样式之一，按模式覆盖基础颜色，并调整默认渐变。
+
+```json docs.json
+{
+  "theme": "jam",
+  "background": {
+    "decoration": "none",
+    "color": {
+      "light": "#faf7f2",
+      "dark": "#0a0a0d"
+    }
+  }
+}
+```
+
+所有字段都是可选的。省略整个 `background` 块即可使用主题默认值。
+
+## 装饰
+
+为 Jam 主题的浅色模式选择背景样式。每个值都会在基础 `--color-bg-primary` 颜色上渲染不同的图案；深色模式始终渲染为纯色，与该值无关。
+
+```json docs.json
+{
+  "background": {
+    "decoration": "grid"
+  }
+}
+```
+
+| 值 | 行为 |
+|-------|----------|
+| `gradient`（默认） | 锚定在顶部的径向渐变。可通过下方的 `gradient` 块进行调整 |
+| `grid` | 细微的点阵图案：在 `--color-primary` 上以 8% 不透明度显示 1.5px 圆点，间距为 24px |
+| `windows` | 上方两个角落显示柔和的径向光斑（Windows 11 风格的磨砂效果） |
+| `none` | 使用纯色 `--color-bg-primary` 填充，不显示装饰 |
+
+<Note>
+`decoration` 仅影响 Jam 主题的浅色模式。无论取值如何，Nebula 和 Pulsar 都会渲染纯色背景。在 Jam 深色模式下，所有值都会渲染为纯色。
+</Note>
+
+## 颜色
+
+按模式覆盖页面背景色。支持任何 CSS 颜色：十六进制、`rgb(...)`、`rgba(...)` 或 `hsl(...)`。
+
+```json docs.json
+{
+  "background": {
+    "color": {
+      "light": "#faf7f2",
+      "dark": "#0a0a0d"
+    }
+  }
+}
+```
+
+| 字段 | 适用范围 |
+|-------|------------|
+| `color.light` | 浅色模式的正文背景 |
+| `color.dark` | 深色模式的正文背景 |
+
+两个字段都是可选的。仅设置 `light` 可覆盖浅色模式并保留主题的深色默认值，反之亦然。适用于所有主题（Jam、Nebula、Pulsar）。
+
+<Tip>
+将 `decoration: "none"` 与 `color` 覆盖搭配使用，即可创建纯色的品牌背景。这在编辑类或营销风格的文档中很常见。
+</Tip>
+
+## 渐变
+
+调整 Jam 主题浅色模式下的径向渐变。四个字段均为可选字段，可独立应用。仅设置 `color` 可更改颜色，或仅设置 `size` 可缩小或放大渐变。
+
+```json docs.json
+{
+  "background": {
+    "gradient": {
+      "color": "#a855f7",
+      "size": "800px",
+      "position": "top center",
+      "opacity": 0.25
+    }
+  }
+}
+```
+
+| 字段 | 默认值 | 描述 |
+|-------|---------|-------------|
+| `color` | 继承 `colors.primary` | 渐变颜色（任何 CSS 颜色） |
+| `size` | `500px` | 半径。支持任何 CSS 长度（`px`、`rem`、`%`、`vh`） |
+| `position` | `top center` | 中心点。支持 `top`/`bottom`/`center`/`left`/`right` 关键字、百分比或像素坐标 |
+| `opacity` | `0.12` | 中心点处的最大不透明度。取值范围为 `0` 到 `1` |
+
+<Note>
+仅当 `decoration` 为 `gradient`（或未设置）时，`gradient` 才会生效。`grid`、`windows` 和 `none` 装饰会忽略此块：`grid` 和 `windows` 会读取 `--color-primary` 作为图案颜色，因此请改用 `colors` 块进行自定义。
+</Note>
+
+### 浏览器支持
+
+参数化渐变（使用 CSS 变量）依赖 `color-mix()`，要求：
+
+- Chrome / Edge 111+
+- Firefox 113+
+- Safari 16.2+
+
+较旧的浏览器会回退到原始 Jam 渐变：渲染品牌默认样式，并忽略你对 `gradient` 的覆盖设置。回退效果本身简洁美观，只是无法进行自定义。
+
+## 常用配置
+
+<AccordionGroup>
+  <Accordion title="纯奶油色背景，不使用渐变">
+    ```json docs.json
+    {
+      "background": {
+        "decoration": "none",
+        "color": {
+          "light": "#faf7f2",
+          "dark": "#0a0a0d"
+        }
+      }
+    }
+    ```
+    编辑类文档中常见的配置。适用于任何主题。
+  </Accordion>
+
+  <Accordion title="细微的紫色渐变">
+    ```json docs.json
+    {
+      "background": {
+        "gradient": {
+          "color": "#a855f7",
+          "opacity": 0.15
+        }
+      }
+    }
+    ```
+    更改 Jam 渐变的颜色，同时保持其大小和位置不变。
+  </Accordion>
+
+  <Accordion title="更大的偏心渐变">
+    ```json docs.json
+    {
+      "background": {
+        "gradient": {
+          "size": "1200px",
+          "position": "top left",
+          "opacity": 0.2
+        }
+      }
+    }
+    ```
+    更宽、更分散的渐变，锚定在左上角。
+  </Accordion>
+
+  <Accordion title="细微的点阵图案">
+    ```json docs.json
+    {
+      "background": {
+        "decoration": "grid"
+      }
+    }
+    ```
+    使用主题的主色绘制淡淡的 24px 点阵图案。它会读取 `--color-primary`，因此可以在 `docs.json` 中设置 `colors.primary` 来更改圆点颜色。
+  </Accordion>
+
+  <Accordion title="Windows 11 风格的磨砂效果">
+    ```json docs.json
+    {
+      "background": {
+        "decoration": "windows"
+      }
+    }
+    ```
+    上方两个角落显示柔和的径向光斑，并锚定到视口。光斑颜色读取 `--color-primary`。
+  </Accordion>
+
+  <Accordion title="仅覆盖深色模式">
+    ```json docs.json
+    {
+      "background": {
+        "color": {
+          "dark": "#0d0d12"
+        }
+      }
+    }
+    ```
+    浅色模式保留主题默认值，并为深色模式选择自定义背景色。
+  </Accordion>
+</AccordionGroup>
+
+## 下一步？
+
+<Columns cols={3}>
+  <Card title="主题设置" icon="palette" href="/cn/customization/theming">
+    选择基础主题并覆盖颜色
+  </Card>
+  <Card title="自定义 CSS" icon="paintbrush" href="/cn/customization/custom-css">
+    覆盖 CSS 可以修改的任何内容
+  </Card>
+  <Card title="品牌设置" icon="image" href="/cn/customization/branding">
+    Logo、favicon 和品牌资源
+  </Card>
+</Columns>

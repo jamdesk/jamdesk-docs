@@ -1,0 +1,157 @@
+---
+title: PDF 导出
+description: 从仪表板将整个文档站点导出为单个 PDF，可下载并通过电子邮件接收。仅限付费计划。
+---
+
+从仪表板将文档站点导出为单个 PDF。Jamdesk 会将每个已发布页面渲染到一个文件中，准备就绪后通过电子邮件发送下载链接，并在下一次文档构建前保留 PDF 供重新下载。
+
+<Card title="下载示例 PDF" icon="file-pdf" href="https://github.com/jamdesk/jamdesk-docs/releases/download/sample-pdf-v1/jamdesk-docs.pdf">
+  查看实际导出效果。完整的 Jamdesk 文档站点通过同一管道渲染而成，共 408 个页面，大小为 6.6 MB。
+</Card>
+
+PDF 导出适用于：
+
+- 与无法访问仪表板的评审人员共享文档
+- 在飞机上、安全设施或客户现场离线阅读
+- 保存特定提交的合规与审计快照
+- 准备客户交接材料
+
+## 谁可以使用
+
+每个**付费计划**均免费包含 PDF 导出，无需购买附加功能。每个项目每天最多可生成 **3 个 PDF**，计数器在 UTC 午夜重置。
+
+## 生成 PDF
+
+<Steps>
+  <Step title="打开 Settings → PDF Exports">
+    在仪表板中从侧边栏选择项目，点击 **Settings**，然后滚动到项目元数据下方的 **PDF Exports** 部分。
+  </Step>
+  <Step title="点击 Generate PDF">
+    Jamdesk 使用无头浏览器渲染站点并将 PDF 写入存储时，按钮会变为 **Generating…**。完成时间取决于页面数量及页面中包含的图像数量。大多数站点可在几分钟内完成。
+  </Step>
+  <Step title="等待电子邮件">
+    PDF 准备就绪后，我们会向已登录用户发送电子邮件，其中包含返回 Settings 页面的链接。你也可以让页面保持打开状态；状态会实时更新。
+  </Step>
+  <Step title="下载">
+    点击 **Download PDF**。如果链接过期，请参阅[下载链接有效期](#下载链接有效期)。
+  </Step>
+</Steps>
+
+## 多语言项目
+
+如果你的 `docs.json` 配置了多种语言，**Generate PDF** 按钮旁边会出现语言下拉菜单。
+
+```json docs.json
+{
+  "navigation": {
+    "languages": [
+      { "language": "en", "default": true },
+      { "language": "es" },
+      { "language": "fr" }
+    ]
+  }
+}
+```
+
+每次导出仅涵盖一种语言。若要将三种语言的 PDF 全部提供给评审人员，请选择 `en` 并导出，然后选择 `es` 并导出，最后选择 `fr` 并导出。
+
+## 缓存与重新生成
+
+Settings 页面仅记住每个项目**最近一次**完成的导出。当你点击 **Regenerate** 时，Jamdesk 会检查上一次导出是否同时匹配当前构建和所请求的语言环境：
+
+- **构建和语言环境相同** → 立即返回缓存的 PDF。你会看到一条通知，说明自上次导出后没有任何变化。
+- **构建更新或语言环境不同** → 开始全新渲染。点击 **Rebuild** 会被视为新构建，即使提交没有变化。
+
+由于缓存只有一个位置，导出第二种语言或新构建会替换之前的内容。之前的 PDF 不会被删除，但不会再显示在 Settings 页面上。
+
+更新文档后，如需获取新的 PDF：
+
+<Steps>
+  <Step title="发布新内容">
+    将更改推送到 GitHub，或从 CLI 使用 `jamdesk deploy`。
+  </Step>
+  <Step title="等待构建完成">
+    仪表板中的 Builds 列表会在新提交上显示 **Completed**。
+  </Step>
+  <Step title="重新生成">
+    返回 Settings 页面并点击 **Regenerate**。缓存导出之后已有新构建完成，因此 Jamdesk 会开始全新渲染。
+  </Step>
+</Steps>
+
+可以放心地多次点击 Regenerate。如果没有完成新的构建，系统不会重新渲染或再次发送电子邮件。
+
+## 速率限制
+
+每个项目有两项限制：
+
+- **每天完成 3 次导出。**计数器在 UTC 午夜重置。仪表板会显示已使用的次数。
+- **两次导出之间间隔 5 分钟。**在该时间窗口内发出的请求会返回 `Try again in a few minutes`。
+
+缓存命中（与上一次导出使用相同构建和语言环境）不受这两项限制影响，因此重复下载未更改的 PDF 不会触发限制。
+
+生成超过二十分钟的 PDF 会被视为过期任务。你可以再次点击 **Generate PDF** 重新加入队列。
+
+## 导出内容
+
+PDF 包含所选语言的 `docs.json` 导航中列出的每个页面，并按照声明顺序排列。导航中的外部链接会被跳过。孤立页面（仓库中存在但未接入导航的文件）不会被包含。
+
+每个页面都会通过读者访问的相同 URL（`https://<slug>.jamdesk.app/<path>`）进行渲染，因此浏览器中显示的内容也会显示在 PDF 中。
+
+## 受密码保护的站点
+
+如果你的站点[受密码保护](/cn/setup/password-protection)，则不会生成 PDF。请先禁用密码保护以运行导出，完成后再重新启用。
+
+## 电子邮件发送
+
+PDF 准备就绪后，点击 **Generate PDF** 的用户会收到一封电子邮件，其中包含返回 Settings → PDF Exports 部分的链接，以及页数、时间戳和语言环境（适用于多语言项目）。仪表板本身也会实时切换到就绪状态；无需依赖电子邮件即可下载。
+
+只有请求者会收到电子邮件。其他协作者下次打开 Settings 页面时即可看到新的 PDF。
+
+<Warning>
+  如果完成后几分钟内仍未收到电子邮件，请检查垃圾邮件文件夹。无论电子邮件是否成功送达，PDF 始终可以从仪表板获取。
+</Warning>
+
+## 下载链接有效期
+
+电子邮件下载链接自 PDF 完成之时起 **72 小时**内有效。每次打开 Settings 页面时，仪表板都会生成新的 URL，因此从仪表板下载不会过期。如果电子邮件链接返回 403，请前往仪表板并在那里点击 **Download PDF**。
+
+## 故障排除
+
+<Accordion title="'No completed build found — trigger a build first'">
+  PDF 导出渲染的是已构建的站点，而不是源 MDX。默认分支上至少需要有一次成功构建。推送提交或在 Builds 页面点击 **Rebuild**，等待完成后再重试。
+</Accordion>
+
+<Accordion title="'PDF export requires a paid plan'">
+  你的项目正在使用免费试用版。请通过 **Settings → Billing** 升级。
+</Accordion>
+
+<Accordion title="'Daily PDF export limit reached (3/day). Try again tomorrow.'">
+  每个项目每天（按 UTC 计算）最多完成 3 次导出。计数器在 UTC 午夜重置。
+</Accordion>
+
+<Accordion title="'Try again in a few minutes'">
+  你触发了导出之间的五分钟间隔限制。请等待后重试。
+</Accordion>
+
+<Accordion title="重新生成未生成新文件">
+  由于上次导出后没有完成新的构建，系统重新使用了缓存的 PDF。请推送提交，或在 Builds 页面点击 **Rebuild**，然后等待构建完成后再次尝试 Regenerate。请参阅[缓存与重新生成](#缓存与重新生成)。
+</Accordion>
+
+<Accordion title="PDF 缺少站点上存在的页面">
+  导出器仅提取所选语言的 `docs.json` 导航中的页面。孤立页面（已编写但未加入导航）和外部链接不会出现。请确认缺失页面可在浏览器中通过 `<slug>.jamdesk.app` 正常加载。
+</Accordion>
+
+<Accordion title="PDF 文件过大">
+  大型图表、视频和未经优化的图像会快速增加 PDF 大小。开启[自动图像转换](/cn/builds/image-optimization)可将图像字节数减少 60-80%。视频会渲染为带播放图标的海报帧，因此不会使文件变大。
+</Accordion>
+
+## 下一步
+
+<Columns cols={2}>
+  <Card title="触发构建" icon="hammer" href="/cn/builds/triggering">
+    PDF 导出基于最近一次完成的构建运行。你可以手动触发构建，也可以在推送时触发。
+  </Card>
+  <Card title="图像优化" icon="image" href="/cn/builds/image-optimization">
+    在构建时将 PNG/JPG 转换为 WebP，以减小 PDF 大小。
+  </Card>
+</Columns>

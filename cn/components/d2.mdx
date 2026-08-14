@@ -1,0 +1,326 @@
+---
+title: D2 图表
+description: 使用基于文本的 D2 语法渲染架构图、流程图、时序图和 SQL 模型，并以支持自动明暗主题的 SVG 呈现。
+---
+
+当图表需要嵌套容器和边界、包含主键和外键的数据库架构，或需要通过切换引擎调整布局时，可以使用 D2。它与 Jamdesk 已支持的 Mermaid 并行：快速流程图继续使用 Mermaid，而结构趋于架构化时则使用 D2。两者的编写位置相同，都是 Markdown 中的围栏代码块，因此选择哪一种取决于适用性，而不是工作流。
+
+## 基本用法
+
+使用带有 `d2` 语言标识符的围栏代码块：
+
+````mdx
+```d2
+a -> b -> c
+```
+````
+
+```d2
+a -> b -> c
+```
+
+## 图表类型
+
+### 架构图
+
+架构图用于展示服务之间的连接方式。使用带标签的形状，展示请求在系统中的路径。
+
+```d2
+Client: Web Client
+API: API Server
+Database: { shape: cylinder }
+
+Client -> API: request
+API -> Database: query
+```
+
+````mdx
+```d2
+Client: Web Client
+API: API Server
+Database: { shape: cylinder }
+
+Client -> API: request
+API -> Database: query
+```
+````
+
+### 容器
+
+容器用于组合相关节点。将形状嵌套在 `{ }` 中，以建模云账户或部署等边界，然后绘制跨越这些边界的连接。
+
+```d2
+cloud: Cloud {
+  api: API
+  worker: Worker
+}
+
+queue: Message Queue
+
+cloud.api -> queue: publish
+queue -> cloud.worker: consume
+```
+
+````mdx
+```d2
+cloud: Cloud {
+  api: API
+  worker: Worker
+}
+
+queue: Message Queue
+
+cloud.api -> queue: publish
+queue -> cloud.worker: consume
+```
+````
+
+### 时序图
+
+时序图展示组件随时间的通信方式。在容器上设置 `shape: sequence_diagram`，并按顺序列出消息，以记录 API 或身份验证流程。
+
+```d2
+flow: {
+  shape: sequence_diagram
+
+  Client -> Server: request
+  Server -> Database: query
+  Database -> Server: results
+  Server -> Client: response
+}
+```
+
+````mdx
+```d2
+flow: {
+  shape: sequence_diagram
+
+  Client -> Server: request
+  Server -> Database: query
+  Database -> Server: results
+  Server -> Client: response
+}
+```
+````
+
+### 类图
+
+类图用于记录面向对象系统的结构。在节点上设置 `shape: class`，并列出其字段和方法。成员前加 `+` 表示公共成员，加 `-` 表示私有成员，加 `#` 表示受保护成员；连接类以展示它们之间的关系。
+
+```d2
+User: {
+  shape: class
+  +name: string
+  +email: string
+  +login(): void
+  +logout(): void
+}
+
+Order: {
+  shape: class
+  +id: int
+  +created: date
+  +addItem(): void
+  +checkout(): void
+}
+
+Item: {
+  shape: class
+  +name: string
+  +price: float
+}
+
+User -> Order: places
+Order -> Item: contains
+```
+
+````mdx
+```d2
+User: {
+  shape: class
+  +name: string
+  +email: string
+  +login(): void
+  +logout(): void
+}
+
+Order: {
+  shape: class
+  +id: int
+  +created: date
+  +addItem(): void
+  +checkout(): void
+}
+
+Item: {
+  shape: class
+  +name: string
+  +price: float
+}
+
+User -> Order: places
+Order -> Item: contains
+```
+````
+
+### 状态图
+
+状态图用于建模对象或流程的生命周期。D2 没有专用的状态图形状。将状态建模为椭圆或圆形，然后在状态之间绘制带标签的转换。
+
+```d2
+Draft: { shape: oval }
+Review: { shape: oval }
+Published: { shape: oval }
+Archived: { shape: oval }
+
+Draft -> Review: submit
+Review -> Published: approve
+Review -> Draft: request changes
+Published -> Archived: archive
+```
+
+````mdx
+```d2
+Draft: { shape: oval }
+Review: { shape: oval }
+Published: { shape: oval }
+Archived: { shape: oval }
+
+Draft -> Review: submit
+Review -> Published: approve
+Review -> Draft: request changes
+Published -> Archived: archive
+```
+````
+
+### SQL 表
+
+SQL 表形状用于记录包含列和类型的数据库架构。为列添加 `{ constraint: primary_key }` 或 `{ constraint: foreign_key }`，即可渲染 PK 和 FK 徽标；然后将外键连接到其引用的表，以展示两者的关系。
+
+```d2
+users: {
+  shape: sql_table
+  id: int { constraint: primary_key }
+  email: varchar
+}
+
+orders: {
+  shape: sql_table
+  id: int { constraint: primary_key }
+  user_id: int { constraint: foreign_key }
+  total: decimal
+}
+
+orders.user_id -> users.id
+```
+
+````mdx
+```d2
+users: {
+  shape: sql_table
+  id: int { constraint: primary_key }
+  email: varchar
+}
+
+orders: {
+  shape: sql_table
+  id: int { constraint: primary_key }
+  user_id: int { constraint: foreign_key }
+  total: decimal
+}
+
+orders.user_id -> users.id
+```
+````
+
+## 形状
+
+在任意节点上设置 `shape`，即可更改其渲染方式：
+
+| 语法                | 形状     | 用途           |
+| ------------------- | -------- | -------------- |
+| `shape: rectangle`  | 矩形     | 默认节点、流程 |
+| `shape: circle`     | 圆形     | 状态、简单节点 |
+| `shape: cylinder`   | 圆柱体   | 数据库、存储   |
+| `shape: cloud`      | 云       | 外部服务、网络 |
+| `shape: diamond`    | 菱形     | 决策、条件     |
+| `shape: person`     | 人物     | 用户、参与者   |
+| `shape: sql_table`  | SQL 表   | 数据库架构、ER 模型 |
+
+## 连接
+
+连接用于定义节点之间的方向和关系：
+
+| 语法              | 描述           | 用途       |
+| ----------------- | -------------- | ---------- |
+| `a -> b`          | 有向箭头       | 常规流程   |
+| `a -- b`          | 无向线         | 关联       |
+| `a <-> b`         | 双向箭头       | 双向交换   |
+| `a <- b`          | 反向箭头       | 反向流程   |
+| `a -> b: label`   | 带标签的连接   | 描述关系   |
+
+## 选择布局引擎
+
+D2 自带多个布局引擎。默认引擎为 `dagre`。如需处理更密集的图，可以切换到 ELK：在图表源代码中使用 D2 的原生配置块进行设置。本版本没有用于此设置的组件属性；引擎需要在图表本身中选择。
+
+```d2
+vars: {
+  d2-config: {
+    layout-engine: elk
+  }
+}
+
+ingress -> service -> database
+```
+
+````mdx
+```d2
+vars: {
+  d2-config: {
+    layout-engine: elk
+  }
+}
+
+ingress -> service -> database
+```
+````
+
+宽幅图表会在其容器内水平滚动，因此即使图表密集，也能保持可读，不会溢出页面。
+
+## 样式提示
+
+<Tip>
+  D2 图表会适配明暗模式。Jamdesk 会构建支持双主题的 SVG，因此无需额外配置，
+  在两种主题下都能保持颜色清晰易读。
+</Tip>
+
+如需创建有效的图表：
+
+- 保持每个图表简洁：将大型系统拆分为多个重点视图。
+- 为连接添加标签，使关系一目了然。
+- 将相关节点分组到容器中，而不是绘制一个扁平图。
+- 对于包含大量连接的密集图，切换到 ELK 布局引擎。
+
+## D2 与 Mermaid
+
+两种语言都会在构建时渲染，因此选择取决于适用性：
+
+- **选择 D2**：适用于架构图和基础设施图、SQL 和 ER 模型、草图风格的可视化内容，以及需要选择布局引擎的场景。
+- **选择 Mermaid**：适用于流程图、甘特图和 Git 图。两者都能渲染时序图；Mermaid 的时序语法功能更丰富，而 D2 则能让图表的其余部分继续使用同一种语言。Mermaid 应用广泛，生态系统也更完善。
+
+请参阅 [Mermaid 图表](/cn/components/mermaid) 页面，了解 Mermaid 语法和示例。
+
+## 了解更多
+
+如需查看完整的 D2 语法参考（包括样式、类和动画），请参阅 [D2 官方文档](https://d2lang.com)。
+
+## 接下来做什么？
+
+<Columns cols={2}>
+  <Card title="Mermaid 图表" icon="chart-network" href="/cn/components/mermaid">
+    使用 Mermaid 渲染流程图和时序图
+  </Card>
+  <Card title="组件概览" icon="puzzle-piece" href="/cn/components/overview">
+    浏览所有可用组件
+  </Card>
+</Columns>

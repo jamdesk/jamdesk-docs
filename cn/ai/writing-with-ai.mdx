@@ -1,0 +1,231 @@
+---
+title: 使用 AI 写作
+description: 介绍使用 AI 工具编写 Jamdesk 文档的实用策略，包括有效提示词、审核清单和常见问题。
+---
+
+无论使用哪种 AI 工具，这些策略都适用：Claude Code、Cursor、Codex、Copilot 或其他工具。如需了解特定工具的设置，请参阅 [Claude Code](/cn/ai/claude-code)、[Cursor](/cn/ai/cursor) 或 [Codex](/cn/ai/codex)。
+
+## MDX 为什么适合 AI
+
+MDX 是最容易供 AI 工具处理的格式之一：
+
+- 语法熟悉：AI 模型基于数百万个 Markdown 文件进行训练，因此只需很少的提示词就能生成有效的 MDX。
+- 组件结构化：`<Card>`、`<Steps>` 和 `<Tabs>` 具有模型可以快速学习的固定模式。
+- 纯文本：MDX 不包含 AI 工具需要解释的二进制格式、专有架构或构建产物。
+
+## 编写更好的提示词
+
+普通 AI 文档与优秀 AI 文档之间的差异通常在于提示词。请明确说明你的需求。
+
+<Tabs>
+  <Tab title="Weak Prompts">
+    ```text
+    Write docs for the webhook feature.
+    ```
+
+    ```text
+    Document authentication.
+    ```
+
+    ```text
+    Create a getting started guide.
+    ```
+
+    这些提示词没有任何约束，因此生成的内容通常泛泛而谈且过于冗长。
+  </Tab>
+  <Tab title="Strong Prompts">
+    ```text
+    Write a page documenting our webhook feature. The reader is a developer
+    integrating webhooks for the first time. Start with a 3-step quickstart,
+    then cover payload format and retry behavior. Reference /src/webhooks
+    for the implementation.
+    ```
+
+    ```text
+    Add a troubleshooting section to the authentication page. Cover these
+    three errors: expired tokens, missing scopes, and rate limits. Use
+    Accordions for each error. Keep each answer under 4 lines.
+    ```
+
+    ```text
+    Create a getting started guide that gets the reader from zero to a
+    working hello-world in under 2 minutes. Skip the theory and background,
+    and jump straight into the install command.
+    ```
+
+    约束可以让输出更有针对性。告诉 AI 读者是谁、应使用什么结构，以及需要跳过哪些内容。
+  </Tab>
+</Tabs>
+
+### 有效的提示词模式
+
+| 模式 | 示例 |
+|---------|---------|
+| **明确读者** | "The reader is a backend developer who has never used our API" |
+| **指定结构** | "Use Steps for the setup flow, then Tabs for language variants" |
+| **设置长度限制** | "Keep the intro under 2 sentences" or "Each accordion answer should be 3-4 lines" |
+| **指向源代码** | "Reference the implementation in /src/auth for accuracy" |
+| **说明要跳过的内容** | "Don't explain what REST is. Skip the theory." |
+| **提供示例页面** | "Match the tone and structure of /quickstart" |
+
+## 审核 AI 输出
+
+AI 工具大多数时候都能生成结构正确的 MDX。更隐蔽的问题通常在于语气、准确性和内容冗余。提交前，请使用以下清单进行检查。
+
+### 语气检查
+
+大声读出生成的内容。如果听起来像聊天机器人，请重写。注意以下问题：
+
+- 填充语句："It's important to note that"、"This allows you to"、"In order to"
+- 模棱两可："You might want to consider"、"It's generally recommended"
+- 空洞的过渡："Now that we've covered X, let's move on to Y"
+- 流行术语："seamlessly"、"robust"、"leverage"、"streamline"
+
+删除这些内容。页面会更简洁，也更好。
+
+### 准确性检查
+
+AI 工具会自信地生成错误信息。请验证：
+
+- 代码示例是否确实可运行？复制粘贴后执行。
+- 配置选项是否真实存在？对照源代码检查。
+- 组件名称是否正确？只能使用[现有组件](/cn/components/overview)。
+- 页面描述的是当前行为，而不是设想中的功能吗？
+
+### 结构检查
+
+- [ ] Frontmatter 同时包含 `title` 和 `description`
+- [ ] 存在开头段落，且此前没有标题
+- [ ] 页面以 `<Columns>` 包裹的 "What's Next?" 卡片结尾
+- [ ] 新页面已添加到 `docs.json` 导航
+- [ ] 没有虚构组件；只能使用[组件参考](/cn/components/overview)中的组件
+
+## 常见 AI 错误
+
+以下问题出现得足够频繁，值得特别注意：
+
+<AccordionGroup>
+  <Accordion title="Inventing components that don't exist">
+    AI 工具会生成 Jamdesk 中不存在的 `<CodeBlock>`、`<Alert>`、`<Section>`、`<Callout>` 及其他组件。请仅使用[概览](/cn/components/overview)中列出的组件。
+  </Accordion>
+  <Accordion title="Forgetting docs.json navigation">
+    创建页面时不将其添加到 `docs.json` 是最常见的错误。页面虽然存在，但不会显示在侧边栏中。创建页面时，请始终更新导航。
+  </Accordion>
+  <Accordion title="Over-using callouts">
+    AI 工具喜欢将每个段落都包裹在 `<Note>` 或 `<Warning>` 中。每页使用一两个提示框就足够了。如果所有内容都很重要，就等于没有重点。
+  </Accordion>
+  <Accordion title="Writing too much">
+    AI 生成的 200 行页面通常只有 100 行是真正的内容。查找重复说明、不必要的背景介绍，以及用不同措辞表达相同内容的段落。大胆删减。
+  </Accordion>
+  <Accordion title="Generic descriptions">
+    "This powerful feature allows you to..." 什么也没有告诉读者。请改为说明它实际执行的操作："Send HTTP POST requests to your endpoint when events fire."
+  </Accordion>
+</AccordionGroup>
+
+## 保持文档同步
+
+编写文档很容易。代码发生变化后让文档保持最新则更难。
+
+<Tabs>
+  <Tab title="Manual Prompting">
+    发布功能后，向 AI 工具发送提示词：
+
+    ```text
+    I just added [feature]. Update the docs to reflect this change.
+    Reference the implementation in /src/[file] for accuracy.
+    ```
+  </Tab>
+  <Tab title="Automated with /update-jamdesk">
+    Claude Code 的 `/update-jamdesk` skill 会分析代码变更，并生成相应的文档更新。实现面向用户的功能后运行它：
+
+    ```text
+    /update-jamdesk
+    ```
+
+    如需完整设置说明，请参阅[自动更新](/cn/ai/automated-updates)。
+  </Tab>
+</Tabs>
+
+## 页面骨架
+
+请求 AI 创建新页面时，可以将以下内容作为起始提示词：
+
+<Prompt title="创建 Jamdesk 文档页面" actions={["cursor", "claude", "chatgpt"]}>
+使用此结构创建一个 Jamdesk 文档页面。请将每个占位符替换为针对我所描述功能的具体、准确内容。
+
+```mdx
+---
+title: Feature Name
+description: One sentence summarizing what this page covers.
+---
+
+Opening paragraph: what problem this solves and who should read this.
+
+## Quick Start
+
+<Steps>
+  <Step title="First step">What to do.</Step>
+  <Step title="Second step">What to do next.</Step>
+</Steps>
+
+## How It Works
+
+Explain the mechanics. Use code examples.
+
+## What's Next?
+
+<Columns cols={2}>
+  <Card title="Related Page" icon="arrow-right" href="/path">
+    Why the reader would go here next
+  </Card>
+</Columns>
+```
+</Prompt>
+
+上方的实时卡片复制了完整的说明和骨架。其源代码使用了与你可以添加到自己页面中的相同组件语法：
+
+````mdx
+<Prompt title="Create a Jamdesk documentation page" actions={["cursor", "claude", "chatgpt"]}>
+Create a Jamdesk documentation page using this structure. Replace each
+placeholder with specific, accurate content for the feature I describe.
+
+```mdx
+---
+title: Feature Name
+description: One sentence summarizing what this page covers.
+---
+
+Opening paragraph: what problem this solves and who should read this.
+
+## Quick Start
+
+<Steps>
+  <Step title="First step">What to do.</Step>
+  <Step title="Second step">What to do next.</Step>
+</Steps>
+
+## How It Works
+
+Explain the mechanics. Use code examples.
+
+## What's Next?
+
+<Columns cols={2}>
+  <Card title="Related Page" icon="arrow-right" href="/path">
+    Why the reader would go here next
+  </Card>
+</Columns>
+```
+</Prompt>
+````
+
+## 接下来做什么？
+
+<Columns cols={2}>
+  <Card title="自动更新" icon="rotate" href="/cn/ai/automated-updates">
+    运行 `/update-jamdesk`，根据代码变更生成文档
+  </Card>
+  <Card title="MDX 组件" icon="puzzle-piece" href="/cn/components/overview">
+    查看可用组件的完整参考
+  </Card>
+</Columns>

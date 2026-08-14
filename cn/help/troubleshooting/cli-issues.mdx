@@ -1,0 +1,238 @@
+---
+title: CLI 问题
+description: "解决 CLI 登录失败、部署错误、开发服务器崩溃及其他命令行问题。支持按错误消息搜索，并提供分步解决方案。"
+---
+
+遇到 CLI 错误？在下方找到与你的问题匹配的内容。
+
+## 身份验证问题
+
+<AccordionGroup>
+  <Accordion title='"Not logged in" or "Session expired"'>
+    保存的凭据缺失，或刷新令牌已失效。
+
+    **解决方法：**运行 `jamdesk login` 以启动新会话。这会替换 `~/.jamdeskrc` 中的现有内容。
+
+    如果登录后错误立即再次出现，请检查是否已写入 `~/.jamdeskrc`：
+
+    ```bash
+    cat ~/.jamdeskrc
+    ```
+
+    文件应包含带有 `refreshToken`、`email` 和 `uid` 的 `auth` 对象。如果该对象为空或缺失，你的主目录可能存在权限问题。
+  </Accordion>
+
+  <Accordion title="登录超时">
+    CLI 会在 9876 端口启动本地服务器，以接收浏览器的身份验证回调。如果始终未收到回调，登录会在 2 分钟后超时。
+
+    **常见原因：**
+    - 防火墙阻止了本地服务器
+    - 完成身份验证前关闭了浏览器标签页
+    - 9876 端口已被占用（CLI 会自动选择其他端口，但 URL 必须匹配）
+
+    **解决方法：**复制终端中打印的 URL，然后手动打开。检查 URL 中的端口号是否与 CLI 正在监听的端口一致。
+  </Accordion>
+
+  <Accordion title="登录时浏览器未打开">
+    这在无头环境（SSH 会话、Docker 容器、CI runner）中很常见。即使没有可用的浏览器，登录 URL 也始终会打印到终端。
+
+    复制该 URL，并在能够通过回调端口访问你的计算机的任意浏览器中打开。
+  </Accordion>
+
+  <Accordion title='"session expired" after password change'>
+    更改 Jamdesk 密码会使所有现有刷新令牌失效。CLI 会检测到这一情况（`TOKEN_EXPIRED` 或 `INVALID_REFRESH_TOKEN`），并自动清除保存的身份验证信息。
+
+    再次运行 `jamdesk login`。
+  </Accordion>
+</AccordionGroup>
+
+## 部署错误
+
+<AccordionGroup>
+  <Accordion title='"A build is already in progress"'>
+    每个项目一次只能运行一个构建。当构建已排队或正在运行时，CLI 会返回此错误（代码 `BUILD_IN_PROGRESS`）。
+
+    **解决方法：**等待当前构建完成。在仪表板的 **Deployments** 中查看状态。如果构建似乎卡住，请让项目所有者检查仪表板。
+  </Accordion>
+
+  <Accordion title='"docs.json not found or invalid"'>
+    当前目录中没有 `docs.json`，或者该文件存在 JSON 语法错误。
+
+    **解决方法：**
+    1. 确认你位于正确的目录中：`ls docs.json`
+    2. 运行 `jamdesk validate` 获取具体错误详情
+    3. 检查是否缺少逗号、括号未闭合或存在尾随逗号（CLI 对 docs.json 使用 JSON，而不是 JSON5）
+  </Accordion>
+
+  <Accordion title='"Upload too large"'>
+    压缩后的 tarball 超过了 100 MB 限制。凡是未被 `.gitignore` 或内置排除列表排除的内容，都会被打包。
+
+    **解决方法：**检查包含了哪些内容。常见原因包括：视频文件、大型 PDF、未压缩的图片和数据转储文件。将这些文件添加到 `.gitignore`。
+
+    无论 `.gitignore` 如何配置，以下内容始终会被排除：`.git`、`node_modules`、`.next`、`.env*`、`*.pem`、`*.key`、`credentials.json`、`.DS_Store`。
+  </Accordion>
+
+  <Accordion title='"No files to deploy"'>
+    每个文件都匹配了排除模式，没有剩余文件可供上传。
+
+    **解决方法：**检查你的 `.gitignore`。如果它阻止了 MDX 文件或 `docs.json`，CLI 将没有可用的内容。
+  </Accordion>
+
+  <Accordion title='"Project not found" or "Access denied"'>
+    `docs.json` 中的 `projectId` 与你账户中的任何项目都不匹配，或者你不是该项目的成员。
+
+    **解决方法：**
+    - 从 `docs.json` 中删除 `projectId` 字段，然后重新运行 `jamdesk deploy` 以选择新项目
+    - 确认你登录的是正确的账户：`jamdesk whoami`
+    - 在仪表板中检查项目成员资格
+  </Accordion>
+
+  <Accordion title="构建轮询期间部署卡住">
+    构建状态每 2 秒轮询一次。如果网络不稳定，CLI 最多容忍连续 3 次轮询失败，之后会放弃。
+
+    **解决方法：**按 Ctrl+C。构建会在后台继续运行。前往仪表板查看状态。退出时会打印链接。
+  </Accordion>
+
+  <Accordion title="构建失败">
+    上传成功，但构建本身失败了。你会在终端中看到构建服务返回的错误。
+
+    **解决方法：**在仪表板的 **Deployments** 下检查构建日志。常见原因包括：MDX 语法错误、导航中引用的页面缺失、OpenAPI 规范无效。在部署前运行 `jamdesk validate`，以便在本地发现这些问题。
+  </Accordion>
+
+  <Accordion title="机密文件警告">
+    当文件看起来像机密文件时（`.env`、`*.pem`、`*.key`、`credentials.json`、以 `secret` 开头的文件），你会看到警告。这只是警告，不会阻止操作。
+
+    **解决方法：**将这些文件添加到 `.gitignore`，以便从上传内容中排除。如果这些文件是有意包含的（例如文档中的示例密钥文件），可以忽略该警告。
+  </Accordion>
+</AccordionGroup>
+
+## 开发服务器问题
+
+<AccordionGroup>
+  <Accordion title="开发服务器无法启动">
+    多种原因可能导致启动失败。
+
+    **按以下顺序尝试：**
+    1. 运行 `jamdesk doctor`，检查 Node.js 版本（需要 v20+）和环境
+    2. 运行 `jamdesk clean`，清除缓存的依赖
+    3. 运行 `jamdesk dev --verbose`，查看详细错误输出
+    4. 运行 `jamdesk dev --clean`，在启动前清除构建缓存
+  </Accordion>
+
+  <Accordion title="端口已被占用">
+    CLI 会从你请求的端口（默认为 3000）开始，尝试连续使用 10 个端口。如果 10 个端口全部被占用，操作将失败。
+
+    **解决方法：**
+    ```bash
+    # Find what's using the port
+    lsof -i :3000
+
+    # Pick a different port
+    jamdesk dev --port 3001
+    ```
+
+    如需设置永久默认值，请将 `"defaultPort": 3001` 添加到 `~/.jamdeskrc` 文件中。不要覆盖该文件，其中可能包含身份验证凭据。
+  </Accordion>
+
+  <Accordion title="Turbopack 缓存损坏">
+    如果开发服务器在编译过程中被终止（强制退出或系统崩溃），`.next` 缓存可能会损坏。下次启动时，你会看到“数据库损坏”或 panic 错误。
+
+    **解决方法：**
+    ```bash
+    jamdesk dev --clean
+    ```
+
+    这会删除 `.next` 目录并重新开始。
+  </Accordion>
+
+  <Accordion title="首次运行缓慢">
+    首次运行 `jamdesk dev` 时，会将运行时依赖安装到 `~/.jamdesk/node_modules`。此操作只执行一次，在连接速度较慢时可能需要 1–2 分钟。
+
+    后续运行会跳过安装，除非 CLI 版本发生变化。
+  </Accordion>
+
+  <Accordion title="依赖安装失败或卡住">
+    如果 `npm install` 在首次运行期间卡住，会在 5 分钟后超时。
+
+    **解决方法：**
+    1. 检查网络连接
+    2. 运行 `jamdesk clean`，清除不完整的安装
+    3. 重试
+    4. 如果 npm 持续运行缓慢，请检查 npm 注册表配置：`npm config get registry`
+  </Accordion>
+</AccordionGroup>
+
+## 验证与链接检查
+
+<AccordionGroup>
+  <Accordion title="MDX 语法错误">
+    MDX 会将 `<` 视为 JSX 标签的开头。写入 `<50%` 会导致解析错误。
+
+    **解决方法：**使用 `&lt;` 转义，或改写内容。运行 `jamdesk validate` 获取行号和建议。
+  </Accordion>
+
+  <Accordion title="发现损坏的链接">
+    `jamdesk broken-links` 发现了指向不存在页面的内部链接。
+
+    **解决方法：**检查文件路径。常见错误包括大小写错误（`Quickstart` 与 `quickstart`）、包含 `.mdx` 扩展名，或使用了已重命名的旧路径。
+
+    CLI 会为接近匹配项提供更正建议（拼写错误在 3 个字符以内）。
+
+    **自动修复这些链接。**如果损坏的链接存在明确无歧义的正确目标（拼写错误的锚点或跨语言锚点漂移），请运行 `jamdesk fix --dry-run` 预览更改，然后运行 `jamdesk fix` 应用更改。它只会重写其更正后的锚点确实是目标页面真实标题的链接；对于有歧义的情况，请手动修复。请参阅[自动修复损坏的链接](/cn/cli/fix-broken-links)。
+  </Accordion>
+
+  <Accordion title="OpenAPI 规范验证失败">
+    CLI 会验证 `docs.json` 中引用的 OpenAPI 规范。失败原因包括无效的 `$ref` 引用、缺少必填字段或语法错误。
+
+    **解决方法：**运行 `jamdesk openapi-check path/to/spec.yaml` 查看详细输出。使用 [Swagger Editor](https://editor.swagger.io) 调试复杂规范。
+
+    <Note>Swagger 2.0 规范会显示警告，但仍能通过验证。</Note>
+  </Accordion>
+</AccordionGroup>
+
+## 常见问题
+
+<AccordionGroup>
+  <Accordion title="找不到命令：jamdesk">
+    未全局安装，或你的 shell 找不到该二进制文件。
+
+    **解决方法：**
+    ```bash
+    npm install -g jamdesk
+    ```
+
+    如果你使用 `curl` 安装，请确保 `~/.jamdesk/bin` 位于你的 `PATH` 中。
+  </Accordion>
+
+  <Accordion title="权限被拒绝错误">
+    `~/.jamdesk`（缓存）和 `~/.jamdeskrc`（凭据）需要写入权限。
+
+    **解决方法：**
+    ```bash
+    ls -la ~/.jamdesk ~/.jamdeskrc
+    sudo chown -R $(whoami) ~/.jamdesk ~/.jamdeskrc
+    ```
+  </Accordion>
+
+  <Accordion title="更新失败">
+    `jamdesk update` 封装了 `npm install -g jamdesk@latest`。如果 npm 存在权限问题或无法访问注册表，更新就会失败。
+
+    **解决方法：**手动更新：
+    ```bash
+    npm install -g jamdesk@latest
+    ```
+
+    如果仍然失败，请检查 `npm config get registry`，然后尝试 `sudo npm install -g jamdesk@latest`。
+  </Accordion>
+</AccordionGroup>
+
+## 仍未解决？
+
+<Columns cols={2}>
+  <Card title="CLI 概览" icon="terminal" href="/cn/cli/overview">
+    完整命令参考
+  </Card>
+  <Card title="联系支持" icon="headset" href="/cn/help/support/contact">
+    附上完整的错误输出
+  </Card>
+</Columns>

@@ -1,0 +1,185 @@
+---
+title: DNS 故障排查
+description: "解决自定义域名设置中的 DNS 传播延迟、CNAME 冲突和 TXT 验证失败问题，包含 dig 命令及常见服务商解决方案。"
+---
+
+DNS 问题是自定义域名出现问题的最常见原因。
+
+## 检查 DNS 传播
+
+DNS 更改在全球范围内传播最长可能需要 48 小时，但大多数情况下会在几小时内完成。
+
+检查传播状态：
+
+```bash
+# Check if your CNAME is resolving
+dig CNAME docs.yourdomain.com
+
+# Or use nslookup
+nslookup -type=CNAME docs.yourdomain.com
+```
+
+预期输出会显示你的 CNAME 指向 `cname.jamdesk.com`：
+
+```text
+docs.yourdomain.com. 300 IN CNAME cname.jamdesk.com.
+```
+
+你可以使用 [whatsmydns.net](https://www.whatsmydns.net/) 等在线工具查看多个区域的传播情况。
+
+## 常见问题
+
+### CNAME 无法解析
+
+**症状**：`dig` 未显示 CNAME 记录，或显示了错误的目标。
+
+**原因**：
+- DNS 服务商中未保存记录
+- 记录名称或值存在拼写错误
+- DNS 传播仍在进行中
+
+**解决方法**：
+1. 登录你的 DNS 服务商
+2. 确认 CNAME 记录存在且值正确
+3. 等待 15–30 分钟后再次检查
+
+### 根域名上的 CNAME
+
+**症状**：DNS 服务商拒绝为 `yourdomain.com`（不含子域名）添加 CNAME 记录。
+
+**原因**：DNS 标准（RFC 1034）禁止在区域顶点（根域名）添加 CNAME 记录。
+
+**解决方法**：对于根域名，Jamdesk 仪表板会自动显示 A 记录（`76.76.21.21`），而不是 CNAME。如果你的仪表板仍为根域名显示 CNAME，请点击 **Refresh** 以获取更新后的记录。
+
+### Cloudflare 代理冲突
+
+**症状**：使用 Cloudflare 时出现 SSL 错误或重定向循环。
+
+**原因**：Cloudflare 的代理（橙色云朵）可能会干扰 Vercel 的 SSL。
+
+**解决方法**：
+1. 在 Cloudflare DNS 设置中，点击橙色云朵图标
+2. 将文档子域名更改为 "DNS only"（灰色云朵）
+3. 让 Vercel 处理 SSL
+
+### 冲突的记录
+
+**症状**：即使记录看起来正确，CNAME 验证仍然失败。
+
+**原因**：现有的 A 记录与 CNAME 冲突。
+
+**解决方法**：
+1. 检查同一子域名上是否存在 A 记录
+2. 删除冲突的 A 记录
+3. 确保只保留 CNAME
+
+```bash
+# Check for A records
+dig A docs.yourdomain.com
+```
+
+### TXT 验证失败
+
+**症状**：子路径托管的 TXT 记录无法通过验证。
+
+**原因**：
+- 记录添加到了错误的域名
+- 记录值存在拼写错误
+- 现有 TXT 记录导致问题
+
+**解决方法**：
+1. 确认 TXT 记录位于 `_jamdesk.yourdomain.com`
+2. 从仪表板复制准确的验证值
+3. 检查是否存在冲突的 TXT 记录
+
+```bash
+# Check TXT records
+dig TXT _jamdesk.yourdomain.com
+```
+
+### SSL 证书未签发
+
+**症状**：域名始终显示为 "pending"。
+
+**原因**：
+- CAA 记录阻止了证书签发
+- DNS 尚未完全传播
+- 域名无法访问
+
+**解决方法**：
+
+检查 CAA 记录：
+```bash
+dig CAA yourdomain.com
+```
+
+如果存在 CAA 记录，请添加一条允许 Let's Encrypt 的记录：
+```text
+yourdomain.com. CAA 0 issue "letsencrypt.org"
+```
+
+## 诊断命令
+
+```bash
+# Full DNS lookup
+dig +trace docs.yourdomain.com
+
+# Check all record types
+dig ANY docs.yourdomain.com
+
+# Check specific nameservers
+dig @8.8.8.8 docs.yourdomain.com
+
+# Check TTL (time to live)
+dig +noall +answer docs.yourdomain.com
+```
+
+## DNS 服务商特定说明
+
+### Cloudflare
+- 在域名验证期间，将代理状态设置为 "DNS only"（灰色云朵）
+- 验证完成后，切换回已代理（橙色云朵）状态
+- **正在使用 Worker？** DNS 记录必须设置为代理（橙色云朵），Worker 才能运行。验证期间使用灰色云朵，之后切回橙色云朵。
+- 为文档子域名停用 "Always Use HTTPS"，以避免与 Vercel 发生 SSL 冲突
+
+### GoDaddy
+- CNAME 目标不应以句点结尾
+- 更改可能需要更长时间才能传播
+
+### Namecheap
+- 使用 "CNAME Record" 类型
+- Host 字段只需填写子域名（`docs`，而不是 `docs.yourdomain.com`）
+
+### Route 53
+- CNAME 目标必须以句点结尾（`cname.jamdesk.com.`）
+- 评估目标运行状况：否
+
+## 何时联系支持团队
+
+如果出现以下情况，请联系支持团队：
+- 已确认 DNS 记录正确，但域名在 48 小时后仍显示为待处理
+- 按照所有步骤操作后 SSL 证书错误仍然存在
+- 出现特定于 Jamdesk 基础设施的错误
+
+在支持请求中提供：
+- 你的域名
+- DNS 服务商名称
+- `dig` 命令的输出
+- DNS 配置屏幕截图
+
+## 接下来做什么？
+
+<Columns cols={2}>
+  <Card title="域名问题" icon="circle-exclamation" href="/cn/help/troubleshooting/domain-issues">
+    SSL 错误、验证失败和加载了错误的网站
+  </Card>
+  <Card title="自定义域名设置" icon="globe" href="/cn/deploy/custom-domains">
+    完整的自定义域名设置指南
+  </Card>
+  <Card title="子路径托管" icon="route" href="/cn/deploy/subpath-hosting">
+    在 yourdomain.com/docs 上托管
+  </Card>
+  <Card title="联系支持团队" icon="headset" href="/cn/help/support/contact">
+    提供 dig 输出和 DNS 屏幕截图
+  </Card>
+</Columns>

@@ -1,0 +1,154 @@
+---
+title: iFrames 与嵌入
+sidebarTitle: iFrames
+description: 在文档中嵌入 Vimeo、CodePen、Figma 和 Loom 等外部内容，并自动应用样式和响应式尺寸。
+---
+
+文档中的每个 `<iframe>` 都会自动获得视觉样式：圆角、带边框的框架，以及与页面其余部分一致的间距。无需添加包装 div 或实用工具类即可启用这些样式。
+
+## 自动样式
+
+Jamdesk 会在渲染时为所有 iframe 应用统一的框架。每个 iframe 都会获得以下样式：
+
+| 属性 | 值 | 描述 |
+|----------|-------|-------------|
+| 边框圆角 | `0.5rem` | 内容的圆角 |
+| 框架宽度 | `8px` | 内容周围的视觉内边距 |
+| 边框 | `1px` | 使用主题颜色的细边框 |
+| 间距 | `1rem + 9px` | 上下边距 |
+
+框架颜色来自 `--color-bg-secondary`，边框线使用 `--color-border`。这两个 CSS 自定义属性与主题关联，因此浅色和深色模式都会自动使用正确的颜色，无需进行额外设置。
+
+## 嵌入外部内容
+
+基本的嵌入使用标准 HTML iframe 标签：
+
+```html
+<iframe
+  src="https://example.com/embed"
+  width="100%"
+  height="400"
+  title="Description of embedded content"
+/>
+```
+
+始终包含 `title` 属性。屏幕阅读器会朗读该属性，同时它也能帮助查看页面源代码的用户了解每个嵌入内容的用途。
+
+## 响应式尺寸
+
+大多数嵌入服务提供商都会以固定宽高比返回内容。Tailwind 的 `aspect-video` 实用工具可使 iframe 始终保持 16:9，而无论视口宽度如何；`w-full` 则会将其拉伸以填满父容器：
+
+```html
+<iframe
+  className="w-full aspect-video"
+  src="https://example.com/embed"
+  title="16:9 responsive embed"
+/>
+```
+
+`w-full` 通过 Tailwind 将 `width` 设置为 `100%`。如果不使用它，iframe 会采用浏览器内置的默认宽度（通常为 300px），在宽屏上显示效果会不理想。
+
+对于非 16:9 的内容（例如 Figma 原型或仪表板），请使用 Tailwind 的任意宽高比语法：
+
+```html
+<iframe
+  className="w-full aspect-[4/3]"
+  src="https://example.com/embed"
+  title="4:3 responsive embed"
+/>
+```
+
+将 `4/3` 替换为适合内容的宽高比。例如，正方形嵌入使用 `aspect-[1/1]`，超宽嵌入使用 `aspect-[21/9]`，依此类推。
+
+## Vimeo
+
+Vimeo 视频通过指向其播放器 URL 的标准 iframe 进行嵌入：
+
+```html
+<iframe
+  className="w-full aspect-video rounded-xl"
+  src="https://player.vimeo.com/video/VIDEO_ID"
+  title="Vimeo video player"
+  allow="autoplay; fullscreen; picture-in-picture"
+  allowFullScreen
+/>
+```
+
+将 `VIDEO_ID` 替换为任意 Vimeo URL 中的数字 ID（即 `vimeo.com/` 后面的数字）。`allow` 属性会向嵌入式播放器授予全屏和画中画权限。
+
+<Tip>
+对于 YouTube 视频，请使用专用的 [`<YouTube>` 组件](/cn/content/youtube)，而不是直接使用 iframe。该组件会延迟加载播放器，并移除相关视频推荐。
+</Tip>
+
+## 常见嵌入内容
+
+<AccordionGroup>
+  <Accordion title="CodePen" icon="codepen">
+    从 CodePen 的 "Embed" 按钮获取嵌入 URL。`default-tab` 参数控制首次显示的面板（`result`、`html`、`css` 或 `js`）。
+
+    ```html
+    <iframe
+      height="400"
+      style={{width: '100%'}}
+      src="https://codepen.io/USERNAME/embed/PEN_ID?default-tab=result"
+      title="CodePen Embed"
+      allowFullScreen
+    />
+    ```
+  </Accordion>
+
+  <Accordion title="CodeSandbox" icon="cube">
+    CodeSandbox 嵌入支持用于设置字号、主题和要显示文件的查询参数。`sandbox` 属性控制 iframe 可以执行的操作。CodeSandbox 需要多项权限才能在浏览器中运行代码。
+
+    ```html
+    <iframe
+      src="https://codesandbox.io/embed/SANDBOX_ID?fontsize=14&theme=dark"
+      style={{width: '100%', height: '500px', border: 0, borderRadius: '4px', overflow: 'hidden'}}
+      title="CodeSandbox"
+      allow="accelerometer; ambient-light-sensor; camera; encrypted-media; geolocation; gyroscope; hid; microphone; midi; payment; usb; vr; xr-spatial-tracking"
+      sandbox="allow-forms allow-modals allow-popups allow-presentation allow-same-origin allow-scripts"
+    />
+    ```
+  </Accordion>
+
+  <Accordion title="Figma" icon="figma">
+    打开 Figma 文件，点击 **Share**，然后点击 **Get embed code**。将 URL 放入 `src` 属性中。Figma 嵌入内容在 `450px` 或更高的高度下效果最佳；高度较小时工具栏会被裁剪。
+
+    ```html
+    <iframe
+      style={{border: '1px solid rgba(0, 0, 0, 0.1)'}}
+      width="100%"
+      height="450"
+      src="https://www.figma.com/embed?embed_host=share&url=FIGMA_URL"
+      allowFullScreen
+    />
+    ```
+  </Accordion>
+
+  <Accordion title="Loom" icon="video">
+    从任意 Loom 分享链接中复制视频 ID（即 `loom.com/share/` 后面的字符串）。Loom 嵌入内容默认会在悬停时自动播放。
+
+    ```html
+    <iframe
+      src="https://www.loom.com/embed/VIDEO_ID"
+      width="100%"
+      height="400"
+      allowFullScreen
+    />
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## 接下来做什么？
+
+<Columns cols={3}>
+  <Card title="图像" icon="image" href="/cn/content/images">
+    Markdown 图像、尺寸和说明文字
+  </Card>
+  <Card title="YouTube 嵌入" icon="youtube" href="/cn/content/youtube">
+    YouTube 视频和 Shorts
+  </Card>
+  <Card title="视频" icon="video" href="/cn/content/videos">
+    本地 MP4 和 WebM 文件
+  </Card>
+</Columns>

@@ -1,0 +1,147 @@
+---
+title: AI 聊天
+sidebarTitle: AI 聊天
+description: 每个 Jamdesk 文档站点都内置 AI 聊天助手，访客可提问并从文档中获取带引用的答案。
+---
+
+每个 Jamdesk 站点都包含一个聊天助手，可根据你的文档回答访客问题。它会检索相关章节，将其发送给 Claude，并流式返回带有源页面链接的响应。所有套餐默认启用聊天功能，且无需额外付费。
+
+屏幕截图显示的是英文界面。
+
+下面是聊天助手的实际运行效果：
+
+<YouTube id="XphRq59HO9g" />
+
+
+## 使用场景
+
+<Tabs>
+  <Tab title="API onboarding">
+    集成你的 API 的开发者询问 *"How do I authenticate requests?"*，并获得包含代码示例的准确步骤以及源页面链接。
+  </Tab>
+  <Tab title="Troubleshooting">
+    *"My build is failing with a timeout error"*
+
+    访客无需浏览多个页面，只需几秒即可从故障排除指南中获得相关解决方案。
+  </Tab>
+  <Tab title="Quick reference">
+    回访用户会询问 *"What parameters does the /users endpoint accept?"* 等问题，聊天助手会提取端点文档，并直接返回参数表。
+  </Tab>
+</Tabs>
+
+## 工作原理
+
+<Steps>
+  <Step title="构建文档索引">
+    每次构建期间，Jamdesk 会将页面拆分为多个章节，并将其存储为可搜索的嵌入向量。
+  </Step>
+  <Step title="访客提出问题">
+    “Ask AI”按钮（或 Cmd+I / Ctrl+I）可在任意页面打开聊天面板。
+  </Step>
+  <Step title="AI 根据文档回答">
+    系统会检索相关章节，将其作为上下文发送给 Claude，随后流式返回响应，并附上指向源页面的引用链接。
+  </Step>
+</Steps>
+
+## 功能
+
+| 功能 | 详情 |
+|---------|--------|
+| 流式响应 | 实时接收答案 |
+| 引用链接 | 每个答案都会链接到所参考的文档页面 |
+| 消歧 | 当问题匹配多个主题时，AI 会询问访客具体指的是哪个主题 |
+| 对话上下文 | 保存每个浏览器标签页中的 10 条消息历史记录 |
+| 起始问题 | 根据文档自动生成，也可以在 docs.json 中自行设置 |
+| 键盘快捷键 | 使用 Cmd+I / Ctrl+I 切换，使用 Escape 关闭 |
+| Markdown 渲染 | 响应中会渲染代码块、表格和列表 |
+
+![Chat panel empty state with starter questions](/images/ai/chat-panel.webp)
+
+## 配置
+
+聊天功能开箱即用，无需任何配置。只有在需要自定义起始问题或关闭聊天功能时，才需要向 `docs.json` 添加 `chat` 块。`chat` 字段是可选的，其中两个设置都有合理的默认值。
+
+```json docs.json
+{
+  "chat": {
+    "enabled": true,
+    "starterQuestions": [
+      "How do I get started?",
+      "What API endpoints are available?"
+    ]
+  }
+}
+```
+
+| 字段 | 类型 | 默认值 | 描述 |
+|-------|------|---------|-------------|
+| `enabled` | boolean | `true` | 设置为 `false` 可从站点中移除 Ask AI 按钮、聊天面板和键盘快捷键 |
+| `starterQuestions` | string[] | auto-generated | 面板打开时显示的最多 4 个问题（每个问题为 5–200 个字符）。省略时会根据文档自动生成；设置为 `[]` 则不显示问题 |
+
+### 起始问题
+
+起始问题是访客输入内容前显示在聊天面板中的建议提示语：这些一键示例可以帮助访客了解可询问的内容。如果你在 `docs.json` 中省略 `starterQuestions`，Jamdesk 会在每次构建时根据文档自动生成问题，确保它们随着文档增长而保持相关性。
+
+如需设置自定义问题，请将其列在 `starterQuestions` 数组中。当支持团队反复处理相同问题，并希望优先展示这些问题时，这一功能非常实用：
+
+```json docs.json
+{
+  "chat": {
+    "starterQuestions": [
+      "How do notifications work?",
+      "Tell me more about analytics"
+    ]
+  }
+}
+```
+
+你最多可以设置 4 个起始问题，每个问题长度为 5–200 个字符。如需完全不显示起始问题，请将 `starterQuestions` 设置为空数组（`[]`）。
+
+### 禁用聊天
+
+所有套餐默认启用聊天功能。如需关闭，请将 `enabled` 设置为 `false`。这会移除 Ask AI 按钮、聊天面板以及 `Cmd+I` / `Ctrl+I` 快捷键：
+
+```json docs.json
+{
+  "chat": {
+    "enabled": false
+  }
+}
+```
+
+<Note>
+禁用聊天不会影响搜索。AI 聊天和搜索是独立的功能，因此即使关闭聊天，文档仍然可以被完整搜索。
+</Note>
+
+## 限制
+
+| 限制 | 值 |
+|-------|-------|
+| 最大消息长度 | 2,000 个字符 |
+| 最大响应长度 | 2,048 个令牌 |
+| 速率限制 | 每个访客每个站点 60 秒内最多 10 个请求 |
+| 对话历史记录 | 每个标签页 10 条消息 |
+| 起始问题 | 最多 4 个 |
+
+聊天功能支持[自定义域名](/cn/deploy/custom-domains)。`/_chat` 端点与当前站点同源，因此文档部署到任何域名后都可以正常使用。
+
+<Accordion title="检索流程的工作原理">
+  每次构建期间，Jamdesk 会将页面拆分为多个章节，并为每个章节存储向量嵌入。当访客提出问题时，系统会运行混合搜索（结合关键词匹配与语义相似度），从文档中找出最相关的章节。系统会将这些章节作为上下文发送给 Claude，并要求其仅根据所提供的文档回答。系统通过将 Claude 响应中的页面引用与检索到的章节进行匹配来提取引用。
+</Accordion>
+
+## 接下来做什么？
+
+<Columns cols={2}>
+  <Card title="llms.txt" icon="file-lines" href="/cn/ai/llms-txt">
+    为 AI 工具自动生成的页面索引
+  </Card>
+  <Card title="MCP Server" icon="robot" href="/cn/ai/mcp-server">
+    让 AI 工具以编程方式搜索和查询你的文档
+  </Card>
+  <Card title="docs.json Reference" icon="file-lines" href="/cn/config/docs-json-reference">
+    包含聊天设置在内的所有配置字段
+  </Card>
+  <Card title="How Jamdesk Works" icon="gear" href="/cn/how-jamdesk-works">
+    为聊天索引提供支持的构建流程
+  </Card>
+</Columns>

@@ -1,0 +1,154 @@
+---
+title: 本地预览
+description: 使用 Jamdesk CLI 在推送到生产环境前于本机预览文档，编辑时修改会即时显示。
+---
+
+在任何包含 `docs.json` 的目录中运行 `jamdesk dev`（或 `npx jamdesk dev`），即可启动本地服务器，支持热重载、完整搜索，并确保所有组件与生产环境中的运行方式完全一致。
+
+## 前置条件
+
+开始前，请确保具备以下条件：
+
+- **Node.js 20+** - 使用 `node --version` 检查
+- **文档项目** - 包含 `docs.json` 配置文件
+
+## 启动开发服务器
+
+<Tabs>
+  <Tab title="npm (Global Install)">
+    全局安装 CLI，然后从文档目录运行：
+
+    ```bash
+    npm install -g jamdesk
+    cd your-docs
+    jamdesk dev
+    ```
+  </Tab>
+  <Tab title="npx (No Install)">
+    无需安装，直接运行：
+
+    ```bash
+    cd your-docs
+    npx jamdesk dev
+    ```
+  </Tab>
+</Tabs>
+
+文档将在 **http://localhost:3000** 提供访问。
+
+## 可用功能
+
+<Columns cols={2}>
+  <Card title="热重载" icon="bolt">
+    编辑 MDX 文件后即可立即查看更改。编辑 `docs.json` 和 `style.css` 后，刷新页面即可加载更改。
+  </Card>
+  <Card title="完整搜索" icon="magnifying-glass">
+    使用实际内容测试 Cmd+K 搜索
+  </Card>
+  <Card title="所有组件" icon="puzzle-piece">
+    每个组件的运行方式都与生产环境完全一致
+  </Card>
+  <Card title="主题切换" icon="moon">
+    测试浅色和深色模式
+  </Card>
+</Columns>
+
+## 自定义端口
+
+默认端口为 3000。如果该端口已被占用，请指定其他端口：
+
+```bash
+jamdesk dev --port 3001
+```
+
+或者在 `~/.jamdeskrc` 中设置永久默认端口：
+
+```json
+{
+  "defaultPort": 3001
+}
+```
+
+## 详细模式
+
+使用 `--verbose` 标志查看详细的构建信息：
+
+```bash
+jamdesk dev --verbose
+```
+
+此模式会显示：
+
+- 文件更改检测
+- 构建耗时
+- 导航解析
+- 任何警告或错误
+
+## 首次运行性能
+
+<Note>
+首次运行 `jamdesk dev` 时，系统会将依赖项安装到 `~/.jamdesk`。此过程需要 30–60 秒。后续运行将在 5 秒内启动。
+</Note>
+
+要清除缓存并强制重新安装：
+
+```bash
+jamdesk clean
+jamdesk dev
+```
+
+## 故障排除
+
+<AccordionGroup>
+  <Accordion title="端口已被占用">
+    其他进程正在使用端口 3000。
+
+    **选项 1：** 使用其他端口
+    ```bash
+    jamdesk dev --port 3001
+    ```
+
+    **选项 2：** 查找并停止该进程
+    ```bash
+    lsof -i :3000
+    kill -9 <PID>
+    ```
+  </Accordion>
+
+  <Accordion title="未找到 docs.json">
+    确保当前位于包含 `docs.json` 文件的目录中：
+
+    ```bash
+    ls docs.json  # Should show the file
+    jamdesk dev
+    ```
+  </Accordion>
+
+  <Accordion title="未显示更改">
+    尝试以下步骤：
+    1. 检查终端中是否有错误
+    2. 强制刷新浏览器（Cmd+Shift+R）
+    3. 重启开发服务器
+    4. 运行 `jamdesk clean`，然后重试
+  </Accordion>
+
+  <Accordion title="启动缓慢">
+    运行诊断：
+    ```bash
+    jamdesk doctor
+    ```
+
+    此命令会检查环境并识别问题。
+  </Accordion>
+</AccordionGroup>
+
+## 接下来做什么？
+
+<Columns cols={2}>
+  <Card title="VS Code 扩展" icon="window" href="/cn/development/vscode-extension">
+    从 VS Code 状态栏启动开发服务器
+  </Card>
+  <Card title="部署" icon="rocket" href="/cn/development/deployment">
+    了解构建和部署流程
+  </Card>
+</Columns>

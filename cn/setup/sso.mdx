@@ -1,0 +1,106 @@
+---
+title: 单点登录（SSO）
+description: "使用身份提供商登录 Jamdesk 仪表板。在任何付费方案中自行设置 SAML 或 OIDC；文档站点读者 SSO 仅适用于 Enterprise。"
+---
+
+Jamdesk 提供两种单点登录方式。**仪表板 SSO** 允许团队通过身份提供商登录以管理项目，并可在任何付费方案中从 Settings 自行配置。**文档站点 SSO** 允许已发布文档的读者通过 IdP 进行身份验证，而不是使用共享密码；Enterprise 方案由我们的团队协助设置。
+
+## SSO 涵盖的内容
+
+<Columns cols={2}>
+  <Card title="仪表板 SSO" icon="gauge">
+    团队成员通过身份提供商登录 `dashboard.jamdesk.com`。如果你需要集中管理账户、通过 IdP 强制执行 MFA，以及在用户离职时立即取消其访问权限，此方式最为合适。你可以在 **Settings → Single Sign-On** 中自行设置。具体步骤如下。
+  </Card>
+  <Card title="文档站点 SSO" icon="book-open">
+    读者必须先通过 IdP 进行身份验证，才能查看受保护的文档。它以按用户登录、审计记录以及移除用户时自动取消访问权限的方式，取代共享密码模式。Enterprise 方案由我们的团队协助设置。
+  </Card>
+</Columns>
+
+## 适用对象
+
+这两种方式都适用于已经运行身份提供商的组织，例如 Okta、Google Workspace、Microsoft Entra ID、Auth0，或任何 SAML 2.0 / OIDC 提供商。
+
+仪表板 SSO 适合希望集中控制项目管理权限的团队。你可以通过自己的 IdP 强制执行 MFA；启用 SSO 强制要求后，从目录中移除某人也会同时切断其仪表板登录权限。
+
+文档站点 SSO 解决的是另一种需求：记录谁阅读了哪些文档，并为已不适合在大量读者之间共享一个密码短语的团队提供按用户控制的访问权限。
+
+## 启用仪表板 SSO
+
+任何付费方案都支持自助设置仪表板 SSO。你需要验证自己拥有电子邮件域名，连接身份提供商，并可选择要求该域名下的所有人通过身份提供商登录。
+
+### 开始前的准备
+
+- 付费 Jamdesk 方案。
+- 项目所有者权限。SSO 连接位于账户所有者级别，并涵盖你拥有的每个项目，因此只有所有者可以看到 Single Sign-On 设置。
+- 访问域名的 DNS，以便添加 TXT 记录。
+- 身份提供商的管理员权限（Okta、Microsoft Entra、Google Workspace、Auth0，或任何 SAML 2.0 / OIDC 提供商）。
+
+### 设置连接
+
+<Steps>
+  <Step title="打开 Single Sign-On 设置">
+    在仪表板中，前往 **Settings → Single Sign-On**，然后输入公司的电子邮件域名，例如 `acme.com`。Jamdesk 会创建连接，并显示用于证明你拥有该域名的 DNS TXT 记录。
+  </Step>
+  <Step title="验证域名">
+    仪表板会显示记录名称和值。将匹配的 TXT 记录添加到域名的 DNS 中，然后点击 **Verify**。DNS 更改最多可能需要一小时才能传播，因此在记录可见之前首次尝试可能会失败。请稍候并重试。验证后请保留该记录：Jamdesk 会定期重新检查记录，如果记录消失，就会禁用连接。
+  </Step>
+  <Step title="配置身份提供商">
+    将仪表板中显示的 **Entity ID** 和 **ACS URL** 复制到 IdP 中的新 SAML 或 OIDC 应用，然后将 IdP 的详细信息粘贴回 Jamdesk：
+
+    - **SAML 2.0**：IdP Entity ID、SSO URL，以及 PEM 格式的 X.509 签名证书。
+    - **OIDC**：issuer URL、client ID 和 client secret。
+
+    从列表中选择你的提供商，以查看针对该供应商的设置指南，然后点击 **Save & activate**。连接状态将变为 **Active**。
+  </Step>
+  <Step title="要求使用 SSO（可选）">
+    连接状态变为 **Active** 后，启用 **Require SSO for all users on your domain**，即可要求该域名下所有电子邮件用户通过 IdP 登录。对他们而言，密码登录和 Google 登录将停止工作。所有者账户不受此限制；你还可以为其他需要密码备用登录方式的管理员添加最多 20 个 **break-glass emails**，以便在 IdP 无法访问时使用。
+  </Step>
+</Steps>
+
+<Warning>
+  启用强制要求前，至少添加一个 break-glass email。如果身份提供商不可用且不存在 break-glass 账户，该域名下将没有任何人可以登录仪表板。
+</Warning>
+
+### 用户登录方式
+
+仪表板 SSO 激活后，登录流程采用**先输入电子邮件**的方式。在登录屏幕中，用户输入公司电子邮件。如果其域名存在 SSO 连接，Jamdesk 会自动将其重定向到你的身份提供商，无需寻找单独的“Sign in with SSO”按钮。
+
+有一点容易让人困惑：通过 IdP 登录可以验证用户身份，但不会自动授予访问权限。用户仍必须受邀加入项目。已完成身份验证但从未受邀的团队成员会看到“Your account isn't provisioned”，并需要获得[邀请](/cn/help/projects/team-members)后才能访问。每当登录被阻止时，用户都会进入 SSO 错误页面，页面会说明下一步操作。
+
+### 故障排除
+
+<AccordionGroup>
+  <Accordion title="域名无法验证">
+    DNS 更改最多可能需要一小时才能传达到 Jamdesk，因此添加记录后立即验证通常会失败。请稍候，然后再次点击 **Verify**。如果仍然失败，请检查记录名称和值是否与仪表板中的完全一致。某些 DNS 提供商会自动将你的域名附加到记录名称后，导致 `_jamdesk` 变成 `_jamdesk.acme.com.acme.com`。如果出现这种情况，请删除重复的后缀。
+  </Accordion>
+  <Accordion title="连接显示为 Disabled">
+    设置完成后，Jamdesk 会重新检查域名的 TXT 记录。如果记录被删除或发生更改，连接状态会变为 **Disabled**，登录也会停止路由到 IdP。将记录重新添加到 DNS，然后点击 **Re-check status**；或者删除连接并重新开始。
+  </Accordion>
+  <Accordion title="团队成员看到“Your account isn't provisioned”">
+    该成员已通过身份提供商完成身份验证，但从未受邀加入项目。SSO 可以证明其身份，但不会自动创建访问权限。从 **Settings → Members** 邀请该成员，然后让其再次登录。请参阅[团队成员](/cn/help/projects/team-members)。
+  </Accordion>
+  <Accordion title="有人因“Your organization requires SSO”而被阻止">
+    强制要求已启用，而该成员尝试使用密码或 Google 登录，而不是使用 IdP。应使用先输入电子邮件的流程，以便 Jamdesk 将其重定向到你的提供商。如果确实需要密码备用登录方式（例如 IdP 中断），请将其地址添加到 break-glass 列表。
+  </Accordion>
+</AccordionGroup>
+
+## 启用文档站点 SSO
+
+文档站点读者 SSO 由我们的团队协助设置。每个 IdP 的配置方式略有不同；在限制已发布文档的访问之前，我们需要确保团队的元数据、声明映射和群组筛选器均已正确配置。
+
+[**联系 Enterprise 销售团队 →**](https://jamdesk.com/pricing)
+
+定价页面列出了当前方案级别以及联系 Enterprise 的方式。之后，我们的团队会指导你完成 IdP 配置，在暂存子域名上测试集成，并在你准备好后将其部署到生产环境。
+
+## 替代方案
+
+还没准备好使用 Enterprise？你仍然可以限制文档访问：
+
+<Columns cols={2}>
+  <Card title="密码保护" icon="lock" href="/cn/setup/password-protection">
+    为整个站点或特定页面设置共享密码短语访问限制。无需 Enterprise 方案即可使用。
+  </Card>
+  <Card title="访问控制概览" icon="shield" href="/cn/setup/access-control">
+    并排比较全部四种访问选项。
+  </Card>
+</Columns>

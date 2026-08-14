@@ -1,0 +1,184 @@
+---
+title: API 试用台
+description: 直接在文档中测试 API 端点：填写参数、查看实时代码示例并发送真实请求。
+---
+
+API 试用台会在 API 端点页面中添加交互式的“Try it”按钮。开发者可以填写参数，实时查看代码示例更新，并直接从文档页面发送真实的 HTTP 请求。
+
+屏幕截图显示的是英文界面。
+
+<Frame>
+  <img src="/images/playground/playground-modal.webp" alt="API 试用台模态窗口，左侧显示参数表单，右侧显示实时代码示例" />
+</Frame>
+
+## 快速开始
+
+试用台默认启用。每个包含 `openapi:` 或 `api:` frontmatter 字段的页面都会自动获得“Try it”按钮。CORS 会自动处理。
+
+无需配置 `docs.json`。在页面 frontmatter 中添加 `openapi:` 或 `api:` 字段，试用台就会显示。
+
+## 显示模式
+
+`display` 字段控制试用台的功能：
+
+| 模式 | “Try it”按钮 | 填写参数 | 实时代码 | 发送请求 |
+|------|:-:|:-:|:-:|:-:|
+| `"interactive"`（默认） | ✓ | ✓ | ✓ | ✓ |
+| `"simple"` | ✓ | ✓ | ✓ | ✗ |
+| `"none"` | ✗ | ✗ | ✗ | ✗ |
+
+<Tabs>
+  <Tab title="Interactive">
+    完整的试用台体验。开发者可以填写参数，实时查看代码示例更新，并发送真实的 HTTP 请求。响应会以内联方式显示，包括状态码、耗时和格式化后的请求正文。
+
+    ```json docs.json
+    {
+      "api": {
+        "playground": {
+          "display": "interactive"
+        }
+      }
+    }
+    ```
+  </Tab>
+  <Tab title="Simple">
+    没有 Send 按钮的只读模式。开发者可以填写参数并复制生成的代码示例，但无法执行请求。当 API 需要无法在文档中共享的身份验证信息时，此模式非常有用。
+
+    ```json docs.json
+    {
+      "api": {
+        "playground": {
+          "display": "simple"
+        }
+      }
+    }
+    ```
+  </Tab>
+</Tabs>
+
+## 身份验证
+
+如果 API 需要身份验证（通过 `docs.json` 中的 `api.mdx.auth.method` 配置），试用台会在参数表单顶部显示身份验证输入字段。开发者可以直接在模态窗口中输入 API 密钥或令牌。
+
+凭据仅在当前会话中保存在内存中。它们不会保存到 `localStorage`，也不会在访问期间持久化。
+
+## 预填示例值
+
+当 OpenAPI 规范在参数和请求正文中包含 `example` 值时，试用台可以预填这些值：
+
+```json docs.json
+{
+  "api": {
+    "examples": {
+      "prefill": true
+    }
+  }
+}
+```
+
+这样可以显示开发者能够修改的真实值，而不是从空字段开始，从而节省时间。
+
+## 按页面覆盖设置
+
+使用 `playground` frontmatter 字段，在单个页面上覆盖全局显示模式：
+
+```mdx
+---
+title: Create Ticket
+openapi: POST /tickets
+playground: interactive
+---
+```
+
+如果你希望全局禁用试用台，但在特定演示端点上启用，或执行相反操作，此设置非常有用。
+
+| Frontmatter | 行为 |
+|-------------|----------|
+| `playground: interactive` | 在此页面上启用完整试用台 |
+| `playground: simple` | 在此页面上启用仅代码试用台 |
+| `playground: none` | 在此页面上不显示试用台 |
+
+## 工作原理
+
+<Steps>
+  <Step title="点击 'Try it'">
+    试用台会以全屏模态叠加层的形式打开。你的文档页面会完整保留在下方。
+  </Step>
+  <Step title="填写参数">
+    路径、查询、标头和正文参数会显示为表单字段。必填字段会进行标记。基础 URL 从 OpenAPI 规范的 `servers` 字段中获取。
+  </Step>
+  <Step title="查看代码更新">
+    输入内容时，所有已配置语言的代码示例都会实时重新生成。点击一次即可复制任意示例。
+  </Step>
+  <Step title="发送请求">
+    在交互模式下，点击 Send（或按下 `Ctrl/Cmd+Enter`）即可执行请求。响应会显示在下方，包括状态码、耗时和格式化后的请求正文。
+  </Step>
+</Steps>
+
+<Frame>
+  <img src="/images/playground/playground-response.webp" alt="API 试用台显示发送请求后返回的 201 Created 响应及 JSON 正文" />
+</Frame>
+
+<Tip>
+打开试用台时，URL 会更新为包含 `?playground=open`。分享此 URL，即可让他人直接打开某个端点的试用台视图。
+</Tip>
+
+## 键盘快捷键
+
+| 快捷键 | 操作 |
+|----------|--------|
+| `Ctrl/Cmd + Enter` | 发送请求 |
+| `Escape` | 关闭试用台 |
+
+## 同时支持两种 API 页面类型
+
+试用台支持使用 `openapi:` 或 `api:` frontmatter 格式的页面：
+
+<Tabs>
+  <Tab title="OpenAPI pages">
+    参数和架构会自动从 OpenAPI 规范中获取。无需额外设置。
+
+    ```mdx
+    ---
+    openapi: POST /tickets
+    ---
+    ```
+  </Tab>
+  <Tab title="MDX api: pages">
+    参数从 `<ParamField>` 组件中提取。基础 URL 来自 `docs.json` 中的 `api.mdx.server`。
+
+    ```mdx
+    ---
+    api: GET /tickets/{ticket_id}
+    ---
+    ```
+  </Tab>
+</Tabs>
+
+## 本地开发
+
+运行 `jamdesk dev` 时，“Try it”按钮会显示，但试用台本身仅支持生产环境。在本地开发环境中点击“Try it”会显示简短通知，而不会打开模态窗口。部署文档后即可使用完整试用台。
+
+## 在线试用
+
+此文档站点已启用试用台。访问 [OpenAPI Example](/cn/api-reference/openapi-example) 页面，然后点击“Try it”，通过演示 API 查看其实际效果。
+
+## 接下来做什么？
+
+<Columns cols={2}>
+  <Card title="OpenAPI 示例" icon="plug" href="/cn/api-reference/openapi-example">
+    在自动生成的端点页面上查看在线试用台
+  </Card>
+  <Card title="docs.json 参考" icon="file-lines" href="/cn/config/docs-json-reference">
+    包含 api.playground 的完整配置参考
+  </Card>
+</Columns>
+
+<Columns cols={2}>
+  <Card title="请求/响应示例" icon="code" href="/cn/api-reference/request-response-examples">
+    使用 MDX 组件手动编写的 API 端点页面
+  </Card>
+  <Card title="代码示例" icon="terminal" href="/cn/config/docs-json-reference#apiexampleslanguages">
+    配置代码示例中显示的语言
+  </Card>
+</Columns>

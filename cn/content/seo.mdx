@@ -1,0 +1,304 @@
+---
+title: SEO 优化
+description: 通过设置标题、描述和元标签优化搜索引擎与社交预览。Jamdesk 会自动生成站点地图和 Open Graph 图片。
+---
+
+通过在 frontmatter 中设置标题、描述和元数据，优化文档在搜索引擎和社交预览中的呈现效果。
+
+## Jamdesk 自动完成的工作
+
+<Columns cols={3}>
+  <Card title="元标签" icon="tags">
+    frontmatter 中的标题和描述会转换为元标签。
+  </Card>
+  <Card title="Open Graph" icon="share">
+    为每个页面生成社交分享图片。
+  </Card>
+  <Card title="站点地图与 Robots" icon="sitemap">
+    每次构建都会生成 XML 站点地图和 robots.txt。
+  </Card>
+  <Card title="JSON-LD" icon="code">
+    每个页面都包含 Schema.org 结构化数据，以获得丰富的搜索结果。
+  </Card>
+  <Card title="IndexNow" icon="bolt">
+    每次构建后，都会将发生更改的 URL 提交给搜索引擎。
+  </Card>
+  <Card title="AI 端点" icon="robot" href="/cn/ai/overview">
+    提供 `llms.txt` 和 MCP 服务器，供 AI 工具读取文档。
+  </Card>
+</Columns>
+
+## 优化内容
+
+### 编写有效的 Frontmatter
+
+```yaml
+---
+title: User Authentication    # Under 60 characters
+description: Set up OAuth, JWT, and session-based authentication  # 120-160 characters
+---
+```
+
+<Tip>
+**将关键词前置。** “Authentication setup” 比 “How to set up authentication.” 更好。
+</Tip>
+
+### 页面标题
+
+- 保持在 60 个字符以内，避免在搜索结果中被截断
+- 将主要关键词放在标题开头附近
+- 确保文档中的每个标题都不重复
+
+### 描述
+
+- 目标长度为 120-160 个字符
+- 总结读者将学到的内容
+- 自然地加入相关关键词
+
+<Note>
+**自动生成的备用描述。** 如果 frontmatter 中缺少 `description`，Jamdesk 会自动从页面内容中提取第一段正文（最多 155 个字符）。标题、代码块、图片和 MDX 组件会被跳过。该内容会用于 `<meta name="description">`、Open Graph 和 Twitter 卡片。为了获得最佳效果，仍建议明确编写描述。
+</Note>
+
+## 控制索引
+
+### 全站设置
+
+在 `docs.json` 中配置默认的 robots 行为：
+
+```json docs.json
+{
+  "seo": {
+    "metatags": {
+      "robots": "index, follow"
+    }
+  }
+}
+```
+
+### 按页面控制
+
+在 frontmatter 中为特定页面覆盖索引设置：
+
+```yaml
+---
+title: Internal Notes
+noindex: true
+---
+```
+
+以下情况可使用 `noindex`：
+
+- 草稿或进行中的页面
+- 内部文档
+- 为供参考而保留的弃用内容
+
+### 搜索索引与 AI 摄取
+
+`robots` 元数据和 `noindex` 控制**搜索引擎**：页面是否出现在 Google 和你的 `sitemap.xml` 中。它们不会影响 AI 工具读取的 `llms.txt` 和 `llms-full.txt` 文件。若要停止发布这些文件，请将 `seo.ai.llmsTxt` 设置为 `false`（参见[关闭 llms.txt](/cn/ai/llms-txt#停用-llmstxt)）。两种控制彼此独立：页面可以被搜索引擎索引但排除在 AI 摄取之外，反之亦然。
+
+## 规范 URL
+
+如果文档可通过多个 URL 访问，请设置规范 URL：
+
+```yaml
+---
+title: Getting Started
+canonical: https://docs.example.com/getting-started
+---
+```
+
+你也可以在 `docs.json` 中设置全站规范 URL 基础地址。Jamdesk 会将每个页面的路径附加到该地址，因此每个页面都会获得正确的页面级规范 URL：
+
+```json docs.json
+{
+  "seo": {
+    "metatags": {
+      "canonical": "https://docs.acme.com"
+    }
+  }
+}
+```
+
+## 社交预览与 Open Graph
+
+Jamdesk 会为每个页面自动生成带品牌元素的 1200×630 社交卡片。你可以在 frontmatter 中覆盖任何社交标签。你可以使用**顶层扁平键**，也可以使用嵌套的 **`seo:`** 块。两种方式都有效；如果同一个键以两种方式设置，则顶层扁平值优先。
+
+<Card title="OpenGraph 预览" icon="share-nodes" href="https://jamdesk.com/utilities/opengraph-preview" horizontal>
+  使用 OpenGraph Preview 工具查看任意页面的卡片在 X、Facebook、LinkedIn 等平台上的呈现效果，并验证其 Open Graph 标签。
+</Card>
+
+<CodeGroup>
+```yaml Flat (top-level)
+---
+title: API Reference
+description: REST API endpoints and authentication
+"og:title": API Reference — Acme
+"og:description": Everything you need to call the Acme API
+"og:image": /images/api-social-card.png
+"twitter:card": summary_large_image
+"twitter:creator": "@acme"
+keywords: ["api", "rest", "authentication"]
+canonical: https://docs.acme.com/api-reference
+---
+```
+
+```yaml Nested (seo block)
+---
+title: API Reference
+description: REST API endpoints and authentication
+seo:
+  "og:title": API Reference — Acme
+  "og:image": /images/api-social-card.png
+  "twitter:card": summary_large_image
+  x-custom-tag: any custom meta value
+---
+```
+</CodeGroup>
+
+### 支持的标签
+
+| 分组 | 标签 |
+|-------|------|
+| Open Graph | `og:title`、`og:description`、`og:image`、`og:image:width`、`og:image:height`、`og:image:alt`、`og:url`、`og:type`、`og:site_name`、`og:locale`、`og:video`、`og:audio` |
+| Article | `og:type: article`，以及 `article:published_time`、`article:modified_time`、`article:author`、`article:section`、`article:tag` |
+| Twitter / X | `twitter:card`、`twitter:title`、`twitter:description`、`twitter:image`、`twitter:image:alt`、`twitter:site`、`twitter:creator`、`twitter:player`、应用卡片标签 |
+| 其他 | `keywords`、`author`、`robots`、`googlebot`、`google-site-verification`、`theme-color`，以及任何自定义标签（将自定义标签放在 `seo:` 下） |
+
+<Note>
+**自定义 OG 图片尺寸。** 设置自定义 `og:image` 时，同时设置 `og:image:width` 和 `og:image:height`，以便爬虫清晰地渲染图片。自动生成的卡片始终为 1200×630。
+</Note>
+
+<Note>
+**自定义标签。** 任意元标签（例如 `x-pinterest`）都会以 `<meta name="...">` 的形式输出。请将它们放在 `seo:` 块下。以扁平形式放置时，只有已识别的 SEO 键会被处理。
+</Note>
+
+### Twitter / X 卡片类型
+
+`twitter:card` 标签控制 X（以及其他平台）在分享链接时使用的布局：
+
+| 值 | 外观 |
+|-------|--------------------|
+| `summary` | 左侧显示小型方形缩略图，旁边显示标题和描述。布局紧凑。 |
+| `summary_large_image` | 顶部显示大幅全宽图片，下方显示标题和描述。醒目突出。 |
+
+对于带品牌元素的 1200×630 卡片，请使用 `summary_large_image`，使图片以全宽显示。
+
+### 全站默认图片
+
+在 `docs.json` 中为每个页面设置备用社交图片。任何设置了自己的 `og:image` 的页面都会覆盖该图片：
+
+```json docs.json
+{
+  "seo": {
+    "metatags": {
+      "og:image": "https://docs.acme.com/images/default-card.png"
+    }
+  }
+}
+```
+
+<Tip>
+**发布前进行预览。** 构建完成后，将页面 URL 粘贴到 [OpenGraph Preview](https://jamdesk.com/utilities/opengraph-preview) 工具中，检查卡片在各个平台上的呈现效果，并验证 Open Graph 标签。该工具还会检查图片尺寸，并说明如何修复发现的问题。
+</Tip>
+
+## Sitemap 与 Robots.txt
+
+每个 Jamdesk 站点都会在每次构建时自动生成 `sitemap.xml` 和 `robots.txt`。
+
+| 文件 | 用途 |
+|------|---------|
+| `sitemap.xml` | 列出所有页面及其最后修改日期，供搜索引擎使用 |
+| `robots.txt` | 允许所有爬虫访问，并指向站点地图 |
+
+### 查找位置
+
+URL 取决于文档位于根域名下，还是位于 `/docs` 子路径下：
+
+<Tabs>
+  <Tab title="根域名">
+    如果文档位于域名根目录（例如 `docs.acme.com` 或 `acme.jamdesk.app`）：
+
+    ```bash
+    https://docs.acme.com/sitemap.xml
+    https://docs.acme.com/robots.txt
+    ```
+  </Tab>
+  <Tab title="/docs 子路径">
+    如果文档位于主站点的 `/docs` 下（如本站位于 `jamdesk.com/docs`）：
+
+    ```bash
+    https://jamdesk.com/docs/sitemap.xml
+    https://jamdesk.com/docs/robots.txt
+    ```
+  </Tab>
+</Tabs>
+
+### 站点地图包含的内容
+
+- 所有已发布页面（不包括 frontmatter 中带有 `noindex` 或 `hidden` 的页面）
+- frontmatter 中提供的最后修改日期
+- 每周变更频率
+
+### 从站点地图中排除页面
+
+在 frontmatter 中添加 `noindex`，即可将页面同时从站点地图和搜索引擎中排除：
+
+```yaml
+---
+title: Internal Notes
+noindex: true
+---
+```
+
+带有 `hidden: true` 的页面也会自动排除。
+
+## JSON-LD 结构化数据
+
+每个页面都会自动包含 [schema.org](https://schema.org) 结构化数据，以 `<script type="application/ld+json">` 标签提供两种 schema：
+
+- `WebSite`：来自 `docs.json` 的站点名称、URL 和描述。
+- `BreadcrumbList`：从 Home 到当前页面的导航路径，根据你的 `navigation` 配置生成。
+
+无需进行任何配置。搜索引擎会利用这些数据，在搜索列表中显示面包屑路径等丰富结果。
+
+<Tip>
+**验证标记。** 将任意页面 URL 粘贴到 [Google 的 Rich Results Test](https://search.google.com/test/rich-results) 中，确认系统检测到了结构化数据。
+</Tip>
+
+## IndexNow
+
+每次构建后，Jamdesk 会自动将发生更改的页面 URL 提交到 [IndexNow](https://www.indexnow.org)，以加快搜索引擎索引速度。这样无需等待下一次抓取周期，即可通知 Bing、Yandex 及其他参与的搜索引擎你的内容已发生更改。
+
+- 每次成功构建后触发
+- 只提交实际发生更改的页面
+- 非阻塞，不会延迟构建
+- 无需配置
+
+## 最佳实践
+
+发布前按照以下清单逐项检查：
+
+<Note>
+**发布前检查清单**
+
+- **唯一标题。** 每个页面都有独特且具描述性的标题，长度不超过 60 个字符。
+- **准确描述。** 描述用 120-160 个字符概括页面内容。
+- **合理的标题层级。** 标题遵循清晰的层级结构：一个 H1，然后是 H2 → H3。
+- **描述性链接。** 内部链接使用有意义的锚文本，绝不使用“点击此处”。
+- **图片 alt 文本。** 每张图片都有用于无障碍访问和图片搜索的 alt 文本。
+- **社交图片。** 为重要页面设置自定义 `og:image`，或使用自动生成的卡片。使用 [OpenGraph Preview](https://jamdesk.com/utilities/opengraph-preview) 工具进行验证。
+</Note>
+
+## 相关文章
+
+<Columns cols={2}>
+  <Card title="Frontmatter 参考" icon="file-lines" href="/cn/content/frontmatter">
+    所有可用的 frontmatter 选项
+  </Card>
+  <Card title="docs.json 参考" icon="gear" href="/cn/config/docs-json-reference">
+    全站配置选项
+  </Card>
+  <Card title="OpenGraph 预览工具" icon="share-nodes" href="https://jamdesk.com/utilities/opengraph-preview">
+    在各个平台预览并验证社交卡片
+  </Card>
+</Columns>

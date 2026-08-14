@@ -1,0 +1,183 @@
+---
+title: 代码片段
+description: 可在多个页面导入的可复用内容块。将常用文本、组件或代码存储在 snippets 目录中。
+---
+
+代码片段是存储在 `/snippets` 目录中的可复用内容块。将它们导入任意 MDX 页面，即可避免重复内容。
+
+## 创建代码片段
+
+在文档根目录创建 `/snippets` 目录：
+
+```bash
+my-docs/
+├── docs.json
+├── introduction.mdx
+└── snippets/
+    ├── prerequisites.mdx
+    ├── installation.mdx
+    └── support-cta.mdx
+```
+
+代码片段内容的编写方式与任何 MDX 文件相同，但不包含 frontmatter：
+
+```mdx snippets/prerequisites.mdx
+Before you begin, make sure you have:
+
+- Node.js 20 or higher
+- A GitHub account
+- A text editor (VS Code recommended)
+```
+
+## 使用代码片段
+
+在页面中导入并使用代码片段：
+
+```mdx getting-started.mdx
+---
+title: Getting Started
+---
+
+## Prerequisites
+
+import Prerequisites from '/snippets/prerequisites.mdx';
+
+<Prerequisites />
+
+## Installation
+
+Continue with your page content...
+```
+
+## 代码片段组件
+
+代码片段可以包含 Jamdesk 组件：
+
+```mdx snippets/support-cta.mdx
+<Columns cols={2}>
+  <Card title="Documentation" icon="book" href="/docs">
+    Browse our guides
+  </Card>
+  <Card title="Contact Support" icon="headset" href="/support">
+    Get help from our team
+  </Card>
+</Columns>
+```
+
+在多个页面中使用：
+
+```mdx
+import SupportCTA from '/snippets/support-cta.mdx';
+
+## Need Help?
+
+<SupportCTA />
+```
+
+## 交互式代码片段
+
+对于需要 React hooks（`useState`、`useEffect` 等）的代码片段，请使用带有 `'use client'` 指令的 `.tsx` 文件：
+
+```tsx snippets/counter.tsx
+'use client';
+
+import { useState } from 'react';
+
+export function Counter() {
+  const [count, setCount] = useState(0);
+  return (
+    <button onClick={() => setCount(c => c + 1)}>
+      Count: {count}
+    </button>
+  );
+}
+```
+
+在 MDX 中导入：
+
+```mdx
+import { Counter } from '/snippets/counter';
+
+<Counter />
+```
+
+<Note>
+任何使用 React hooks 的组件都必须包含 `'use client'` 指令。否则会出现 "useState is not defined" 错误。
+</Note>
+
+## 参数化代码片段
+
+传入 props，让代码片段实现动态化：
+
+```mdx snippets/api-key-warning.mdx
+export const ApiKeyWarning = ({ service }) => (
+  <Warning>
+    Never commit your {service} API key to version control. Use environment variables instead.
+  </Warning>
+);
+```
+
+使用 props：
+
+```mdx
+import { ApiKeyWarning } from '/snippets/api-key-warning.mdx';
+
+<ApiKeyWarning service="Stripe" />
+```
+
+## 组织代码片段
+
+对于较大的项目，可以将代码片段组织到子目录中：
+
+```bash
+snippets/
+├── components/
+│   ├── cta-cards.mdx
+│   └── feature-table.mdx
+├── warnings/
+│   ├── api-key.mdx
+│   └── deprecation.mdx
+└── shared/
+    ├── prerequisites.mdx
+    └── support-links.mdx
+```
+
+使用完整路径导入：
+
+```mdx
+import CtaCards from '/snippets/components/cta-cards.mdx';
+import ApiKeyWarning from '/snippets/warnings/api-key.mdx';
+```
+
+## 常见使用场景
+
+| 使用场景 | 示例 |
+|----------|---------|
+| 前置条件 | 系统要求、账户设置 |
+| 安装步骤 | 各平台的 CLI 安装命令 |
+| API 身份验证 | 在多个端点中重复使用的身份验证设置 |
+| 支持行动号召 | 故障排除页面末尾的联系链接 |
+| 弃用通知 | 针对过时功能的警告 |
+| 代码示例 | 可复用的代码模式 |
+
+## 代码片段与内联组件
+
+| 功能 | 代码片段 | 内联组件 |
+|---------|---------|------------------|
+| 可跨页面复用 | 是 | 否（仅限页面） |
+| 可使用 React hooks | 是（需使用 `'use client'`） | 否 |
+| 可导入外部软件包 | 是（`.tsx` 文件） | 否 |
+| 语法 | Import 语句 | MDX 中的 `export const` |
+
+对于出现在多个页面中的内容，请使用**代码片段**。对于单个页面中的一次性展示组件，请使用**内联组件**。
+
+## 接下来做什么？
+
+<Columns cols={2}>
+  <Card title="自定义 React 组件" icon="code" href="/cn/content/react-components">
+    在 MDX 中定义内联组件
+  </Card>
+  <Card title="MDX 基础" icon="file-code" href="/cn/content/mdx-basics">
+    了解 MDX 基础知识
+  </Card>
+</Columns>

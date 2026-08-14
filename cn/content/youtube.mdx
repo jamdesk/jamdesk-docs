@@ -1,0 +1,124 @@
+---
+title: YouTube 嵌入
+sidebarTitle: YouTube
+description: 在文档中嵌入 YouTube 视频和 Shorts，支持延迟加载播放器、自定义开始时间和竖向 9:16 Shorts。
+---
+
+`<YouTube>` 组件支持延迟加载、圆角和隐藏相关视频的 YouTube 视频嵌入。页面加载时会显示缩略图和播放按钮，用户点击后再替换为完整的 YouTube 播放器。
+
+## 嵌入 YouTube 视频
+
+将视频 ID 作为 `id` prop 传入：
+
+```mdx
+<YouTube id="dQw4w9WgXcQ" />
+```
+
+<YouTube id="dQw4w9WgXcQ" />
+
+在观看者点击播放之前，不会加载 iframe。由于组件底层使用了 [lite-youtube-embed](https://github.com/nicolegoesdigital/lite-youtube-embed)，页面可以保持快速加载：它只加载缩略图和几 KB 的 CSS，而不是 800KB 以上的 YouTube iframe 包。
+
+## Props
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `id` | `string` | none | **必填。** YouTube 视频 ID。 |
+| `title` | `string` | `"Play"` / `"YouTube Short"` | 嵌入内容的无障碍标签。屏幕阅读器会使用此文本。 |
+| `start` | `number` | `0` | 从视频开始后的指定秒数处开始播放。 |
+| `short` | `boolean` | `false` | 将内容渲染为竖向 9:16 的 YouTube Short，而不是 16:9 视频。 |
+
+## 从指定时间开始播放
+
+`start` prop 会在播放开始时跳转到指定时间戳（以秒为单位）：
+
+```mdx
+<YouTube id="dQw4w9WgXcQ" start={60} />
+```
+
+<YouTube id="dQw4w9WgXcQ" start={60} />
+
+播放会从 1 分钟处开始。小数值会向下取整为整数秒。
+
+## 查找视频 ID
+
+<Tip>
+视频 ID 是 YouTube URL 中 `v=` 后面的字符串。
+
+- `youtube.com/watch?v=dQw4w9WgXcQ` → ID 是 `dQw4w9WgXcQ`
+- `youtu.be/dQw4w9WgXcQ` → ID 是 `dQw4w9WgXcQ`
+
+请复制 ID，而不是完整 URL。
+</Tip>
+
+## YouTube Shorts
+
+YouTube Shorts 是宽高比为 9:16 的竖向视频。将 Short 嵌入标准的 16:9 播放器会在两侧增加宽大的黑边：视频会被压缩到原本用于横向内容的信箱式画面中。
+
+`short` prop 可以解决此问题。它会以 9:16 的比例渲染嵌入内容，在页面中居中显示，宽度为 360px，并带有圆角。最终效果与 Shorts 在移动设备上的显示方式一致。
+
+### 如何嵌入 Short
+
+```mdx
+<YouTube id="_6HzLIJPH2A" short />
+```
+
+<YouTube id="_6HzLIJPH2A" short />
+
+### 查找 Short ID
+
+Short ID 是 URL 中 `/shorts/` 后面的路径片段：
+
+- `youtube.com/shorts/_6HzLIJPH2A` → ID 是 `_6HzLIJPH2A`
+
+这些 ID 与普通 YouTube 视频一样，均遵循 11 个字符的格式。你也可以使用标准的 `<YouTube>` 组件测试任何 Short ID，但如果不添加 `short`，它会以 16:9 比例渲染，并显示黑边。
+
+### 渲染详情
+
+| Detail | How it renders |
+|--------|---------------|
+| Width | 最大宽度为 360px，并居中显示（与 YouTube 自有移动版 Shorts 播放器的宽度一致） |
+| Aspect ratio | 通过 CSS `aspect-ratio` 设置为 9:16，因此容器可以在较小屏幕上平滑缩放 |
+| Corners | 使用 `border-radius` 设置圆角，与其他 Jamdesk 媒体嵌入内容保持一致 |
+| Related videos | 通过 `rel=0` 禁用，与标准嵌入内容相同 |
+
+### 性能差异
+
+标准 YouTube 嵌入使用 `lite-youtube-embed`，不会在初始加载时加载任何 YouTube JavaScript。页面会显示缩略图，完整的播放器 iframe 只有在观看者点击播放后才会加载。
+
+Shorts 的工作方式不同。由于 `lite-youtube-embed` 不支持竖向宽高比，Shorts 使用带有 `loading="lazy"` 的直接 `<iframe>`。浏览器会延迟加载，直到 iframe 滚动到接近视口的位置。iframe 可见后，完整的 YouTube 播放器会初始化（包括脚本、样式及其他全部内容）。
+
+<Note>
+如果页面上只有一个或两个 Shorts，差异可以忽略不计。如果页面上有很多 Shorts，额外的 iframe 会明显增加页面负担。如果要在一个页面上嵌入三个或四个以上的 Shorts，可以考虑改为链接到这些内容，或将它们放在选项卡后面，以减少初始加载量。
+</Note>
+
+## 直接使用 iFrame
+
+如果需要完全控制嵌入参数，可以使用原始 iframe：
+
+```html
+<iframe
+  className="w-full aspect-video rounded-xl"
+  src="https://www.youtube.com/embed/VIDEO_ID"
+  title="YouTube video player"
+  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+  allowFullScreen
+/>
+```
+
+<Note>
+`<YouTube>` 组件是更好的默认选择。它会延迟加载播放器、移除相关视频，并处理 Shorts 的宽高比。只有在需要使用组件未提供的嵌入参数时，才应使用原始 iframe。
+</Note>
+
+## 接下来做什么？
+
+<Columns cols={3}>
+  <Card title="图片" icon="image" href="/cn/content/images">
+    Markdown 图片、尺寸和说明文字
+  </Card>
+  <Card title="视频" icon="video" href="/cn/content/videos">
+    本地 MP4 和 WebM 文件
+  </Card>
+  <Card title="iFrame" icon="code" href="/cn/content/iframes">
+    Vimeo、CodePen、Figma 等更多内容
+  </Card>
+</Columns>

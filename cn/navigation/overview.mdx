@@ -1,0 +1,234 @@
+---
+title: 导航
+description: Jamdesk 使用标签页、分组和页面组织文档。还可以使用锚点添加外部链接。
+---
+
+侧边栏和顶部栏完全由 `docs.json` 定义。导航层级分为三层：用于顶级分区的标签页、用于可折叠文件夹的分组，以及用于单个条目的页面。锚点可添加显示在每个页面上的外部链接。
+
+屏幕截图显示的是英文界面。
+
+## 结构概览
+
+```json docs.json
+{
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "icon": "book-open",
+        "groups": [
+          {
+            "group": "Getting Started",
+            "pages": ["introduction", "quickstart"]
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+## 概念
+
+### 标签页
+
+顶级导航分区。使用 `tabsPosition` 设置控制其位置：
+
+| 值       | 位置             |
+| -------- | ---------------- |
+| `"top"`  | 位于页眉标签栏中 |
+| `"left"` | 位于侧边栏顶部   |
+
+默认位置取决于主题：
+
+| 主题   | 默认值   |
+| ------ | -------- |
+| jam    | `"left"` |
+| nebula | `"left"` |
+| pulsar | `"top"`  |
+| halo   | `"left"` |
+
+```json
+{
+  "tabsPosition": "left",
+  "navigation": {
+    "tabs": [
+      { "tab": "Guides", "icon": "book", "groups": [...] },
+      { "tab": "API", "icon": "code", "groups": [...] }
+    ]
+  }
+}
+```
+
+<Note>
+  侧边栏图标默认使用 Font Awesome Solid 变体。使用样式前缀（`light/book`）或
+  [图标对象形式](/cn/content/icons#图标对象形式)覆盖任意图标的字重。
+</Note>
+
+### 外部链接（锚点）
+
+添加显示在所有页面侧边栏顶部的外部链接：
+
+```json
+{
+  "anchors": [
+    { "name": "Blog", "href": "https://blog.example.com", "icon": "newspaper" },
+    { "name": "Status", "href": "https://status.example.com", "icon": "signal" }
+  ]
+}
+```
+
+| 字段   | 类型   | 必填 | 描述                 |
+| ------ | ------ | ---- | -------------------- |
+| `name` | string | 是   | 链接的显示文本       |
+| `href` | string | 是   | URL（在新标签页打开） |
+| `icon` | string | 否   | Font Awesome 图标名称 |
+
+### 分组
+
+分组是标签页中一组带有标签的侧边栏条目。分组为侧边栏增加第二层层级，并允许你将更深层的分区隐藏在手风琴样式的文件夹中。
+
+```json
+{
+  "group": "Authentication",
+  "pages": ["auth/overview", "auth/tokens"]
+}
+```
+
+#### 分区和手风琴行为
+
+顶级分组是永久分区：其标题和页面始终可见，点击标题会跳转到该分组的第一个页面。嵌套的命名分组是可折叠的手风琴。除非包含当前页面或设置了 `expanded: true`，否则嵌套分组默认处于关闭状态。在初始加载和路由变更时，当前页面的完整祖先链会自动展开，以显示活动链接；访客仍可手动折叠活动的嵌套分组。
+
+| 分组类型           | 默认行为 |
+| ------------------ | -------- |
+| **顶级分组**       | 始终展开，没有箭头。点击标题会导航到该分组的第一个页面。 |
+| **嵌套命名分组**   | 在处于活动状态、手动打开或配置 `expanded: true` 前保持折叠。点击关闭的分组会将其打开，点击打开的分组会将其关闭；只有点击页面时才会进行导航。 |
+| **未命名容器**     | 始终显示其页面，因为没有标签或切换控件。 |
+
+使用顶级分组组织侧边栏的主要分区，并使用嵌套分组让较长的分区更易浏览。在应用内导航期间，展开状态会持续保留；完整刷新页面后会重置。
+
+<Frame caption="处于折叠状态的嵌套分组。箭头指向右侧，子页面处于隐藏状态。">
+  <img src="/images/navigation/sidebar-group-collapsed.webp" alt="侧边栏中的“Privacy & Access”分组处于折叠状态：箭头指向右侧，子页面处于隐藏状态" width="320" height="900" />
+</Frame>
+
+<Frame caption="导航到其中一个子页面后的同一分组。箭头旋转，子页面显示在下方。">
+  <img src="/images/navigation/sidebar-group-expanded.webp" alt="侧边栏中的“Privacy & Access”分组处于展开状态：箭头向下旋转，下方显示三个子页面" width="320" height="900" />
+</Frame>
+
+#### 分组字段
+
+| 字段       | 类型    | 必填 | 描述 |
+| ---------- | ------- | ---- | ---- |
+| `group`    | string  | 是   | 在侧边栏中显示的标签。 |
+| `pages`    | array   | 是   | 页面路径和/或嵌套分组对象列表（嵌套结构请参阅[嵌套分组](#嵌套分组)）。 |
+| `icon`     | string  | 否   | 显示在分组标签旁的 Font Awesome 图标名称。 |
+| `tag`      | string  | 否   | 标签旁的小徽章（例如 `"New"`、`"Beta"`）。 |
+| `root`     | string  | 否   | 点击标签时分组链接到的页面路径，而不是跳转到第一个子页面。 |
+| `hidden`   | boolean | 否   | 默认在侧边栏中隐藏分组。页面仍可通过直接链接访问。 |
+| `public`   | boolean | 否   | 将分组标记为公开可访问。默认使用父标签页的设置。 |
+| `expanded` | boolean | 否   | 首次加载页面时默认展开嵌套命名分组。顶级分组始终展开，因此此标志在那里不会产生可见效果。初始加载和路由变更时，当前页面的祖先分组会自动展开。 |
+
+### 页面
+
+通过文件路径（不含 `.mdx`）引用的单个文档页面：
+
+```json
+"pages": ["introduction", "guides/quickstart", "api/endpoints"]
+```
+
+默认情况下，侧边栏标题根据文件名生成：短横线会变为空格，并将每个单词首字母大写。例如，`"api/getting-started"` 会显示为“Getting Started”。
+
+要设置自定义侧边栏标题，请使用对象而不是字符串：
+
+```json
+"pages": [
+  "guides/quickstart",
+  { "page": "deploy/aws", "title": "AWS Route 53 & CloudFront" },
+  { "page": "content/seo", "title": "SEO" },
+  { "page": "api/users", "title": "List Users", "method": "GET" }
+]
+```
+
+这对于首字母缩写、专有名词和 API 端点徽章很有用。
+
+| 字段     | 类型   | 必填 | 描述 |
+| -------- | ------ | ---- | ---- |
+| `page`   | string | 是   | 不含 `.mdx` 的文件路径 |
+| `title`  | string | 否   | 自定义侧边栏标题 |
+| `icon`   | string | 否   | Font Awesome 图标名称 |
+| `tag`    | string | 否   | 标题旁的小徽章（例如 "New"、"Beta"） |
+| `method` | string | 否   | HTTP 方法徽章：GET、POST、PUT、PATCH 或 DELETE |
+
+## 多个标签页
+
+为不同受众创建独立分区：
+
+```json
+{
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Guides",
+        "icon": "book",
+        "groups": [
+          { "group": "Getting Started", "pages": ["intro", "quickstart"] }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "icon": "code",
+        "groups": [{ "group": "Endpoints", "pages": ["api/auth", "api/users"] }]
+      }
+    ]
+  }
+}
+```
+
+## 外部标签页链接
+
+直接从标签页链接到外部文档或资源：
+
+```json
+{
+  "navigation": {
+    "tabs": [
+      { "tab": "Docs", "icon": "book", "groups": [...] },
+      { "tab": "GitHub", "icon": "github", "href": "https://github.com/example/repo" }
+    ]
+  }
+}
+```
+
+外部标签页会在新的浏览器标签页中打开。
+
+## 嵌套分组
+
+使用嵌套结构组织复杂文档：
+
+```json
+{
+  "group": "SDKs",
+  "pages": [
+    "sdks/overview",
+    {
+      "group": "JavaScript",
+      "pages": ["sdks/js/install", "sdks/js/usage"]
+    },
+    {
+      "group": "Python",
+      "pages": ["sdks/python/install", "sdks/python/usage"]
+    }
+  ]
+}
+```
+
+## 接下来做什么？
+
+<Columns cols={2}>
+  <Card title="连接 GitHub" icon="github" href="/cn/setup/connecting-github">
+    连接代码仓库以自动构建
+  </Card>
+  <Card title="目录结构" icon="folder-tree" href="/cn/setup/directory-structure">
+    组织文档以支持规模化管理
+  </Card>
+</Columns>

@@ -1,0 +1,175 @@
+---
+title: Claude Code
+description: 设置 Claude Code 以编写和维护 Jamdesk 文档，包含 CLAUDE.md 模板和 MCP 服务器连接。
+---
+
+[Claude Code](https://claude.ai/code) 是 Anthropic 提供的 Claude CLI。由于它会读取完整的项目目录，因此可以从文件本身了解现有的写作风格和 `docs.json` 布局，然后编写出与现有内容协调一致的页面。
+
+Jamdesk 自己的文档正是采用这一配置。下面的 CLAUDE.md 模板与我们实际使用的版本非常接近。你可以根据项目进行自定义，但我们建议保留页面结构规则、“What's Next?” 卡片约定以及严格的组件列表。
+
+与 [Codex](/cn/ai/codex) 相比，Claude Code 的优势在于交互式迭代。你可以起草页面、阅读结果、指出某个部分的问题，然后让它在同一会话中重写该部分，同时始终保留完整的项目上下文。Codex 更适合无需人工介入的多文件批处理任务；本页介绍其他场景下的工作流。
+
+## 快速设置
+
+<Steps>
+  <Step title="安装 Claude Code">
+    从 [claude.ai/code](https://claude.ai/code) 安装。
+  </Step>
+  <Step title="通过 MCP 连接文档">
+    将文档添加为 MCP 数据源：
+
+    ```bash
+    claude mcp add --transport http my-docs https://your-project.jamdesk.app/_mcp
+    ```
+
+    将 `your-project` 替换为 Jamdesk 子域名；如果你已经启用自定义域名，也可以直接使用该域名：`https://docs.acme.com/_mcp`。现在，Claude 可以直接搜索和读取已发布的文档。详情请参阅 [MCP 服务器](/cn/ai/mcp-server)。
+  </Step>
+  <Step title="添加 CLAUDE.md 文件">
+    在文档项目根目录创建 `CLAUDE.md`。这样可以为 Claude 提供有关文档标准、可用组件和写作风格的一致上下文。
+  </Step>
+</Steps>
+
+## CLAUDE.md 模板
+
+将此文件添加到 Jamdesk 文档项目的根目录：
+
+```markdown CLAUDE.md
+# Documentation Project
+
+Jamdesk docs project. Pages are MDX (Markdown + React components). Config is in `docs.json`.
+
+## How This Project Works
+
+- `docs.json`: navigation structure, theme, colors, branding. Pages must be listed here to appear in the sidebar.
+- `*.mdx` files: documentation pages. Every page needs `title` and `description` frontmatter.
+- `images/`: static assets. Always use `.webp` format.
+- `snippets/`: reusable MDX fragments. Import with `<Snippet file="name.mdx" />`.
+
+## Page Template
+
+Every page follows this structure:
+
+    ---
+    title: Clear, Specific Title
+    description: One sentence. Used in search results and social previews.
+    ---
+
+    Opening paragraph: what this page covers and who it's for. No heading needed.
+
+    ## First Section
+
+    Content. Use components where they help, not for decoration.
+
+    ## What's Next?
+
+    <Columns cols={2}>
+      <Card title="Related Page" icon="arrow-right" href="/path">
+        Why the reader would go here next
+      </Card>
+    </Columns>
+
+The opening paragraph comes right after frontmatter, with no heading before it. "What's Next?" is always the last section. Card descriptions explain why, not what ("Set up search for your docs", not "Search configuration page").
+
+## Writing Style
+
+Start with why. What problem does this page solve? Show that first, then walk through how to use the feature.
+
+Use progressive disclosure: a simple example near the top, advanced options tucked into Accordions or later sections.
+
+Active voice. "Run this command", not "This command should be run".
+
+One idea per paragraph. If you reach for "also" or "additionally", start a new paragraph instead.
+
+Code examples must actually work. Never show partial code or pseudocode. Every block should be complete and copy-pasteable.
+
+Write like a person. Skip filler like "It's important to note that", "This allows you to", or "seamlessly". Drop the hedging ("you might want to consider"). Read your output back, and if it sounds like a chatbot wrote it, rewrite it shorter and more direct.
+
+## Components
+
+Layout: Card, Columns, Tabs, Tab, Accordion, AccordionGroup, Steps, Step, Expandable, Frame, CodeGroup
+Callouts: Note, Info, Warning, Tip, Check, Danger
+
+When to use each:
+
+| Component | Use for | Don't use for |
+|-----------|---------|---------------|
+| Tabs | Mutually exclusive choices (npm/yarn, languages) | Sequential content |
+| Steps | Ordered procedures | Unordered lists of features |
+| Accordion | Optional/advanced detail | Core content readers need |
+| Card (in Columns) | Navigation links, feature grids | Inline content |
+| Note/Tip/Warning | Important context the reader might miss | Every other paragraph |
+
+Cards always go inside Columns:
+
+    <Columns cols={2}>
+      <Card title="Page Title" icon="icon-name" href="/path">
+        Brief description
+      </Card>
+    </Columns>
+
+Icons are Font Awesome Light names: "rocket", "code", "terminal", "book-open", "gear"
+
+## Adding Pages
+
+1. Create the `.mdx` file
+2. Add the page path (no `.mdx` extension) to `docs.json` in the right navigation group
+3. Link to it from related pages via "What's Next?" cards
+
+**If you skip step 2, the page won't show up in the sidebar.** Read `docs.json` before creating pages so you understand the navigation structure.
+
+## Before You're Done
+
+Check your work:
+- [ ] Frontmatter has both `title` and `description`
+- [ ] Opening paragraph exists (no heading before it)
+- [ ] Page ends with "What's Next?" cards
+- [ ] New pages are added to `docs.json` navigation
+- [ ] Code examples are complete and copy-pasteable
+- [ ] No invented components; only the ones listed above
+- [ ] No raw HTML tags; use MDX components
+- [ ] Images use `.webp` format
+
+## Common Mistakes
+
+- Inventing components like `<CodeBlock>`, `<Alert>`, or `<Section>`. They don't exist. Use the components listed above.
+- Wrapping code in components. Code blocks are standard Markdown triple backticks. Don't wrap them in `<CodeGroup>` unless you're showing multiple language alternatives.
+- Skipping description frontmatter. Every page needs it; it appears in search results and link previews.
+- Using `<Card>` without `<Columns>`. Cards must be inside a `<Columns>` wrapper.
+- Writing "click here" links. Use descriptive link text: [Migration guide](/setup/migration), not [click here](/setup/migration).
+```
+
+<Tip>
+  根据项目自定义模板。添加产品名称、API 约定、术语以及文档特有的内容规范。
+</Tip>
+
+## 示例提示词
+
+配置好 CLAUDE.md 和 MCP 连接后，无需过度解释。Claude 已经了解项目上下文，因此简短的提示词比冗长的提示词更有效。
+
+一个常见的起点是：*“为[功能]编写入门指南。”* 由于 Claude 已经读取了其他页面，它无需额外说明就能掌握你的语气。要检测内容偏差，可以让它根据网站其他内容检查某个页面。Claude 往往能发现作者自查时容易忽略的小问题，例如某个组件在不同页面中的用法不一致，或不同章节之间的语气发生变化。
+
+最令人意外的提示词通常是清理类任务。*“将此 README 转换为文档页面”* 会把单个文件转换为结构合理、带导航的一组页面。让它根据现有页面创建基于 Accordion 的常见问题解答，可以从代码仓库中提取真实问题，比从空白文档开始编写的内容更贴近读者的实际疑问。
+
+## /update-jamdesk 技能
+
+要在代码发生变化时自动更新文档，请安装 `/update-jamdesk` 技能：
+
+```bash
+npx skills add jamdesk/skills --skill update-jamdesk
+```
+
+实现面向用户的功能后，运行 `/update-jamdesk`，Claude 会判断需要创建或编辑哪些文档页面。完整指南请参阅 [自动更新](/cn/ai/automated-updates)。
+
+## 接下来？
+
+<Columns cols={3}>
+  <Card title="Claude Code 插件" icon="puzzle-piece" href="/cn/claude-code-plugin">
+    安装 Jamdesk 插件，获取组件、配置和 CLI 参考
+  </Card>
+  <Card title="Cursor" icon="text-cursor" href="/cn/ai/cursor">
+    Cursor 规则文件和内联编辑快捷方式
+  </Card>
+  <Card title="MCP 服务器" icon="robot" href="/cn/ai/mcp-server">
+    端点参考、速率限制和 curl 示例
+  </Card>
+</Columns>

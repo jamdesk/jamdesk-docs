@@ -1,0 +1,106 @@
+---
+title: 邮件订阅
+description: 将 Resend、Mailchimp、Kit、Loops、beehiiv、Brevo 或 SendGrid 连接到文档，直接将邮件订阅添加到你自己的服务商受众列表。
+---
+
+Jamdesk 可以从文档站点收集电子邮件地址，并直接将其添加到你现有的邮件服务商中。中间不经过任何第三方表单服务。在仪表板中连接一次服务商，然后将[订阅表单](/cn/components/email-subscribe)添加到任意页面。列表和邮件发送均由你管理；Jamdesk 只负责捕获地址并将其传递给你的服务商。
+
+屏幕截图显示的是英文界面。
+
+## 前提条件
+
+- 拥有一个[受支持的服务商](#支持的服务商)账户
+- 该服务商提供的、具有添加联系人成员权限的 API 密钥
+- 大多数服务商用于选择列表的受众标识符（Audience ID、List ID、Form ID 或 Publication ID）
+
+## 捕获原理
+
+连接服务商时，Jamdesk 会先通过该服务商的 API 验证 API 密钥，然后再保存。此后，文档站点上的每次表单提交都会调用该服务商，并将读者添加到你的受众列表中。系统会按访客和项目分别限制提交频率，以阻止滥用；隐藏的蜜罐字段则会过滤机器人。
+
+以下是读者在文档站点上看到的订阅表单：
+
+<Frame caption="读者在已发布文档站点上看到的 Jamdesk 托管订阅表单">
+  ![标题为“Get Jamdesk release notes”的订阅表单，包含“New features and platform changes, straight to your inbox,”文本、电子邮件字段和 Subscribe 按钮](/images/email-signups/changelog-signup-form.webp)
+</Frame>
+
+你可以在 [Jamdesk 更新日志](/cn/reference/changelog)中查看一个在线示例。
+
+<Note>
+你的 API 密钥存储在 Jamdesk 后端，仅用于添加联系人。它不会写入已发布的网站、`docs.json` 或任何客户端代码，因此访客无法读取。
+</Note>
+
+## 支持的服务商
+
+七个服务商支持**原生**捕获订阅。读者提交 Jamdesk 托管的表单后，无需离开文档即可进入你的受众列表：
+
+| 服务商 | 连接信息 |
+|----------|------------------|
+| Resend | API 密钥（完全访问权限）+ Audience ID |
+| Mailchimp | API 密钥（以数据中心结尾，例如 `-us21`）+ Audience (List) ID |
+| Kit (ConvertKit) | v4 API 密钥 + Form ID |
+| Loops | API 密钥 |
+| beehiiv | API 密钥 + Publication ID |
+| Brevo | v3 API 密钥 + Contact List ID |
+| SendGrid | 具有 Marketing Contacts 写入权限的 API 密钥 + Marketing List ID |
+
+另外两个服务商仅支持**嵌入**。Jamdesk 会渲染它们自己的表单或 iframe，而不是自行捕获地址，因此不需要密钥：
+
+| 服务商 | 需要提供的信息 |
+|----------|------------------|
+| Buttondown | 你的账户 `username`（位于 `<EmailSubscribe>` 标签上） |
+| Substack | 你的账户 `username`（位于 `<EmailSubscribe>` 标签上） |
+
+有关仅嵌入设置，请参阅 [EmailSubscribe](/cn/components/email-subscribe)。
+
+## 连接服务商
+
+<Steps>
+  <Step title="打开 Email Signups 卡片">
+    在仪表板中打开项目，然后转到 **Integrations**。找到 **Email Signups** 卡片。
+  </Step>
+  <Step title="选择服务商">
+    从 **Provider** 下拉菜单中选择服务商。表单会更新，只显示该服务商所需的字段，并提供获取其 API 密钥位置的链接。
+  </Step>
+  <Step title="粘贴密钥和受众 ID">
+    输入 API 密钥，以及大多数服务商所需的受众标识符（Loops 只需要密钥）。密钥字段会被遮罩。
+  </Step>
+  <Step title="连接">
+    点击 **Connect**。Jamdesk 会在保存前使用你的服务商验证密钥。如果密钥错误或缺少联系人权限，你会看到错误提示，且不会保存任何内容。
+  </Step>
+</Steps>
+
+连接后，卡片会显示带有服务商和受众 ID 的 **Configured** 标记。文档的新版本发布后，系统会渲染实时捕获表单。
+
+## 自定义表单文案
+
+卡片包含两个可选字段：**Form title** 和 **Form subtitle**，用于设置自动放置表单的标题和辅助说明。留空时，表单只显示字段和按钮；填写后，更新日志表单会在下一次发布时应用这些内容；无需编辑 `docs.json`。
+
+你可以随时更改这些文案。在已连接的卡片中编辑字段并点击 **Save copy** 即可，无需重新输入 API 密钥。直接在 `docs.json` 或 `<EmailSubscribe>` 标签上设置的 `title` 或 `description` 仍会优先于仪表板文案，因此每个页面的覆盖设置依然有效。
+
+## 将表单添加到文档
+
+连接服务商本身不会自动放置表单。你可以选择订阅表单的显示位置：
+
+- 在任意页面中写入 `<EmailSubscribe provider="resend" />`（使用已连接服务商的 ID）。
+- 或者在 `docs.json` 中设置 `placement: changelog`，在每个更新日志页面自动放置表单。
+
+这两种方式都在 [EmailSubscribe 组件页面](/cn/components/email-subscribe)中介绍。
+
+## 断开服务商连接
+
+如需停止收集订阅，请打开 **Email Signups** 卡片并点击 **Remove**。表单会在下一次发布后停止捕获。
+
+<Warning>
+断开连接只会从 Jamdesk 中移除密钥。你已经收集的订阅者仍会保留在服务商的受众列表中。Jamdesk 永远不会删除这些订阅者。你可以随时重新连接。
+</Warning>
+
+## 下一步
+
+<Columns cols={2}>
+  <Card title="EmailSubscribe 组件" icon="envelope" href="/cn/components/email-subscribe">
+    放置订阅表单，并在更新日志页面自动加载表单
+  </Card>
+  <Card title="Update 组件" icon="timeline" href="/cn/components/update">
+    编写读者订阅后希望收到的更新日志条目
+  </Card>
+</Columns>

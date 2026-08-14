@@ -1,0 +1,882 @@
+---
+title: docs.json 参考
+description: "docs.json 各字段完整参考：主题、颜色、导航、标签页、OpenAPI 集成、品牌、SEO、分析和 AI 聊天设置。"
+---
+
+`docs.json` 文件是 Jamdesk 文档站点的中央配置文件。
+
+<Tip>
+  docs.json 中的关键设置会显示在仪表板的
+  **Project Settings → Configuration Highlights** 下。此视图为只读视图，
+  每次构建成功后都会自动更新。
+</Tip>
+
+## 必填字段
+
+### name
+
+**类型：** `string`（必填）
+
+文档站点的名称。显示在页眉和浏览器标签页中。
+
+```json
+{ "name": "Acme API Docs" }
+```
+
+### theme
+
+**类型：** `"jam" | "nebula" | "pulsar" | "halo"`（必填）
+
+<Tabs>
+  <Tab title="jam">
+    使用 Inter 字体的简洁现代设计。基于页眉的导航。
+
+    **适用场景：** 大多数文档站点、API 参考
+  </Tab>
+  <Tab title="nebula">
+    使用 JetBrains Mono 字体，风格宽松舒展。
+
+    **适用场景：** 叙述型文档、指南
+  </Tab>
+  <Tab title="pulsar">
+    高对比度的锐利设计，使用侧边栏导航。
+
+    **适用场景：** 密集的技术参考
+  </Tab>
+  <Tab title="halo">
+    使用 Figtree 字体，风格温暖柔和，界面圆角明显，内容显示在卡片上。
+
+    **适用场景：** 舒适的长篇阅读、易于阅读的产品文档
+  </Tab>
+</Tabs>
+
+### colors
+
+**类型：** `object`（必填）
+
+| 字段 | 类型 | 必填 | 描述 |
+|-------|------|----------|-------------|
+| `primary` | string (hex) | 是 | 主要品牌颜色 |
+| `light` | string (hex) | 否 | 浅色主题强调色 |
+| `dark` | string (hex) | 否 | 深色主题强调色 |
+
+```json
+{
+  "colors": {
+    "primary": "#635BFF",
+    "light": "#7C75FF",
+    "dark": "#4F46E5"
+  }
+}
+```
+
+## 品牌
+
+### favicon
+
+**类型：** `string` 或 `object`
+
+网站 favicon 文件的路径（推荐使用 SVG）。可以为两种模式提供同一张图片，也可以分别提供 `light` / `dark` 变体。
+
+| 字段 | 类型 | 描述 |
+|-------|------|-------------|
+| `light` | string | 浅色模式的 favicon（使用对象形式时必填） |
+| `dark` | string | 深色模式的 favicon（可选，默认回退到 `light`） |
+
+```json
+{ "favicon": "/images/favicon.svg" }
+```
+
+```json
+{
+  "favicon": {
+    "light": "/images/favicon.svg",
+    "dark": "/images/favicon-dark.svg"
+  }
+}
+```
+
+### logo
+
+**类型：** `object`
+
+| 字段 | 类型 | 描述 |
+|-------|------|-------------|
+| `light` | string | 浅色模式的 Logo |
+| `dark` | string | 深色模式的 Logo |
+| `href` | string | 点击 Logo 时打开的 URL |
+
+```json
+{
+  "logo": {
+    "light": "/images/logo-light.webp",
+    "dark": "/images/logo-dark.webp",
+    "href": "https://yoursite.com"
+  }
+}
+```
+
+## 字体
+
+### fonts
+
+**类型：** `object`（可选）
+
+覆盖主题为正文和标题设置的默认字体。每个主题都提供经过调优的默认字体。只有在需要不同外观时才设置 `fonts`。
+
+全局使用同一字体：
+
+```json
+{
+  "fonts": {
+    "family": "Lora"
+  }
+}
+```
+
+分别设置标题和正文：
+
+```json
+{
+  "fonts": {
+    "heading": { "family": "Space Grotesk" },
+    "body": { "family": "Inter" }
+  }
+}
+```
+
+| 字段 | 类型 | 描述 |
+|-------|------|-------------|
+| `family` | string | 字体系列名称。任何 Google Font 都可使用；构建时会自动获取 |
+| `weight` | number | 要加载的单个字重（例如 `400`）。省略时加载 `400, 500, 600, 700` |
+| `source` | string | 自托管字体文件的 URL 或以 `/` 开头的相对路径。设置后跳过 Google Fonts |
+| `format` | `"woff"` \| `"woff2"` | 设置 `source` 时必填 |
+
+`heading` 和 `body` 接受相同的字段。有关选择字体的指导，请参阅[主题 → 字体](/cn/customization/theming#字体)。
+
+## 外观
+
+### appearance
+
+**类型：** `object`（可选）
+
+控制站点默认的深色模式行为。
+
+```json
+{
+  "appearance": {
+    "default": "dark",
+    "strict": true
+  }
+}
+```
+
+| 字段 | 类型 | 默认值 | 描述 |
+|-------|------|---------|-------------|
+| `default` | `"system"` \| `"light"` \| `"dark"` | `"system"` | 首次访问者的初始模式 |
+| `strict` | boolean | `false` | 为 `true` 时隐藏导航栏切换按钮，使访问者保持使用 `default` |
+
+有关切换按钮行为，请参阅[主题 → 深色模式](/cn/customization/theming#暗色模式)。
+
+## 页面元数据
+
+### metadata
+
+**类型：** `object`（可选）
+
+控制每个文档页面上显示的页面元数据。
+
+```json
+{
+  "metadata": {
+    "timestamp": true
+  }
+}
+```
+
+| 字段 | 类型 | 默认值 | 描述 |
+|-------|------|---------|-------------|
+| `timestamp` | boolean | `false` | 为 `true` 时，在每个页面的页脚显示类似“Last updated on June 15, 2026”的行。日期取自最后一次修改该页面的 Git 提交，因此每次构建时都会自动保持准确。 |
+
+日期会显示在已发布的站点和 `jamdesk dev` 中。它反映最近一次修改每个页面文件的提交，因此未编辑的页面会保留其原始日期。
+
+## 横幅
+
+### banner
+
+在每个页面顶部、页眉上方，以全宽和主题强调色显示站点范围的公告栏。可用于发布上线、迁移、维护窗口或所有访问者都应看到的消息。
+
+```json
+{
+  "banner": {
+    "content": "🎉 Version 2.0 is live! Read the [changelog](/changelog).",
+    "dismissible": true
+  }
+}
+```
+
+| 字段 | 类型 | 默认值 | 描述 |
+|-------|------|---------|-------------|
+| `content` | string | - | **必填。** 横幅文本。支持基本的行内格式：链接 `[text](url)`、**粗体**（`**text**`）和*斜体*（`*text*`）。不支持自定义 MDX 组件。 |
+| `dismissible` | boolean | `false` | 为 `true` 时显示关闭按钮。访问者关闭横幅后，横幅会一直对其隐藏，直到你更改 `content`。编辑消息后横幅会重新显示。 |
+
+横幅会显示在已发布的站点和 `jamdesk dev` 中。它采用全局配置（整个站点使用一个横幅）；目前不支持按标签页或语言设置横幅。
+
+## OpenAPI
+
+### api.openapi
+
+**类型：** `string | string[]`
+
+列出要由 Jamdesk 验证并用于端点页面的 OpenAPI 3.x 规范文件。使用相对于 `docs.json` 的路径。
+
+```json docs.json
+{
+  "api": {
+    "openapi": ["/openapi/api.yaml"]
+  }
+}
+```
+
+配置完成后，可以在页面的 frontmatter 中添加 `openapi` 字段来生成端点页面：
+
+```mdx
+---
+title: Create Ticket
+openapi: /openapi/api.yaml POST /tickets
+---
+```
+
+如果只列出一个规范，也可以使用简写格式：
+
+```mdx
+---
+title: Create Ticket
+openapi: POST /tickets
+---
+```
+
+有关实时端点页面，请参阅 [OpenAPI 示例](/cn/api-reference/openapi-example)；有关文件放置位置，请参阅[目录结构](/cn/setup/directory-structure)。
+
+如果站点支持多语言，请在每个源规范旁放置一个 `<spec>.<lang>.<ext>` 文件（例如 `openapi/api.fr.yaml`），Jamdesk 会在对应语言的 URL 下提供该文件。请参阅[翻译 OpenAPI 规范](/cn/setup/languages#翻译-openapi-规范)。
+
+### api.examples.languages
+
+**类型：** `string[]`
+**默认值：** `["curl", "python", "javascript"]`
+
+选择在 `openapi:` 页面自动生成的 API 代码示例中显示哪些编程语言。数组顺序决定标签页显示顺序，第一种语言默认处于选中状态。
+
+**支持的值：** `curl`、`bash`、`python`、`javascript`、`go`、`ruby`、`csharp`、`java`、`rust`、`php`
+
+<Note>`bash` 是 `curl` 的别名；两者生成相同的输出。可以使用任意一个标签。</Note>
+
+```json All supported languages
+{
+  "api": {
+    "examples": {
+      "languages": ["curl", "python", "javascript", "go", "ruby", "csharp", "java", "rust", "php"]
+    }
+  }
+}
+```
+
+```json Custom subset
+{
+  "api": {
+    "examples": {
+      "languages": ["python", "javascript", "go"]
+    }
+  }
+}
+```
+
+### api.examples.defaults
+
+**类型：** `"required" | "all"`
+**默认值：** `"all"`
+
+控制哪些参数会出现在自动生成的代码示例中。
+
+| 值 | 行为 |
+|-------|----------|
+| `"all"` | 示例包含所有带占位值的参数 |
+| `"required"` | 示例仅包含规范中标记为 `required` 的参数 |
+
+```json
+{
+  "api": {
+    "examples": {
+      "defaults": "required"
+    }
+  }
+}
+```
+
+### api.examples.prefill
+
+**类型：** `boolean`
+**默认值：** `false`
+
+为 `true` 时，[API Playground](/cn/api-reference/playground) 会使用 OpenAPI 规范中的 `example` 值预填参数字段。
+
+```json
+{
+  "api": {
+    "examples": {
+      "prefill": true
+    }
+  }
+}
+```
+
+### api.playground.display
+
+**类型：** `"interactive" | "simple" | "none"`
+**默认值：** `"interactive"`
+
+控制端点页面上的 [API Playground](/cn/api-reference/playground)。默认情况下，每个 `openapi:` 和 `api:` 页面都会显示“Try it”按钮。
+
+| 值 | 行为 |
+|-------|----------|
+| `"interactive"` | 完整 Playground：填写参数、生成代码、发送请求（默认） |
+| `"simple"` | 填写参数并复制代码，但不显示 Send 按钮 |
+| `"none"` | 禁用 Playground |
+
+```json
+{
+  "api": {
+    "playground": {
+      "display": "interactive"
+    }
+  }
+}
+```
+
+有关使用详情和页面级覆盖设置，请参阅 [API Playground](/cn/api-reference/playground)。
+
+### api.mdx.auth.method
+
+**类型：** `"bearer" | "basic" | "key" | "cobo"`
+
+自动生成代码示例中使用的身份验证方法。设置后，示例会包含相应的身份验证标头。
+
+| 值 | 标头格式 |
+|-------|--------------|
+| `"bearer"` | `Authorization: Bearer <token>` |
+| `"basic"` | `Authorization: Basic <base64>` |
+| `"key"` | 自定义标头（参阅 `api.mdx.auth.name`） |
+| `"cobo"` | Cobo 专用身份验证 |
+
+```json
+{
+  "api": {
+    "mdx": {
+      "auth": {
+        "method": "bearer"
+      }
+    }
+  }
+}
+```
+
+### api.mdx.auth.name
+
+**类型：** `string`
+
+基于密钥的身份验证所使用的自定义标头名称。仅当 `api.mdx.auth.method` 为 `"key"` 时使用。
+
+```json
+{
+  "api": {
+    "mdx": {
+      "auth": {
+        "method": "key",
+        "name": "X-API-Key"
+      }
+    }
+  }
+}
+```
+
+## 导航
+
+### tabsPosition
+
+**类型：** `"top" | "left"`
+
+控制导航标签页的显示位置。
+
+| 值 | 描述 |
+|-------|-------------|
+| `"top"` | 标签页显示在页眉标签栏中 |
+| `"left"` | 标签页显示在侧边栏顶部 |
+
+默认值取决于主题：
+
+| 主题 | 默认值 |
+|-------|---------|
+| jam | `"left"` |
+| nebula | `"left"` |
+| pulsar | `"top"` |
+| halo | `"left"` |
+
+```json
+{ "tabsPosition": "left" }
+```
+
+### anchors
+
+**类型：** `array`
+
+显示在所有页面侧边栏顶部的外部链接。
+
+| 字段 | 类型 | 必填 | 描述 |
+|-------|------|----------|-------------|
+| `name` | string | 是 | 显示文本 |
+| `href` | string | 是 | URL（外部链接） |
+| `icon` | string | 否 | Font Awesome 图标名称 |
+
+```json
+{
+  "anchors": [
+    { "name": "Blog", "href": "https://blog.example.com", "icon": "newspaper" }
+  ]
+}
+```
+
+### navigation (structure)
+
+**类型：** `object`
+
+文档的导航结构。有关详细文档，请参阅[导航](/cn/navigation/overview)。
+
+页面可以是字符串（根据文件名自动生成标题），也可以是带自定义标题的对象：
+
+```json
+"pages": [
+  "introduction",
+  { "page": "content/mdx-basics", "title": "MDX Basics" }
+]
+```
+
+<Accordion title="基本导航示例">
+```json
+{
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Docs",
+        "icon": "book-open",
+        "groups": [
+          {
+            "group": "Getting Started",
+            "pages": ["introduction", "quickstart"]
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+</Accordion>
+
+## 导航栏和页脚
+
+### navbar
+
+**类型：** `object`
+
+| 字段 | 类型 | 描述 |
+|-------|------|-------------|
+| `links` | array | 导航链接 |
+| `links[].label` | string | 默认按钮文本 |
+| `links[].labels` | object | 可选的按语言覆盖设置，以语言代码为键（例如 `fr`、`es`）。默认回退到 `label` |
+| `links[].icon` | icon | 可选，在标签旁显示的图标 |
+| `links[].href` | string | 目标 URL |
+| `primary` | object | 主要 CTA 按钮 |
+| `primary.label` | string | 默认按钮文本 |
+| `primary.labels` | object | 可选的按语言覆盖设置，以语言代码为键。默认回退到 `label` |
+
+```json
+{
+  "navbar": {
+    "links": [
+      {
+        "label": "Blog",
+        "labels": { "fr": "Blog", "es": "Blog" },
+        "href": "/blog"
+      },
+      {
+        "label": "Pricing",
+        "labels": { "fr": "Tarifs", "es": "Precios" },
+        "href": "/pricing"
+      }
+    ],
+    "primary": {
+      "type": "button",
+      "label": "Dashboard",
+      "labels": { "fr": "Tableau de bord", "es": "Panel" },
+      "href": "https://app.example.com"
+    }
+  }
+}
+```
+
+<Note>
+  `labels` 是可选的。单语言文档可以省略它。设置后，当前 URL 语言（例如 `/fr/...`）会选择匹配的覆盖文本。
+</Note>
+
+### footer
+
+**类型：** `object`
+
+使用社交链接和自定义链接列配置页面页脚。
+
+```json
+{
+  "footer": {
+    "socials": {
+      "github": "https://github.com/yourorg",
+      "x": "https://x.com/yourhandle",
+      "discord": "https://discord.gg/yourserver"
+    },
+    "links": [
+      {
+        "header": "Resources",
+        "items": [
+          { "label": "Blog", "href": "https://example.com/blog" },
+          { "label": "Changelog", "href": "/changelog" }
+        ]
+      }
+    ]
+  }
+}
+```
+
+| 字段 | 类型 | 描述 |
+|-------|------|-------------|
+| `socials` | object | 社交媒体平台 URL |
+| `links` | array | 链接列配置 |
+| `links[].header` | string | 列标题 |
+| `links[].items` | array | `{ label, href }` 对象数组 |
+
+**支持的社交平台：** `github`、`x`、`twitter`、`linkedin`、`discord`、`slack`、`youtube`、`instagram`、`facebook`、`reddit`、`telegram`、`bluesky`、`threads`、`medium`、`hacker-news`、`website`
+
+## 样式
+
+### styling.latex
+
+**类型：** `boolean`
+
+使用 KaTeX 启用 LaTeX 数学公式渲染。启用后，可以使用 `$...$` 表示行内公式，使用 `$$...$$` 表示块级公式。
+
+```json
+{
+  "styling": {
+    "latex": true
+  }
+}
+```
+
+有关使用详情，请参阅[数学公式与 LaTeX](/cn/content/math)。
+
+### styling.js
+
+**类型：** `string | string[]`
+
+在每个页面中包含自定义 JavaScript 文件。路径相对于文档目录，并且必须以 `/` 开头。
+
+```json
+{
+  "styling": {
+    "js": "/script.js"
+  }
+}
+```
+
+多个文件可以使用数组：
+
+```json
+{
+  "styling": {
+    "js": ["/chat.js", "/analytics.js"]
+  }
+}
+```
+
+未设置此字段时，Jamdesk 会自动检测项目根目录中的 `.js` 文件。有关详情，请参阅[自定义 JavaScript](/cn/customization/custom-javascript)。
+
+## 搜索
+
+### search
+
+**类型：** `object`（可选）
+
+自定义文档搜索栏。搜索开箱即用；只有在需要更改占位文本或在空状态中显示热门页面时，才需要设置此字段。
+
+| 字段 | 类型 | 默认值 | 描述 |
+|-------|------|---------|-------------|
+| `prompt` | string | `Search documentation…` | 搜索输入框中显示的占位文本 |
+| `popularPages` | array | Quick Start, Introduction | 访问者输入查询前显示的快速访问链接 |
+
+```json
+{
+  "search": {
+    "prompt": "Ask me anything…",
+    "popularPages": [
+      { "title": "Quick Start", "slug": "quickstart", "icon": "rocket" },
+      { "title": "Authentication", "slug": "guides/authentication", "icon": "key" }
+    ]
+  }
+}
+```
+
+#### 热门页面
+
+`popularPages` 中的每个条目接受以下字段：
+
+| 字段 | 类型 | 必填 | 描述 |
+|-------|------|----------|-------------|
+| `title` | string | 是 | 链接显示的标签 |
+| `slug` | string | 是 | 页面路径，不带开头的斜杠或 `.mdx` 扩展名（例如 `quickstart`，或文件 `guides/authentication.mdx` 对应的 `guides/authentication`） |
+| `icon` | string | 否 | 链接旁显示的 Font Awesome 图标名称（例如 `rocket` 或 `bell`） |
+
+`icon` 字段也接受完整的 `{ "name", "style", "library" }` 对象。请参阅[图标对象形式](/cn/content/icons#图标对象形式)。省略 `popularPages` 时，Jamdesk 默认显示 Quick Start 和 Introduction。
+
+## 聊天
+
+### chat
+
+**类型：** `object`（可选）
+
+配置内置的 AI 聊天助手。所有站点默认启用聊天；只有在需要自定义开场问题或禁用聊天时，才需要设置此字段。
+
+| 字段 | 类型 | 默认值 | 描述 |
+|-------|------|---------|-------------|
+| `enabled` | boolean | `true` | 设置为 `false` 可从站点中移除聊天面板 |
+| `starterQuestions` | string[] | 自动生成 | 聊天打开时显示的最多 4 个问题（每个 5–200 个字符）。省略时会在构建过程中自动生成。设置为 `[]` 表示不显示 |
+
+```json
+{
+  "chat": {
+    "starterQuestions": [
+      "How do I get started?",
+      "What API endpoints are available?"
+    ]
+  }
+}
+```
+
+有关聊天工作方式及访问者所见内容的详情，请参阅 [AI 聊天](/cn/ai/chat)。
+
+## AI 操作菜单
+
+### contextual
+
+**类型：** `object`（可选）
+
+配置显示在每个页面上的 AI 操作下拉菜单。默认启用所有选项；只有在需要自定义显示哪些选项或禁用菜单时，才需要设置此字段。
+
+| 字段 | 类型 | 默认值 | 描述 |
+|-------|------|---------|-------------|
+| `enabled` | boolean | `true` | 设置为 `false` 可从站点中移除 AI 操作菜单 |
+| `options` | array | 所有内置选项 | 选项键和/或自定义选项对象列表 |
+
+**内置选项键：** `copy`、`view`、`chatgpt`、`claude`、`perplexity`、`gemini`、`mcp`、`cursor`、`vscode`
+
+```json
+{
+  "contextual": {
+    "options": ["copy", "claude", "mcp", "cursor"]
+  }
+}
+```
+
+可以将自定义选项与内置选项一起添加：
+
+```json
+{
+  "contextual": {
+    "options": [
+      "copy",
+      "claude",
+      {
+        "title": "Ask on Discord",
+        "description": "Get help from the community",
+        "icon": "discord",
+        "href": "https://discord.gg/your-server"
+      }
+    ]
+  }
+}
+```
+
+有关完整选项列表和自定义选项格式，请参阅 [AI 操作菜单](/cn/ai/ai-actions)。
+
+## 拼写检查
+
+### spellcheck
+
+**类型：** `object`（可选）
+
+配置 `jamdesk spellcheck` CLI 命令。只有在需要将项目专用词添加到忽略列表时，才需要设置此字段。
+
+| 字段 | 类型 | 描述 |
+|-------|------|-------------|
+| `ignore` | string[] | 拼写检查时跳过的词语（产品名称、技术术语等） |
+
+```json
+{
+  "spellcheck": {
+    "ignore": ["Acme", "kubectl", "Terraform"]
+  }
+}
+```
+
+CLI 内置了 180 多个技术术语（API、GraphQL、Kubernetes、React 等），还会自动忽略 `name` 字段中的项目名称。只需添加项目专用词语。
+
+有关使用详情和交互式修复模式，请参阅 [CLI 概览：拼写检查](/cn/cli/overview)。
+
+## 图片
+
+### images.convertToWebp
+
+**类型：** `boolean`（可选，默认值为 `false`）
+
+在构建过程中为 PNG 和 JPG 资源启用自动 WebP 转换。转换后的文件通常比原文件小 60–80%，且不会出现可见的质量损失。MDX、自定义 CSS、自定义 JS 和 `docs.json` 中的引用都会自动重写，因此无需更改任何路径。
+
+favicon、`og:image` 和 `twitter:image` 会保留原始格式。并非所有社交爬虫或电子邮件客户端都能可靠地渲染 WebP，而损坏的预览卡片比稍大的 JPG 更糟糕。
+
+```json
+{
+  "images": {
+    "convertToWebp": true
+  }
+}
+```
+
+有关转换内容、缓存工作方式和构建进度指示器，请参阅[自动图片转换](/cn/builds/image-optimization)。
+
+## 访问控制
+
+### auth.password
+
+**类型：** `object`（可选）
+
+为站点启用共享密码保护。此处仅配置声明式设置。下一次构建完成后，仍需在[仪表板](/cn/setup/password-protection#轮换和撤销会话)中设置实际密码短语。
+
+设置 `auth.password.enabled: true` 可锁定整个站点；也可以在 `auth.password.private[]` 下列出路径，仅保护指定页面。两种方式都会在下一次构建时触发相同的仪表板密码提示。
+
+```json
+{
+  "auth": {
+    "password": {
+      "enabled": true,
+      "hint": "Ask your account manager",
+      "public": ["/marketing/**", "/changelog"]
+    }
+  }
+}
+```
+
+| 字段 | 类型 | 描述 |
+|-------|------|-------------|
+| `enabled` | `boolean` | 全站模式。为 `true` 时，每个页面都需要密码（标记为公开的内容除外）。 |
+| `hint` | `string`（最多 200 个字符） | 解锁屏幕上显示的纯文本提示。不支持 HTML。 |
+| `public` | `string[]` | 绕过密码保护的路径 glob。支持 `*`（一个路径段）和 `**`（递归匹配）。不接受单独的 `/`。 |
+| `private` | `string[]` | 需要密码的精确路径。不设置 `enabled` 而设置此字段时，会启用指定页面模式。 |
+
+有关完整流程（包括仪表板操作流程，以及 frontmatter 中的 `public: true` / `private: true` 如何与这些数组交互），请参阅[密码保护](/cn/setup/password-protection)。
+
+## 完整示例
+
+<Accordion title="完整的 docs.json 示例" defaultOpen>
+```json
+{
+  "$schema": "https://jamdesk.com/docs.json",
+  "name": "Acme Documentation",
+  "description": "Learn how to use Acme",
+  "theme": "jam",
+  "colors": {
+    "primary": "#635BFF"
+  },
+  "favicon": "/images/favicon.svg",
+  "logo": {
+    "light": "/images/logo-light.webp",
+    "dark": "/images/logo-dark.webp"
+  },
+  "api": {
+    "openapi": ["/openapi/api.yaml"],
+    "playground": {
+      "display": "interactive"
+    },
+    "examples": {
+      "languages": ["curl", "python", "javascript"],
+      "prefill": true
+    }
+  },
+  "styling": {
+    "latex": true,
+    "js": "/script.js"
+  },
+  "chat": {
+    "starterQuestions": ["How do I get started?", "What endpoints are available?"]
+  },
+  "contextual": {
+    "options": ["copy", "claude", "chatgpt", "mcp", "cursor"]
+  },
+  "spellcheck": {
+    "ignore": ["Acme"]
+  },
+  "anchors": [
+    { "name": "Blog", "href": "https://blog.acme.com", "icon": "newspaper" }
+  ],
+  "navbar": {
+    "links": [
+      { "label": "Support", "href": "/support" }
+    ],
+    "primary": {
+      "type": "button",
+      "label": "Dashboard",
+      "href": "https://app.acme.com"
+    }
+  },
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Docs",
+        "icon": "book-open",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": ["introduction", "quickstart"]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "icon": "code",
+        "groups": [
+          {
+            "group": "Endpoints",
+            "pages": ["api/users", "api/posts"]
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+</Accordion>
+
+## 下一步是什么？
+
+<Columns cols={2}>
+  <Card title="导航概览" icon="sitemap" href="/cn/navigation/overview">
+    构建文档导航结构
+  </Card>
+  <Card title="AI 操作菜单" icon="wand-magic-sparkles" href="/cn/ai/ai-actions">
+    自定义每个页面上的 AI 下拉菜单
+  </Card>
+</Columns>

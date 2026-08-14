@@ -1,0 +1,130 @@
+---
+title: Jamdesk 工作原理
+description: 从 Git 推送到文档上线不到 60 秒。了解 Jamdesk 如何构建、部署和优化文档站点，无需管理基础设施。
+---
+
+Jamdesk 从 GitHub 仓库中的 MDX 文件构建文档站点。你可以使用 React 组件编写 Markdown，推送到 GitHub，站点会在不到 60 秒内上线全球 CDN。内容以纯 MDX 文件的形式保留在你的仓库中，因此你可以随时将其迁移到其他工具。
+
+## 架构概览
+
+你的仓库是唯一可信来源。Jamdesk 连接仓库、构建站点，并将其部署到全球边缘网络。你无需管理任何基础设施。
+
+<Frame caption="内容如何从你的仓库流向用户">
+  <Mermaid minWidth="700px">
+{`%%{init: {'theme': 'neutral', 'themeVariables': {'background': 'transparent'}, 'flowchart': {'nodeSpacing': 25, 'rankSpacing': 40, 'curve': 'basis', 'useMaxWidth': false}}}%%
+flowchart LR
+    subgraph Source["Your Repository"]
+        A[("MDX Files")]
+        B[("docs.json")]
+    end
+
+    subgraph Build["Build Phase"]
+        C["Validate"]
+        D["Process"]
+    end
+
+    E[("CDN Storage")]
+
+    subgraph Serve["Serve Phase"]
+        F["Render on Request"]
+        G["Edge Cache"]
+    end
+
+    Source -->|"git push"| C
+    C --> D
+    D -->|"Upload"| E
+    E --> F
+    F --> G
+    G -->|"< 50ms"| H["Your Users"]`}
+  </Mermaid>
+</Frame>
+
+## 构建流程
+
+通常从开始到完成需要 30–60 秒。构建速度快，是因为 Jamdesk 不会预渲染页面。原始内容会发送到边缘网络，访客请求页面时才按需渲染。
+
+<Steps>
+  <Step title="获取源内容">
+    你可以推送到已连接的 GitHub 分支，或在仪表板中点击 Rebuild。Jamdesk 会克隆你的仓库并查找文档目录。
+  </Step>
+  <Step title="验证">
+    系统会根据架构验证你的 `docs.json` 配置，并检查内部链接是否指向不存在的页面或错误的锚点。
+  </Step>
+  <Step title="处理内容">
+    Jamdesk 会根据你的内容生成搜索索引、[AI 聊天](/cn/ai/chat)嵌入、站点地图、[`llms.txt`](/cn/ai/llms-txt)以及重定向规则。
+  </Step>
+  <Step title="部署到边缘网络">
+    内容会上传到 CDN，并传播到 300 多个边缘位置。只有发生更改的文件会被传输，因此重新部署速度很快。
+  </Step>
+</Steps>
+
+## 每个站点内置的功能
+
+每个站点默认都包含以下功能，无需额外配置。
+
+<Columns cols={2}>
+  <Card title="AI 搜索" icon="magnifying-glass" href="/cn/ai/chat">
+    支持自然语言搜索，理解用户意图，而不仅仅是关键词。搜索功能由构建时根据你的内容生成的向量嵌入提供支持。
+  </Card>
+  <Card title="llms.txt" icon="robot" href="/cn/ai/llms-txt">
+    遵循 llmstxt.org 规范的 AI 可读索引。编码助手和 AI 代理可以直接读取你的文档。
+  </Card>
+  <Card title="SEO 基础功能" icon="chart-line">
+    包括站点地图、robots.txt、Open Graph 图片和元标签。你的文档从首次部署起即可被索引。
+  </Card>
+  <Card title="内置分析" icon="chart-bar" href="/cn/setup/analytics-overview">
+    注重隐私的分析仪表板，无需使用 Cookie。你也可以接入自己的工具：Jamdesk 支持 Google Analytics、Plausible、PostHog 等。
+  </Card>
+</Columns>
+
+## 什么会触发构建
+
+向已连接的分支执行 git push、点击仪表板中的 Rebuild 按钮，或通过 CLI 运行 [`jamdesk deploy`](/cn/cli/deploy)。如果你在短时间内推送多个提交，Jamdesk 会将它们合并为一次构建，避免浪费资源。
+
+如需了解运行详情（状态监控、回滚、环境变量和分支部署），请参阅 [构建与部署生命周期](/cn/deploy/lifecycle)。
+
+## 安全性与基础设施
+
+你无需关注这些细节，但如果安全团队提出疑问：构建会在隔离容器中运行，并且你的 GitHub App 连接仅具有读取权限。
+
+<Columns cols={2}>
+  <Card title="最小权限" icon="shield-check">
+    GitHub App 只会请求读取你所选仓库的权限。该应用没有写入权限，也不会请求组织范围的权限。
+  </Card>
+  <Card title="隔离构建" icon="box">
+    每次构建都会使用独立容器，该容器在部署后销毁。不同构建或客户之间不会保留任何内容。
+  </Card>
+  <Card title="全程使用 HTTPS" icon="lock">
+    为自定义域名和子域名自动提供 SSL 证书。证书会自动签发和续期。
+  </Card>
+  <Card title="全球 CDN" icon="globe">
+    内容通过 Cloudflare 网络提供服务，覆盖 300 多个边缘位置，正常运行时间达到 99.9%。
+  </Card>
+</Columns>
+
+## 性能
+
+文档能否被发现，部分取决于加载速度。Google 将 [Core Web Vitals](https://jamdesk.com/blog/why-google-pagespeed-matters) 作为排名信号，而 GPTBot 和 ClaudeBot 等 AI 爬虫每个页面只会给自己 1–5 秒的抓取时间。如果你的文档无法在这段时间内加载，就不会被引用。
+
+每个 Jamdesk 站点都从边缘网络提供服务，首字节时间低于 50 毫秒。这一速度足以满足 Google 的排名阈值，也能让 AI 爬虫抓取并引用文档。
+
+| 指标 | 典型值 |
+|--------|---------------|
+| 构建时间 | 30–60 秒 |
+| 部署传播时间 | < 30 秒 |
+| 首字节时间（边缘） | < 50ms |
+| 完整页面加载时间 | < 500ms |
+
+## 后续步骤
+
+<Columns cols={3}>
+  <Card title="创建项目" icon="plus" href="/cn/setup/creating-projects">
+    在仪表板中设置新的文档站点
+  </Card>
+  <Card title="连接 GitHub" icon="github" href="/cn/setup/connecting-github">
+    关联你的仓库以启用自动构建
+  </Card>
+  <Card title="本地预览" icon="terminal" href="/cn/cli/overview">
+    使用 Jamdesk CLI 在推送前预览和验证文档
+  </Card>
+</Columns>

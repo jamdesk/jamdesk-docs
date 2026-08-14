@@ -1,0 +1,223 @@
+---
+title: Prompt
+description: 使用 Prompt 展示可复用的 AI 指令，支持复制、内置打开操作、自定义目标、图标和紧凑显示选项。
+---
+
+`<Prompt>` 组件会将一组可复用的指令转换为卡片，读者可以复制这些指令，或在受支持的 AI 工具中打开。复制和打开操作使用标签之间由作者编写的完整可见内容。
+
+## 基本用法
+
+每个 Prompt 都包含复制操作，因此最简单的版本无需任何属性：
+
+<Prompt>
+说明 API 密钥轮换对首次使用我们 REST API 的开发者是如何工作的。
+</Prompt>
+
+```mdx
+<Prompt>
+Explain how API key rotation works for a developer using our REST API for the first time.
+</Prompt>
+```
+
+## 标题和描述
+
+使用 `title` 为任务添加标签。兼容 Mintlify 的 `description` 属性会将可见预览替换为更短的摘要，而标签之间由作者编写的可见内容仍然是复制和打开操作所使用的完整提示词。
+
+<Prompt
+  title="起草发布说明"
+  description="为开发者读者编写简洁的发布说明。"
+  actions={["copy", "claude"]}
+>
+为新的 API 密钥轮换端点编写发布说明。
+
+- 面向后端开发者。
+- 以用户收益为重点。
+- 包含一个请求示例。
+</Prompt>
+
+```mdx
+<Prompt
+  title="Draft a release note"
+  description="Write a concise release note for a developer audience."
+  actions={["copy", "claude"]}
+>
+Write a release note for the new API key rotation endpoint.
+
+- Address backend developers.
+- Lead with the user benefit.
+- Include one request example.
+</Prompt>
+```
+
+显式的 `"copy"` 操作可用于兼容性，但复制操作始终存在，无需列出。
+
+<Note>
+  Prompt 会复制由作者编写的完整可见内容。当提示词包含 [Visibility](/cn/components/visibility) 时，仅面向人类用户的包装标签会从复制文本中省略，但其内容会保留。仅面向代理的子树会被排除。带有表达式值 `for` 属性的 Visibility，或其受众被后续展开属性隐藏的 Visibility，也会被排除，因为无法静态确定其受众。相比之下，不带 `for` 属性、使用简写 `for` 或包含无效字面量受众的 Visibility 仍会显示。隐藏在仅面向代理或表达式/展开属性隐藏的 Visibility 中的 Prompt 没有可复制的源内容。
+</Note>
+
+## 打开操作
+
+添加 `claude`、`cursor`、`chatgpt`、`perplexity` 或 `gemini`，即可让读者在相应工具中打开提示词；每个操作都带有对应的品牌图标。第一个有效的打开操作会显示在复制操作旁边，其他操作会显示在更多菜单中。
+
+<Prompt
+  title="比较身份验证流程"
+  actions={["claude", "cursor", "chatgpt", "perplexity", "gemini"]}
+>
+比较此代码库中的会话令牌和 API 密钥身份验证流程。列出它们在安全性方面的权衡，并建议每种客户端类型应使用哪种流程。
+</Prompt>
+
+```mdx
+<Prompt
+  title="Compare authentication flows"
+  actions={["claude", "cursor", "chatgpt", "perplexity", "gemini"]}
+>
+Compare the session-token and API-key authentication flows in this repository.
+List their security tradeoffs and recommend which flow each client type should use.
+</Prompt>
+```
+
+<Warning>
+  点击打开操作会将完整的可复制提示词发送给选定的第三方。除非你打算根据该提供商的隐私政策共享，否则请勿包含机密信息、个人数据或专有内容。复制操作不会打开第三方服务。
+</Warning>
+
+## 自定义 URL 操作
+
+自定义操作需要 `label`、HTTPS 或 HTTP `url`，以及可选的图标。在路径片段、查询值或片段中放入 `{prompt}`，即可控制 URL 编码后的提示词放置位置。如果省略占位符，Jamdesk 会添加 `prompt` 查询参数。
+
+<Prompt
+  title="研究此迁移"
+  actions={[
+    {
+      label: "搜索网络",
+      url: "https://www.google.com/search?q={prompt}",
+      icon: "magnifying-glass",
+    },
+    "claude",
+  ]}
+>
+将此迁移计划与当前的公共 API 契约进行比较。找出破坏性变更、缺失的回滚步骤，以及发布前所需的测试。
+</Prompt>
+
+```mdx
+<Prompt
+  title="Research this migration"
+  actions={[
+    {
+      label: "Search the web",
+      url: "https://www.google.com/search?q={prompt}",
+      icon: "magnifying-glass",
+    },
+    "claude",
+  ]}
+>
+Compare this migration plan with the current public API contract. Identify
+breaking changes, missing rollback steps, and tests needed before release.
+</Prompt>
+```
+
+自定义操作 URL 必须使用不包含凭据的 `http:` 或 `https:` URL。Jamdesk 会拒绝其他协议、来源或查询键中的占位符，以及长度超过 8,000 个字符的最终操作 URL。当打开操作被拒绝时，复制操作仍然可用。
+
+## 自定义图标
+
+将 `icon` 设置为 Font Awesome 名称、图片 URL 或路径，或内联 SVG。对于不带前缀的 Font Awesome 名称，可使用 `iconType` 选择样式。
+
+<Prompt title="规划教程" icon="pen-nib" iconType="duotone">
+概述一个实践型教程，帮助新用户在十分钟内完成安装并成功发送 API 请求。
+</Prompt>
+
+```mdx
+<Prompt title="Plan a tutorial" icon="pen-nib" iconType="duotone">
+  Outline a hands-on tutorial that gets a new user from installation to a
+  successful API request in under ten minutes.
+</Prompt>
+```
+
+请参阅 [图标](/cn/content/icons)，了解可用的名称和样式。
+
+## 紧凑显示
+
+预览最多显示三行，提示词较长时可以滚动；展开控件可以打开完整提示词。将 `singleLine` 设置为仅显示单行预览。无论采用哪种方式，完整的可见提示词仍会由打开操作复制或发送。
+
+<Prompt title="总结 API">
+用五个要点总结公共 API：
+
+- 身份验证和令牌有效期。
+- 分页约定。
+- 速率限制和重试指南。
+- 错误格式和常见代码。
+- 版本控制和弃用策略。
+</Prompt>
+
+当仅凭标签就足以让读者了解上下文时，可以将 `hidePrompt` 与标题结合使用：
+
+<Prompt title="生成迁移检查清单" hidePrompt actions={["claude"]}>
+为从 API v1 迁移到 v2 创建迁移检查清单。包含前置条件、代码变更、验证步骤、回滚标准和负责人签字确认。
+</Prompt>
+
+```mdx
+<Prompt title="Summarize the API">
+  Summarize the public API in five bullets:
+
+  - Authentication and token lifetimes.
+  - Pagination conventions.
+  - Rate limits and retry guidance.
+  - Error format and common codes.
+  - Versioning and deprecation policy.
+</Prompt>
+
+<Prompt title="Generate a migration checklist" hidePrompt actions={["claude"]}>
+  Create a migration checklist for moving from API v1 to v2. Include
+  prerequisites, code changes, validation steps, and rollback criteria.
+</Prompt>
+```
+
+仅当存在 `title` 时，`hidePrompt` 才会隐藏预览。没有标题时，Jamdesk 会保留提示词可见，以确保读者仍能理解该卡片。
+
+## 属性
+
+<ParamField name="children" type="ReactNode">
+  开始和结束标签之间的提示词内容。Jamdesk 会保留由作者编写的完整可见 Markdown，供复制和打开操作使用；除非 `description` 替换预览，或 `hidePrompt` 隐藏预览，否则也会将此内容渲染为预览。Visibility 过滤遵循上述规则。
+</ParamField>
+
+<ParamField name="title" type="string">
+  显示在卡片标题中的标签。默认不显示标题。
+</ParamField>
+
+<ParamField name="description" type="string">
+  为兼容 Mintlify 而接受的紧凑内联 Markdown 预览。它只会更改可见预览；由作者编写的可见内容仍然是要复制或发送的提示词。
+</ParamField>
+
+<ParamField name="icon" type="string | ReactElement" default="sparkles">
+  标题图标。接受 Font Awesome 名称、图片 URL 或路径，或内联 SVG 元素。
+</ParamField>
+
+<ParamField name="iconType" type="regular | solid | light | thin | sharp-solid | duotone | brands">
+  应用于不带前缀字符串图标的 Font Awesome 样式。不会更改图片 URL、路径、已有前缀的名称或内联 SVG 元素。
+</ParamField>
+
+<ParamField name="actions" type="('copy' | 'cursor' | 'claude' | 'chatgpt' | 'perplexity' | 'gemini' | CustomAction)[]" default="[]">
+  按显示顺序排列的打开操作。`CustomAction` 是 `{ label: string; url: string; icon?: string }`。复制操作始终显示；可以接受显式的 `copy` 条目，并会自动去重。无效、重复或过大的打开操作会被省略。
+</ParamField>
+
+<ParamField name="singleLine" type="boolean | string" default="false">
+  设置为布尔值 `true` 或字符串 `"true"` 时，将可见预览截取为一行。字符串 `"false"` 仍表示禁用，并且每个操作仍会使用完整提示词。
+</ParamField>
+
+<ParamField name="hidePrompt" type="boolean | string" default="false">
+  存在标题且值为布尔值 `true` 或字符串 `"true"` 时，隐藏可见预览。没有标题时，预览仍会显示。字符串 `"false"` 仍表示禁用。
+</ParamField>
+
+<ParamField name="className" type="string">
+  应用于 Prompt 卡片根元素的其他 CSS 类名。
+</ParamField>
+
+## 接下来做什么？
+
+<Columns cols={2}>
+  <Card title="使用 AI 编写内容" icon="wand-magic-sparkles" href="/cn/ai/writing-with-ai">
+    将页面需求转换为重点明确的提示词
+  </Card>
+  <Card title="组件概览" icon="puzzle-piece" href="/cn/components/overview">
+    浏览其余 MDX 组件库
+  </Card>
+</Columns>

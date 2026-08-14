@@ -1,0 +1,178 @@
+---
+title: Codex
+description: >-
+  Codex 是 OpenAI 的云端编码代理，可直接针对 GitHub 仓库异步执行多文件文档批处理任务。
+---
+
+[Codex](https://openai.com/index/introducing-codex/) 是 OpenAI 的云端编码代理。它可以直接处理 GitHub 仓库，因此你无需先设置本地环境，就能针对项目执行文档任务。
+
+Codex 与 [Claude Code](/cn/ai/claude-code) 的差异主要在于工作流形式。Codex 在云端异步运行：你描述一项工作，暂时离开，完成后再检查 PR。这非常适合批处理任务（例如将包含 500 行内容的 README 拆分成十几个页面，或根据过去六个月的 GitHub issue 生成故障排查页面），但不太适合反复完善单个页面。如果你的工作是一个不想持续跟进的多文件批处理任务，Codex 是合适的选择。对于交互式单页面工作，请改用 [Claude Code](/cn/ai/claude-code)。
+
+## 快速设置
+
+<Steps>
+  <Step title="打开仓库">
+    在 Codex 中打开你的 Jamdesk 文档仓库。Codex 可直接连接 GitHub 仓库。
+  </Step>
+  <Step title="添加代理说明">
+    在项目根目录中创建 `AGENTS.md` 文件，写入文档规范，让 Codex 遵循你的约定。
+  </Step>
+  <Step title="连接 MCP 服务器">
+    将文档 MCP 端点添加到 `.codex/config.toml`，让 Codex 能够搜索已发布的文档。
+  </Step>
+</Steps>
+
+## AGENTS.md 模板
+
+在项目根目录中创建 `AGENTS.md`：
+
+```markdown AGENTS.md
+# Jamdesk Documentation Project
+
+Jamdesk docs project. Pages are MDX (Markdown + React components). Config is in `docs.json`.
+
+## How This Project Works
+
+- `docs.json`: navigation structure, theme, colors, branding. Pages must be listed here to appear in the sidebar.
+- `*.mdx` files: documentation pages. Every page needs `title` and `description` frontmatter.
+- `images/`: static assets. Always use `.webp` format.
+- `snippets/`: reusable MDX fragments. Import with `<Snippet file="name.mdx" />`.
+
+## Page Template
+
+Every page follows this structure:
+
+    ---
+    title: Clear, Specific Title
+    description: One sentence. Used in search results and social previews.
+    ---
+
+    Opening paragraph: what this page covers and who it's for. No heading needed.
+
+    ## First Section
+
+    Content. Use components where they help, not for decoration.
+
+    ## What's Next?
+
+    <Columns cols={2}>
+      <Card title="Related Page" icon="arrow-right" href="/path">
+        Why the reader would go here next
+      </Card>
+    </Columns>
+
+The opening paragraph comes right after frontmatter with no heading. "What's Next?" is always the last section. Card descriptions explain why, not what.
+
+## Writing Style
+
+Start with why. What problem does this solve? Show the answer first, then unpack the how.
+
+Use progressive disclosure: simple example up top, advanced options tucked into Accordions or later sections.
+
+Active voice. "Run this command", not "This command should be run".
+
+One idea per paragraph. If you find yourself reaching for "also" or "additionally", that's the cue to start a new paragraph instead.
+
+Code examples have to actually work. Every block should be complete and copy-pasteable, never partial or pseudocode.
+
+And write like a person. No filler ("It's important to note that", "This allows you to"). No hedging ("you might want to consider"). If a paragraph reads like a chatbot wrote it, rewrite it shorter.
+
+## Components
+
+Only use these. Do not invent others.
+
+Layout: Card, Columns, Tabs, Tab, Accordion, AccordionGroup, Steps, Step, Expandable, Frame, CodeGroup
+Callouts: Note, Info, Warning, Tip, Check, Danger
+
+| Use | For | Don't use for |
+|-----|-----|---------------|
+| Tabs | Mutually exclusive choices (npm/yarn, OS) | Sequential content |
+| Steps | Ordered procedures | Unordered lists |
+| Accordion | Optional/advanced detail | Core content |
+| Card + Columns | Navigation links, feature grids | Inline content |
+| Note/Tip/Warning | Important context | Every other paragraph |
+
+Cards always go inside Columns:
+
+    <Columns cols={2}>
+      <Card title="Page Title" icon="icon-name" href="/path">
+        Brief description
+      </Card>
+    </Columns>
+
+Icons are Font Awesome Light names: "rocket", "code", "terminal", "book-open", "gear"
+
+## Adding Pages
+
+1. Create the `.mdx` file
+2. Add the page path (no `.mdx` extension) to `docs.json` in the right navigation group
+3. Link to it from related pages via "What's Next?" cards
+
+If you skip step 2, the page won't show up in the sidebar. Read `docs.json` before creating pages so you understand the navigation structure.
+
+## Common Mistakes
+
+- Inventing components like `<CodeBlock>`, `<Alert>`, `<Section>`. They don't exist.
+- Using `<Card>` without a `<Columns>` wrapper.
+- Skipping `description` in frontmatter, which breaks search results and link previews.
+- Using raw HTML tags instead of MDX components.
+- Writing "click here" links instead of descriptive link text.
+```
+
+<Tip>
+  添加产品术语、API 命名约定，以及适用于文档的任何特定风格规则。
+</Tip>
+
+## MCP 配置
+
+将文档端点添加到 `.codex/config.toml`：
+
+```toml .codex/config.toml
+[mcp_servers.my-docs]
+url = "https://your-project.jamdesk.app/_mcp"
+```
+
+将 `your-project` 替换为你的 Jamdesk 子域名；如果你已启用自定义域名，也可以改用该域名：`url = "https://docs.acme.com/_mcp"`。有关端点的详细信息，请参阅 [MCP 服务器](/cn/ai/mcp-server)。
+
+## 示例提示词
+
+Codex 会异步执行任务。这会改变你编写提示词的方式：你不再进行交互式来回沟通，而是提交一项长期任务，稍后再查看结果。因此，最有效的提示词是要求 Codex 完成一组明确的工作。
+
+可以先尝试：*"根据 `/src/auth` 中的源代码，为身份验证 API 编写文档"*。Codex 会读取代码库，找到相关文件，并生成匹配的页面。对于更复杂的情况，可以让它参考真实的 bug 历史：*"创建一个故障排查页面，涵盖 GitHub issue 中最常见的 5 个错误"*，这样生成的页面通常比凭记忆编写的内容更贴合实际。
+
+多文件重构尤其适合这种模式。对于具有明确审查标准的任务，可以将以下提示词复制到 Codex：
+
+<Prompt title="重构大型 README">
+将包含 500 行内容的 `README.md` 重构为重点明确的 Jamdesk 文档页面。
+
+验收标准：
+
+- 保留 README 中每一项独特的技术细节、命令、警告和代码示例。
+- 将内容分组为面向任务的 `.mdx` 页面，并使用具有描述性的文件名。
+- 为每个页面添加 `title` 和 `description` frontmatter、开头段落以及“下一步”卡片。
+- 将每个新页面添加到 `docs.json` 中对应的分组，并保持合理的页面顺序。
+- 只能使用 `components/overview.mdx` 中已列出的 Jamdesk 组件；不要自行创建组件。
+- 根据新的文件结构修复内部链接，并报告任何无法解析的源链接。
+- 在所有内容都已迁移，且新页面通过项目验证和失效链接检查之前，不要删除原始 README。
+</Prompt>
+
+## /update-jamdesk 技能
+
+代码发生变更时，如需自动更新文档，请安装 `/update-jamdesk` 技能：
+
+```bash
+npx skills add jamdesk/skills --skill update-jamdesk -a codex
+```
+
+有关完整指南，请参阅[自动更新](/cn/ai/automated-updates)。
+
+## 下一步
+
+<Columns cols={2}>
+  <Card title="使用 AI 编写文档" icon="wand-magic-sparkles" href="/cn/ai/writing-with-ai">
+    适用于各种工具的有效提示词策略
+  </Card>
+  <Card title="Claude Code" icon="terminal" href="/cn/ai/claude-code">
+    CLAUDE.md 模板和完整项目上下文工作流
+  </Card>
+</Columns>

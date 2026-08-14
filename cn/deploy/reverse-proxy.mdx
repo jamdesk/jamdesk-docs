@@ -1,0 +1,326 @@
+---
+title: 反向代理
+description: "使用 nginx、Apache、Caddy、Traefik 或 HAProxy，通过 /docs 提供文档，并为每种反向代理提供经过测试的配置片段。"
+---
+
+如果您已运行 nginx、Apache、Caddy、Traefik 或 HAProxy，请添加 location/route 块，将 `/docs` 流量转发到您的 Jamdesk 子域名。
+
+## 前置条件
+
+- 访问 Web 服务器配置的权限
+- 您的 Jamdesk 子域名（可在仪表板设置中找到）
+
+<Note>
+如果您使用自定义子路径而不是默认的 `/docs`，请将下面每个 location/route 块（nginx、Apache、Caddy、Traefik、HAProxy）中的 `/docs` 替换为您的子路径。在仪表板中重命名后，也请再次更新配置。
+</Note>
+
+## nginx
+
+添加一个 location 块，将 `/docs` 请求代理到 Jamdesk：
+
+```nginx nginx.conf
+server {
+    listen 443 ssl;
+    server_name yoursite.com;
+
+    # Your existing configuration...
+
+    # Proxy /docs to Jamdesk
+    location /docs {
+        proxy_pass https://YOUR_SLUG.jamdesk.app;
+        proxy_ssl_server_name on;
+
+        proxy_set_header Host YOUR_SLUG.jamdesk.app;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        # Required for domain verification
+        proxy_set_header X-Jamdesk-Forwarded-Host $host;
+    }
+
+    # Next.js static assets (JS, CSS)
+    location /_next/ {
+        proxy_pass https://YOUR_SLUG.jamdesk.app;
+        proxy_ssl_server_name on;
+        proxy_set_header Host YOUR_SLUG.jamdesk.app;
+    }
+
+    # Jamdesk assets (fonts, images, branding)
+    location /_jd/ {
+        proxy_pass https://YOUR_SLUG.jamdesk.app;
+        proxy_ssl_server_name on;
+        proxy_set_header Host YOUR_SLUG.jamdesk.app;
+    }
+
+}
+```
+
+<Note>
+将 `YOUR_SLUG` 替换为您的实际 Jamdesk 子域名。
+</Note>
+
+<Warning>
+**路径处理非常重要。** `proxy_pass` URL 没有尾随路径，因此 nginx 会保留原始请求路径。请求 `/docs/page` 会被代理到 `jamdesk.app/docs/page`。如果添加尾随斜杠（`proxy_pass https://...jamdesk.app/`），`/docs` 前缀就会被移除。请完全按照上面的示例保留配置。
+</Warning>
+
+更新配置后，重新加载 nginx：
+
+```bash
+sudo nginx -t && sudo systemctl reload nginx
+```
+
+## Apache
+
+使用 `mod_proxy` 将 `/docs` 请求转发到 Jamdesk：
+
+```apache httpd.conf or .htaccess
+<VirtualHost *:443>
+    ServerName yoursite.com
+
+    # Your existing configuration...
+
+    # Enable proxy modules
+    ProxyRequests Off
+    SSLProxyEngine On
+
+    # Proxy /docs to Jamdesk
+    ProxyPass /docs https://YOUR_SLUG.jamdesk.app/docs
+    ProxyPassReverse /docs https://YOUR_SLUG.jamdesk.app/docs
+
+    # Next.js static assets (JS, CSS)
+    ProxyPass /_next https://YOUR_SLUG.jamdesk.app/_next
+    ProxyPassReverse /_next https://YOUR_SLUG.jamdesk.app/_next
+
+    # Jamdesk assets (fonts, images, branding)
+    ProxyPass /_jd https://YOUR_SLUG.jamdesk.app/_jd
+    ProxyPassReverse /_jd https://YOUR_SLUG.jamdesk.app/_jd
+
+    <Location /docs>
+        RequestHeader set X-Forwarded-Host "yoursite.com"
+        RequestHeader set X-Forwarded-Proto "https"
+        # Required for domain verification
+        RequestHeader set X-Jamdesk-Forwarded-Host "yoursite.com"
+    </Location>
+</VirtualHost>
+```
+
+确保已启用所需模块：
+
+```bash
+sudo a2enmod proxy proxy_http ssl headers
+sudo systemctl reload apache2
+```
+
+## Caddy
+
+[Caddy](https://caddyserver.com/) 通过自动 HTTPS 提供简单的反向代理配置：
+
+```caddy Caddyfile
+yoursite.com {
+    # Your existing configuration...
+
+    handle /docs* {
+        reverse_proxy https://YOUR_SLUG.jamdesk.app {
+            header_up Host {upstream_hostport}
+            header_up X-Forwarded-Host {host}
+            # Required for domain verification
+            header_up X-Jamdesk-Forwarded-Host {host}
+        }
+    }
+
+    # Next.js static assets and Jamdesk assets
+    handle /_next/* {
+        reverse_proxy https://YOUR_SLUG.jamdesk.app {
+            header_up Host {upstream_hostport}
+        }
+    }
+
+    handle /_jd/* {
+        reverse_proxy https://YOUR_SLUG.jamdesk.app {
+            header_up Host {upstream_hostport}
+        }
+    }
+
+    # Handle other routes
+    handle {
+        # Your main site configuration
+    }
+}
+```
+
+完成更改后重新加载 Caddy：
+
+```bash
+sudo systemctl reload caddy
+```
+
+## Traefik
+
+对于 [Traefik](https://traefik.io/) 用户，请配置路由器和服务：
+
+```yaml traefik.yml
+http:
+  routers:
+    docs-router:
+      rule: "Host(`yoursite.com`) && (PathPrefix(`/docs`) || PathPrefix(`/_next`) || PathPrefix(`/_jd`))"
+      service: jamdesk-docs
+      middlewares:
+        - jamdesk-headers
+      tls: {}
+
+  middlewares:
+    jamdesk-headers:
+      headers:
+        customRequestHeaders:
+          # Required for domain verification
+          X-Jamdesk-Forwarded-Host: "yoursite.com"
+
+  services:
+    jamdesk-docs:
+      loadBalancer:
+        servers:
+          - url: "https://YOUR_SLUG.jamdesk.app"
+        passHostHeader: false
+```
+
+## HAProxy
+
+对于 [HAProxy](https://www.haproxy.org/)，请添加后端和 ACL 规则：
+
+```haproxy haproxy.cfg
+frontend https
+    bind *:443 ssl crt /etc/ssl/certs/yoursite.pem
+
+    # Route /docs and assets to Jamdesk backend
+    acl is_docs path_beg /docs
+    acl is_next path_beg /_next
+    acl is_jd path_beg /_jd
+    use_backend jamdesk_docs if is_docs or is_next or is_jd
+
+    # Default backend for other requests
+    default_backend main_site
+
+backend jamdesk_docs
+    server jamdesk YOUR_SLUG.jamdesk.app:443 ssl verify none
+    http-request set-header Host YOUR_SLUG.jamdesk.app
+    http-request set-header X-Forwarded-Host %[req.hdr(host)]
+    # Required for domain verification
+    http-request set-header X-Jamdesk-Forwarded-Host %[req.hdr(host)]
+```
+
+## 同时转发根目录文件
+
+`robots.txt`、`sitemap.xml`、`llms.txt` 和 `llms-full.txt` 从域名根目录提供，而不是从 `/docs` 下提供——仅转发 `/docs`、`/_next` 和 `/_jd` 的代理会让这些文件由您自己的网站提供（或完全无法提供），从而破坏 AI 代理发现并影响 SEO，无论本页其他配置如何。
+
+请为以下四个路径分别添加与上面 `/docs` 使用的相同 location/route 模式。nginx 配置如下：
+
+```nginx nginx.conf
+    location = /robots.txt {
+        proxy_pass https://YOUR_SLUG.jamdesk.app;
+        proxy_ssl_server_name on;
+        proxy_set_header Host YOUR_SLUG.jamdesk.app;
+        proxy_set_header X-Jamdesk-Forwarded-Host $host;
+    }
+
+    location = /sitemap.xml {
+        proxy_pass https://YOUR_SLUG.jamdesk.app;
+        proxy_ssl_server_name on;
+        proxy_set_header Host YOUR_SLUG.jamdesk.app;
+        proxy_set_header X-Jamdesk-Forwarded-Host $host;
+    }
+
+    location = /llms.txt {
+        proxy_pass https://YOUR_SLUG.jamdesk.app;
+        proxy_ssl_server_name on;
+        proxy_set_header Host YOUR_SLUG.jamdesk.app;
+        proxy_set_header X-Jamdesk-Forwarded-Host $host;
+    }
+
+    location = /llms-full.txt {
+        proxy_pass https://YOUR_SLUG.jamdesk.app;
+        proxy_ssl_server_name on;
+        proxy_set_header Host YOUR_SLUG.jamdesk.app;
+        proxy_set_header X-Jamdesk-Forwarded-Host $host;
+    }
+```
+
+相同的四个块——使用相同的标头和上游——同样适用于 Apache、Caddy、Traefik 和 HAProxy：复制上面正在使用的 `/docs` 块，并为每个路径重复一次。
+
+<Warning>
+仅当 Jamdesk 管理您的域名根目录时，才转发这些文件。如果您的主站点已经提供自己的 `robots.txt` 或 `sitemap.xml`，请将两者合并，而不是相互覆盖。
+</Warning>
+
+## 必需标头
+
+无论使用哪种代理，都请确保设置以下标头：
+
+| 标头 | 值 | 用途 |
+|--------|-------|---------|
+| `Host` | `YOUR_SLUG.jamdesk.app` | 将请求标识为发往 Jamdesk |
+| `X-Forwarded-Host` | 您的域名 | 告知 Jamdesk 在 URL 中使用哪个域名 |
+| `X-Forwarded-Proto` | `https` | 确保生成安全 URL |
+| `X-Jamdesk-Forwarded-Host` | 您的域名 | 域名验证所必需 |
+| `?jd_proxy=1` 查询标记 | 附加到上游 URL | 标头的替代方式，适用于只能重写 URL 而无法设置请求标头的工具——请参阅[仅限自定义域名](/cn/deploy/custom-domain-only) |
+
+<Warning>
+`X-Jamdesk-Forwarded-Host` 标头（或 `?jd_proxy=1` 标记）是**必需的**，缺少这两者中的任意一个都会静默失败。
+
+请求仍会成功——不会出现任何错误，这正是问题容易被忽略的原因。真正出问题的地方更加隐蔽：
+
+- **如果您尚未在仪表板中注册自定义域名**，文档页面会带有 `<meta name="robots" content="noindex">`，并且规范 URL、Open Graph URL 和 sitemap URL 都会指向 `YOUR_SLUG.jamdesk.app`，而不是您的域名。搜索引擎将永远不会为您的文档建立索引。
+- **如果您已注册自定义域名**，Jamdesk 会回退到已登记的域名，因此 URL 仍然正确——但它仍无法区分代理流量与直接访问您的 `*.jamdesk.app` 子域名的流量，并且[仅限自定义域名](/cn/deploy/custom-domain-only)预检检查会失败。
+
+**403** 表示相反的问题：标头确实存在，但其中指定的域名尚未为此项目注册并激活。
+</Warning>
+
+<Tip>
+代理配置是**一次性设置**。如果您之后在 Jamdesk 仪表板中更改自定义域名或配置，则无需更新代理——所有路由决策都基于仪表板设置在服务器端完成。
+</Tip>
+
+## 故障排除
+
+<Accordion title="502 Bad Gateway">
+确认代理可以通过 HTTPS 访问 `YOUR_SLUG.jamdesk.app`。检查防火墙规则和 DNS 解析。
+</Accordion>
+
+<Accordion title="SSL certificate errors">
+为上游连接启用 SSL/TLS。对于 nginx，请添加 `proxy_ssl_server_name on;`。对于 Apache，请启用 `SSLProxyEngine On`。
+</Accordion>
+
+<Accordion title="Assets loading from wrong domain">
+确保正确设置 `X-Forwarded-Host` 标头。该标头会告知 Jamdesk 在资源 URL 和内部链接中使用哪个域名。
+</Accordion>
+
+<Accordion title="Redirect loops">
+检查代理是否正在跟随重定向。代理应按原样转发响应，不进行额外的重定向处理。
+</Accordion>
+
+<Accordion title="403 Domain not authorized error">
+如果看到“Domain is not authorized to serve this content”：
+
+1. 确认您的域名已在 Jamdesk 仪表板中注册
+2. 为您的域名完成 DNS 验证（TXT 记录）
+3. 确保在代理配置中设置了 `X-Jamdesk-Forwarded-Host` 标头
+4. 检查您的域名是否映射到正确的项目
+
+代理只有在域名验证完成后才能提供文档。
+</Accordion>
+
+<Accordion title="The Custom domain only preflight check keeps failing">
+预检会在您的线上域名上获取 `/_jd/preflight`，并检查实际到达 Jamdesk 的内容。如果报告您的代理“没有标识自身”，说明请求已到达 Jamdesk，但缺少标头或标记——请重新检查上面每个 location/route 块中的 `X-Jamdesk-Forwarded-Host` 行。有关每条预检消息的含义，请参阅[仅限自定义域名](/cn/deploy/custom-domain-only)。
+</Accordion>
+
+## 下一步
+
+<Columns cols={3}>
+  <Card title="仅限自定义域名" icon="eye-slash" href="/cn/deploy/custom-domain-only">
+    停止子域名直接响应
+  </Card>
+  <Card title="自定义域名" icon="globe" href="/cn/deploy/custom-domains">
+    验证 DNS 并排查问题
+  </Card>
+  <Card title="子路径托管" icon="folder-tree" href="/cn/deploy/subpath-hosting">
+    在 /docs 提供文档
+  </Card>
+</Columns>

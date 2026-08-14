@@ -1,0 +1,179 @@
+---
+title: 自定义域名
+description: 将文档托管在自定义域名，而非默认的 *.jamdesk.app 子域名。涵盖子域名和根域名的 DNS、SSL 与验证设置。
+---
+
+将文档托管在自定义域名，而非默认的 `*.jamdesk.app` 子域名。
+
+## 设置概览
+
+<Steps>
+  <Step title="在仪表板中添加域名">
+    前往项目的 **Settings** → **Domain**，输入您的域名（例如 `docs.example.com` 或 `example.com`）。
+  </Step>
+  <Step title="配置 DNS">
+    将仪表板中显示的 DNS 记录添加到您的 DNS 服务商。记录取决于您的域名类型（见下文）。
+  </Step>
+  <Step title="验证并等待">
+    Jamdesk 会验证所有权并自动配置 SSL 证书。
+  </Step>
+</Steps>
+
+## 托管选项
+
+添加域名时，请选择托管模式：
+
+### 标准域名
+
+您的文档将由 Jamdesk 直接通过自定义域名提供：
+
+```text
+docs.example.com → acme.jamdesk.app
+```
+
+DNS 指向 Jamdesk，SSL 证书由系统自动处理。
+
+### 在 /docs 托管（基于代理，可自定义子路径）
+
+您的文档将托管在现有网站的子路径下：
+
+```text
+example.com/docs → acme.jamdesk.app/docs
+```
+
+`/docs` 是默认路径；您也可以在同一个切换控件中选择其他单段子路径（例如 `/help``、`/guide` 等）。您需要配置代理（Cloudflare、Vercel、nginx 等），将对所选子路径的请求转发到 Jamdesk。请参阅[子路径托管](/cn/deploy/subpath-hosting)，了解设置指南和子路径选择规则。
+
+<Note>
+启用或停用“Host at a subpath”，或更改子路径，都会触发自动重新构建，因为 URL 结构发生了变化。
+</Note>
+
+## DNS 配置
+
+所需记录取决于您使用的是子域名还是根域名（apex）。
+
+### 子域名（例如 docs.example.com）
+
+| 类型 | 名称 | 值 |
+|------|------|-------|
+| CNAME | `docs` | `cname.jamdesk.com` |
+| TXT | `_jamdesk.docs` | *(在仪表板中显示)* |
+
+“Name”字段仅表示子域名部分。对于 `docs.example.com`，请输入 `docs`。
+
+### 根域名（例如 example.com）
+
+| 类型 | 名称 | 值 |
+|------|------|-------|
+| A | `@` | `76.76.21.21` |
+| TXT | `_jamdesk` | *(在仪表板中显示)* |
+
+根域名使用 A 记录而不是 CNAME，因为 DNS 标准（RFC 1034）禁止在区域根使用 CNAME 记录。
+
+<Note>
+DNS 更改最多可能需要 48 小时才能传播，但大多数情况下几分钟内即可完成。请在 [whatsmydns.net](https://www.whatsmydns.net/) 查看状态。
+</Note>
+
+## 验证
+
+添加 DNS 记录后，Jamdesk 会自动：
+
+1. 检测您的 DNS 记录（CNAME 或 A 记录，以及 TXT）
+2. 通过 TXT 记录验证域名所有权
+3. 通过 Let's Encrypt 配置 SSL 证书
+4. 将流量路由到您的文档
+
+在 **Settings** → **Domain** 中查看验证状态。状态包括：
+- **Pending** - 等待 DNS 传播
+- **Active** - 域名已验证并正在提供流量
+- **Needs Attention** - 配置不匹配或存在冲突（请检查邮件通知）
+- **Error** - 配置问题（请在仪表板中查看详细信息）
+
+点击仪表板中的 **Refresh**，手动检查验证状态。
+
+## SSL 证书
+
+SSL 证书会自动配置，并在到期前续期。由于必须使用 HTTPS，HTTP 请求会重定向到 HTTPS。
+
+您无需手动配置证书。
+
+## 根域名
+
+`example.com` 等根域名（apex）完全受支持。仪表板会自动显示正确的记录：指向 `76.76.21.21` 的 A 记录，而不是 CNAME，因为 DNS 标准禁止在区域根使用 CNAME 记录。
+
+如果您更喜欢使用 `docs.example.com` 这样的子域名，也同样支持。
+
+## 多个域名
+
+每个项目支持一个自定义域名。若要将多个域名指向同一文档：
+
+1. 在 Jamdesk 中设置主域名
+2. 在 DNS/CDN 层配置其他域名，将其重定向到主域名
+
+## 移除域名
+
+要断开自定义域名：
+
+1. 前往 **Settings** → **Domain**
+2. 点击 **Remove Domain**
+3. 您的文档仍可通过 `*.jamdesk.app` 子域名访问
+
+<Warning>
+移除已启用“Host at a subpath”的域名会触发重新构建，以更新 URL 路径。任何自定义子路径都会随域名一并清除，因此如果稍后重新连接域名，文档将从默认的 `/docs` 开始。
+</Warning>
+
+## Cloudflare 用户
+
+如果使用 Cloudflare 作为 DNS 服务商：
+
+1. 在域名验证期间，将代理状态设置为 **DNS only**（灰色云图标）
+2. 让 Vercel 处理 SSL：为文档子域名停用 Cloudflare 的“Always Use HTTPS”
+3. 验证完成后，您可以重新启用代理（橙色云）
+
+<Note>
+**正在使用 Cloudflare Worker？** Worker 要运行，DNS 记录必须启用代理（橙色云）。仅在验证期间使用灰色云，之后切换回来。详情请参阅 [Cloudflare Workers 设置](/cn/deploy/cloudflare)。
+</Note>
+
+## 故障排除
+
+| 问题 | 解决方案 |
+|-------|----------|
+| 域名停留在“Pending” | 使用 `dig` 检查 DNS 记录（子域名使用 CNAME，根域名使用 A） |
+| SSL 证书错误 | 确保没有 CAA 记录阻止 Let's Encrypt |
+| 重定向循环 | 如果使用 Cloudflare，请在验证期间设置为灰色云（参见上面的 [Cloudflare 用户](#cloudflare-用户)） |
+| CNAME 无法解析 | 在 DNS 服务商处验证记录，并等待传播 |
+| 域名已在使用 | 域名在之前的设置中已注册到 Vercel；验证通常会自动完成 |
+
+### 使用 dig 验证 DNS
+
+```bash
+# Check CNAME record (subdomains)
+dig CNAME docs.example.com
+
+# Check A record (apex domains)
+dig A example.com
+
+# Check TXT record
+dig TXT _jamdesk.example.com
+```
+
+如需详细诊断，请参阅 [DNS 故障排除](/cn/help/troubleshooting/dns-issues)。
+
+## jamdesk.app 子域名会在搜索中与我的域名竞争吗？
+
+不会。自定义域名启用后，直接从您的
+`[slug].jamdesk.app` 子域名提供的页面会包含一个指向您域名的规范链接，
+因此搜索引擎会将您的域名视为唯一可信来源，并将所有排名信号集中到该域名。
+
+## 下一步
+
+<Columns cols={2}>
+  <Card title="子域名" icon="sitemap" href="/cn/deploy/subdomains">
+    配置特定于子域名的设置
+  </Card>
+  <Card title="子路径托管" icon="route" href="/cn/deploy/subpath-hosting">
+    在 example.com/docs 托管文档
+  </Card>
+  <Card title="DNS 故障排除" icon="server" href="/cn/help/troubleshooting/dns-issues">
+    诊断 DNS 配置问题
+  </Card>
+</Columns>

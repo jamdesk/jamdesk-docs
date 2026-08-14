@@ -1,0 +1,104 @@
+---
+title: AI 评分
+sidebarTitle: AI 评分
+description: Jamdesk 根据开放的 AFDocs 标准，在每次构建时评估 AI 代理读取文档的效果。查看评分、修复问题并持续跟踪。
+---
+
+AI 助手越来越多地直接从产品文档回答相关问题，但前提是它们确实能够读取文档。AI 评分用于衡量这一点。每次构建后，Jamdesk 都会根据开放的 [AFDocs](https://afdocs.dev) 代理就绪度标准扫描已发布的网站，并提供 0–100 分的评分、字母等级以及可操作的逐项问题明细。
+
+屏幕截图显示的是英文界面。
+
+<Tip>
+  **先在任意网站上试用。**免费的 [AI Score 工具](https://jamdesk.com/ai-score) 可根据相同标准为任意文档 URL 评分，[AI Score Chrome 扩展](https://chromewebstore.google.com/detail/jamdesk-ai-score/mhihkkgpcbmapmojnakhjfhjmiagkhlj) 则可在浏览网站时为其评分。在 Jamdesk 中，评分会自动针对你自己的文档运行。
+</Tip>
+
+## 评分方式
+
+AI 评分会自动运行，无需设置。每次构建成功后，Jamdesk 会等待新版本上线，然后扫描已发布的文档并记录结果。
+
+- **每次构建都会运行。**每次部署都会重新评估网站，因此回归问题一上线就会显示出来。
+- **0–100 分和字母等级**（从 A+ 到 F），根据开放的 AFDocs 标准进行衡量。评分引擎与免费的公共工具相同。
+- **随时重新运行。**打开项目的 **AI Score** 页面，然后点击 **Run score now**，即可重新为线上网站评分，无需等待构建。
+
+在仪表板中打开项目，然后选择 **AI Score**。
+
+## 查看评分
+
+<Frame>
+  <img src="/images/ai-score/dashboard.webp" alt="AI Score 仪表板显示评分为 94、等级为 A 的环形图，六次构建的趋势线，以及可展开的类别卡片，其中一张显示失败检查和用于修复的 Copy prompt to fix 按钮" />
+</Frame>
+
+AI Score 页面分为三个部分：
+
+- **评分环形图。**显示当前评分和等级，以及与上次构建相比的变化。
+- **趋势线。**显示近期构建中的评分，让评分下降一目了然。
+- **类别卡片。**将检查分为七个领域，每个领域都有自己的等级。展开类别即可查看单项检查及其通过、警告或失败状态。
+
+页脚会注明扫描的内容、抽样的页面数量以及 AFDocs 规范版本。
+
+### 评分衡量的内容
+
+每个类别都会归纳相关的代理就绪度检查：
+
+| 类别 | 覆盖内容 |
+|---|---|
+| 内容可发现性 | `llms.txt` 以及将代理引导至内容的信号 |
+| Markdown 可用性 | 供代理读取的每个页面的整洁 Markdown 版本 |
+| 页面大小与截断风险 | 页面大小是否足以放入代理的上下文窗口 |
+| 内容结构 | 标题、顺序以及页面开头是否尽早出现内容 |
+| URL 稳定性与重定向 | 稳定的 URL 以及正确的同主机重定向 |
+| 可观测性与内容健康度 | 状态码、缓存，以及读者与代理所看到内容之间的一致性 |
+| 身份验证与访问权限 | 代理是否能够访问页面 |
+
+## 修复问题
+
+每项发出警告或失败的检查都会附带通俗易懂的说明，以及针对 MDX 和 `docs.json` 编写的修复建议。检查结果分为两类：
+
+- **需要在内容中修复的问题。**例如，页面的实际内容开始位置过低、应拆分的超大页面，或由交互式组件渲染但未出现在页面 Markdown 中的内容。修复文本会指出下一步操作及其适用的页面。
+- **由 Jamdesk 为你处理的问题。**`llms.txt`、Markdown 导出、状态码和缓存都会自动生成。如果其中一项失败，通常表示构建时出现了暂时性问题，因此请在下次构建后重新运行评分；如果问题持续存在，请联系支持团队。
+
+### 复制修复提示
+
+每项可修复的检查都有一个 **Copy prompt to fix** 按钮。该按钮会复制一段可直接粘贴的提示，其中包含检查项、发现的问题以及如何在 MDX 或 `docs.json` 中解决问题。将其粘贴到 AI 编程代理（[Claude Code](/cn/ai/claude-code)、[Jamdesk Claude 插件](/cn/claude-code-plugin)、[Cursor](/cn/ai/cursor) 或 [Codex](/cn/ai/codex)）中，让它完成编辑，然后推送更改以重新构建并重新评分。
+
+## 评分变化时接收邮件
+
+你的团队无需一直查看仪表板。每当构建产生首次评分、评分变化达到或超过 3 分，或评分恢复到满分 100 分时，Jamdesk 都会向项目成员发送邮件，告知新评分以及最重要的待修复问题。
+
+- **按项目切换。****Email team when score changes** 开关位于 AI Score 页面的顶部，默认开启。
+- **小幅波动不会单独触发通知。**评分变化一两分时不会单独发送邮件，但这些变化也不会被忽略：Jamdesk 会将每次新评分与上一次发送邮件时的评分进行比较，因此逐渐累积的变化达到 3 分后，你就会收到通知。
+
+<Note>
+  手动重新运行和由构建触发的评分都可能发送邮件；补录扫描和公共工具扫描则不会。
+</Note>
+
+## 故障排除
+
+<AccordionGroup>
+  <Accordion title="评分显示无法读取我的网站">
+    如果网站暂时无法访问、返回错误或阻止扫描器，扫描结果可能为空。Jamdesk **不会**保存这些结果，因此短暂的故障不会固定错误评分，也不会影响趋势线。页面会继续显示上一次有效评分；点击 **Run score now** 再试一次。
+  </Accordion>
+  <Accordion title="由于文档受密码保护，我的评分很低">
+    AI 代理无法读取密码保护页面，因此评分会反映这一情况。如果限制访问是有意为之（例如内部文档或预发布文档），这里的低评分属于预期结果，不必担心。
+  </Accordion>
+  <Accordion title="某项检查失败，但我无法采取措施">
+    某些检查涵盖由 Jamdesk 负责的平台行为（`llms.txt`、Markdown 导出、状态码和缓存）。这些项目按设计应当通过，因此失败几乎总是表示构建时出现了暂时性问题。请在下次构建后重新运行评分；如果问题持续存在，请联系支持团队。
+  </Accordion>
+</AccordionGroup>
+
+## 下一步
+
+<Columns cols={2}>
+  <Card title="llms.txt" icon="file-lines" href="/cn/ai/llms-txt">
+    AI 工具通过此索引了解整个网站
+  </Card>
+  <Card title="Markdown 源文件" icon="file-code" href="/cn/ai/markdown-source">
+    代理为任意页面获取的原始 Markdown
+  </Card>
+  <Card title="自动更新" icon="arrows-rotate" href="/cn/ai/automated-updates">
+    随着产品变化持续更新文档
+  </Card>
+  <Card title="AI Score 工具" icon="gauge-high" href="https://jamdesk.com/ai-score">
+    免费为任意文档网站评分
+  </Card>
+</Columns>

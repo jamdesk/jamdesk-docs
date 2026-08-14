@@ -1,0 +1,110 @@
+---
+title: 修复失效链接
+description: >-
+  了解 jamdesk fix 如何自动修复失效内部链接和拼写错误的锚点，并在应用前安全预览更改。
+---
+
+`jamdesk fix` 是 `jamdesk broken-links` 的自动修复配套命令。它读取相同的失效链接警告，并重写所有能够明确确定正确目标的文件。对于存在歧义的情况，它会标记为需要手动检查并保持不变。
+
+<Tip>
+  更喜欢使用仪表板？[使用 AI 修复](/cn/builds/fix-with-ai) 可以在构建过程中执行相同的修复，还能补充缺失的页面描述，并自动将更改提交到 GitHub。
+</Tip>
+
+它可以修复两种失效的内部链接：
+
+- **拼写错误的锚点** — 目标页面中某个片段明显是实际标题的拼写错误（例如 `#instalation` → `#installation`）
+- **跨语言锚点漂移** — 翻译页面重命名了标题，但该语言环境中的链接仍指向旧的英文片段（例如 `/fr/ai/selectors#ai-strategies` → `/fr/ai/selectors#stratégies-ia`）
+
+## 步骤 1：查找失效链接
+
+运行 `jamdesk broken-links`，查看需要修复的内容：
+
+```bash
+jamdesk broken-links
+```
+
+检查输出。`jamdesk fix` 会针对能够与实际标题匹配到可能正确锚点的警告进行处理。
+
+## 步骤 2：预览修复内容
+
+使用 `--dry-run` 运行，在修改任何文件前准确查看将发生的更改：
+
+```bash
+jamdesk fix --dry-run
+```
+
+**示例输出：**
+
+```text
+Planned fixes:
+
+  fr/ai/overview.mdx:9
+    /fr/ai/selectors#ai-strategies  →  /fr/ai/selectors#stratégies-ia
+
+(dry run — no files written)
+```
+
+检查每项计划中的修复。如果某项更改看起来不正确，请手动修复该链接，而不要应用此修复。`jamdesk fix` 只会重写能够明确解析的链接。
+
+## 步骤 3：应用修复
+
+不使用 `--dry-run` 运行即可应用修复。系统会提示你确认：
+
+```bash
+jamdesk fix
+```
+
+```text
+Apply 1 fix(es) to local files? (y/N)
+```
+
+按 `y` 写入更改。要在 CI 或脚本中跳过提示，请使用 `-y`：
+
+```bash
+jamdesk fix -y
+```
+
+应用后，命令会输出：
+
+```text
+Fixed 1 file(s); 0 warning(s) left for manual review.
+```
+
+如果警告的目标存在歧义，`jamdesk fix` 会保持其不变，供你手动解决。
+
+## 步骤 4：检查差异并提交
+
+提交前检查更改：
+
+```bash
+git diff
+```
+
+确认每个重写后的链接都指向预期位置。然后提交：
+
+```bash
+git add -A
+git commit -m "fix(docs): auto-fix broken internal links"
+```
+
+## 选项
+
+| 标志 | 描述 |
+|------|-------------|
+| `--dry-run` | 预览计划中的修复，不写入任何文件 |
+| `-y, --yes` | 应用修复，不显示确认提示 |
+| `--types <list>` | 要修复的逗号分隔警告类型（默认为全部支持的类型） |
+
+## 接下来做什么？
+
+<Columns cols={2}>
+  <Card title="Fix with AI" icon="wand-magic-sparkles" href="/cn/builds/fix-with-ai">
+    从仪表板修复问题并提交到 GitHub
+  </Card>
+  <Card title="CLI Overview" icon="terminal" href="/cn/cli/overview">
+    完整的命令参考
+  </Card>
+  <Card title="Links & Navigation" icon="link" href="/cn/content/links">
+    了解内部链接的检测和解析方式
+  </Card>
+</Columns>

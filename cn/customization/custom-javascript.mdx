@@ -1,0 +1,120 @@
+---
+title: 自定义 JavaScript
+description: 为文档站点添加自定义 JavaScript，用于聊天小组件、分析、第三方集成及其他客户端功能。
+---
+
+Jamdesk 允许你添加在文档站点每个页面上运行的自定义 JavaScript。你可以将其用于聊天小组件、分析，或所需的任何其他客户端脚本。
+
+## 添加自定义 JavaScript
+
+在文档目录中创建 JavaScript 文件，并在 `docs.json` 中引用：
+
+```json docs.json
+{
+  "styling": {
+    "js": "/script.js"
+  }
+}
+```
+
+```javascript script.js
+// Your custom JavaScript runs on every page
+console.log('Hello from custom JS!');
+```
+
+你的脚本会直接内联到页面 HTML 中，因此会在页面加载时执行。
+
+## 自动检测
+
+如果你没有配置 `styling.js`，Jamdesk 会自动检测项目根目录中的 `.js` 文件。只需在 `docs.json` 旁边放置一个 `script.js` 文件，该文件就会被包含。
+
+```bash
+my-docs/
+├── docs.json
+├── script.js      ← auto-detected
+├── introduction.mdx
+└── getting-started.mdx
+```
+
+在 `docs.json` 中配置了 `styling.js` 后，自动检测将被禁用，并且只会使用指定的文件。
+
+<Note>自动检测会包含项目根目录中的**所有** `.js` 文件。如果文档目录中还有 `eslint.config.js` 或 `postcss.config.js` 等实用脚本，请在 `docs.json` 中使用 `styling.js`，以准确指定要包含的文件。</Note>
+
+## 多个文件
+
+通过传入数组来包含多个脚本：
+
+```json docs.json
+{
+  "styling": {
+    "js": ["/chat.js", "/analytics.js"]
+  }
+}
+```
+
+使用自动检测时，根目录中的所有 `.js` 文件都会按字母顺序包含。如果同时存在 `analytics.js` 和 `chat.js`，它们会按此顺序加载。
+
+## 示例
+
+### 聊天小组件（Crisp）
+
+```javascript script.js
+window.$crisp = [];
+window.CRISP_WEBSITE_ID = "your-website-id";
+(function () {
+  var d = document;
+  var s = d.createElement("script");
+  s.src = "https://client.crisp.chat/l.js";
+  s.async = 1;
+  d.getElementsByTagName("head")[0].appendChild(s);
+})();
+```
+
+### 自定义分析
+
+```javascript script.js
+// Track outbound link clicks
+document.addEventListener('click', function (e) {
+  var link = e.target.closest('a[href^="http"]');
+  if (link && !link.href.includes(window.location.hostname)) {
+    console.log('Outbound click:', link.href);
+    // Send to your analytics service
+  }
+});
+```
+
+### 反馈小组件
+
+```javascript script.js
+// Load a feedback widget after the page is ready
+window.addEventListener('load', function () {
+  var s = document.createElement('script');
+  s.src = 'https://your-feedback-tool.com/widget.js';
+  s.setAttribute('data-project', 'your-project-id');
+  document.body.appendChild(s);
+});
+```
+
+## 工作原理
+
+你的 JavaScript 文件会在构建过程中读取，并直接嵌入每个页面的 HTML 中。脚本标签会放置在 `<body>` 末尾，因此代码运行时 DOM 已可用。
+
+在本地开发中（`jamdesk dev`），脚本会自动加载，并在浏览器刷新时热重载。
+
+## 限制
+
+- 脚本会在**每个页面**上运行——无法指定仅针对特定页面
+- 更改需要**重新构建**才能生效（本地开发时刷新浏览器即可）
+- 脚本会**内联**到 HTML 中，而不会作为独立文件提供
+- 对于分析功能，建议改用内置的 [集成](/cn/integrations/google-analytics)，它会自动处理同意管理和性能优化
+
+## 接下来做什么？
+
+<Columns cols={2}>
+  <Card title="自定义 CSS" icon="paintbrush" href="/cn/customization/custom-css">
+    使用自定义 CSS 覆盖主题样式
+  </Card>
+  <Card title="集成" icon="plug" href="/cn/integrations/google-analytics">
+    内置分析和第三方集成
+  </Card>
+</Columns>

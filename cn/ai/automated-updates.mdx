@@ -1,0 +1,247 @@
+---
+title: 自动更新文档
+description: 使用 Claude Code 的 /update-jamdesk 技能让文档与代码保持同步，实现功能后自动更新文档。
+---
+
+Claude Code 的 `/update-jamdesk` 技能会监视代码变更，并生成匹配的文档更新。发布面向用户的功能后，运行该技能，它会确定需要创建或编辑哪些文档页面。
+
+<Note>
+**想了解通用的 AI 写作技巧？** 本页介绍用于自动更新文档的 `/update-jamdesk` 技能。有关工具设置，请参阅 [Claude Code](/cn/ai/claude-code)。有关使用 AI 工具编写文档的更多指导，请参阅 [使用 AI 写作](/cn/ai/writing-with-ai)。
+</Note>
+
+## 何时使用
+
+**适用场景：** 你对 API、CLI 命令、界面、配置选项或组件行为进行了面向用户的更改。
+
+**跳过场景：** 内部重构、仅测试更改、构建/CI 配置，或不改变行为的性能优化。这些更改不需要面向用户的文档。
+
+## 前置条件
+
+- 已安装并配置 [Claude Code](https://claude.ai/code)
+- 包含 `docs.json` 的 Jamdesk 文档项目
+- 可选：[Jamdesk CLI](/cn/cli/overview)，用于验证（`npm install -g jamdesk`）
+
+## 快速开始
+
+<Steps>
+  <Step title="创建配置文件">
+    在代码仓库中创建 `.jamdesk-docs-path` 文件，并将其指向你的文档：
+
+    ```yaml .jamdesk-docs-path
+    docs_path: ../my-docs
+    ```
+
+    路径可以是相对路径（相对于配置文件）或绝对路径。
+  </Step>
+  <Step title="运行技能">
+    实现功能后，运行：
+
+    ```text
+    /update-jamdesk
+    ```
+
+    Claude 会分析你的更改，并在编写文档前提出澄清问题。
+  </Step>
+  <Step title="检查并提交">
+    检查生成的文档，然后 Claude 会使用 `jamdesk validate` 和 `jamdesk broken-links` 验证文档，再进行提交。
+  </Step>
+</Steps>
+
+## 配置文件格式
+
+`.jamdesk-docs-path` 文件会告诉 Claude 文档所在位置。
+
+**简单格式** — 仅包含路径：
+
+```text
+../my-docs
+```
+
+**完整格式** — 包含选项：
+
+```yaml .jamdesk-docs-path
+# Path to documentation repository
+docs_path: ../my-docs
+
+# Optional: Branch for doc updates (default: main)
+docs_branch: main
+```
+
+<Note>
+  配置文件会从当前目录向上查找到 git 根目录。为获得最佳效果，请将其放在仓库根目录中。
+</Note>
+
+## 工作原理
+
+运行 `/update-jamdesk` 时，Claude 会：
+
+1. **定位文档** — 查找 `.jamdesk-docs-path` 配置文件
+2. **提出问题** — 澄清分支策略、范围和内容
+3. **分析现有文档** — 搜索相关内容以进行更新或扩展
+4. **编写文档** — 遵循 Jamdesk 标准创建或更新页面，并优先提供简单示例
+5. **检查语气** — 检查输出中是否包含 AI 套话。使用设置语气的 CLAUDE.md，Claude 的写作效果会更好（请参阅 [Claude Code](/cn/ai/claude-code)）
+6. **验证** — 运行 `jamdesk validate` 和 `jamdesk broken-links`
+7. **提交** — 暂存更改，并提供提交、推送或创建 PR 的选项
+
+<Tip>
+  不喜欢这些更改？提交前运行 `git checkout .` 还原所有编辑。
+</Tip>
+
+<Accordion title="Claude 如何决定创建还是更新">
+  | 场景 | 操作 |
+  |----------|--------|
+  | 新功能 | 创建新页面 |
+  | 行为更改 | 更新现有页面 |
+  | 小幅新增 | 向现有页面添加章节 |
+  | 主要能力 | 创建新的独立页面 |
+  | 弃用/移除 | 更新现有页面并添加迁移说明 |
+</Accordion>
+
+## 会话示例
+
+```text
+User: I just added a webhook feature. Can you document it?
+
+Claude: I'm using the update-jamdesk skill to update your documentation.
+
+Found .jamdesk-docs-path: ../customer-docs
+
+How should I handle changes to the docs repository?
+1. Create a new feature branch (recommended)
+2. Update directly on main
+3. Use current branch
+
+User: 1
+
+Claude: Based on the webhook implementation, I plan to:
+- Create: webhooks/overview.mdx
+- Update: getting-started.mdx (add link)
+
+Any changes to this plan?
+
+User: Looks good
+
+Claude: [Creates documentation...]
+
+✓ jamdesk validate passed
+✓ jamdesk broken-links passed
+
+Commit these changes?
+```
+
+## 预览模式
+
+运行 `--preview`，即可查看将要进行的更改，而不会实际编辑：
+
+```text
+/update-jamdesk --preview
+```
+
+预览模式可以让你：
+
+- 检查需要更新的文档
+- 在提交前检查建议的更改
+- 查看技能的分析结果，而不会产生副作用
+
+## 主动建议
+
+提交面向用户的代码更改后，Claude 可能会建议：
+
+```text
+Tip: These changes affect user-facing features.
+Run /update-jamdesk to update your documentation.
+```
+
+出现此建议需要满足以下条件：
+
+- 你有一个 `.jamdesk-docs-path` 配置文件，并且
+- 你的提交包含符合面向用户模式的文件（API、CLI、组件）
+
+## 安装技能
+
+使用 skills CLI 安装 `/update-jamdesk` 技能：
+
+```bash
+npx skills add jamdesk/skills --skill update-jamdesk
+```
+
+这会将技能安装到项目中的 `.claude/skills/update-jamdesk/`。
+
+<Tabs>
+  <Tab title="项目安装（默认）">
+    安装到当前项目目录：
+
+    ```bash
+    npx skills add jamdesk/skills --skill update-jamdesk
+    ```
+
+    在此项目中工作时即可使用该技能。
+  </Tab>
+  <Tab title="全局安装">
+    安装到主目录，以便在所有项目中使用：
+
+    ```bash
+    npx skills add jamdesk/skills --skill update-jamdesk -g
+    ```
+
+    该技能可在任何项目中使用。
+  </Tab>
+  <Tab title="其他代理">
+    安装到 Cursor、Codex、Windsurf 或其他受支持的代理：
+
+    ```bash
+    # Install to Cursor
+    npx skills add jamdesk/skills --skill update-jamdesk -a cursor
+
+    # Install to multiple agents
+    npx skills add jamdesk/skills --skill update-jamdesk -a claude-code -a cursor
+    ```
+
+    运行 `npx skills add --help` 查看所有受支持的代理。
+  </Tab>
+</Tabs>
+
+### 列出可用技能
+
+查看所有 Jamdesk 技能：
+
+```bash
+npx skills add jamdesk/skills --list
+```
+
+### 更新
+
+重新运行安装命令以获取最新版本：
+
+```bash
+npx skills add jamdesk/skills --skill update-jamdesk
+```
+
+<Note>
+  安装或更新后，重启 Claude Code 或启动新会话，使更改生效。
+</Note>
+
+## 故障排除
+
+<Accordion title="技能无法识别">
+  确保技能文件位于 `.claude/skills/update-jamdesk/SKILL.md`，然后重启 Claude Code 会话。
+</Accordion>
+
+<Accordion title="找不到配置文件">
+  在仓库根目录中创建 `.jamdesk-docs-path`，并填写文档目录的路径。技能会从当前目录向上查找到 git 根目录。
+</Accordion>
+
+<Accordion title="未安装 jamdesk CLI">
+  使用 `npm install -g jamdesk` 安装。没有它，技能仍可运行，但不会执行自动验证。
+</Accordion>
+
+## 下一步
+
+<Columns cols={2}>
+  <Card title="MCP 服务器" icon="robot" href="/cn/ai/mcp-server">
+    将 AI 助手直接连接到你的文档
+  </Card>
+  <Card title="CLI 概览" icon="terminal" href="/cn/cli/overview">
+    了解用于本地开发的 jamdesk CLI
+  </Card>
+</Columns>

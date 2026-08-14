@@ -1,0 +1,89 @@
+---
+title: 部署概览
+description: "文档托管选项：Jamdesk 子域名、带 SSL 的自定义域名，或通过反向代理在现有网站的 /docs 子路径下托管。"
+---
+
+Jamdesk 会自动将您的文档部署到 `*.jamdesk.app` 子域名。准备好在自己的域名上正式发布后，您可以选择自定义子域名（例如 `docs.example.com`），也可以将文档托管在主网站的子路径下：默认为 `/docs`，也可以使用您选择的自定义路径段。
+
+## 部署选项
+
+| 选项 | 适用场景 | 设置复杂度 |
+|--------|----------|------------------|
+| **Jamdesk 子域名** (`your-project.jamdesk.app`) | 最快启动，无需处理 DNS | 低 |
+| **自定义子域名** (`docs.example.com`) | 使用您品牌的生产文档 | 中 |
+| **子路径托管** (`example.com/docs`，可自定义) | 让文档保留在主域名下 | 高 |
+
+## 默认托管（无需设置）
+
+连接代码仓库后，每个项目都会立即在 Jamdesk 子域名上正式发布。这是内部文档、预览或早期发布的最简单选项。
+
+## 自定义域名（子域名）
+
+使用您自己的子域名（例如 `docs.example.com`）创建品牌化的面向公众的 URL。您需要添加 DNS 记录，并在 Jamdesk 仪表板中验证所有权。
+
+<Note>
+DNS 验证和 SSL 会在记录配置完成后自动处理。有关设置，请参阅[自定义域名](/cn/deploy/custom-domains)。
+</Note>
+
+## 子路径托管
+
+通过将流量代理到 Jamdesk，在您的域名下使用子路径托管文档：默认为 `example.com/docs`，也可以使用类似 `example.com/help` 的自定义路径段。当您希望文档位于主营销域名下时，可以使用此选项。
+
+<Info>
+子路径托管需要代理或 CDN 层来转发请求并设置 `X-Jamdesk-Forwarded-Host` 标头。请参阅[子路径托管](/cn/deploy/subpath-hosting)。
+</Info>
+
+### 代理示例代码片段（nginx）
+
+```nginx nginx.conf
+location /docs {
+    proxy_pass https://YOUR_SLUG.jamdesk.app;
+    proxy_set_header X-Jamdesk-Forwarded-Host $host;
+}
+
+location /_next/ {
+    proxy_pass https://YOUR_SLUG.jamdesk.app;
+}
+
+location /_jd/ {
+    proxy_pass https://YOUR_SLUG.jamdesk.app;
+}
+```
+
+有关包含 SSL、标头和特定提供商指南的完整配置，请参阅[子路径托管](/cn/deploy/subpath-hosting)指南。
+
+## 提供商指南
+
+选择您的基础设施，以实现子路径托管：
+
+<Columns cols={2}>
+  <Card title="Cloudflare" icon="cloud" href="/cn/deploy/cloudflare">
+    使用 Cloudflare Workers 代理 /docs 流量
+  </Card>
+  <Card title="AWS" icon="aws" href="/cn/deploy/aws">
+    配置带有 Route 53 的 CloudFront
+  </Card>
+  <Card title="Vercel" icon="triangle" href="/cn/deploy/vercel">
+    添加重写规则或边缘中间件
+  </Card>
+  <Card title="反向代理" icon="server" href="/cn/deploy/reverse-proxy">
+    nginx、Apache 或其他代理服务器
+  </Card>
+</Columns>
+
+## 接下来做什么？
+
+<Columns cols={2}>
+  <Card title="构建与部署生命周期" icon="rotate" href="/cn/deploy/lifecycle">
+    了解构建的触发和部署方式
+  </Card>
+  <Card title="子路径托管" icon="folder-tree" href="/cn/deploy/subpath-hosting">
+    在主域名的 /docs 下托管文档
+  </Card>
+  <Card title="自定义域名" icon="globe" href="/cn/deploy/custom-domains">
+    设置 docs.yourdomain.com
+  </Card>
+  <Card title="DNS 故障排除" icon="server" href="/cn/help/troubleshooting/dns-issues">
+    解决 DNS 传播和验证问题
+  </Card>
+</Columns>

@@ -1,0 +1,163 @@
+---
+title: 构建 API / 触发器
+description: 通过 API 触发文档重建，无需推送提交，适用于 CI 流水线和定时更新。
+---
+
+使用构建 API 触发文档重建，无需推送新提交。它适用于 CI 流水线、定时重建，或在文档目录外生成的内容。
+
+## 身份验证
+
+所有请求都使用项目 API 密钥：
+
+```http
+Authorization: Bearer YOUR_API_KEY
+```
+
+在项目的 **Settings** → **API** 中查找 API 密钥。
+
+## 触发重建
+
+**POST** `https://api.jamdesk.com/projects/{project_id}/rebuild`
+
+### 请求示例
+
+<CodeGroup>
+```bash cURL
+curl -X POST "https://api.jamdesk.com/projects/YOUR_PROJECT_ID/rebuild" \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+```javascript JavaScript
+const projectId = "YOUR_PROJECT_ID";
+const apiKey = "YOUR_API_KEY";
+
+const response = await fetch(
+  `https://api.jamdesk.com/projects/${projectId}/rebuild`,
+  {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${apiKey}`
+    }
+  }
+);
+const build = await response.json();
+console.log(build.buildId, build.status);
+```
+</CodeGroup>
+
+### 响应
+
+请求成功时会返回包含构建元数据的 `200 OK` 响应，你可以使用这些元数据跟踪进度。
+
+```json
+{
+  "buildId": "build_8f3k2j",
+  "status": "queued",
+  "createdAt": "2026-02-05T10:30:00Z",
+  "commit": {
+    "sha": "a1b2c3d",
+    "message": "Update API docs",
+    "author": "jane@example.com"
+  },
+  "project": {
+    "id": "proj_abc123",
+    "name": "My Docs"
+  }
+}
+```
+
+<Note>
+如果收到 `429` 响应，请使用指数退避策略重试。如果需要更高的限制，请联系支持团队。
+</Note>
+
+### 响应字段
+
+<ResponseField name="buildId" type="string">
+  唯一的构建标识符。在仪表板中引用构建时使用此标识符。
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  当前构建状态。可能的值包括：`queued`、`building`、`deployed`、`failed`。
+</ResponseField>
+
+<ResponseField name="createdAt" type="string">
+  构建创建时间的 ISO 8601 时间戳。
+</ResponseField>
+
+<ResponseField name="commit.sha" type="string">
+  触发构建的短提交哈希。
+</ResponseField>
+
+<ResponseField name="commit.message" type="string">
+  源代码仓库中的提交消息。
+</ResponseField>
+
+<ResponseField name="commit.author" type="string">
+  提交作者的电子邮件地址。
+</ResponseField>
+
+<ResponseField name="project.id" type="string">
+  与仪表板项目匹配的项目标识符。
+</ResponseField>
+
+<ResponseField name="project.name" type="string">
+  项目的显示名称。
+</ResponseField>
+
+## 跟踪构建状态
+
+你可以在仪表板的 **Deployments** 下查看构建状态。每次构建都会经历以下阶段：
+
+1. **queued** -- 构建正在队列中等待。
+2. **building** -- 构建服务正在编译文档。
+3. **deployed** -- 构建已完成，网站已上线。
+4. **failed** -- 构建出现问题。请检查构建日志了解详情。
+
+如果代码仓库已连接到 GitHub，提交状态检查会自动更新。构建部署成功后，提交上会显示绿色勾号；如果构建失败，则会显示红色 X。无需轮询 API 获取状态更新。
+
+## 错误响应格式
+
+错误响应遵循一致的结构：
+
+```json
+{
+  "error": {
+    "code": "unauthorized",
+    "message": "Invalid API key",
+    "status": 401
+  }
+}
+```
+
+<ResponseField name="error.code" type="string">
+  机器可读的错误代码。可能的值请参见下表。
+</ResponseField>
+
+<ResponseField name="error.message" type="string">
+  对所发生问题的人类可读描述。
+</ResponseField>
+
+<ResponseField name="error.status" type="number">
+  与响应状态匹配的 HTTP 状态代码。
+</ResponseField>
+
+### 错误代码
+
+| 状态 | 代码 | 消息 | 修复方法 |
+|--------|------|---------|-----|
+| **401** | `unauthorized` | API 密钥无效 | 在 **Settings** → **API** 中重新生成密钥 |
+| **403** | `forbidden` | 无权访问项目 | 确认项目 ID 与 API 密钥所属项目匹配 |
+| **404** | `project_not_found` | 未找到项目 | 在仪表板中验证项目 ID |
+| **429** | `rate_limited` | 请求过多 | 采用指数退避策略并重试 |
+| **500** | `internal_error` | 服务器内部错误 | 几秒后重试。如果问题仍然存在，请联系支持团队 |
+
+## 相关文章
+
+<Columns cols={2}>
+  <Card title="触发构建" icon="hammer" href="/cn/builds/triggering">
+    手动和自动构建触发器
+  </Card>
+  <Card title="监控构建" icon="chart-line" href="/cn/builds/monitoring">
+    跟踪构建状态和队列
+  </Card>
+</Columns>

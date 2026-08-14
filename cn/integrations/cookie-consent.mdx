@@ -1,0 +1,153 @@
+---
+title: Cookie 同意
+description: 通过 integrations.cookies 在获得 Cookie 同意前阻止分析脚本，并在文档网站加载 Osano 或 Termly 同意横幅。
+---
+
+Jamdesk 可以在访客同意 Cookie 前阻止所有分析和跟踪脚本（Google Analytics、Google Tag Manager、Plausible、Crisp 聊天、自定义 JavaScript 以及 Jamdesk 内置的分析功能）运行。同意状态从浏览器的 `localStorage` 中读取，因此适用于任何会在其中记录同意状态的同意管理平台（CMP），包括 Osano 和 Termly。
+
+这有助于你遵守 GDPR、CCPA 和《ePrivacy 指令》等隐私法规，因为访客同意前不会运行任何跟踪功能。
+
+## 工作原理
+
+在 `docs.json` 中设置 `localStorage` 键及表示“已授予同意”的值：
+
+```json docs.json
+{
+  "integrations": {
+    "cookies": {
+      "key": "jamdesk_consent",
+      "value": "granted"
+    }
+  }
+}
+```
+
+设置 `integrations.cookies` 后，只有当 `localStorage["jamdesk_consent"]` 等于 `"granted"` 时，分析脚本才会加载。同意横幅记录访客接受操作后，脚本会立即加载，无需重新加载页面。如果访客撤回同意，脚本会从其下一次完整的页面加载开始停止加载（当前页面中已经运行的脚本会继续运行，直到访客离开或重新加载页面）。
+
+<Info>
+`key` 和 `value` 都是必需的。如果任一项缺失或为空，则不会启用同意控制，脚本会正常加载。
+</Info>
+
+<Warning>
+同意控制也适用于 Jamdesk 的内置分析功能：从未同意的访客不会计入统计，因此启用此功能后，项目仪表板中的页面浏览量预计会降低。
+</Warning>
+
+## 连接同意横幅
+
+大多数 CMP（包括 Osano 和 Termly）不会提供可直接供 Jamdesk 使用的简单、稳定的 `localStorage` 标志：它们会将同意状态存储在 Cookie 中，或存储在因访客而异的值中。你可以在 CMP 自带的自定义代码区域中添加一段简短的**桥接代码片段**，在访客接受同意时写入 `jamdesk_consent`。由于该代码片段作为 CMP 的一部分运行（而不是作为受同意控制的 Jamdesk 自定义 JavaScript 运行），因此它始终会运行。
+
+该代码片段会在访客同意时写入 `granted`，并在撤回同意时删除此键，因此同意控制会在下一次页面加载时重新生效。
+
+## Osano
+
+在 `docs.json` 中添加 Osano 脚本：
+
+```json docs.json
+{
+  "integrations": {
+    "osano": {
+      "scriptSource": "https://cmp.osano.com/YOUR_CUSTOMER_ID/YOUR_CONFIG_ID/osano.js"
+    }
+  }
+}
+```
+
+脚本 URL 来自 Osano 仪表板。它始终以 `https://cmp.osano.com/` 开头，并以 `/osano.js` 结尾。
+
+然后在 Osano 中添加以下桥接代码（Consent Manager → your config → custom JavaScript），使同意状态传递给 Jamdesk：
+
+```js
+function jdOsanoBridge(consent) {
+  if (consent && consent.ANALYTICS === 'ACCEPT') {
+    localStorage.setItem('jamdesk_consent', 'granted');
+  } else {
+    localStorage.removeItem('jamdesk_consent');
+  }
+}
+if (window.Osano && window.Osano.cm) {
+  jdOsanoBridge(window.Osano.cm.getConsent());
+  window.Osano.cm.addEventListener('osano-cm-consent-saved', jdOsanoBridge);
+} else {
+  window.addEventListener('osano-cm-initialized', function () {
+    jdOsanoBridge(window.Osano.cm.getConsent());
+    window.Osano.cm.addEventListener('osano-cm-consent-saved', jdOsanoBridge);
+  });
+}
+```
+
+## Termly
+
+在 `docs.json` 中添加 Termly 脚本：
+
+```json docs.json
+{
+  "integrations": {
+    "termly": {
+      "scriptSource": "https://app.termly.io/resource-blocker/YOUR-WEBSITE-UUID?autoBlock=on"
+    }
+  }
+}
+```
+
+该 URL 来自 Termly 针对你网站提供的嵌入说明（Resource Blocker 脚本）。查询参数 `?autoBlock=on` 用于启用 Termly 的自动脚本阻止功能，可选。
+
+然后在 Termly 中添加以下桥接代码（your website → custom HTML/JavaScript），使同意状态传递给 Jamdesk：
+
+```js
+function jdTermlyBridge() {
+  var s = Termly.getConsentState();
+  if (s && s.analytics) {
+    localStorage.setItem('jamdesk_consent', 'granted');
+  } else {
+    localStorage.removeItem('jamdesk_consent');
+  }
+}
+(function register() {
+  if (window.Termly && typeof Termly.on === 'function') {
+    Termly.on('consent', jdTermlyBridge);
+    try { jdTermlyBridge(); } catch (e) {}
+  } else {
+    setTimeout(register, 200);
+  }
+})();
+```
+
+Osano 和 Termly 都会先在页面的 `<head>` 中加载，然后才加载其他脚本，因此它们的自动阻止功能可以正常运行。
+
+<Warning>
+如果你的 CMP 运行在严格或自动阻止模式下，请在其管理规则中将 `*.jamdesk.app` 和你的自定义文档域名加入允许列表（Osano：classification/allowlist；Termly：Domain Rules 或 Custom Blocking Map）。否则，CMP 可能会阻止文档网站自身的资源，导致页面无法正常运行。
+</Warning>
+
+## 测试设置
+
+同意控制仅在已上线的正式网站上运行，不会在 `jamdesk dev` 中运行（本地预览会忽略同意配置）。测试步骤如下：
+
+1. 在 `localStorage` 为空的情况下打开正式文档网站。分析功能不应加载（检查浏览器的 Network 标签页：不应有发送到 Google、Plausible 或 `/api/ev` 的请求）。
+2. 在浏览器控制台中运行 `localStorage.setItem("jamdesk_consent", "granted")`。脚本应在大约一秒内加载，无需重新加载页面。
+
+## 完全停用 Jamdesk 分析
+
+无论访客是否同意，都可以关闭面向所有访客的 Jamdesk 内置（无 Cookie）分析功能：
+
+```json docs.json
+{
+  "analytics": { "enabled": false }
+}
+```
+
+## 相关文章
+
+<Columns cols={2}>
+  <Card title="Google Tag Manager" icon="tags" href="/cn/integrations/google-tag-manager">
+    管理标签和 GTM 同意模式
+  </Card>
+  <Card title="Google Analytics" icon="chart-simple" href="/cn/integrations/google-analytics">
+    直接添加 GA4
+  </Card>
+  <Card title="Plausible Analytics" icon="chart-pie" href="/cn/integrations/plausible-analytics">
+    注重隐私，通常无需同意
+  </Card>
+  <Card title="Custom JavaScript" icon="code" href="/cn/customization/custom-javascript">
+    自定义脚本同样受同意控制
+  </Card>
+</Columns>

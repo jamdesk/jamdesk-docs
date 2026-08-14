@@ -1,0 +1,139 @@
+---
+title: Cursor
+description: "配置 Cursor IDE，使用 MDX 格式规则、组件自动补全和 MCP 服务器访问来编写 Jamdesk 文档。"
+---
+
+[Cursor](https://cursor.com) 是一款基于 VS Code 构建的 AI 代码编辑器。它的内联编辑（Cmd+K）和聊天（Cmd+L）非常适合迭代编写 MDX：选中一段文字，描述你的需求，Cursor 就会在原位置重写内容。
+
+## 快速设置
+
+<Steps>
+  <Step title="打开文档项目">
+    在 Cursor 中打开 Jamdesk 文档目录。
+  </Step>
+  <Step title="添加 Cursor 规则">
+    创建 `.cursor/rules/jamdesk-docs.mdc`，加入文档规范，让 Cursor 的 AI 遵循你的约定。
+  </Step>
+  <Step title="连接 MCP 服务器">
+    将文档 MCP 端点添加到 `.cursor/mcp.json`，这样 Cursor 就能搜索已发布的文档。
+  </Step>
+</Steps>
+
+## Cursor 规则模板
+
+在项目根目录中创建 `.cursor/rules/jamdesk-docs.mdc`：
+
+```markdown .cursor/rules/jamdesk-docs.mdc
+---
+description: Rules for writing Jamdesk documentation in MDX
+globs: "**/*.mdx"
+---
+
+# Jamdesk MDX Rules
+
+## Page Structure
+
+Every page follows this pattern — no exceptions:
+
+1. Frontmatter with `title` and `description`
+2. Opening paragraph (no heading before it)
+3. Content sections with ## headings
+4. "What's Next?" section at the end with Card links inside Columns
+
+## Components
+
+Only use these — do not invent others:
+
+Layout: Card, Columns, Tabs, Tab, Accordion, AccordionGroup, Steps, Step, Expandable, Frame, CodeGroup
+Callouts: Note, Info, Warning, Tip, Check, Danger
+
+| Use | For |
+|-----|-----|
+| Tabs | Mutually exclusive choices (npm/yarn, OS variants) |
+| Steps | Ordered procedures the reader follows |
+| Accordion | Optional detail that would clutter the page |
+| Card + Columns | Navigation links and feature grids |
+| Note/Tip/Warning | Important context — use sparingly |
+
+Cards always go inside Columns: `<Columns cols={2}><Card ... /></Columns>`
+Icons are Font Awesome Light names: "rocket", "code", "terminal", "book-open"
+
+## Style
+
+- Active voice: "Run this command" not "This command should be run"
+- Start with why, then how
+- One idea per paragraph
+- Code examples must be complete and copy-pasteable
+- Write like a person — no filler ("It's important to note"), no hedging ("you might want to consider"). If it sounds like a chatbot, rewrite it shorter.
+
+## Common Mistakes
+
+- `<CodeBlock>`, `<Alert>`, `<Section>` don't exist — use the components listed above
+- `<Card>` without `<Columns>` wrapper won't render correctly
+- Missing `description` in frontmatter breaks search and link previews
+- Raw HTML tags should be MDX components instead
+
+## New Pages
+
+When creating a page, add it to `docs.json` navigation. Without this, the page won't appear in the sidebar. Read `docs.json` first to understand the group structure.
+```
+
+## MCP 配置
+
+创建 `.cursor/mcp.json` 以连接已发布的文档：
+
+```json .cursor/mcp.json
+{
+  "mcpServers": {
+    "my-docs": {
+      "url": "https://your-project.jamdesk.app/_mcp"
+    }
+  }
+}
+```
+
+将 `your-project` 替换为你的 Jamdesk 子域名；如果你已启用自定义域名，则改用该域名，例如：`"url": "https://docs.acme.com/_mcp"`。有关端点的详细信息，请参阅 [MCP 服务器](/cn/ai/mcp-server)。
+
+## 工作流
+
+<Tabs>
+  <Tab title="Inline Editing (Cmd+K)">
+    在 MDX 文件中选中文字，然后按 **Cmd+K** 描述你希望进行的更改。适用于：
+    - 重写某个部分，使其更清晰
+    - 添加代码示例
+    - 将文字转换为组件（例如，将步骤包裹在 `<Steps>` 中）
+  </Tab>
+  <Tab title="Chat (Cmd+L)">
+    按 **Cmd+L** 打开聊天，并以文档为上下文提问：
+    - "此页面有哪些可用组件？"
+    - "为 [feature] 编写故障排除部分"
+    - "根据我们的写作规范检查此页面"
+  </Tab>
+  <Tab title="Composer">
+    使用 Composer 处理多文件文档任务：
+    - 生成包含多个页面的新部分
+    - 跨文件重构导航
+    - 批量更新组件使用模式
+  </Tab>
+</Tabs>
+
+## /update-jamdesk 技能
+
+当代码发生更改时，如需自动更新文档，请安装 `/update-jamdesk` 技能：
+
+```bash
+npx skills add jamdesk/skills --skill update-jamdesk -a cursor
+```
+
+有关完整指南，请参阅 [自动更新](/cn/ai/automated-updates)。
+
+## 接下来
+
+<Columns cols={2}>
+  <Card title="Claude Code" icon="terminal" href="/cn/ai/claude-code">
+    CLAUDE.md 模板和完整项目上下文工作流
+  </Card>
+  <Card title="使用 AI 编写文档" icon="wand-magic-sparkles" href="/cn/ai/writing-with-ai">
+    高效提示词、审核清单和常见问题
+  </Card>
+</Columns>

@@ -1,0 +1,82 @@
+---
+title: 故障排查
+description: 快速解决 Jamdesk 常见问题，包括构建失败、DNS 验证、GitHub 连接和分析数据缺失。
+---
+
+如果遇到问题，请从这里开始。每个部分都提供快速修复方法，以及指向帮助中心详细指南的链接。
+
+<Note>
+  对于这里未涵盖的账户、账单或产品问题，请直接前往 [Help Center](/cn/help/faq)。
+</Note>
+
+## 构建失败
+
+您的仪表板将构建显示为 "Failed"。大多数失败原因有三种：MDX 页面中的导入或组件损坏、对 `docs.json` 的编辑无效（括号未闭合、数组最后一项后有尾随逗号），或者 `docs.json` 导航中列出的页面不存在对应的 `.mdx` 文件。前两种问题会在本地通过 `jamdesk dev` 暴露出来，不会等到部署构建时才出现。推送前运行一次，通常可以避免往返排查。
+
+<Tip>
+仪表板中的构建日志会显示发生错误的具体文件和行号。请从那里开始排查。它几乎总能指向真正的问题，而不仅仅是表面症状。
+</Tip>
+
+如需了解具体错误代码，请参阅 [构建失败](/cn/help/troubleshooting/build-failures) 和[错误参考](/cn/help/troubleshooting/error-reference)。
+
+## 自定义域名无法验证
+
+添加 DNS 记录后，域名仍停留在 "Pending"？请按以下顺序检查：
+
+1. 确认已添加 `_jamdesk.<hostname>` **TXT** 记录。没有该记录，路由不会激活；缺少 TXT 是域名处于 Pending 状态最常见的原因。主机名是您要验证的完整域名（对于 `docs.example.com`，TXT 记录名称为 `_jamdesk.docs.example.com`）。
+2. 确认已为子域名添加 **CNAME** 记录，而不是 A 记录。
+3. 如果使用 Cloudflare，请将两条记录的代理设置为 **DNS only**（灰色云朵）。
+4. 在 [whatsmydns.net](https://www.whatsmydns.net/) 检查传播情况。
+
+```bash
+# Verify the TXT verification record
+dig TXT _jamdesk.docs.yourdomain.com
+
+# Verify your CNAME is resolving
+dig CNAME docs.yourdomain.com
+```
+
+还有一点不太明显但值得注意：即使 `dig` 显示记录已解析，仪表板仍可能在最多 30 分钟内报告 "Pending"。验证程序位于会缓存负 DNS 响应的上游解析器之后，必须等缓存窗口结束后，重新检查才能成功。如果本地解析一切正常但仪表板尚未更新，请等待半小时，再判断是否存在更深层的问题。
+
+[DNS 故障排查](/cn/help/troubleshooting/dns-issues)介绍了特定提供商的常见问题。
+
+## 有效的 OpenAPI 规范无法验证
+
+`jamdesk dev` 拒绝您确认有效的规范，并显示类似 `#/servers/0/variables/host must NOT have unevaluated properties` 的错误——通常出现在包含 `description` 的服务器变量，或只有 `name` 的许可证上。规范本身没有问题；问题出在 CLI 使用的 OpenAPI 3.1 元模式副本上。npm 12 默认阻止软件包安装脚本运行，因此跳过了修复该模式中两个已知缺陷的步骤。
+
+请升级 CLI——1.1.167 及更高版本会在验证时修复该模式，因此安装步骤不再重要：
+
+```bash
+npm install -g jamdesk@latest
+```
+
+如果您固定使用旧版本，可以运行 `npm install -g --allow-scripts=jamdesk jamdesk`，让安装步骤正常执行。
+
+## GitHub 仓库未显示
+
+如果创建项目时仓库不在列表中，可能是 Jamdesk GitHub App 尚未安装到该仓库所属的组织中，或者仓库访问权限设置为 "Selected repositories"，但未包含您的仓库。请在 [github.com/settings/installations](https://github.com/settings/installations) 重新授权，并授予 "All repositories" 或您所需的特定仓库的访问权限。
+
+如需了解 Webhook 和权限问题，请参阅 [GitHub 问题](/cn/help/troubleshooting/github-issues)。
+
+## 分析数据缺失
+
+仪表板显示访客数为零，常见原因有以下几种。网站首次部署后，分析数据最多可能需要 24 小时才会显示，因此新项目会暂时显示为空。广告拦截器和 Do Not Track 会阻止部分访问被统计，因此数据始终会少于服务器日志中的数量。如果以上情况都不适用，请确认网站确实已部署且可公开访问。
+
+[分析问题](/cn/help/troubleshooting/analytics-issues)进一步介绍了数据延迟或缺失的情况。
+
+## 登录问题
+
+无法登录，或登录后又返回登录页面？请清除 `dashboard.jamdesk.com` 的缓存和 Cookie，然后尝试使用无痕窗口。如果您使用 GitHub 登录，GitHub 电子邮件地址必须与 Jamdesk 账户中的电子邮件地址一致。
+
+如需了解账户恢复步骤，请参阅[登录问题](/cn/help/troubleshooting/login-issues)。
+
+## 仍然无法解决？
+
+<Columns cols={2}>
+  <Card title="帮助中心" icon="life-ring" href="/cn/help/faq">
+    浏览所有故障排查指南
+  </Card>
+  <Card title="联系支持" icon="headset" href="/cn/help/support/contact">
+    直接联系 Jamdesk 团队
+  </Card>
+</Columns>

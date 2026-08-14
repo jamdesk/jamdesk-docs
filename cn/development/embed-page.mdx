@@ -1,0 +1,277 @@
+---
+title: 嵌入页面
+description: 在自己的应用中添加“What's new?”按钮，以模态框打开 Jamdesk 更新日志并显示未读圆点。只需一个 script 标签，无需构建步骤。
+---
+
+您的更新日志已经位于文档中。本指南会将“What's new?”触发器放入您自己的产品中：一个按钮或浮动启动器，可在模态框中打开相同的更新条目，并通过圆点标记每位访客尚未阅读的更新。您只需粘贴一个 `<script>` 标签；Jamdesk 会托管并管理此小组件的版本。
+
+屏幕截图显示的是英文界面。
+
+更新日志是最常见的使用场景，未读圆点也是围绕它设计的。不过，同一个小组件也可以在模态框中打开**任意**文档页面。将 `data-page` 指向任何适合提供聚焦式上下文的页面（参见[将模态框指向任意页面](#将模态框指向任意页面)）。
+
+<img src="/images/embed-changelog/modal.webp" alt="The What's new modal open over a dimmed app, showing the Jamdesk changelog page with a Copy page button and dated update entries, and a close button in the top corner" width="420" style={{ display: 'block', margin: '0 auto' }} />
+
+## 立即在线试用
+
+此页面运行的是真实小组件。点击下方按钮，访客看到的相同模态框会在此处打开，并加载此网站自己的更新日志：
+
+<Widget page="/reference/changelog" label="What's new" unread={false} />
+
+此实时按钮是 [`<Widget>`](/cn/components/widget) MDX 组件，是在 **Jamdesk 文档页面中**嵌入小组件的最简单方式：只需一个标签，无需脚本，并会自动解析您的网站。下面的 `<script>` 代码片段适用于另一种场景，即将小组件**嵌入您自己的产品或应用**，因为 MDX 组件无法在那里运行。两者使用的是同一个小组件和模态框；本页其余内容将介绍脚本方式。
+
+## 前置条件
+
+- **已发布的 Jamdesk 网站**，位于其 `*.jamdesk.app` 子域名下（小组件始终从该域名加载，即使您也通过自定义域名提供文档）。
+- **更新日志页面**，由 [`<Update>`](/cn/components/update) 条目构建，并在其 frontmatter 中设置 `rss: true`（参见[使用 `rss: true` 启用](#使用-rss-true-启用)）。
+
+## 快速开始
+
+打开仪表板，转到 **Integrations → What's New widget**，设置页面和启动器选项，然后复制生成的代码片段。它如下所示：
+
+```html
+<script
+  src="https://acme.jamdesk.app/_jd/widget.js"
+  data-base="https://acme.jamdesk.app"
+  data-page="/changelog"
+  data-theme="auto"
+  async
+></script>
+```
+
+将其粘贴到应用的 HTML 中，放在结束 `</body>` 标签之前。加载后，它会在角落添加一个浮动的 **What's new** 启动器。点击后会在模态框中打开更新日志；当访客有尚未查看的条目时，会显示未读圆点。
+
+<Note>
+将 `acme` 替换为您自己的子域名。仪表板卡片会自动为您填入该值，并确保 `data-base` 指向正确的源，包括您在子路径下托管文档时所需的 `/docs` 路径。
+</Note>
+
+## 固定版本或自行托管
+
+此小组件是开源的，上面的托管代码片段始终提供最新版本，这对大多数网站来说是合适的默认设置。如果您希望固定已知版本或自行提供文件，[`jamdesk-widget`](https://github.com/jamdesk/jamdesk-widget) 仓库还提供另外两种加载方式。
+
+**使用 jsDelivr 固定版本。** 从 CDN 加载带标签的发行版，文件内容不会在您不知情的情况下发生变化：
+
+```html
+<script
+  src="https://cdn.jsdelivr.net/gh/jamdesk/jamdesk-widget@v1.0.0/widget.js"
+  data-base="https://acme.jamdesk.app"
+  data-page="/changelog"
+  async
+></script>
+```
+
+**自行托管。** 从[最新发行版](https://github.com/jamdesk/jamdesk-widget/releases/latest)下载 `widget.js`，并从您自己的源提供。严格的 `script-src` 策略禁止第三方脚本时，这种方式很有帮助。
+
+无论采用哪种方式，都要将 `data-base` 设置为您的 `*.jamdesk.app` 源：托管代码片段会从脚本自身的 URL 中读取该值，但 CDN 或您自己的服务器无法这样做。每个发行版都会发布 Subresource Integrity 哈希，以便您固定确切的文件内容。[仓库 README](https://github.com/jamdesk/jamdesk-widget#install)介绍了全部三种安装路径。
+
+## 使用 `rss: true` 启用
+
+小组件会从支持 RSS 的同一 feed 中读取最新条目，因此只有当页面的 frontmatter 设置了 `rss: true` 时，该页面才会向小组件提供内容：
+
+```mdx
+---
+title: Changelog
+rss: true
+---
+
+<Update label="June 2026" date="2026-06-01">
+**Spec validation at build time.** Every deploy validates the OpenAPI specs your `docs.json` references.
+</Update>
+```
+
+如果没有 `rss: true`，小组件仍会加载，但不会显示条目，启动器也会保持隐藏。仅用于*演示* `<Update>` 组件的文档页面（未设置 `rss: true`）会被正确排除，因此演示日期不会点亮圆点。
+
+<Warning>
+每个向小组件提供内容的 `<Update>` 都需要 **`date`**（任何能被 `Date.parse` 读取的值，例如 `2026-06-01`），而不仅仅是页面设置了 `rss: true`。日期用于排列 feed 并确定最新条目，因此没有日期的条目会被跳过。如果您的所有条目都没有日期，即使设置了 `rss: true`，浮动启动器也会保持隐藏，未读圆点也不会出现。
+</Warning>
+
+## 配置代码片段
+
+每个选项都是 script 标签上的一个 `data-` 属性。仪表板卡片会为您写入这些属性，但您也可以手动编辑代码片段。
+
+| 属性 | 值 | 默认值 | 用途 |
+|-----------|--------|---------|---------|
+| `data-base` | 您的网站 URL | script origin | `*.jamdesk.app` 源（如果您在子路径下托管，则还包括 `/docs`）。 |
+| `data-page` | 路径 | `/changelog` | 要在模态框中打开的任意文档路径，而不仅是更新日志。参见[将模态框指向任意页面](#将模态框指向任意页面)。 |
+| `data-theme` | `auto`、`light`、`dark` | `auto` | 强制设置模态框的配色方案，或跟随访客的系统设置。 |
+| `data-position` | `bottom-right`、`bottom-left`、`top-right`、`top-left` | `bottom-right` | 浮动启动器所在的角落。设置 `data-trigger` 后，此选项会被忽略。 |
+| `data-label` | 文本 | `What's new` | 浮动启动器的按钮文本。 |
+| `data-width` | CSS 长度 | `560px` | 模态框宽度。参见[调整模态框大小](#调整模态框大小)。 |
+| `data-height` | CSS 长度 | `680px` | 模态框高度。 |
+| `data-radius` | CSS 长度 | `12px` | 模态框的圆角半径。减小该值可使角变得更方。 |
+| `data-unread` | `off` 以禁用 | on | 是否显示未读圆点。 |
+| `data-unread-color` | 十六进制或 CSS 颜色名称 | `#e5484d` | 未读圆点的颜色。 |
+| `data-button-color` | 十六进制或 CSS 颜色名称 | `#111` | 浮动启动器背景色。设置 `data-trigger` 后，此选项会被忽略。 |
+| `data-button-text-color` | 十六进制或 CSS 颜色名称 | `#fff` | 浮动启动器文本颜色。 |
+| `data-trigger` | CSS 选择器 | _(none)_ | 绑定到您自己的元素，而不是使用浮动启动器。 |
+| `data-project` | Slug | derived from `data-base` | 存储每位访客“已查看”状态所用的键。仅当一个源提供多个更新日志时才覆盖此值。 |
+
+### 将模态框指向任意页面
+
+`data-page` 可以打开文档网站上的任意路径，而不仅是 `/changelog`。模态框会渲染您指定的页面，例如单个公告或迁移说明，并移除网站外壳。将其指向任何适合提供聚焦式上下文的页面：
+
+```html
+<script
+  src="https://acme.jamdesk.app/_jd/widget.js"
+  data-base="https://acme.jamdesk.app"
+  data-page="/announcements/2026-migration"
+  data-unread="off"
+  async
+></script>
+```
+
+当打开的页面不是更新日志时，以下两种行为仍与更新日志 feed 相关，请注意：
+
+- **未读圆点**跟踪的是更新日志的最新条目，而不是模态框中的页面。模态框打开其他内容时，请设置 `data-unread="off"`，否则访客看不到的更新日志更新也会点亮圆点。
+- **浮动启动器**只有在更新日志包含条目后才会自动出现（参见[使用 `rss: true` 启用](#使用-rss-true-启用)）。要在没有更新日志的网站上嵌入页面，请使用 [`data-trigger`](#启动器模式) 绑定到您自己的元素。您的元素始终会显示。
+
+### 启动器模式
+
+<Columns cols={2}>
+  <Card title="浮动启动器" icon="circle-dot">
+    不设置 `data-trigger`，小组件就会在 `data-position` 指定的角落渲染自己的按钮，并使用 `data-label` 中的文本。
+  </Card>
+  <Card title="绑定到您自己的元素" icon="link">
+    设置 `data-trigger="#whats-new"`（任意 CSS 选择器），小组件就会从您现有的导航链接或按钮打开，而不是使用浮动启动器。
+  </Card>
+</Columns>
+
+将小组件绑定到您自己的元素时，小组件会将未读圆点添加到该元素，并且不再渲染浮动按钮（因此 `data-position` 和 `data-label` 不再适用）：
+
+```html
+<script
+  src="https://acme.jamdesk.app/_jd/widget.js"
+  data-base="https://acme.jamdesk.app"
+  data-page="/changelog"
+  data-trigger="#whats-new"
+  async
+></script>
+```
+
+### 调整模态框大小
+
+模态框默认以 560 × 680 px 打开。设置 `data-width` 和 `data-height` 可更改其大小。单独的数字会被视为像素，也可以使用任何 `px`、`vw`、`vh`、`rem`、`em` 或 `%` 值：
+
+```html
+<script
+  src="https://acme.jamdesk.app/_jd/widget.js"
+  data-base="https://acme.jamdesk.app"
+  data-page="/changelog"
+  data-width="720px"
+  data-height="600px"
+  async
+></script>
+```
+
+两个尺寸都会进行响应式限制（宽度为 `92vw`，高度为 `86vh`），因此即使设置较大尺寸，也能适配手机。无法识别的值会回退到默认值。圆角默认为 12px；设置 `data-radius`（任意 CSS 长度）可将其变方或进一步增大圆角。
+
+### 设置启动器按钮样式
+
+浮动启动器默认是深色胶囊形按钮。使用 `data-button-color`（背景色）和 `data-button-text-color`（文本色）为其重新着色，二者都可以使用十六进制值或 CSS 颜色名称：
+
+```html
+<script
+  src="https://acme.jamdesk.app/_jd/widget.js"
+  data-base="https://acme.jamdesk.app"
+  data-page="/changelog"
+  data-button-color="#4f46e5"
+  data-button-text-color="#ffffff"
+  async
+></script>
+```
+
+这两个属性只会设置小组件自身浮动按钮的样式。使用 `data-trigger` 绑定到您自己的元素时，启动器会继承该元素的样式，因此这两个属性不会生效。
+
+### 自定义未读圆点
+
+未读圆点默认为红色（`#e5484d`）且处于启用状态。使用 `data-unread-color`（十六进制值或 CSS 颜色名称）更改其颜色，或使用 `data-unread="off"` 将其关闭：
+
+```html
+<!-- Recolor the dot -->
+<script src="https://acme.jamdesk.app/_jd/widget.js" data-base="https://acme.jamdesk.app" data-unread-color="#7c3aed" async></script>
+
+<!-- Turn the dot off -->
+<script src="https://acme.jamdesk.app/_jd/widget.js" data-base="https://acme.jamdesk.app" data-unread="off" async></script>
+```
+
+关闭圆点后，启动器和模态框仍会保留，只会移除指示器。下一节将说明如何跟踪“已查看”状态。
+
+## 未读圆点
+
+小组件会为每位访客保留未读指示状态。它会将最新条目的 id 与浏览器 `localStorage` 中的值进行比较（每个项目使用一个键）。两者不同时，启动器上会显示圆点；打开模态框后，该条目会被标记为已查看，圆点会被清除，直到发布下一次更新。
+
+由于状态存储在 `localStorage` 中，因此它按浏览器和访客分别保存。这里没有账户或跟踪功能，清除网站数据会重置状态。使用全新浏览器的访客会看到一次圆点，之后直到您发布新内容前都不会再次看到。
+
+## 示例
+
+<CodeGroup>
+```html Floating, bottom-left, green dot
+<script
+  src="https://acme.jamdesk.app/_jd/widget.js"
+  data-base="https://acme.jamdesk.app"
+  data-page="/changelog"
+  data-position="bottom-left"
+  data-unread-color="#22c55e"
+  async
+></script>
+```
+
+```html Bound to a nav link, larger modal
+<script
+  src="https://acme.jamdesk.app/_jd/widget.js"
+  data-base="https://acme.jamdesk.app"
+  data-page="/changelog"
+  data-trigger="#whats-new"
+  data-width="720px"
+  data-height="600px"
+  async
+></script>
+```
+
+```html No dot, custom label
+<script
+  src="https://acme.jamdesk.app/_jd/widget.js"
+  data-base="https://acme.jamdesk.app"
+  data-page="/changelog"
+  data-label="Release notes"
+  data-unread="off"
+  async
+></script>
+```
+</CodeGroup>
+
+## 内容安全策略
+
+如果您自己的网站发送了严格的 `Content-Security-Policy`，请在三个指令中允许您的 `*.jamdesk.app` 源，否则小组件会静默失效：
+
+```
+Content-Security-Policy:
+  script-src  https://acme.jamdesk.app;
+  frame-src   https://acme.jamdesk.app;
+  connect-src https://acme.jamdesk.app;
+```
+
+- **`script-src`** 加载 `widget.js`。
+- **`frame-src`** 渲染模态框的 iframe。
+- **`connect-src`** 获取用于未读圆点的更新日志元数据。
+
+遗漏其中任何一项都不会显示错误横幅：启动器不会出现，或者模态框会保持空白。如果小组件没有显示，请检查浏览器控制台中的 CSP 违规信息。
+
+## 受密码保护的网站
+
+<Warning>
+如果您的文档网站受密码保护，请不要嵌入小组件。解锁屏幕设计为在您自己的 `*.jamdesk.app` 网站上以第一方页面打开，而不是在第三方 iframe 中打开。嵌入后，访客会被要求在另一个源的框架中输入网站密码，这正是钓鱼提示的典型形式。请仅将小组件用于公开的更新日志。
+</Warning>
+
+## 下一步
+
+<Columns cols={2}>
+  <Card title="Update Component" icon="timeline" href="/cn/components/update">
+    编写小组件读取的更新日志条目
+  </Card>
+  <Card title="Custom Domains" icon="globe" href="/cn/deploy/custom-domains">
+    使用您自己的域名提供文档（小组件仍从 jamdesk.app 加载）
+  </Card>
+  <Card title="Widget Source" icon="github" href="https://github.com/jamdesk/jamdesk-widget">
+    固定版本、自行托管，或在 GitHub 上阅读源代码
+  </Card>
+</Columns>

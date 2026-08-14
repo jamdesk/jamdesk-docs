@@ -1,0 +1,178 @@
+---
+title: 图像
+description: >-
+  了解 Jamdesk 如何处理图像尺寸、说明文字、明暗主题变体和支持的格式，让文档视觉内容清晰易读。
+---
+
+Jamdesk 会为图像添加圆角并保持统一间距。将文件放入 `/images` 目录，然后使用标准 Markdown 引用。
+
+屏幕截图显示的是英文界面。
+
+## 标准 Markdown
+
+使用熟悉的 `![alt](path)` 语法：
+
+```markdown
+![API response showing user data in JSON format](/images/tabs-preview.webp)
+```
+
+![显示 JSON 格式用户数据的 API 响应](/images/tabs-preview.webp)
+
+路径从项目根目录开始。例如，位于 `your-docs/images/screenshot.webp` 的图像应引用为 `/images/screenshot.webp`。
+
+## 图像尺寸
+
+在图像 URL 后追加 `=WIDTHxHEIGHT`（中间用空格分隔）即可控制尺寸：
+
+```markdown
+![Dashboard overview](/images/tabs-preview.webp =400x300)
+```
+
+只设置一个尺寸，另一个尺寸会按比例缩放：
+
+```markdown
+![Wide banner](/images/tabs-preview.webp =800x)
+![Tall graphic](/images/tabs-preview.webp =x200)
+```
+
+如果你希望同一列中的屏幕截图具有一致宽度，或需要将高分辨率图像缩小到合理的显示尺寸，这种方式会很有用。
+
+## 说明文字
+
+将图像包裹在 `<Frame>` 组件中，即可为其添加边框和底部说明文字：
+
+```mdx
+<Frame caption="Dashboard overview showing project statistics">
+  ![Dashboard](/images/tabs-preview.webp)
+</Frame>
+```
+
+<Frame caption="带说明文字的边框图像示例">
+  ![Jamdesk](/images/jd-blueprint-transparent.webp)
+
+</Frame>
+
+`Frame` 会在图像周围绘制细边框，并将说明文字放在下方。它不仅适用于图像，也适用于其中的任何内容。
+
+## 明暗主题
+
+文档网站通常需要为每种配色方案使用不同的图像变体：白色背景上的徽标在深色模式下看起来不协调。
+
+### `srcDark` 属性
+
+最简单的方法。Jamdesk 会根据当前主题切换图像源：
+
+```mdx
+<img
+  src="/images/logo-light.webp"
+  srcDark="/images/logo-dark.webp"
+  alt="Company logo"
+/>
+```
+
+浏览器只会加载与当前配色方案匹配的图像。
+
+### HTML `<picture>` 元素
+
+如果你需要在 Jamdesk 之外也能使用的标准 HTML，可以结合媒体查询使用 `<picture>`：
+
+```mdx
+<picture>
+  <source srcset="/images/logo-dark.webp" media="(prefers-color-scheme: dark)" />
+  <img src="/images/logo-light.webp" alt="Company logo" />
+</picture>
+```
+
+`<picture>` 方式会遵循操作系统的配色方案设置。`srcDark` 属性则响应 Jamdesk 的主题切换按钮，这通常更适合文档网站。
+
+## 支持的格式
+
+| 格式 | 适用场景 | 备注 |
+|--------|----------|-------|
+| PNG | 屏幕截图、UI 捕获 | 无损质量，支持透明度。文件较大。 |
+| JPEG | 照片 | 压缩效果好，不支持透明度。 |
+| SVG | 图标、图表、徽标 | 矢量格式，可缩放到任意尺寸且不会损失质量。文件极小。 |
+| GIF | 简单动画 | 文件可能迅速变大。超过几帧时，可考虑使用较短的 `.mp4` 循环。 |
+| WebP | 通用场景 | 在相近质量下比 PNG 和 JPEG 更小。所有现代浏览器均支持。 |
+
+<Tip>
+对于大多数文档图像，WebP 能提供最佳的大小与质量平衡。如果需要透明度，WebP 同样支持，因此无需使用 PNG。
+</Tip>
+
+## 最佳实践
+
+<AccordionGroup>
+  <Accordion title="编写有意义的替代文本" icon="universal-access">
+    替代文本有两个作用：屏幕阅读器使用它来提供无障碍支持，图像加载失败时它会作为占位文本显示。请描述图像实际展示的内容。
+
+    ```markdown
+    {/* Good -- says what's in the image */}
+    ![API response showing user data in JSON format](/images/tabs-preview.webp)
+
+    {/* Bad -- tells you nothing */}
+    ![Screenshot](/images/tabs-preview.webp)
+    ```
+
+    对于不包含额外信息的装饰性图像（背景图案、分隔线），请使用空替代文本：`![](/images/decoration.webp)`。
+  </Accordion>
+
+  <Accordion title="保持文件大小较小" icon="gauge-high">
+    较大的图像会拖慢页面加载速度，尤其是在移动网络连接下。建议使用以下大小：
+
+    - **屏幕截图/UI：** PNG 或 WebP，小于 500KB
+    - **照片：** JPEG 或 WebP，小于 200KB
+    - **图标和图表：** 尽可能使用 SVG
+
+    [Squoosh](https://squoosh.app) 和 [TinyPNG](https://tinypng.com) 可以在不造成明显质量损失的情况下压缩图像。提交前，请使用其中一个工具处理屏幕截图。
+
+    也可以让 Jamdesk 在构建时处理图像。在 `docs.json` 中启用[自动 WebP 转换](/cn/builds/image-optimization)，这样你提交的任何 PNG 或 JPG 都会在每次构建时得到优化。
+  </Accordion>
+
+  <Accordion title="保持尺寸一致" icon="ruler-combined">
+    宽度不断变化的屏幕截图看起来会比较杂乱。请选择一个标准捕获宽度（1200px 效果良好），并在整个文档中使用该宽度。Jamdesk 会自动缩放图像以适应内容区域，因此统一的源尺寸会带来一致的渲染效果。
+  </Accordion>
+
+  <Accordion title="检查社交分享图像" icon="share-nodes">
+    Jamdesk 会为每个页面自动生成带品牌标识的 1200×630 社交卡片，你也可以在 frontmatter 中使用 `og:image` 为单个页面覆盖该设置。构建后，将页面 URL 输入免费的 [OpenGraph Preview](https://jamdesk.com/utilities/opengraph-preview) 工具，即可查看卡片在 X、Facebook、LinkedIn、Slack、Discord 等平台上的呈现效果。完整设置请参阅 [SEO 优化](/cn/content/seo)。
+  </Accordion>
+</AccordionGroup>
+
+## 文件组织
+
+将图像分组到与内容结构对应的子目录中。这样，随着文档不断增长，文件仍然易于查找：
+
+```bash
+your-docs/
+├── images/
+│   ├── getting-started/
+│   │   ├── step-1.png
+│   │   └── step-2.png
+│   ├── api/
+│   │   └── response.png
+│   └── logo.svg
+└── docs.json
+```
+
+使用从项目根目录开始的完整路径引用它们：
+
+```markdown
+![GitHub repository access](/images/getting-started/step-1.png)
+```
+
+<Warning>
+避免在图像文件名中使用空格。请改用连字符：`api-response.webp`，而不是 `api response.webp`。
+</Warning>
+
+## 接下来做什么？
+
+<Columns cols={3}>
+  <Card title="YouTube 嵌入" icon="youtube" href="/cn/content/youtube">
+    嵌入 YouTube 视频和 Shorts
+  </Card>
+  <Card title="视频" icon="video" href="/cn/content/videos">
+    本地 MP4 和 WebM 文件
+  </Card>
+  <Card title="iFrames" icon="code" href="/cn/content/iframes">
+    Vimeo、CodePen、Figma 等
+  </Card>
+</Columns>

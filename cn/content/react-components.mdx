@@ -1,0 +1,253 @@
+---
+title: 自定义 React 组件
+description: >-
+  在 MDX 文件中定义和使用自定义 React 组件，支持服务端渲染、Tailwind 样式以及使用 Jamdesk 内置组件。
+---
+
+直接在 MDX 文件中定义自定义 React 组件。在文件顶部导出箭头函数组件，然后在正文中使用。组件会在构建时进行服务端渲染，并可使用所有 Jamdesk 内置组件和 Tailwind 类。
+
+## 基本用法
+
+在 MDX 文件顶部使用 `export const` 定义组件：
+
+```mdx
+export const Highlight = ({ children, color }) => (
+  <span style={{ backgroundColor: color, padding: '0.2em 0.4em', borderRadius: '4px' }}>
+    {children}
+  </span>
+);
+
+This text has a <Highlight color="#ffeb3b">yellow highlight</Highlight> in it.
+```
+
+<Note>
+组件名称必须使用 PascalCase（以大写字母开头）。
+</Note>
+
+## 示例：Hero 卡片
+
+下面是一个包含多个 prop 和 Tailwind 类的复杂示例：
+
+```mdx
+export const HeroCard = ({ title, description, href, icon }) => (
+  <a
+    href={href}
+    className="group block p-6 rounded-lg border border-gray-200 hover:border-blue-500 transition-colors"
+  >
+    <div className="flex items-center gap-3 mb-2">
+      <Icon icon={icon} />
+      <h3 className="font-semibold text-lg">{title}</h3>
+    </div>
+    <p className="text-gray-600">{description}</p>
+  </a>
+);
+
+<div className="grid grid-cols-2 gap-4">
+  <HeroCard
+    title="Getting started"
+    description="Learn the basics"
+    href="/quickstart"
+    icon="rocket"
+  />
+  <HeroCard
+    title="Components"
+    description="Explore available components"
+    href="/components/overview"
+    icon="puzzle-piece"
+  />
+</div>
+```
+
+## 使用内置组件
+
+自定义组件可以使用 Jamdesk 的所有内置组件。无需导入：
+
+```mdx
+export const FeatureCard = ({ title, children }) => (
+  <Card title={title} icon="star">
+    {children}
+    <Tip>This tip is inside a custom component!</Tip>
+  </Card>
+);
+
+<FeatureCard title="My Feature">
+  <Note>Notes work inside custom components too!</Note>
+</FeatureCard>
+```
+
+内置组件分类如下：
+
+| 类别 | 组件 |
+|----------|-----------|
+| 提示框 | `Note`, `Tip`, `Info`, `Warning`, `Check`, `Danger` |
+| 布局 | `Card`, `Columns`, `Tabs`, `Tab`, `Accordion`, `Steps`, `Step`, `View` |
+| 媒体 | `Frame`, `Icon`, `Badge`, `Tooltip` |
+| 代码 | `CodeGroup` |
+| API 文档 | `ParamField`, `ResponseField`, `Expandable` |
+
+## 限制
+
+- **仅支持箭头函数**：使用 `export const` 语法。不支持 `export function` 语法。
+- **不支持导入**：无法导入外部软件包或其他文件。
+- **不支持 Hooks**：React Hooks（`useState`、`useEffect`、`useRef` 等）不可用。组件会在构建期间进行服务端渲染，而 Hooks 只能在客户端运行。对于交互式组件，请改用代码片段文件（见下方的故障排除）。
+- **仅支持服务端渲染**：组件在服务端渲染，不支持客户端交互或事件处理程序。
+- **仅支持 Tailwind**：使用 Tailwind CSS 类进行样式设置，不支持 CSS-in-JS。
+- **语法严格**：内联组件中的语法错误会导致构建失败，并显示明确的错误消息。
+- **PascalCase 名称**：组件名称必须以大写字母开头，且只能包含字母和数字（不能包含下划线）。
+
+<Warning>
+**需要使用 React Hooks？** 内联组件无法使用 `useState`、`useEffect` 或其他 Hooks，因为它们会在构建期间于服务端渲染。对于需要状态或副作用的交互式组件，请创建一个带有 `'use client'` 指令的代码片段文件（见下方的故障排除部分）。
+</Warning>
+
+## 最佳实践
+
+<Steps>
+<Step title="保持组件简单">
+内联组件应仅负责展示。对于复杂逻辑，请请求使用内置组件。
+</Step>
+<Step title="使用语义化 HTML">
+确保组件使用适当的 HTML 元素和 ARIA 属性，以满足无障碍要求。
+</Step>
+<Step title="充分测试">
+在本地预览文档，验证组件在浅色和深色模式下都能正确渲染。
+</Step>
+</Steps>
+
+## 故障排除
+
+<Accordion title="找不到组件错误">
+**错误：** `Expected component 'MyComponent' to be defined`
+
+**原因：**
+- 组件名称未使用 PascalCase（必须以大写字母开头）
+- 组件定义中存在语法错误
+- 缺少闭合标签或括号
+
+**解决方案：** 检查导出是否遵循以下模式：
+```mdx
+export const MyComponent = ({ prop }) => (
+  <div>{prop}</div>
+);
+```
+</Accordion>
+
+<Accordion title="构建因语法错误失败">
+**错误：** 构建失败，并提示 Babel 或 JSX 语法错误。
+
+**原因：**
+- 组件中的 JSX 语法无效
+- 标签或括号未闭合
+- 使用了不受支持的 JavaScript 功能
+
+**解决方案：** 验证 JSX 是否有效。常见问题包括：
+- 所有标签都必须闭合（使用 `<img />`，而不是 `<img>`）
+- 使用 `className`，而不是 `class`
+- 将多个元素包装在片段 `<>...</>` 或父元素中
+</Accordion>
+
+<Accordion title="组件覆盖内置组件警告">
+**警告：** `Inline component(s) override built-in: Note`
+
+**原因：** 内联组件与内置组件使用了相同的名称。
+
+**解决方案：** 重命名组件以避免冲突：
+```mdx
+// Instead of: export const Note = ...
+export const CustomNote = ({ children }) => (
+  <div className="my-note">{children}</div>
+);
+```
+</Accordion>
+
+<Accordion title="样式未生效">
+**问题：** Tailwind 类无法正常工作。
+
+**原因：**
+- 使用了 CSS-in-JS 或内联样式对象（支持有限）
+- Tailwind 类未包含在构建中
+
+**解决方案：** 使用标准 Tailwind 工具类。对于自定义样式，请使用带有简单值的内联 `style` prop：
+```mdx
+export const Highlight = ({ children }) => (
+  <span style={{ backgroundColor: '#ffeb3b' }}>{children}</span>
+);
+```
+</Accordion>
+
+<Accordion title="组件未渲染（export function）">
+**问题：** 使用 `export function` 定义的组件未渲染。
+
+**原因：** 仅支持 `export const` 箭头函数语法。
+
+**解决方案：** 将函数转换为箭头函数语法：
+```mdx
+// Instead of:
+export function MyComponent({ prop }) {
+  return <div>{prop}</div>;
+}
+
+// Use:
+export const MyComponent = ({ prop }) => (
+  <div>{prop}</div>
+);
+```
+</Accordion>
+
+<Accordion title="组件名称包含无效字符">
+**问题：** 包含下划线或特殊字符的组件无法正常工作。
+
+**原因：** 组件名称必须是有效的 PascalCase 标识符（只能包含字母和数字）。
+
+**解决方案：** 组件名称中只能使用字母和数字：
+```mdx
+// Instead of: export const Hero_Card = ...
+// Instead of: export const my-component = ...
+export const HeroCard = ({ title }) => (
+  <div>{title}</div>
+);
+```
+</Accordion>
+
+<Accordion title="useState 未定义（或 useEffect、useRef 等）">
+**错误：** `ReferenceError: useState is not defined`
+
+**原因：** 内联组件无法使用 React Hooks。内联组件会在构建过程中进行服务端渲染，而 Hooks 只能在客户端 React 组件中运行。
+
+**解决方案：** 对于需要状态或副作用的交互式组件，请改为创建代码片段文件：
+
+1. 在 `/snippets` 目录中创建文件（例如 `/snippets/counter.tsx`）
+2. 在文件顶部添加 `'use client'`
+3. 在 MDX 中导入并使用该文件
+
+```tsx title="/snippets/counter.tsx"
+'use client';
+
+import { useState } from 'react';
+
+export function Counter() {
+  const [count, setCount] = useState(0);
+  return (
+    <button onClick={() => setCount(c => c + 1)}>
+      Count: {count}
+    </button>
+  );
+}
+```
+
+```mdx title="your-page.mdx"
+import { Counter } from '/snippets/counter';
+
+<Counter />
+```
+</Accordion>
+
+## 接下来做什么？
+
+<Columns cols={2}>
+  <Card title="代码片段" icon="scissors" href="/cn/content/snippets">
+    可在多个页面中复用的组件，包括带 Hooks 的交互式组件
+  </Card>
+  <Card title="组件概览" icon="puzzle-piece" href="/cn/components/overview">
+    探索内置组件
+  </Card>
+</Columns>

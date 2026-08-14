@@ -1,0 +1,209 @@
+---
+title: MCP 服务器
+sidebarTitle: MCP 服务器
+description: 每个 Jamdesk 站点都内置 MCP 服务器。Claude 和 Cursor 等 AI 助手可以直接搜索和读取您的文档。
+---
+
+每个 Jamdesk 站点都内置 MCP（Model Context Protocol）服务器。`llms.txt` 为 AI 工具提供文档的静态快照，而 MCP 支持交互式搜索和查询 — 当 AI 代理需要查找特定答案，而不是阅读全部内容时，这非常有用。
+
+## 什么是 MCP？
+
+[Model Context Protocol](https://modelcontextprotocol.io) 是一种开放标准，允许 AI 工具访问外部数据源。您的 Jamdesk 文档通过 MCP 提供两个工具：
+
+| 工具 | 用途 |
+|------|---------|
+| `searchDocs` | 按关键字搜索文档，并返回按相关性排序的结果 |
+| `getPage` | 获取特定页面的完整内容 |
+
+## 端点 URL
+
+您的 MCP 端点是在文档 URL 后追加 `/_mcp`。如果您已有在线的[自定义域名](/cn/deploy/custom-domains)，请使用该域名：
+
+| 配置 | 端点 |
+|-------|----------|
+| 自定义域名为 `docs.acme.com` | `https://docs.acme.com/_mcp` |
+| 没有自定义域名 | `https://my-project.jamdesk.app/_mcp` |
+
+<Note>
+  只要连接了自定义域名，就应优先使用该端点 — 这样 AI 工具看到的每个 URL 都会保留您的品牌，即使您之后通过[仅使用自定义域名](/cn/deploy/custom-domain-only)隐藏 `.jamdesk.app` 子域名，该端点仍然有效。
+</Note>
+
+## 快速设置
+
+<Tabs>
+  <Tab title="Claude Code">
+    将您的文档添加为 MCP 服务器：
+
+    ```bash
+    claude mcp add --transport http my-docs https://docs.acme.com/_mcp
+    ```
+
+    将 `docs.acme.com` 替换为您的文档域名 — 如果您尚未连接自定义域名，则替换为 `my-project.jamdesk.app`。
+
+    现在，当您向 Claude 询问项目相关问题时，它可以直接搜索和读取您的文档。
+  </Tab>
+  <Tab title="Cursor">
+    将以下内容添加到项目的 `.cursor/mcp.json`：
+
+    ```json
+    {
+      "mcpServers": {
+        "my-docs": {
+          "url": "https://docs.acme.com/_mcp"
+        }
+      }
+    }
+    ```
+
+    打开项目时，Cursor 会自动连接到您的文档。
+  </Tab>
+</Tabs>
+
+## 可用工具
+
+### searchDocs
+
+搜索您的文档并获取按相关性排序的结果。
+
+**参数：**
+
+| 参数 | 类型 | 必填 | 描述 |
+|-----------|------|----------|-------------|
+| `query` | string | 是 | 搜索词（例如 "authentication"、"getting started"） |
+| `limit` | number | 否 | 最大结果数（默认：10，最大：50） |
+| `type` | string | 否 | 按内容类型筛选：`all`、`api`、`guide`、`quickstart`、`help`、`component` |
+
+**请求示例：**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "tools/call",
+  "params": {
+    "name": "searchDocs",
+    "arguments": {
+      "query": "authentication",
+      "limit": 5
+    }
+  }
+}
+```
+
+**响应示例：**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "content": [{
+      "type": "text",
+      "text": "{\"query\":\"authentication\",\"total\":1,\"results\":[{\"title\":\"Authentication\",\"description\":\"How to authenticate API requests\",\"url\":\"/docs/api/authentication\",\"type\":\"api\",\"score\":0.95}]}"
+    }]
+  }
+}
+```
+
+### getPage
+
+获取特定文档页面的完整内容。
+
+**参数：**
+
+| 参数 | 类型 | 必填 | 描述 |
+|-----------|------|----------|-------------|
+| `slug` | string | 是 | 不含 `/docs` 前缀的页面路径（例如 `api/authentication`） |
+
+**请求示例：**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 2,
+  "method": "tools/call",
+  "params": {
+    "name": "getPage",
+    "arguments": {
+      "slug": "api/authentication"
+    }
+  }
+}
+```
+
+**响应示例：**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 2,
+  "result": {
+    "content": [{
+      "type": "text",
+      "text": "{\"title\":\"Authentication\",\"description\":\"How to authenticate\",\"content\":\"## Overview\\n\\nUse API keys to authenticate...\",\"url\":\"/docs/api/authentication\"}"
+    }]
+  }
+}
+```
+
+## 测试端点
+
+您可以直接使用 curl 测试 MCP 端点：
+
+```bash
+# List available tools
+curl -X POST https://docs.acme.com/_mcp \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}'
+
+# Search for content
+curl -X POST https://docs.acme.com/_mcp \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"searchDocs","arguments":{"query":"getting started"}}}'
+```
+
+## 工作原理
+
+MCP 端点使用与文档一起构建的搜索索引：
+
+- **BM25 排名** - 按相关性对结果排序
+- **模糊匹配** - 处理拼写错误（容许 1 个字符的差异）
+- **字段加权** - 标题和章节标题的权重高于正文内容
+- **类型筛选** - 按内容类型筛选结果（API、指南等）
+
+每次部署时都会重新构建索引。
+
+## 速率限制
+
+MCP 端点按 IP 地址限制速率：每分钟 **60 个请求**。这足以满足 AI 助手的正常使用需求。如果超过限制，您将收到 429 响应。
+
+## 故障排除
+
+<Accordion title="MCP 服务器未连接">
+  验证端点 URL 是否正确且可访问：
+
+  ```bash
+  curl https://docs.acme.com/_mcp
+  ```
+
+  您应该会看到包含服务器信息的 JSON 响应。如果没有，请确认您的文档至少构建过一次。
+</Accordion>
+
+<Accordion title="搜索未返回结果">
+  搜索索引在构建时生成。如果您最近添加了内容，请从 Jamdesk 仪表板触发重新构建，以更新索引。
+</Accordion>
+
+<Accordion title="getPage 返回 null">
+  确保 slug 与页面路径完全匹配（不含 `.mdx` 扩展名）。例如，如果页面位于 `api/authentication.mdx`，请使用 `api/authentication` 作为 slug。
+</Accordion>
+
+## 接下来做什么？
+
+<Columns cols={2}>
+  <Card title="使用 AI 编写文档" icon="wand-magic-sparkles" href="/cn/ai/writing-with-ai">
+    使用 AI 工具编写文档的技巧
+  </Card>
+  <Card title="llms.txt" icon="file-lines" href="/cn/ai/llms-txt">
+    为 AI 工具自动生成的页面索引
+  </Card>
+</Columns>
