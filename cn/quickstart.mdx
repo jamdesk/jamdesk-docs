@@ -1,0 +1,231 @@
+---
+title: "快速开始：5 分钟完成部署"
+sidebarTitle: 快速入门
+description: "创建 Jamdesk 文档站点并部署到子域名。无需构建工具，只需 GitHub 和两个文件。"
+---
+
+**Jamdesk 是文档软件**，可以将 GitHub 仓库中的 Markdown 发布为托管文档站点，并自动生成 AI 可读的输出（`llms.txt`、每页的 `.md` 端点和 MCP 服务器）。
+
+只需两个文件即可部署文档站点：`docs.json` 和一个 MDX 页面。根据你的起点选择相应路径。
+
+## 前置条件
+
+你需要：
+- 一个 [GitHub](https://github.com) 账户
+- 一个包含文档的仓库（如果没有，我们会创建一个）
+
+## 选项 1：从入门模板开始
+
+最快的入门方式。[入门模板](https://github.com/jamdesk/starter-docs)包含示例内容、OpenAPI 规范以及每个组件的示例，方便你在替换为自己的内容前了解其工作方式。
+
+<Steps>
+  <Step title="创建 Jamdesk 账户">
+    前往 [dashboard.jamdesk.com](https://dashboard.jamdesk.com)，使用 GitHub 注册。
+  </Step>
+
+  <Step title="从模板创建项目">
+    点击 **New Project** → **From Template** → **Starter Docs**。
+
+    Jamdesk 会为你创建一个 GitHub 仓库，并预先完成所有配置。
+  </Step>
+
+  <Step title="站点上线">
+    你的文档已部署到 `your-project.jamdesk.app`。编辑 MDX 文件并推送更改，站点会自动重新构建。
+  </Step>
+</Steps>
+
+<Tip>
+你也可以直接克隆入门模板：`git clone https://github.com/jamdesk/starter-docs.git my-docs`
+</Tip>
+
+<Tip>
+**想让部分页面保持私有？**在任意 MDX 文件的 frontmatter 中添加 `private: true`，然后在下一次构建后于 **Project Settings** 中设置密码。请参阅[访问控制](/cn/setup/access-control)，了解四种选项（公开、全站密码、混合、SSO）。
+</Tip>
+
+## 选项 2：连接现有仓库
+
+已经有包含适用于 Jamdesk 的文档的仓库？可以直接连接。如果你要从 Mintlify 或其他文档平台迁移，请先使用选项 3。
+
+<Steps>
+  <Step title="创建 Jamdesk 账户">
+    前往 [dashboard.jamdesk.com](https://dashboard.jamdesk.com)，使用 GitHub 注册。
+  </Step>
+
+  <Step title="创建项目">
+    点击 **New Project** 并连接你的仓库。
+
+    1. 选择你的 GitHub 仓库
+    2. 选择要部署的分支
+    3. Jamdesk 会自动检测你的 `docs.json`
+
+    如果你的仓库还没有 `docs.json`，请在连接前从[文档项目包含什么](#文档项目包含什么)中添加最简文件。
+
+    有关仓库权限、分支选择和文档路径，请参阅[连接 GitHub](/cn/setup/connecting-github)。
+  </Step>
+
+  <Step title="站点上线">
+    你的文档已部署到 `your-project.jamdesk.app`，并会自动生成 `llms.txt`，供 AI 工具读取文档。
+
+    每次向已连接的分支推送更改，都会触发自动重新构建。
+  </Step>
+</Steps>
+
+## 选项 3：从 Mintlify 或其他文档平台迁移
+
+已经在 Mintlify、GitBook、Docusaurus、ReadMe、Confluence 或其他平台上编写了文档？创建新项目之前，请先查看迁移指南。指南介绍了适用于 Mintlify 的 `jamdesk migrate` 命令，以及适用于其他文档工具的手动步骤。迁移后，使用[选项 2](#选项-2连接现有仓库)连接迁移后的仓库。
+
+<Columns cols={2}>
+  <Card title="迁移指南" icon="right-left" href="/cn/setup/migration">
+    转换 Mintlify 文档，或从其他文档平台手动迁移
+  </Card>
+</Columns>
+
+## 文档项目包含什么
+
+最简 Jamdesk 项目包含两个部分：
+
+```bash
+my-docs/
+├── docs.json           # Configuration
+└── introduction.mdx    # Your first page
+```
+
+对于较大型的站点，请参阅[目录结构](/cn/setup/directory-structure)，了解推荐的文件夹、资源和代码片段。
+
+### docs.json
+
+用于定义站点的配置文件：
+
+```json
+{
+  "$schema": "https://jamdesk.com/docs.json",
+  "name": "My Docs",
+  "theme": "jam",
+  "navigation": {
+    "groups": [
+      {
+        "group": "Getting Started",
+        "pages": ["introduction"]
+      }
+    ]
+  }
+}
+```
+
+有关所有配置选项，请参阅 [docs.json 参考](/cn/config/docs-json-reference)。
+
+### MDX 页面
+
+使用 MDX 编写的文档页面：
+
+```mdx
+---
+title: Introduction
+description: Welcome to the docs
+---
+
+# Welcome
+
+This is your first documentation page.
+```
+
+有关 frontmatter、标题、链接和组件语法，请参阅 [MDX 基础](/cn/content/mdx-basics)。
+
+## 本地开发
+
+Jamdesk CLI 允许你在推送到 GitHub 前在本地预览更改。这有助于在 MDX 语法错误影响线上站点前发现问题。有关所有安装方式和命令，请参阅 [Jamdesk CLI 概览](https://jamdesk.com/docs/cli/overview)。
+
+在本地预览更改：
+
+<Tabs>
+  <Tab title="npm">
+    ```bash
+    npm install -g jamdesk
+    cd my-docs
+    jamdesk dev
+    ```
+  </Tab>
+  <Tab title="Homebrew">
+    ```bash
+    brew tap jamdesk/tap
+    brew install jamdesk
+    cd my-docs
+    jamdesk dev
+    ```
+  </Tab>
+  <Tab title="npx">
+    ```bash
+    cd my-docs
+    npx jamdesk dev
+    ```
+  </Tab>
+</Tabs>
+
+打开 **http://localhost:3000**，即可查看启用热重载的文档站点。
+
+## 添加更多页面
+
+1. 创建一个新的 MDX 文件：
+
+```mdx
+---
+title: Getting Started
+description: Learn the basics
+---
+
+Your content here...
+```
+
+2. 将其添加到 `docs.json`：
+
+```json docs.json
+{
+  "navigation": {
+    "groups": [
+      {
+        "group": "Getting Started",
+        "pages": ["introduction", "getting-started"]
+      }
+    ]
+  }
+}
+```
+
+3. 推送到 GitHub，新页面会自动部署。
+
+有关更多链接模式（包括锚点和卡片），请参阅[链接与导航](/cn/content/links)。
+
+## 自定义域名
+
+在 **Settings** → **Domains** 中添加自己的域名：
+
+1. 输入域名（例如 `docs.example.com`）
+2. 添加显示的 DNS 记录
+3. 等待验证（最长 48 小时）
+
+SSL 证书会自动配置。[查看完整指南 →](/cn/deploy/custom-domains)
+
+## 需要帮助？
+
+遇到问题？浏览[帮助中心](/cn/help/overview)，查看设置、账单和故障排除指南。也可以联系人工支持：打开任意 Jamdesk 页面底角的聊天窗口，或发送邮件至 [support@jamdesk.com](mailto:support@jamdesk.com)。我们会快速回复。
+
+## 完整参考
+
+你可以构建和运行的所有内容都包含在三份参考中：所有 MDX [组件](/cn/components/overview)、所有 [CLI 命令](/cn/cli/overview)以及所有 [`docs.json` 配置选项](/cn/config/docs-json-reference)。
+
+## 接下来做什么？
+
+<Columns cols={2}>
+  <Card title="端到端教程" icon="route" href="/cn/end-to-end-tutorial">
+    介绍从设置到自定义域名的完整工作流
+  </Card>
+  <Card title="MDX 基础" icon="file-code" href="/cn/content/mdx-basics">
+    使用 MDX 编写文档
+  </Card>
+  <Card title="组件" icon="puzzle-piece" href="/cn/components/overview">
+    探索可用组件
+  </Card>
+  <Card title="配置参考" icon="gear" href="/cn/config/docs-json-reference">
+    所有 docs.json 选项
+  </Card>
+</Columns>

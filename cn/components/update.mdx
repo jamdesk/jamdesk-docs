@@ -1,0 +1,207 @@
+---
+title: 更新
+description: 使用日期、描述和分类标签创建时间线式变更日志条目，并与目录集成以便导航。
+---
+
+Update 组件可创建时间线式变更日志条目，并自动与目录集成。每个条目都可以包含日期标签、描述和分类标签，因此适用于“What's New”页面、API 变更日志和发行说明。
+
+请在以下情况下使用 Update：
+- **记录发行版本**，包含版本号或日期
+- **构建变更日志**，让读者可以通过目录进行导航
+- **宣布新功能**，并使用分类标签（new、fix、breaking）
+
+<Tip>
+已经使用这些条目构建了变更日志？你可以在自己的产品中通过 "What's new?" 按钮和未读提示点展示它。请参阅[嵌入变更日志](/cn/development/embed-page)。
+</Tip>
+
+## 基本用法
+
+<Update label="2025年1月10日">
+新增对所有主题深色模式的支持。
+</Update>
+
+```mdx
+<Update label="January 10, 2025">
+Added support for dark mode across all themes.
+</Update>
+```
+
+## 添加描述
+
+在日期下方添加上下文：
+
+<Update label="2025年1月5日" description="重大变更">
+`getData()` 函数现在需要一个选项对象。
+</Update>
+
+```mdx
+<Update label="January 5, 2025" description="Breaking change">
+The `getData()` function now requires an options object.
+</Update>
+```
+
+## 添加标签
+
+使用标签对条目进行分类：
+
+<Update label="2024年12月20日" tags={["breaking", "api"]}>
+- 移除了已弃用的 `legacyMode` 选项
+- 更新了身份验证流程
+</Update>
+
+```mdx
+<Update label="December 20, 2024" tags={["breaking", "api"]}>
+- Removed deprecated `legacyMode` option
+- Updated authentication flow
+</Update>
+```
+
+## 多个条目
+
+堆叠多个 Update 组件，创建完整的变更日志：
+
+<Update label="2024年12月15日" tags={["feature"]}>
+新增 PDF 和 CSV 格式的导出功能。
+</Update>
+
+<Update label="2024年12月10日" tags={["fix"]}>
+修复了计划发布内容中的时区处理问题。
+</Update>
+
+<Update label="2024年12月1日" tags={["deprecation"]}>
+`v1` API 端点现已弃用。请在 2025 年 3 月前迁移到 `v2`。
+</Update>
+
+## 锚点链接和目录
+
+每个 Update 都会根据其标签生成锚点 ID（`label="January 10, 2025"` 会创建 `#january-10-2025`）。标签也会显示在目录中，以便快速导航。
+
+## 属性
+
+<ParamField name="label" type="string">
+  日期或版本标签（用于创建锚点 ID）。
+</ParamField>
+
+<ParamField name="description" type="string">
+  标签下方显示的辅助文本。
+</ParamField>
+
+<ParamField name="tags" type="string[]">
+  以徽章形式显示的分类标签。
+</ParamField>
+
+<ParamField name="date" type="string">
+  用于 RSS feed `pubDate` 的 ISO 日期字符串（例如 `"2025-03-15"`）。不会以可视方式渲染；`label` 仍是显示文本。
+</ParamField>
+
+## RSS Feed
+
+让读者订阅变更日志更新。在包含 Update 组件的任意页面中添加 `rss: true`，Jamdesk 会在构建期间自动生成 `feed.xml`。
+
+```yaml
+---
+title: Changelog
+rss: true
+---
+```
+
+启用后：
+- 页面标题旁会显示 RSS 图标，并链接到 feed
+- `<link rel="alternate">` 标签会添加到 `<head>`，以便自动发现，使 RSS 阅读器和浏览器能够自动找到 feed
+- 每个 `<Update>` 都会成为一个 RSS 条目，其标签作为标题，并包含返回该条目的锚点链接
+
+### 设置发布日期
+
+使用 `date` 属性设置 feed 中每个条目的 `<pubDate>`。如果没有 `date`，条目仍会出现在 feed 中，但不包含时间戳。
+
+```mdx
+<Update label="March 2025" date="2025-03-15" tags={["feature"]}>
+Added dark mode support across all themes.
+</Update>
+```
+
+### Feed 内容
+
+RSS feed 只包含纯文本。Feed 描述中的 Markdown 格式、MDX 组件、代码块和 HTML 都会被移除，因此请将第一句话写成无需格式也清晰易懂的摘要。
+
+### Feed URL
+
+Feed 可通过 `/feed.xml` 获取（如果你的网站使用 [hostAtDocs](/cn/deploy/custom-domains)，则通过 `/docs/feed.xml` 获取）。
+
+生成的 feed 如下所示：
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Acme Docs Changelog</title>
+    <link>https://docs.acme.com</link>
+    <description>Updates and changelog for Acme Docs</description>
+    <item>
+      <title>March 2025 — New dashboard</title>
+      <link>https://docs.acme.com/changelog#march-2025</link>
+      <pubDate>Sat, 15 Mar 2025 00:00:00 GMT</pubDate>
+      <description>Added dark mode support across all themes.</description>
+    </item>
+  </channel>
+</rss>
+```
+
+### 与其他工具集成
+
+订阅者可以将 feed URL 与任何兼容 RSS 的服务结合使用：
+
+- Slack：将 [/feed](https://slack.com/apps/A0F81R7U7-rss) RSS 应用添加到频道。
+- Discord：使用 [MonitoRSS](https://monitorss.xyz/) 或类似机器人自动发布更新。
+- 电子邮件：将 feed 连接到 [Zapier](https://zapier.com/) 或 [IFTTT](https://ifttt.com/)，在有新条目时向订阅者发送电子邮件。
+- 浏览器：Safari、Vivaldi 和 Firefox（通过扩展）原生支持 RSS。
+
+<Tip>
+  你可以在多个页面中添加 `rss: true`。所有启用 RSS 的页面中的 Update 条目都会合并到单个全站 `feed.xml` 中。
+</Tip>
+
+## 最佳实践
+
+<AccordionGroup>
+  <Accordion title="使用唯一标签" icon="fingerprint" defaultOpen>
+    每个标签都会创建一个锚点 ID，因此请使用唯一标签以确保深层链接正常工作：
+    - 使用具体日期：`January 10, 2025`（而不只是 `January 2025`）
+    - 包含版本号：`v2.1.0` 与 `v2.0.0`
+    - 重复的标签会创建重复 ID，导致锚点导航失效
+  </Accordion>
+
+  <Accordion title="使用一致的日期格式" icon="calendar">
+    选择一种格式并始终保持一致：
+    - `January 10, 2025`（推荐）
+    - `2025-01-10`（ISO 格式）
+    - `v2.0.0`（用于基于版本的变更日志）
+  </Accordion>
+
+  <Accordion title="使用有意义的标签" icon="tags">
+    常见标签及其自动颜色编码：
+
+    | 标签 | 颜色 | 用途 |
+    |-----|-------|---------|
+    | `breaking` | 红色 | 重大变更 |
+    | `feature` / `new` | 绿色 | 新功能 |
+    | `deprecation` / `deprecated` | 琥珀色 | 已弃用的功能 |
+    | 其他标签 | 灰色 | `api`、`fix` 等常规分类 |
+  </Accordion>
+
+  <Accordion title="保持条目易于浏览" icon="eye">
+    - 以最重要的变更开头
+    - 对多个项目使用项目符号
+    - 为复杂变更链接到详细文档
+  </Accordion>
+</AccordionGroup>
+
+## 接下来做什么？
+
+<Columns cols={2}>
+  <Card title="组件概览" icon="puzzle-piece" href="/cn/components/overview">
+    浏览所有可用组件
+  </Card>
+  <Card title="MDX 基础" icon="file-code" href="/cn/content/mdx-basics">
+    了解如何在 MDX 中使用组件
+  </Card>
+</Columns>
