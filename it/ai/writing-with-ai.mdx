@@ -1,0 +1,231 @@
+---
+title: Scrivere con l'AI
+description: Strategie pratiche per scrivere la documentazione Jamdesk con strumenti di AI: prompt efficaci, checklist di revisione e problemi comuni.
+---
+
+Queste strategie funzionano indipendentemente dallo strumento di AI utilizzato: Claude Code, Cursor, Codex, Copilot o qualsiasi altro. Per la configurazione specifica degli strumenti, consulta [Claude Code](/it/ai/claude-code), [Cursor](/it/ai/cursor) o [Codex](/it/ai/codex).
+
+## Perché MDX funziona bene con l'AI
+
+MDX è uno dei formati più semplici da utilizzare con gli strumenti di AI:
+
+- Sintassi familiare: i modelli di AI sono addestrati su milioni di file Markdown, quindi producono MDX valido con un prompting minimo.
+- Componenti strutturati: `<Card>`, `<Steps>` e `<Tabs>` seguono schemi prevedibili che i modelli apprendono rapidamente.
+- Testo semplice: MDX non include formati binari, schemi proprietari o artefatti di build che uno strumento di AI debba interpretare.
+
+## Scrivere prompt migliori
+
+La differenza tra una documentazione AI mediocre e una buona documentazione è solitamente il prompt. Specifica chiaramente ciò che vuoi ottenere.
+
+<Tabs>
+  <Tab title="Prompt deboli">
+    ```text
+    Write docs for the webhook feature.
+    ```
+
+    ```text
+    Document authentication.
+    ```
+
+    ```text
+    Create a getting started guide.
+    ```
+
+    Questi prompt producono output generico e prolisso perché l'AI non ha vincoli.
+  </Tab>
+  <Tab title="Prompt efficaci">
+    ```text
+    Write a page documenting our webhook feature. The reader is a developer
+    integrating webhooks for the first time. Start with a 3-step quickstart,
+    then cover payload format and retry behavior. Reference /src/webhooks
+    for the implementation.
+    ```
+
+    ```text
+    Add a troubleshooting section to the authentication page. Cover these
+    three errors: expired tokens, missing scopes, and rate limits. Use
+    Accordions for each error. Keep each answer under 4 lines.
+    ```
+
+    ```text
+    Create a getting started guide that gets the reader from zero to a
+    working hello-world in under 2 minutes. Skip the theory and background,
+    and jump straight into the install command.
+    ```
+
+    I vincoli producono output mirato. Indica all'AI chi è il lettore, quale struttura usare e cosa tralasciare.
+  </Tab>
+</Tabs>
+
+### Schemi di prompting efficaci
+
+| Schema | Esempio |
+|---------|---------|
+| **Specifica il lettore** | "The reader is a backend developer who has never used our API" |
+| **Indica la struttura** | "Use Steps for the setup flow, then Tabs for language variants" |
+| **Imposta limiti di lunghezza** | "Keep the intro under 2 sentences" or "Each accordion answer should be 3-4 lines" |
+| **Indica il codice sorgente** | "Reference the implementation in /src/auth for accuracy" |
+| **Indica cosa tralasciare** | "Don't explain what REST is. Skip the theory." |
+| **Fornisci una pagina di esempio** | "Match the tone and structure of /quickstart" |
+
+## Revisionare l'output dell'AI
+
+Gli strumenti di AI producono MDX strutturalmente corretto nella maggior parte dei casi. I problemi più sottili riguardano tono, accuratezza e prolissità. Esamina questa checklist prima di eseguire il commit.
+
+### Controllo dello stile
+
+Leggi l'output ad alta voce. Se sembra scritto da un chatbot, riscrivilo. Presta attenzione a:
+
+- Frasi riempitive: "It's important to note that", "This allows you to", "In order to"
+- Formulazioni esitanti: "You might want to consider", "It's generally recommended"
+- Transizioni vuote: "Now that we've covered X, let's move on to Y"
+- Termini alla moda: "seamlessly", "robust", "leverage", "streamline"
+
+Eliminali. La pagina sarà più breve e migliore.
+
+### Controllo dell'accuratezza
+
+Gli strumenti di AI producono informazioni errate con grande sicurezza. Verifica quanto segue:
+
+- Gli esempi di codice funzionano davvero? Copiali, incollali ed eseguili.
+- Le opzioni di configurazione esistono davvero? Verificale nel codice sorgente.
+- I nomi dei componenti sono corretti? Usa solo [componenti esistenti](/it/components/overview).
+- La pagina descrive il comportamento attuale, non funzionalità auspicabili?
+
+### Controllo della struttura
+
+- [ ] Il frontmatter contiene sia `title` sia `description`
+- [ ] Esiste un paragrafo introduttivo senza un'intestazione precedente
+- [ ] La pagina termina con schede "Cosa fare dopo?" in un wrapper `<Columns>`
+- [ ] Le nuove pagine sono aggiunte alla navigazione di `docs.json`
+- [ ] Non ci sono componenti inventati; usa solo quelli nel [riferimento dei componenti](/it/components/overview)
+
+## Errori comuni dell'AI
+
+Questi errori ricorrono abbastanza spesso da richiedere attenzione:
+
+<AccordionGroup>
+  <Accordion title="Inventare componenti inesistenti">
+    Gli strumenti di AI generano `<CodeBlock>`, `<Alert>`, `<Section>`, `<Callout>` e altri componenti che non esistono in Jamdesk. Attieniti ai componenti elencati nella [panoramica](/it/components/overview).
+  </Accordion>
+  <Accordion title="Dimenticare la navigazione di docs.json">
+    Creare una pagina senza aggiungerla a `docs.json` è l'errore più comune. La pagina esisterà, ma non apparirà nella barra laterale. Aggiorna sempre la navigazione quando crei una pagina.
+  </Accordion>
+  <Accordion title="Usare troppi callout">
+    Gli strumenti di AI amano racchiudere ogni altro paragrafo in un `<Note>` o un `<Warning>`. Uno o due callout per pagina sono sufficienti. Se tutto è importante, niente lo è.
+  </Accordion>
+  <Accordion title="Scrivere troppo">
+    Una pagina di 200 righe generata dall'AI di solito contiene 100 righe di contenuto effettivo. Cerca spiegazioni ripetute, informazioni di contesto non necessarie e paragrafi che esprimono lo stesso concetto con parole diverse. Taglia senza esitazione.
+  </Accordion>
+  <Accordion title="Descrizioni generiche">
+    "This powerful feature allows you to..." non comunica nulla al lettore. Sostituiscila con ciò che la funzionalità fa davvero: "Send HTTP POST requests to your endpoint when events fire."
+  </Accordion>
+</AccordionGroup>
+
+## Mantenere aggiornata la documentazione
+
+Scrivere la documentazione è la parte più semplice. Mantenerla aggiornata quando cambia il codice è più difficile.
+
+<Tabs>
+  <Tab title="Prompt manuale">
+    Dopo aver rilasciato una funzionalità, invia questo prompt allo strumento di AI:
+
+    ```text
+    I just added [feature]. Update the docs to reflect this change.
+    Reference the implementation in /src/[file] for accuracy.
+    ```
+  </Tab>
+  <Tab title="Automatizzato con /update-jamdesk">
+    La skill `/update-jamdesk` per Claude Code analizza le modifiche al codice e genera aggiornamenti della documentazione corrispondenti. Eseguila dopo aver implementato funzionalità visibili agli utenti:
+
+    ```text
+    /update-jamdesk
+    ```
+
+    Consulta [Aggiornamenti automatizzati](/it/ai/automated-updates) per la configurazione completa.
+  </Tab>
+</Tabs>
+
+## Struttura di una pagina
+
+Usa questo prompt come punto di partenza quando chiedi all'AI di creare una nuova pagina:
+
+<Prompt title="Crea una pagina di documentazione Jamdesk" actions={["cursor", "claude", "chatgpt"]}>
+Crea una pagina di documentazione Jamdesk usando questa struttura. Sostituisci ogni segnaposto con contenuti specifici e accurati per la funzionalità che descriverò.
+
+```mdx
+---
+title: Feature Name
+description: One sentence summarizing what this page covers.
+---
+
+Opening paragraph: what problem this solves and who should read this.
+
+## Quick Start
+
+<Steps>
+  <Step title="First step">What to do.</Step>
+  <Step title="Second step">What to do next.</Step>
+</Steps>
+
+## How It Works
+
+Explain the mechanics. Use code examples.
+
+## What's Next?
+
+<Columns cols={2}>
+  <Card title="Related Page" icon="arrow-right" href="/path">
+    Why the reader would go here next
+  </Card>
+</Columns>
+```
+</Prompt>
+
+La scheda interattiva precedente copia le istruzioni e la struttura complete. Il relativo codice sorgente usa la stessa sintassi dei componenti che puoi aggiungere alle tue pagine:
+
+````mdx
+<Prompt title="Create a Jamdesk documentation page" actions={["cursor", "claude", "chatgpt"]}>
+Create a Jamdesk documentation page using this structure. Replace each
+placeholder with specific, accurate content for the feature I describe.
+
+```mdx
+---
+title: Feature Name
+description: One sentence summarizing what this page covers.
+---
+
+Opening paragraph: what problem this solves and who should read this.
+
+## Quick Start
+
+<Steps>
+  <Step title="First step">What to do.</Step>
+  <Step title="Second step">What to do next.</Step>
+</Steps>
+
+## How It Works
+
+Explain the mechanics. Use code examples.
+
+## What's Next?
+
+<Columns cols={2}>
+  <Card title="Related Page" icon="arrow-right" href="/path">
+    Why the reader would go here next
+  </Card>
+</Columns>
+```
+</Prompt>
+````
+
+## Cosa fare dopo?
+
+<Columns cols={2}>
+  <Card title="Aggiornamenti automatizzati" icon="rotate" href="/it/ai/automated-updates">
+    Esegui `/update-jamdesk` per generare la documentazione dalle modifiche al codice
+  </Card>
+  <Card title="Componenti MDX" icon="puzzle-piece" href="/it/components/overview">
+    Riferimento completo dei componenti disponibili
+  </Card>
+</Columns>

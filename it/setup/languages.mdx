@@ -1,0 +1,308 @@
+---
+title: Supporto multilingue
+description: Servi la documentazione in più lingue con un selettore. Ogni lingua ha una struttura di navigazione e contenuti tradotti.
+---
+
+Se la documentazione deve raggiungere utenti che parlano più di una lingua, puoi definire alberi di navigazione separati per ogni lingua e consentire ai lettori di cambiare lingua dal menu a discesa nella barra superiore.
+
+<Note>
+  Jamdesk non traduce i contenuti per te. Devi fornire i file MDX tradotti; Jamdesk gestisce routing, navigazione, selettore della lingua e stile RTL. Inserisci le traduzioni ottenute dal tuo flusso di lavoro (traduttori umani, traduzione automatica o un LLM) in directory con prefisso della lingua.
+</Note>
+
+## Configurazione
+
+Racchiudi la navigazione in un array `languages`, con ogni lingua contenente la propria struttura di navigazione:
+
+```json docs.json
+{
+  "navigation": {
+    "languages": [
+      {
+        "language": "en",
+        "tabs": [
+          {
+            "tab": "Documentation",
+            "groups": [
+              {
+                "group": "Getting Started",
+                "pages": ["introduction", "quickstart"]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "language": "es",
+        "tabs": [
+          {
+            "tab": "Documentación",
+            "groups": [
+              {
+                "group": "Comenzar",
+                "pages": ["es/introduction", "es/quickstart"]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+## Lingue supportate
+
+| Codice | Lingua | Codice | Lingua |
+|------|----------|------|----------|
+| `en` | Inglese | `ko` | Coreano |
+| `es` | Spagnolo | `pt-BR` | Portoghese (Brasile) |
+| `fr` | Francese | `ru` | Russo |
+| `de` | Tedesco | `ar` | Arabo |
+| `it` | Italiano | `hi` | Hindi |
+| `jp` | Giapponese | `id` | Indonesiano |
+| `cn` | Cinese (semplificato) | `tr` | Turco |
+| `zh-Hant` | Cinese (tradizionale) | `vi` | Vietnamita |
+| `nl` | Olandese | `pl` | Polacco |
+| `sv` | Svedese | `cs` | Ceco |
+| `no` | Norvegese | `ro` | Rumeno |
+| `he` | Ebraico | `ua` | Ucraino |
+| `lv` | Lettone | `uz` | Uzbeko |
+
+## Struttura delle directory
+
+Organizza i contenuti tradotti in directory con prefisso della lingua:
+
+```bash
+my-docs/
+├── docs.json
+├── introduction.mdx          # English (default)
+├── quickstart.mdx
+├── es/
+│   ├── introduction.mdx      # Spanish
+│   └── quickstart.mdx
+├── fr/
+│   ├── introduction.mdx      # French
+│   └── quickstart.mdx
+└── de/
+    ├── introduction.mdx      # German
+    └── quickstart.mdx
+```
+
+Fai riferimento alle pagine nella navigazione usando il percorso completo (con il prefisso della lingua):
+
+```json
+{
+  "language": "es",
+  "tabs": [
+    {
+      "tab": "Documentación",
+      "groups": [
+        {
+          "group": "Comenzar",
+          "pages": ["es/introduction", "es/quickstart"]
+        }
+      ]
+    }
+  ]
+}
+```
+
+## Impostazioni specifiche per lingua
+
+Ogni lingua può avere la propria configurazione:
+
+```json
+{
+  "navigation": {
+    "languages": [
+      {
+        "language": "en",
+        "tabs": [...]
+      },
+      {
+        "language": "es",
+        "tabs": [...]
+      }
+    ]
+  }
+}
+```
+
+<Note>
+I banner vengono impostati globalmente al livello superiore di `docs.json` (vedi [Banner](/it/config/docs-json-reference#banner)), non per ogni lingua. Un solo banner viene mostrato su tutte le pagine in tutte le lingue.
+</Note>
+
+## Traduzione delle etichette della barra di navigazione
+
+I link della barra di navigazione superiore e la CTA principale accettano un oggetto `labels` facoltativo con override per ogni lingua. Quando il lettore si trova su un URL con prefisso della lingua (ad esempio `/fr/...`), viene usato l'override corrispondente; altrimenti viene mostrata l'etichetta predefinita `label`.
+
+```json docs.json
+{
+  "navbar": {
+    "links": [
+      {
+        "label": "Blog",
+        "labels": { "fr": "Blog", "es": "Blog" },
+        "href": "/blog"
+      },
+      {
+        "label": "Pricing",
+        "labels": { "fr": "Tarifs", "es": "Precios" },
+        "href": "/pricing"
+      }
+    ],
+    "primary": {
+      "type": "button",
+      "label": "Dashboard",
+      "labels": { "fr": "Tableau de bord", "es": "Panel" },
+      "href": "https://app.example.com"
+    }
+  }
+}
+```
+
+Le stringhe dell'interfaccia integrate (il pulsante **Search**, il pulsante **Ask AI** e il menu a discesa delle schede **More**) vengono tradotte automaticamente per ogni lingua supportata. Non devi configurarle.
+
+## Lingua predefinita
+
+La prima lingua nell'array è quella predefinita. Gli utenti che accedono alla documentazione vedono prima questa lingua. Il selettore della lingua consente loro di cambiarla.
+
+## Struttura degli URL
+
+I prefissi della lingua compaiono negli URL:
+
+| Lingua | URL |
+|----------|-----|
+| Inglese (predefinita) | `docs.example.com/introduction` |
+| Spagnolo | `docs.example.com/es/introduction` |
+| Francese | `docs.example.com/fr/introduction` |
+
+## Traduzioni parziali
+
+Non è necessario tradurre ogni pagina. Se una pagina non esiste in una lingua, gli utenti visualizzano un messaggio di fallback con un link alla versione inglese.
+
+Per le pagine che non devono essere tradotte (come i riferimenti API), puoi fare riferimento alla stessa pagina in tutte le lingue:
+
+```json
+{
+  "language": "es",
+  "tabs": [
+    {
+      "tab": "API",
+      "groups": [
+        {
+          "group": "Endpoints",
+          "pages": ["api/users", "api/posts"]  // Same as English
+        }
+      ]
+    }
+  ]
+}
+```
+
+## Traduzione delle specifiche OpenAPI
+
+Le pagine degli endpoint basate su OpenAPI (quelle con una direttiva `openapi:` nel frontmatter) mostrano contenuti provenienti da un file di specifica YAML o JSON. Per tradurre il riepilogo dell'endpoint, le descrizioni, i suggerimenti sui parametri e le descrizioni dei campi dello schema, fornisci un file di specifica specifico per la lingua accanto a quello inglese.
+
+### Denominazione dei file
+
+Inserisci la specifica tradotta accanto a quella di origine, aggiungendo il codice della lingua prima dell'estensione:
+
+```bash
+openapi/
+├── api.yaml           # English (default)
+├── api.fr.yaml        # French
+├── api.es.yaml        # Spanish
+└── api.zh.yaml        # Simplified Chinese
+```
+
+Non è necessaria alcuna modifica alla configurazione o a `docs.json`. Jamdesk risolve la specifica corrispondente al momento del rendering in base al prefisso della lingua nell'URL. Una pagina all'indirizzo `/fr/api-reference/create-ticket` cerca prima `api.fr.yaml`, quindi usa `api.yaml` se non trova alcuna traduzione.
+
+### Cosa tradurre nella specifica
+
+Traduci la prosa leggibile dagli utenti. Mantieni identici tutti i valori strutturali nelle diverse lingue.
+
+| Tradurre | Mantenere identico |
+|-----------|----------------|
+| `info.title`, `info.description` | versione `openapi` / `swagger`, `servers[*].url` |
+| `summary`, `description` di ogni operazione | percorsi URL, metodi HTTP, `operationId`, `tags` |
+| `description` di ogni parametro | nomi dei parametri (`name`), nomi dei campi, chiavi delle proprietà dello schema |
+| `description` di ogni risposta | chiavi dei codici di stato (`"200"`, `"400"`, ecc.) |
+| `requestBody.description` | valori `enum` (`low`, `normal`, `high`), `type`, `format` |
+| `description` dello schema e delle proprietà | puntatori `$ref`, contenuti dei payload `example` / `examples` |
+
+### Comportamento di fallback
+
+Se una pagina viene richiesta tramite un URL localizzato ma non esiste alcuna specifica tradotta, Jamdesk esegue il rendering della specifica inglese all'interno dell'interfaccia della pagina tradotta. Gli utenti visualizzano un blocco dell'endpoint in più lingue anziché un errore 404. Questo comportamento è coerente con quello delle traduzioni parziali per le pagine MDX.
+
+<Note>
+  L'anteprima locale della CLI `jamdesk` (`jamdesk dev`) risolve le specifiche OpenAPI solo in base al nome del file. Al momento non applica la ricerca del suffisso della lingua. Quando lavori localmente sulle traduzioni, usa l'URL di anteprima Jamdesk di produzione (`<project>.jamdesk.app/<lang>/...`) oppure sostituisci temporaneamente il file di origine. Questo influisce solo sullo sviluppo locale; il rendering ospitato e quello ISR selezionano correttamente la specifica tradotta.
+</Note>
+
+### Rimozione di una specifica specifica per lingua
+
+L'eliminazione di `api.<lang>.yaml` fa sì che la pagina utilizzi la specifica inglese al rendering successivo (non è necessaria alcuna nuova build). Per ritradurre da zero, elimina il file e rigeneralo. Non è necessaria alcuna modifica a `docs.json`: la risoluzione della specifica si basa esclusivamente sul nome del file.
+
+### Esempio
+
+File di origine `openapi/tickets.yaml`:
+
+```yaml
+info:
+  title: Tickets API
+  description: Manage support tickets.
+paths:
+  /tickets:
+    post:
+      summary: Create a ticket
+      description: Create a new support ticket.
+      operationId: createTicket
+```
+
+Traduzione francese `openapi/tickets.fr.yaml`:
+
+```yaml
+info:
+  title: API Tickets
+  description: Gérez les tickets de support.
+paths:
+  /tickets:
+    post:
+      summary: Créer un ticket
+      description: Créer un nouveau ticket de support.
+      operationId: createTicket
+```
+
+Nota che `/tickets`, `post` e `createTicket` rimangono identici. Cambia solo la prosa.
+
+## Flusso di lavoro per la traduzione
+
+<Steps>
+  <Step title="Inizia dall'inglese">
+    Scrivi prima la documentazione in inglese. Questa diventa la tua fonte di verità.
+  </Step>
+  <Step title="Aggiungi le directory delle lingue">
+    Crea una directory per ogni lingua di destinazione (`es/`, `fr/`, ecc.).
+  </Step>
+  <Step title="Traduci i contenuti">
+    Copia i file inglesi nelle directory delle lingue e traducili. Mantieni invariati i nomi dei file.
+  </Step>
+  <Step title="Aggiorna docs.json">
+    Aggiungi le lingue alla configurazione della navigazione.
+  </Step>
+</Steps>
+
+## Lingue RTL
+
+Le lingue con scrittura da destra a sinistra, come l'arabo e l'ebraico, sono supportate. Jamdesk applica automaticamente lo stile RTL quando queste lingue sono attive.
+
+## Qual è il prossimo passo?
+
+<Columns cols={2}>
+  <Card title="Panoramica della navigazione" icon="sitemap" href="/it/navigation/overview">
+    Configura schede, gruppi e struttura delle pagine
+  </Card>
+  <Card title="Riferimento docs.json" icon="gear" href="/it/config/docs-json-reference">
+    Opzioni di configurazione complete
+  </Card>
+</Columns>

@@ -1,0 +1,147 @@
+---
+title: Integrazione Plausible Analytics
+description: Aggiungi Plausible Analytics al tuo sito di documentazione: un'alternativa leggera e attenta alla privacy a Google Analytics.
+---
+
+Aggiungi Plausible Analytics al tuo sito di documentazione per ottenere dati sul traffico senza cookie o script di tracciamento che seguono gli utenti sul web.
+
+<Info>
+Plausible è open source, pesa meno di 1 KB e nella maggior parte delle giurisdizioni non richiede un banner per il consenso ai cookie. È una scelta adatta se vuoi analisi semplici e conformi al GDPR.
+</Info>
+
+Se hai bisogno della gestione del consenso (o utilizzi anche GA, GTM o Crisp), consulta [Consenso ai cookie](/it/integrations/cookie-consent).
+
+Esistono due modi per aggiungere Plausible. Scegli quello adatto alla tua configurazione:
+
+| Configurazione | Utilizzala quando | Campo |
+|----------------|-------------------|-------|
+| **Standard** | Utilizzi il piano gratuito di Plausible o un piano a pagamento senza necessità di proxy | `domain` |
+| **Script proxy** | Utilizzi un piano a pagamento e vuoi bypassare gli ad blocker | `scriptUrl` |
+
+## Configurazione standard (domain)
+
+Questa è l'impostazione predefinita per la maggior parte degli utenti. Registra il tuo sito in Plausible e passa il dominio.
+
+<Steps>
+
+### Registrati a Plausible
+
+Crea un account su [Plausible Analytics](https://plausible.io/) e aggiungi il dominio del tuo sito di documentazione (ad esempio `docs.example.com`).
+
+### Aggiungi il dominio a docs.json
+
+```json docs.json
+{
+  "name": "My Docs",
+  "integrations": {
+    "plausible": {
+      "domain": "docs.example.com"
+    }
+  }
+}
+```
+
+Utilizza esattamente il dominio che hai registrato: `docs.example.com`, non `www.docs.example.com`.
+
+</Steps>
+
+### Server self-hosted
+
+Se esegui la [Community Edition](https://github.com/plausible/community-edition), aggiungi il campo `server` in modo che lo script e l'API degli eventi puntino alla tua istanza:
+
+```json docs.json
+{
+  "name": "My Docs",
+  "integrations": {
+    "plausible": {
+      "domain": "docs.example.com",
+      "server": "https://analytics.example.com"
+    }
+  }
+}
+```
+
+`server` funziona solo con `domain`. Gli script proxy gestiscono il proprio routing.
+
+## Configurazione dello script proxy (scriptUrl)
+
+I piani a pagamento di Plausible offrono script proxy con un nome file univoco (come `pa-XXXXX.js`). Questi script bypassano la maggior parte degli ad blocker perché il relativo URL non corrisponde agli elenchi di filtri comuni.
+
+<Steps>
+
+### Ottieni l'URL dello script proxy
+
+Nelle impostazioni del tuo sito Plausible, individua la sezione dello script proxy e copia l'URL completo. È simile a `https://plausible.io/js/pa-XXXXX.js`.
+
+### Aggiungi l'URL dello script a docs.json
+
+```json docs.json
+{
+  "name": "My Docs",
+  "integrations": {
+    "plausible": {
+      "scriptUrl": "https://plausible.io/js/pa-XXXXX.js"
+    }
+  }
+}
+```
+
+Non sono necessari i campi `domain` o `server`. L'identità del sito è incorporata nell'ID dello script e la CDN di Plausible gestisce internamente il routing.
+
+</Steps>
+
+## Verifica dell'installazione
+
+Dopo aver aggiunto l'integrazione:
+
+1. Avvia una nuova build della documentazione
+2. Visita il sito di documentazione online
+3. Controlla il tuo dashboard Plausible. La visita dovrebbe comparire entro pochi secondi.
+4. In alternativa, apri DevTools, vai alla scheda Network e cerca una richiesta a `plausible.io/js/script.js` (standard) o allo script `pa-XXXXX.js` (proxy)
+
+<Note>
+Plausible mostra i dati in tempo reale, senza un periodo di attesa come Google Analytics.
+</Note>
+
+## Riferimento della configurazione
+
+| Campo | Tipo | Obbligatorio | Descrizione |
+|-------|------|--------------|-------------|
+| `domain` | `string` | Uno tra `domain` e `scriptUrl` | Il dominio del sito registrato in Plausible. Viene utilizzato come attributo `data-domain` nel tag script. |
+| `scriptUrl` | `string` | Uno tra `domain` e `scriptUrl` | URL completo di uno script proxy a pagamento di Plausible (`pa-XXXXX.js`). L'identità del sito è incorporata nello script, quindi non è necessario alcun campo di dominio. |
+| `server` | `string` | No | URL di un server Plausible self-hosted. Utilizzato solo con `domain`, non con `scriptUrl`. |
+
+## Risoluzione dei problemi
+
+<Accordion title="Non visualizzi dati in Plausible">
+  Nove volte su dieci, il problema è il dominio. Deve corrispondere esattamente a quello registrato in Plausible (quindi `docs.example.com`, non `www.docs.example.com`).
+
+  Se il dominio sembra corretto:
+
+  1. Ricostruisci la documentazione. Le modifiche alla configurazione diventano effettive solo dopo una nuova build.
+  2. Controlla la presenza di ad blocker. Alcune estensioni del browser bloccano gli script di analisi, incluso Plausible. Se questa è la causa, passa alla [configurazione dello script proxy](#configurazione-dello-script-proxy-scripturl).
+  3. Ispeziona il codice sorgente della pagina per verificare la presenza di un tag `<script>` con `data-domain` (standard) o del nome file `pa-XXXXX.js` (proxy). Se non è presente, la configurazione non è stata applicata.
+</Accordion>
+
+<Accordion title="Utilizzo di un dominio personalizzato o di una sottodirectory">
+  Registra il dominio che gli utenti visitano effettivamente. Se la documentazione è disponibile su `docs.example.com`, utilizza questo valore come `domain`, non il dominio principale.
+</Accordion>
+
+<Accordion title="Script bloccato dagli ad blocker">
+  Passa alla [configurazione dello script proxy](#configurazione-dello-script-proxy-scripturl). Il nome file univoco bypassa la maggior parte degli elenchi di filtri degli ad blocker. L'hosting autonomo ottiene lo stesso risultato, poiché lo script viene caricato dal tuo dominio.
+</Accordion>
+
+<Accordion title="Quando utilizzare domain o scriptUrl">
+  Utilizza `domain` se hai il piano gratuito o non ti preoccupano gli ad blocker. Utilizza `scriptUrl` se hai un piano a pagamento e vuoi la massima copertura del tracciamento. Non impostarli entrambi: scegline uno.
+</Accordion>
+
+## Articoli correlati
+
+<Columns cols={2}>
+  <Card title="Google Analytics" icon="chart-simple" href="/it/integrations/google-analytics">
+    Aggiungi il tracciamento GA4 alla documentazione
+  </Card>
+  <Card title="Analisi del progetto" icon="chart-line" href="/it/setup/project-analytics">
+    Visualizza le analisi integrate di Jamdesk
+  </Card>
+</Columns>

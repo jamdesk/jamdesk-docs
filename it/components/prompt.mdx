@@ -1,0 +1,223 @@
+---
+title: Prompt
+description: Usa Prompt per presentare istruzioni AI riutilizzabili con copia, azioni di apertura integrate, destinazioni personalizzate, icone e opzioni compatte.
+---
+
+Il componente `<Prompt>` trasforma un insieme riutilizzabile di istruzioni in una scheda che i lettori possono copiare o aprire in uno strumento AI supportato. Le azioni di copia e apertura usano esattamente il contenuto scritto e visibile all'utente tra i tag.
+
+## Utilizzo di base
+
+Ogni Prompt include un'azione Copia, quindi la versione più semplice non richiede prop:
+
+<Prompt>
+Spiega come funziona la rotazione delle chiavi API per uno sviluppatore che usa per la prima volta la nostra API REST.
+</Prompt>
+
+```mdx
+<Prompt>
+Explain how API key rotation works for a developer using our REST API for the first time.
+</Prompt>
+```
+
+## Titolo e descrizione
+
+Usa `title` per identificare l'attività. La prop `description`, compatibile con Mintlify, sostituisce l'anteprima visibile con un riepilogo più breve, mentre il contenuto scritto e visibile all'utente tra i tag rimane il prompt completo usato dalle azioni Copia e di apertura.
+
+<Prompt
+  title="Scrivi una nota di rilascio"
+  description="Scrivi una nota di rilascio concisa per un pubblico di sviluppatori."
+  actions={["copy", "claude"]}
+>
+Scrivi una nota di rilascio per il nuovo endpoint di rotazione delle chiavi API.
+
+- Rivolgiti agli sviluppatori backend.
+- Inizia dal vantaggio per l'utente.
+- Includi un esempio di richiesta.
+</Prompt>
+
+```mdx
+<Prompt
+  title="Draft a release note"
+  description="Write a concise release note for a developer audience."
+  actions={["copy", "claude"]}
+>
+Write a release note for the new API key rotation endpoint.
+
+- Address backend developers.
+- Lead with the user benefit.
+- Include one request example.
+</Prompt>
+```
+
+L'azione `"copy"` esplicita è accettata per compatibilità, ma Copia è sempre presente e non deve mai essere elencata.
+
+<Note>
+  Prompt copia esattamente il contenuto scritto e visibile all'utente. Quando un prompt contiene [Visibility](/it/components/visibility), i tag wrapper destinati solo agli utenti vengono omessi dal testo copiato, ma il loro contenuto rimane. I sottoalberi destinati solo agli agenti vengono esclusi. Anche Visibility con una prop `for` il cui valore è un'espressione, o la cui audience è nascosta da un attributo spread successivo, viene escluso perché l'audience non può essere determinata staticamente. Al contrario, Visibility senza prop `for`, con la forma abbreviata `for` o con un'audience letterale non valida rimane visibile. Un Prompt nascosto all'interno di Visibility destinato solo agli agenti o con audience nascosta da un'espressione/spread non ha una sorgente copiabile.
+</Note>
+
+## Azioni di apertura
+
+Aggiungi `claude`, `cursor`, `chatgpt`, `perplexity` o `gemini` per consentire ai lettori di aprire il prompt in questi strumenti, ciascuno con la propria icona. La prima azione di apertura valida viene visualizzata accanto a Copia; le azioni aggiuntive appaiono nel menu Altro.
+
+<Prompt
+  title="Confronta i flussi di autenticazione"
+  actions={["claude", "cursor", "chatgpt", "perplexity", "gemini"]}
+>
+Confronta i flussi di autenticazione tramite token di sessione e chiave API in questo repository. Elenca i compromessi in termini di sicurezza e indica quale flusso dovrebbe usare ciascun tipo di client.
+</Prompt>
+
+```mdx
+<Prompt
+  title="Compare authentication flows"
+  actions={["claude", "cursor", "chatgpt", "perplexity", "gemini"]}
+>
+Compare the session-token and API-key authentication flows in this repository.
+List their security tradeoffs and recommend which flow each client type should use.
+</Prompt>
+```
+
+<Warning>
+  Facendo clic su un'azione di apertura, invii il prompt completo copiabile al servizio di terze parti selezionato. Non includere segreti, dati personali o contenuti proprietari, a meno che tu non intenda condividerli secondo l'informativa sulla privacy del provider. Copia non apre un servizio di terze parti.
+</Warning>
+
+## Azioni URL personalizzate
+
+Le azioni personalizzate richiedono un `label`, un `url` HTTPS o HTTP e un'icona facoltativa. Inserisci `{prompt}` in un segmento del percorso, in un valore di query o in un frammento per controllare la destinazione del prompt codificato nell'URL. Se ometti il segnaposto, Jamdesk aggiunge un parametro di query `prompt`.
+
+<Prompt
+  title="Analizza questa migrazione"
+  actions={[
+    {
+      label: "Cerca sul web",
+      url: "https://www.google.com/search?q={prompt}",
+      icon: "magnifying-glass",
+    },
+    "claude",
+  ]}
+>
+Confronta questo piano di migrazione con il contratto API pubblico attuale. Identifica le modifiche incompatibili, i passaggi di rollback mancanti e i test necessari prima del rilascio.
+</Prompt>
+
+```mdx
+<Prompt
+  title="Research this migration"
+  actions={[
+    {
+      label: "Search the web",
+      url: "https://www.google.com/search?q={prompt}",
+      icon: "magnifying-glass",
+    },
+    "claude",
+  ]}
+>
+Compare this migration plan with the current public API contract. Identify
+breaking changes, missing rollback steps, and tests needed before release.
+</Prompt>
+```
+
+Gli URL delle azioni personalizzate devono usare URL `http:` o `https:` privi di credenziali. Jamdesk rifiuta altri schemi, segnaposto nelle origini o nelle chiavi di query e URL finali delle azioni più lunghi di 8.000 caratteri. Copia rimane disponibile quando un'azione di apertura viene rifiutata.
+
+## Icona personalizzata
+
+Imposta `icon` su un nome Font Awesome, un URL o percorso di immagine oppure un SVG inline. Usa `iconType` per selezionare lo stile di un nome Font Awesome senza prefisso.
+
+<Prompt title="Pianifica un tutorial" icon="pen-nib" iconType="duotone">
+Delimita un tutorial pratico che accompagni un nuovo utente dall'installazione a una richiesta API riuscita in meno di dieci minuti.
+</Prompt>
+
+```mdx
+<Prompt title="Plan a tutorial" icon="pen-nib" iconType="duotone">
+  Outline a hands-on tutorial that gets a new user from installation to a
+  successful API request in under ten minutes.
+</Prompt>
+```
+
+Consulta [Icone](/it/content/icons) per i nomi e gli stili disponibili.
+
+## Visualizzazioni compatte
+
+L'anteprima mostra fino a tre righe e scorre quando il prompt è più lungo; il controllo Espandi apre il prompt completo. Imposta `singleLine` per troncare invece l'anteprima a una sola riga. In entrambi i casi, il prompt completo e visibile all'utente viene comunque copiato o inviato da un'azione di apertura.
+
+<Prompt title="Riepiloga l'API">
+Riepiloga l'API pubblica in cinque punti:
+
+- Autenticazione e durata dei token.
+- Convenzioni per la paginazione.
+- Limiti di frequenza e indicazioni sui nuovi tentativi.
+- Formato degli errori e codici comuni.
+- Criteri di versioning e deprecazione.
+</Prompt>
+
+Usa `hidePrompt` con un titolo quando la sola etichetta fornisce ai lettori un contesto sufficiente:
+
+<Prompt title="Genera una checklist di migrazione" hidePrompt actions={["claude"]}>
+Crea una checklist di migrazione per il passaggio da API v1 a v2. Includi prerequisiti, modifiche al codice, passaggi di convalida, criteri di rollback e approvazione del responsabile.
+</Prompt>
+
+```mdx
+<Prompt title="Summarize the API">
+  Summarize the public API in five bullets:
+
+  - Authentication and token lifetimes.
+  - Pagination conventions.
+  - Rate limits and retry guidance.
+  - Error format and common codes.
+  - Versioning and deprecation policy.
+</Prompt>
+
+<Prompt title="Generate a migration checklist" hidePrompt actions={["claude"]}>
+  Create a migration checklist for moving from API v1 to v2. Include
+  prerequisites, code changes, validation steps, and rollback criteria.
+</Prompt>
+```
+
+`hidePrompt` nasconde l'anteprima solo quando è presente `title`. Senza un titolo, Jamdesk mantiene visibile il prompt per garantire che la scheda rimanga comprensibile.
+
+## Prop
+
+<ParamField name="children" type="ReactNode">
+  Contenuto del prompt tra i tag di apertura e chiusura. Jamdesk conserva l'esatto Markdown scritto e visibile all'utente per le azioni Copia e di apertura; visualizza inoltre questo contenuto come anteprima, a meno che `description` non sostituisca l'anteprima o `hidePrompt` non la nasconda. Il filtro Visibility segue le regole descritte sopra.
+</ParamField>
+
+<ParamField name="title" type="string">
+  Etichetta visualizzata nell'intestazione della scheda. Per impostazione predefinita non viene mostrato alcun titolo.
+</ParamField>
+
+<ParamField name="description" type="string">
+  Anteprima compatta con Markdown inline, accettata per la compatibilità con Mintlify. Modifica solo l'anteprima visibile; il contenuto scritto e visibile all'utente rimane il prompt copiato o inviato.
+</ParamField>
+
+<ParamField name="icon" type="string | ReactElement" default="sparkles">
+  Icona dell'intestazione. Accetta un nome Font Awesome, un URL o percorso di immagine oppure un elemento SVG inline.
+</ParamField>
+
+<ParamField name="iconType" type="regular | solid | light | thin | sharp-solid | duotone | brands">
+  Stile Font Awesome applicato a un'icona stringa senza prefisso. Non modifica URL o percorsi di immagini, nomi già provvisti di prefisso o elementi SVG inline.
+</ParamField>
+
+<ParamField name="actions" type="('copy' | 'cursor' | 'claude' | 'chatgpt' | 'perplexity' | 'gemini' | CustomAction)[]" default="[]">
+  Azioni di apertura nell'ordine di visualizzazione. `CustomAction` è `{ label: string; url: string; icon?: string }`. Copia viene sempre mostrata; una voce `copy` esplicita è accettata e deduplicata. Le azioni di apertura non valide, duplicate o troppo grandi vengono omesse.
+</ParamField>
+
+<ParamField name="singleLine" type="boolean | string" default="false">
+  Tronca l'anteprima visibile a una riga quando è impostato sul valore booleano `true` o sulla stringa `"true"`. La stringa `"false"` mantiene l'opzione disabilitata e ogni azione continua a usare il prompt completo.
+</ParamField>
+
+<ParamField name="hidePrompt" type="boolean | string" default="false">
+  Nasconde l'anteprima visibile quando è presente un titolo e il valore è il booleano `true` o la stringa `"true"`. Senza un titolo, l'anteprima rimane visibile. La stringa `"false"` mantiene l'opzione disabilitata.
+</ParamField>
+
+<ParamField name="className" type="string">
+  Nomi di classi CSS aggiuntivi applicati all'elemento radice della scheda Prompt.
+</ParamField>
+
+## Prossimi passi
+
+<Columns cols={2}>
+  <Card title="Scrivere con l'AI" icon="wand-magic-sparkles" href="/it/ai/writing-with-ai">
+    Trasforma i requisiti della pagina in prompt mirati
+  </Card>
+  <Card title="Panoramica dei componenti" icon="puzzle-piece" href="/it/components/overview">
+    Esplora il resto della libreria di componenti MDX
+  </Card>
+</Columns>

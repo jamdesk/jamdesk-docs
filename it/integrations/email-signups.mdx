@@ -1,0 +1,106 @@
+---
+title: Iscrizioni email
+description: Collega Resend, Mailchimp, Kit, Loops, beehiiv, Brevo o SendGrid per raccogliere iscrizioni email dalla documentazione nel tuo pubblico.
+---
+
+Jamdesk può raccogliere gli indirizzi email dal tuo sito di documentazione e aggiungerli direttamente al provider email che già utilizzi. Nessun servizio di moduli di terze parti si interpone. Collega un provider una volta nel dashboard, quindi inserisci un [modulo di iscrizione](/it/components/email-subscribe) in qualsiasi pagina. La lista e l'invio restano di tua proprietà; Jamdesk acquisisce semplicemente l'indirizzo e lo trasferisce al tuo provider.
+
+Gli screenshot mostrano l'interfaccia in inglese.
+
+## Prerequisiti
+
+- Un account presso uno dei [provider supportati](#provider-supportati)
+- Una chiave API del provider con l'autorizzazione ad aggiungere contatti
+- L'identificatore del pubblico utilizzato dalla maggior parte dei provider per selezionare una lista (Audience ID, List ID, Form ID o Publication ID)
+
+## Come funziona l'acquisizione
+
+Quando colleghi un provider, Jamdesk convalida la chiave API tramite l'API del provider prima di salvarla. Dopodiché, ogni invio del modulo sul tuo sito di documentazione chiama il provider e aggiunge il lettore al tuo pubblico. Gli invii sono soggetti a limiti di frequenza per visitatore e per progetto per bloccare gli abusi, mentre un campo honeypot nascosto filtra i bot.
+
+Ecco come appare un modulo di iscrizione ai tuoi lettori:
+
+<Frame caption="Un modulo di iscrizione ospitato da Jamdesk, come appare ai lettori su un sito di documentazione pubblicato">
+  ![Modulo di iscrizione intitolato "Get Jamdesk release notes" con la frase "New features and platform changes, straight to your inbox", un campo email e un pulsante Subscribe](/images/email-signups/changelog-signup-form.webp)
+</Frame>
+
+Puoi vederne uno attivo nel [changelog di Jamdesk](/it/reference/changelog).
+
+<Note>
+La tua chiave API è archiviata nel backend di Jamdesk e utilizzata solo per aggiungere contatti. Non viene mai scritta nel sito pubblicato, nel tuo `docs.json` o in alcun codice lato client, quindi i visitatori non possono leggerla.
+</Note>
+
+## Provider supportati
+
+Sette provider acquisiscono le iscrizioni **in modo nativo**. I lettori inviano un modulo ospitato da Jamdesk e vengono aggiunti al tuo pubblico senza lasciare la documentazione:
+
+| Provider | Cosa colleghi |
+|----------|------------------|
+| Resend | Chiave API (accesso completo) + Audience ID |
+| Mailchimp | Chiave API (termina con il tuo datacenter, ad esempio `-us21`) + Audience (List) ID |
+| Kit (ConvertKit) | Chiave API v4 + Form ID |
+| Loops | Chiave API |
+| beehiiv | Chiave API + Publication ID |
+| Brevo | Chiave API v3 + Contact List ID |
+| SendGrid | Chiave API con accesso in scrittura a Marketing Contacts + Marketing List ID |
+
+Altri due provider sono **solo per incorporamento**. Jamdesk visualizza il loro modulo o iframe invece di acquisire direttamente l'indirizzo, quindi non è necessaria alcuna chiave:
+
+| Provider | Cosa fornisci |
+|----------|------------------|
+| Buttondown | Il tuo `username` dell'account (nel tag `<EmailSubscribe>`) |
+| Substack | Il tuo `username` dell'account (nel tag `<EmailSubscribe>`) |
+
+Consulta [EmailSubscribe](/it/components/email-subscribe) per la configurazione dei provider solo per incorporamento.
+
+## Collega un provider
+
+<Steps>
+  <Step title="Apri la scheda Email Signups">
+    Nel dashboard, apri il progetto e vai a **Integrations**. Trova la scheda **Email Signups**.
+  </Step>
+  <Step title="Scegli il provider">
+    Seleziona un provider dal menu a discesa **Provider**. Il modulo si aggiorna per chiedere esattamente i campi necessari a quel provider, con un link che indica dove trovare la relativa chiave API.
+  </Step>
+  <Step title="Incolla la chiave e l'ID del pubblico">
+    Inserisci la chiave API e, per la maggior parte dei provider, l'identificatore del pubblico (Loops richiede solo la chiave). Il campo della chiave è mascherato.
+  </Step>
+  <Step title="Connetti">
+    Fai clic su **Connect**. Jamdesk convalida la chiave con il tuo provider prima di salvarla. Se la chiave è errata o non dispone delle autorizzazioni per i contatti, visualizzerai un errore e non verrà memorizzato nulla.
+  </Step>
+</Steps>
+
+Dopo la connessione, la scheda mostra un badge **Configured** con il provider e l'ID del pubblico. Le nuove pubblicazioni della documentazione visualizzano moduli di acquisizione attivi.
+
+## Personalizza il testo del modulo
+
+La scheda dispone di due campi facoltativi, **Form title** e **Form subtitle**, che impostano il titolo e la riga di supporto dei moduli inseriti automaticamente. Lasciali vuoti per mostrare solo il campo e il pulsante; compilali per fare in modo che i moduli del changelog li utilizzino alla pubblicazione successiva. Non è necessaria alcuna modifica a `docs.json`.
+
+Puoi modificare questo testo in qualsiasi momento. Modifica i campi in una scheda connessa e fai clic su **Save copy**; non devi inserire nuovamente la chiave API. Un `title` o una `description` impostati direttamente in `docs.json` o in un tag `<EmailSubscribe>` hanno comunque la precedenza sul testo del dashboard, quindi le sostituzioni per pagina continuano a funzionare.
+
+## Aggiungi un modulo alla documentazione
+
+La connessione di un provider non inserisce automaticamente un modulo. Scegli tu dove visualizzare le iscrizioni:
+
+- Scrivi `<EmailSubscribe provider="resend" />` (utilizzando l'id del provider connesso) in qualsiasi pagina.
+- Oppure inserisci automaticamente un modulo in ogni pagina del changelog impostando `placement: changelog` in `docs.json`.
+
+Entrambi i metodi sono descritti nella [pagina del componente EmailSubscribe](/it/components/email-subscribe).
+
+## Disconnetti un provider
+
+Per interrompere la raccolta delle iscrizioni, apri la scheda **Email Signups** e fai clic su **Remove**. I moduli smetteranno di acquisire dati alla pubblicazione successiva.
+
+<Warning>
+La disconnessione rimuove la chiave solo da Jamdesk. Gli iscritti già raccolti rimangono nel pubblico del provider. Jamdesk non li elimina mai. Puoi riconnetterti in qualsiasi momento.
+</Warning>
+
+## Cosa fare dopo
+
+<Columns cols={2}>
+  <Card title="Componente EmailSubscribe" icon="envelope" href="/it/components/email-subscribe">
+    Inserisci moduli di iscrizione e montali automaticamente nelle pagine del changelog
+  </Card>
+  <Card title="Componente Update" icon="timeline" href="/it/components/update">
+    Scrivi le voci del changelog di cui i lettori vogliono ricevere notizie
+  </Card>
+</Columns>

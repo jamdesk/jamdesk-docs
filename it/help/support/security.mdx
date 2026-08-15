@@ -1,0 +1,139 @@
+---
+title: Sicurezza
+description: Pratiche di sicurezza di Jamdesk: crittografia, controlli di accesso, isolamento delle build, conformità al GDPR e divulgazione responsabile.
+---
+
+Come Jamdesk protegge la documentazione e i dati del tuo account.
+
+## Sicurezza dell'infrastruttura
+
+### Hosting
+
+Jamdesk opera su provider cloud conformi a SOC 2. Le build, i dati dell'applicazione e la documentazione compilata risiedono ciascuno in servizi gestiti e protetti forniti da questi provider, mentre il traffico viene distribuito tramite una CDN globale con protezione DDoS integrata.
+
+### Crittografia
+
+| Stato dei dati | Protezione |
+|----------------|------------|
+| In transito | TLS 1.3 tra te, il nostro edge e le nostre origini |
+| A riposo | AES-256 per tutto ciò che persistiamo, inclusi i record del database, lo storage degli oggetti e i log |
+| Backup | Crittografati con le stesse chiavi e replicati in più regioni |
+
+## Controlli di accesso
+
+### Accesso
+
+Puoi accedere al dashboard con email e password oppure tramite single sign-on con Google o GitHub. Le password non vengono mai archiviate in testo non cifrato; il nostro provider di autenticazione conserva solo hash a senso unico.
+
+Se accedi con Google o GitHub, qualsiasi MFA configurata su quell'account (TOTP, chiavi di sicurezza, passkey) si applica anche al tuo accesso a Jamdesk. Per la massima protezione, ti consigliamo di abilitare la MFA sul tuo account Google o GitHub e di usare SSO.
+
+### Accesso del team
+
+L'accesso basato sui ruoli (Owner, Admin, Member) viene applicato sia nelle regole di sicurezza del nostro database sia a ogni chiamata al backend. Le sessioni scadono automaticamente dopo periodi di inattività e le modifiche a fatturazione, membri, domini personalizzati o chiavi API vengono registrate in un audit log per progetto.
+
+### Integrazione con GitHub
+
+Jamdesk si connette ai tuoi repository tramite una GitHub App con le autorizzazioni minime necessarie:
+
+- Accesso in sola lettura ai contenuti dei repository
+- Consegna di Webhook per attivare le build
+- Nessun accesso in scrittura al tuo codice
+
+Non eseguiamo mai push, creiamo branch o modifichiamo il tuo repository. Puoi revocare l'accesso di Jamdesk in qualsiasi momento dalle [Applications settings](https://github.com/settings/installations) di GitHub.
+
+### Token e segreti
+
+Ogni segreto che ci affidi viene crittografato a riposo. Questo include:
+
+- Connessioni GitHub App, per le quali conserviamo solo il tuo ID numerico di installazione. I token di installazione a breve durata (validi per un'ora) vengono creati su richiesta e non vengono mai persistiti.
+- Token OAuth di GitHub utilizzati durante il flusso del repository iniziale, che vengono scambiati una volta, usati per clonare il template e poi eliminati.
+- Credenziali di integrazioni di terze parti, come gli URL dei Webhook in ingresso di Slack, i token di verifica dei domini personalizzati e le chiavi API di analisi.
+
+Dopo il salvataggio, il dashboard non restituisce mai questi valori al browser; solo la pipeline di build lato server può leggerli.
+
+Le chiavi API programmatiche vengono archiviate come hash a senso unico. Il testo non cifrato viene mostrato esattamente una volta, al momento della creazione. Se lo perdi, ruota la chiave.
+
+## Gestione dei dati
+
+### Cosa archiviamo
+
+- La configurazione `docs.json` e qualsiasi risorsa di branding caricata
+- La documentazione compilata (HTML, CSS, JS)
+- I log delle build, conservati per 30 giorni
+- Eventi di analisi anonimizzati (visualizzazioni di pagina, paese, famiglia del dispositivo)
+- Segreti crittografati per qualsiasi integrazione di terze parti configurata
+
+### Cosa non archiviamo
+
+- Il tuo codice sorgente. Cloniamo il repository al momento della build ed eliminiamo l'albero di lavoro quando il container di build viene distrutto.
+- Credenziali GitHub di lunga durata. Consulta **Token e segreti** sopra.
+- Password degli utenti in qualsiasi forma reversibile.
+- Numeri delle carte di pagamento. Stripe gestisce tutti i dati delle carte; noi conserviamo solo l'ID cliente e i metadati dell'abbonamento.
+
+### Accesso interno
+
+L'accesso ai dati di produzione è limitato a un numero ristretto di dipendenti che ne hanno bisogno per gestire il servizio o rispondere alle richieste di supporto. L'accesso viene registrato.
+
+## Isolamento delle build
+
+Ogni build della documentazione viene eseguita in un container dedicato:
+
+- Nessun accesso ai dati di altri clienti
+- Ambiente nuovo per ogni build, con i segreti iniettati appena prima dell'uso
+- Il container viene distrutto al completamento o al fallimento della build
+
+## Conformità
+
+### GDPR
+
+Jamdesk è conforme ai requisiti del GDPR:
+
+- Accordo sul trattamento dei dati disponibile su richiesta all'indirizzo `privacy@jamdesk.com`
+- Elenco pubblico dei sub-responsabili disponibile su [jamdesk.com/subprocessors](https://jamdesk.com/subprocessors)
+- Il diritto alla cancellazione viene rispettato entro 30 giorni
+- La portabilità dei dati è supportata tramite esportazione
+
+### Privacy
+
+Le nostre analisi integrate:
+
+- Non usano cookie
+- Non tracciano singole persone
+- Rispettano gli header Do Not Track
+
+Consulta la nostra [Privacy Policy](https://jamdesk.com/privacy) per maggiori dettagli.
+
+## Risposta agli incidenti
+
+Se un incidente di sicurezza interessa il tuo account o i tuoi dati, eseguiamo tre azioni:
+
+1. Indaghiamo sul problema e lo conteniamo.
+2. Informiamo i clienti interessati entro 72 ore, in conformità ai nostri obblighi previsti dal GDPR.
+3. Forniamo un rapporto scritto post-incidente una volta confermata la causa.
+
+## Segnalazione delle vulnerabilità
+
+Hai trovato un problema di sicurezza? Segnalalo in modo responsabile:
+
+- Invia un'email a `security@jamdesk.com`
+- Includi una descrizione, i passaggi per riprodurlo e una valutazione dell'impatto
+- Ti confermeremo la ricezione entro 48 ore
+
+Al momento non gestiamo un programma di bug bounty a pagamento, ma saremo lieti di dare credito ai ricercatori che effettuano segnalazioni in buona fede.
+
+## Domande?
+
+<Card title="Contatta il supporto" icon="shield" href="/it/help/support/contact">
+  Per richieste relative alla sicurezza
+</Card>
+
+## Articoli correlati
+
+<Columns cols={2}>
+  <Card title="Contatta il supporto" icon="headset" href="/it/help/support/contact">
+    Contatta il team di Jamdesk
+  </Card>
+  <Card title="Domande frequenti" icon="circle-question" href="/it/help/faq">
+    Domande e risposte comuni
+  </Card>
+</Columns>

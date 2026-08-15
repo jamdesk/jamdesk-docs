@@ -1,0 +1,243 @@
+---
+title: Integrazioni
+description: Collega l'API di ricerca della documentazione di Jamdesk a Intercom, Zendesk, Slack e chatbot personalizzati. Guide passo passo per ogni integrazione.
+---
+
+Questa guida mostra come collegare l'API di ricerca della documentazione agli strumenti più comuni: Intercom, Zendesk, Slack e chatbot personalizzati.
+
+## Intercom (Fin AI Agent)
+
+L'AI Agent Fin di Intercom supporta i **Data Connectors**: origini di ricerca esterne che Fin consulta insieme agli articoli di Intercom. Collega l'API di ricerca della documentazione per consentire a Fin di rispondere alle domande direttamente dalla documentazione di Jamdesk.
+
+<Steps>
+  <Step title="Genera una chiave API">
+    Nel dashboard di Jamdesk, vai a **Project Settings → API Keys** e fai clic su **Generate Key**. Assegna il nome "Intercom Fin" e copia la chiave `jd_live_` (40 caratteri in totale).
+  </Step>
+  <Step title="Apri le impostazioni di AI Agent di Intercom">
+    In Intercom, vai a **AI Agent → Data Sources → Add Source → API**.
+  </Step>
+  <Step title="Configura il connettore">
+    Inserisci i seguenti dettagli:
+
+    | Campo | Valore |
+    |-------|-------|
+    | **Endpoint URL** | `https://your-project.jamdesk.app/_api/search` |
+    | **Method** | `POST` |
+    | **Auth header** | `Authorization: Bearer jd_live_c83003a54ae0a83123454c3f7ec82f0a` |
+    | **Query field** | `query` |
+    | **Result path** | `results[*].content` |
+  </Step>
+  <Step title="Testa la connessione">
+    Usa lo strumento di test integrato di Intercom per inviare una query di esempio. Verifica che Fin restituisca passaggi pertinenti della documentazione.
+  </Step>
+  <Step title="Abilita per la tua casella di posta">
+    Attiva il connettore dati nella configurazione di Fin. Fin citerà ora la documentazione nelle risposte alle domande dei clienti.
+  </Step>
+</Steps>
+
+<Info>
+Fin tiene conto del campo `score`, quindi i risultati con il punteggio più alto vengono mostrati per primi nelle risposte. I passaggi con un punteggio inferiore a 0.7 in genere non vengono utilizzati.
+</Info>
+
+---
+
+## Zendesk (MCP Server)
+
+Le funzionalità di IA di Zendesk supportano i server MCP come origini di conoscenza. Usa il server MCP integrato di Jamdesk per collegare la documentazione agli agenti IA di Zendesk senza scrivere codice personalizzato.
+
+<Steps>
+  <Step title="Trova l'URL del server MCP">
+    Il server MCP è disponibile all'indirizzo `https://your-project.jamdesk.app/_jd/mcp`. Non è necessaria alcuna chiave API per il server MCP: utilizza la documentazione pubblica del progetto.
+  </Step>
+  <Step title="Aggiungi il server MCP in Zendesk">
+    In Zendesk Admin Center, vai a **AI Agents → Knowledge Sources → Add MCP Server**.
+  </Step>
+  <Step title="Inserisci l'URL del server">
+    Incolla l'URL del server MCP: `https://your-project.jamdesk.app/_jd/mcp`
+  </Step>
+  <Step title="Verifica la connessione">
+    Zendesk elencherà gli strumenti disponibili (`searchDocs`, `getPage`). Verifica che entrambi gli strumenti siano rilevati, quindi salva.
+  </Step>
+</Steps>
+
+<Info>
+Il server MCP espone lo stesso indice di ricerca dell'API di ricerca della documentazione. Usa l'API di ricerca della documentazione (con una chiave `jd_live_`) quando ti servono accesso autenticato, limitazione della frequenza per chiave o controllo della revoca.
+</Info>
+
+---
+
+## Chatbot personalizzati
+
+Aggiungi la ricerca nella documentazione a qualsiasi chatbot o app web con una chiamata `fetch` standard. CORS è abilitato, quindi i client basati su browser possono chiamare direttamente l'API senza un proxy backend.
+
+```javascript
+async function searchDocs(query) {
+  const response = await fetch(
+    "https://your-project.jamdesk.app/_api/search",
+    {
+      method: "POST",
+      headers: {
+        "Authorization": "Bearer jd_live_c83003a54ae0a83123454c3f7ec82f0a",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ query, limit: 5 }),
+    }
+  );
+
+  if (!response.ok) {
+    const { error } = await response.json();
+    throw new Error(error);
+  }
+
+  const data = await response.json();
+  return data.results;
+}
+
+// Example usage
+const results = await searchDocs("How do I configure a custom domain?");
+
+results.forEach((result) => {
+  console.log(`[${result.score.toFixed(2)}] ${result.title}`);
+  console.log(result.content);
+  console.log(result.url);
+  console.log("---");
+});
+```
+
+### Creazione di uno strumento per un AI Agent
+
+Passa i risultati della ricerca come contesto a un modello linguistico per generare risposte basate sulla documentazione:
+
+```javascript
+import Anthropic from "@anthropic-ai/sdk";
+
+const client = new Anthropic();
+
+async function answerFromDocs(userQuestion) {
+  // 1. Search your docs
+  const results = await searchDocs(userQuestion);
+  const context = results
+    .map((r) => `[${r.title}](${r.url})\n${r.content}`)
+    .join("\n\n---\n\n");
+
+  // 2. Pass context to Claude
+  const message = await client.messages.create({
+    model: "claude-sonnet-4-5-20241022",
+    max_tokens: 1024,
+    messages: [
+      {
+        role: "user",
+        content: `Answer the following question using only the provided documentation excerpts.
+If the answer isn't in the docs, say so.
+
+Documentation:
+${context}
+
+Question: ${userQuestion}`,
+      },
+    ],
+  });
+
+  return message.content[0].text;
+}
+```
+
+---
+
+## Bot Slack
+
+Crea un comando slash `/docs` di Slack che cerca nella documentazione e pubblica i risultati in qualsiasi canale.
+
+```javascript
+import { App } from "@slack/bolt";
+
+const app = new App({
+  token: process.env.SLACK_BOT_TOKEN,
+  signingSecret: process.env.SLACK_SIGNING_SECRET,
+});
+
+app.command("/docs", async ({ command, ack, respond }) => {
+  await ack();
+
+  const query = command.text.trim();
+  if (!query) {
+    await respond("Usage: `/docs <your question>`");
+    return;
+  }
+
+  try {
+    const response = await fetch(
+      "https://your-project.jamdesk.app/_api/search",
+      {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${process.env.JAMDESK_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ query, limit: 3 }),
+      }
+    );
+
+    const data = await response.json();
+
+    if (data.results.length === 0) {
+      await respond(`No results found for: _${query}_`);
+      return;
+    }
+
+    const blocks = [
+      {
+        type: "section",
+        text: {
+          type: "mrkdwn",
+          text: `*Results for:* _${query}_`,
+        },
+      },
+      { type: "divider" },
+      ...data.results.flatMap((result) => [
+        {
+          type: "section",
+          text: {
+            type: "mrkdwn",
+            text: `*<${result.url}|${result.title}>*\n${result.content}`,
+          },
+        },
+        { type: "divider" },
+      ]),
+    ];
+
+    await respond({ blocks });
+  } catch (err) {
+    await respond(`Error searching docs: ${err.message}`);
+  }
+});
+
+(async () => {
+  await app.start(process.env.PORT || 3000);
+  console.log("Slack bot is running");
+})();
+```
+
+Imposta `JAMDESK_API_KEY` nelle variabili d'ambiente della tua app Slack. Non inserire mai la chiave direttamente nel codice.
+
+---
+
+## Hosting su sottopercorso (Cloudflare Worker)
+
+Se utilizzi l'[hosting su sottopercorso](/it/deploy/subpath-hosting) per pubblicare la documentazione su un percorso del tuo dominio (`/docs` per impostazione predefinita o un sottopercorso personalizzato come `/help`), anche la route `/_api` deve essere inoltrata tramite il tuo Cloudflare Worker, insieme al percorso della documentazione.
+
+Aggiungi `/_api` all'array `PROXY_PATHS` nel worker, utilizzando il prefisso del percorso configurato nel dashboard:
+
+```javascript
+const PROXY_PATHS = [
+  "/docs",  // or your custom subpath, e.g. "/help"
+  "/_jd",
+  "/_api",  // Add this line
+];
+```
+
+In questo modo le richieste di ricerca a `yoursite.com/_api/search` (o a `yoursite.com/help/_api/search`, se utilizzi un sottopercorso personalizzato) vengono inoltrate al sito della documentazione Jamdesk.
+
+<Warning>
+La route `/_api` richiede l'autenticazione tramite la chiave API `jd_live_`, indipendentemente dal modo in cui viene instradata la richiesta. Il proxy tramite Cloudflare non bypassa l'autenticazione.
+</Warning>

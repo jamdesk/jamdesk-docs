@@ -1,0 +1,148 @@
+---
+title: GitHub: problemi
+description: Risolvi organizzazioni mancanti, repository assenti, webhook non riusciti, errori di autorizzazione e branch non corrispondenti nell'integrazione GitHub di Jamdesk.
+---
+
+La maggior parte dei problemi di integrazione con GitHub è dovuta a permessi, errori dei webhook o branch non corrispondenti.
+
+## Organizzazione non visibile durante la configurazione
+
+Durante il flusso della documentazione iniziale, Jamdesk mostra le tue organizzazioni GitHub, così puoi scegliere dove creare il repository. L'elenco proviene dall'API OAuth di GitHub e GitHub nasconde le organizzazioni in due casi:
+
+- Restrizioni dell'app OAuth: la tua organizzazione limita l'accesso alle app di terze parti (impostazione predefinita di GitHub per le nuove organizzazioni) e non ha ancora approvato Jamdesk.
+- SAML SSO: la tua organizzazione richiede l'autenticazione SAML prima che l'API la restituisca.
+
+<Accordion title="Concedi personalmente l'accesso (proprietari dell'organizzazione)">
+  Se sei il proprietario dell'organizzazione, puoi approvare subito Jamdesk:
+
+  1. Fai clic su **grant Jamdesk access on GitHub** sotto il selettore dell'organizzazione (oppure vai su GitHub → **Settings** → **Applications** → **Authorized OAuth Apps** → **Jamdesk**)
+  2. In **Organization access**, fai clic su **Grant** accanto alla tua organizzazione
+  3. Torna al flusso di configurazione di Jamdesk e fai clic su **refresh the list**. La tua organizzazione apparirà immediatamente
+
+  Se sei un membro (non un proprietario), vedrai invece un pulsante **Request**; facendo clic su di esso invierai una richiesta di approvazione agli amministratori dell'organizzazione.
+</Accordion>
+
+<Accordion title="Chiedi all'amministratore di approvare Jamdesk (membri)">
+  Se sei un membro senza diritti di proprietario, invia prima una richiesta di approvazione agli amministratori:
+
+  1. Vai su GitHub → **Settings** → **Applications** → **Authorized OAuth Apps** → **Jamdesk**
+  2. In **Organization access**, fai clic su **Request** accanto alla tua organizzazione. Questa azione notifica gli amministratori
+  3. Un amministratore approva la richiesta in **Settings** → **Third-party access** → **OAuth application policy** dell'organizzazione (le richieste in sospeso mostrano un pulsante **Approve**)
+  4. Torna al flusso di configurazione di Jamdesk e fai clic su **refresh the list**; ora la tua organizzazione dovrebbe essere visibile
+
+  Consulta la guida di GitHub su [come approvare le app OAuth per la tua organizzazione](https://docs.github.com/en/organizations/managing-oauth-access-to-your-organizations-data/approving-oauth-apps-for-your-organization) per i passaggi dettagliati.
+</Accordion>
+
+<Accordion title="Crea nel tuo account personale e trasferisci in seguito">
+  Non vuoi aspettare l'approvazione dell'amministratore? Durante la configurazione, scegli il tuo account personale e trasferisci successivamente il repository alla tua organizzazione:
+
+  1. Completa la configurazione di Jamdesk usando il tuo account personale
+  2. Vai al repository creato su GitHub
+  3. Vai su **Settings** → **General** → **Danger Zone**
+  4. Fai clic su **Transfer** e seleziona la tua organizzazione come destinazione
+  5. In Jamdesk, disconnetti e riconnetti il repository dalla pagina **Settings** del tuo progetto
+
+  <Warning>
+    La disconnessione e la riconnessione generano un nuovo URL della documentazione (ad esempio, `your-project.jamdesk.app` potrebbe cambiare). Se hai già condiviso l'URL o configurato un dominio personalizzato, contatta il [supporto](/it/help/support/contact) prima di disconnettere il repository, così potremo mantenere la configurazione.
+  </Warning>
+</Accordion>
+
+## Repository non visibile
+
+Se il tuo repository non viene visualizzato nell'elenco:
+
+<Accordion title="Controlla i permessi del repository">
+  1. Vai su GitHub → Settings → Applications → Jamdesk
+  2. Verifica che il repository disponga dell'accesso concesso
+  3. Fai clic su **Configure** per aggiungere altri repository
+</Accordion>
+
+<Accordion title="Repository dell'organizzazione">
+  Per i repository dell'organizzazione:
+  1. Un amministratore dell'organizzazione deve approvare Jamdesk
+  2. Vai alle impostazioni dell'organizzazione → Third-party access
+  3. Approva la richiesta di accesso di Jamdesk
+</Accordion>
+
+<Accordion title="Repository privati">
+  I repository privati richiedono l'autorizzazione di GitHub. Se necessario, autorizza nuovamente Jamdesk.
+</Accordion>
+
+## I build non vengono avviati
+
+Se i push non avviano i build:
+
+<Steps>
+  <Step title="Controlla il webhook">
+    1. Vai al tuo repository su GitHub
+    2. Vai su Settings → Webhooks
+    3. Individua il webhook di Jamdesk
+    4. Controlla la sezione "Recent Deliveries" per verificare la presenza di errori
+  </Step>
+  <Step title="Verifica il branch">
+    I build vengono avviati solo sul branch configurato. Controlla **Settings** in Jamdesk.
+  </Step>
+  <Step title="Sincronizza nuovamente la connessione">
+    1. Vai su **Settings** del progetto in Jamdesk
+    2. Fai clic su **Re-sync GitHub**
+  </Step>
+</Steps>
+
+## Errori dei webhook
+
+### 404 Not Found
+
+Non è stato possibile raggiungere l'endpoint del webhook.
+
+**Correzione:** sincronizza nuovamente la connessione GitHub nelle impostazioni del progetto.
+
+### 401 Unauthorized
+
+L'autenticazione non è riuscita.
+
+**Correzione:**
+1. Vai alle impostazioni del tuo account GitHub
+2. Vai su Applications → Authorized OAuth Apps
+3. Revoca Jamdesk
+4. Autorizza nuovamente Jamdesk nelle impostazioni
+
+### 500 Server Error
+
+Si è verificato un problema temporaneo di Jamdesk.
+
+**Correzione:** attendi qualche minuto e riprova a eseguire il push oppure avvia una nuova build manualmente.
+
+## Errori di autorizzazione
+
+**"Repository not found"** durante il build:
+
+- Il repository potrebbe essere stato eliminato o rinominato
+- Jamdesk potrebbe aver perso l'accesso
+- Autorizza nuovamente la connessione GitHub
+
+## Problemi del branch
+
+### Viene eseguito il build del branch errato
+
+Controlla il branch configurato in **Settings** → **Repository**.
+
+### Branch rinominato o eliminato
+
+Aggiorna l'impostazione del branch in modo che corrisponda al nuovo nome.
+
+## I problemi persistono?
+
+<Card title="Contatta il supporto" icon="headset" href="/it/help/support/contact">
+  Includi l'URL del repository e i messaggi di errore
+</Card>
+
+## Articoli correlati
+
+<Columns cols={2}>
+  <Card title="Riferimento degli errori" icon="book" href="/it/help/troubleshooting/error-reference">
+    Elenco completo dei codici di errore
+  </Card>
+  <Card title="Contatta il supporto" icon="headset" href="/it/help/support/contact">
+    Inoltra i problemi non risolti
+  </Card>
+</Columns>

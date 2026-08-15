@@ -1,0 +1,78 @@
+---
+title: Conversione automatica immagini
+description: >-
+  Abilita la conversione automatica da PNG e JPG a WebP in Jamdesk per ridurre le dimensioni delle immagini e velocizzare il caricamento delle pagine.
+---
+
+Jamdesk può convertire le immagini PNG e JPG nel formato WebP durante i build. I file WebP sono generalmente più piccoli del 60-80% rispetto agli originali, senza una perdita visibile di qualità, quindi le pagine si caricano più velocemente senza alcuna elaborazione manuale delle immagini.
+
+La funzionalità è **disattivata per impostazione predefinita**. Attivala nel tuo `docs.json`.
+
+## Attivarla
+
+Aggiungi il campo `images.convertToWebp` al tuo `docs.json`:
+
+```json docs.json
+{
+  "images": {
+    "convertToWebp": true
+  }
+}
+```
+
+Questo è l'unico interruttore. La pagina Settings nel dashboard mostra lo stato attuale in **Config Highlights**, ma non dispone di un interruttore dedicato. `docs.json` è la fonte autorevole.
+
+## Cosa viene convertito
+
+| Sorgente | Convertito? |
+|--------|------------|
+| PNG | Sì |
+| JPG / JPEG | Sì |
+| SVG | No (è già vettoriale) |
+| GIF | No (l'animazione andrebbe persa) |
+| ICO | No (è troppo piccolo per fare la differenza) |
+| WebP | No (è già ottimizzato) |
+
+Le immagini convertite conservano il nome di base e ricevono l'estensione `.webp`. Ogni riferimento nelle tue pagine MDX, nel CSS personalizzato, nel JS personalizzato e in `docs.json` viene riscritto automaticamente. Non devi modificare alcun percorso.
+
+## Cosa rimane nel formato originale
+
+Alcune immagini non vengono modificate anche quando la conversione è attiva.
+
+**Favicon.** Non tutti i browser o client email visualizzano in modo affidabile le favicon WebP.
+
+Anche le immagini dei social media (`og:image` e `twitter:image` nei tuoi `seo.metatags`) rimangono nel formato originale. I crawler dei social, come Facebook, LinkedIn, WhatsApp e le versioni precedenti di Twitter/X, non visualizzano tutti WebP, e una scheda di anteprima non funzionante è peggiore di un JPG leggermente più grande.
+
+Anche le immagini inutilizzate vengono escluse. Se un file si trova nella directory `/images` ma nessun riferimento nelle tue pagine MDX o nella configurazione lo utilizza, l'originale viene comunque caricato sul CDN, ma non viene convertito. Non ha senso consumare CPU per qualcosa a cui non fa riferimento nulla.
+
+Le immagini che non trarrebbero vantaggio dalla conversione rimangono nel formato originale. Se l'output WebP fosse più grande del file sorgente, come accade spesso con i JPG già compressi e i PNG molto piccoli, Jamdesk conserva l'originale. Queste immagini vengono indicate come `skipped` nelle statistiche del build.
+
+Un elemento che *viene* convertito è `background.image`. Si tratta di uno sfondo a schermo intero visualizzato dal browser, quindi trae vantaggio da WebP come qualsiasi altra immagine.
+
+## Indicatore di avanzamento del build
+
+Quando la funzionalità è attiva, nel dashboard l'elenco di avanzamento del build mostra il passaggio **Optimizing images**, tra "Building documentation" e "Uploading to CDN". Il CLI `jamdesk deploy` mostra lo stesso passaggio nell'output di avanzamento del terminale. Quando la funzionalità è disattivata, il passaggio non viene visualizzato.
+
+## Caching dei build
+
+Jamdesk memorizza un hash di ogni immagine sorgente nel manifest del build. Se un file non è cambiato dall'ultimo build, salta la conversione e riutilizza il WebP memorizzato nella cache. I tempi di ricostruzione rimangono rapidi anche con centinaia di immagini.
+
+## Gestione degli errori
+
+Se la conversione non riesce per una singola immagine, a causa di un file danneggiato, memoria insufficiente o formato imprevisto, l'originale viene conservato e il resto del build continua. La documentazione non si interromperà a causa di un errore nella conversione di un'immagine.
+
+## Log del build
+
+Oltre all'indicatore del dashboard, i log del build includono una riga simile alla seguente:
+
+```text
+Optimizing images... done (4 converted, 2 cached, 1 skipped, 0 failed, saved 1.2 MB)
+```
+
+| Campo | Significato |
+|-------|---------|
+| converted | Immagini convertite da PNG/JPG a WebP in questo build |
+| cached | Immagini invariate trasferite dal build precedente |
+| skipped | Immagini lasciate nel formato originale (campi protetti, file inutilizzati o formati che non richiedono la conversione) |
+| failed | Conversioni non riuscite (gli originali vengono conservati) |
+| saved | Byte totali risparmiati per tutte le immagini convertite |

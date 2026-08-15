@@ -1,0 +1,179 @@
+---
+title: Immagini
+description: >-
+  Scopri come Jamdesk gestisce dimensioni, didascalie, varianti chiaro/scuro e
+  formati supportati per immagini nitide e accessibili nella documentazione.
+---
+
+Jamdesk visualizza le immagini con angoli arrotondati e spaziatura uniforme. Inserisci i file nella directory `/images` e fai riferimento a essi con la sintassi Markdown standard.
+
+Gli screenshot mostrano l'interfaccia in inglese.
+
+## Markdown standard
+
+Usa la familiare sintassi `![alt](path)`:
+
+```markdown
+![API response showing user data in JSON format](/images/tabs-preview.webp)
+```
+
+![Risposta API che mostra dati utente in formato JSON](/images/tabs-preview.webp)
+
+I percorsi partono dalla radice del progetto. Un'immagine in `your-docs/images/screenshot.webp` viene indicata come `/images/screenshot.webp`.
+
+## Dimensioni delle immagini
+
+Aggiungi `=WIDTHxHEIGHT` dopo l'URL dell'immagine, separato da uno spazio, per controllarne le dimensioni:
+
+```markdown
+![Dashboard overview](/images/tabs-preview.webp =400x300)
+```
+
+Imposta una sola dimensione per ridimensionare proporzionalmente l'altra:
+
+```markdown
+![Wide banner](/images/tabs-preview.webp =800x)
+![Tall graphic](/images/tabs-preview.webp =x200)
+```
+
+È utile quando vuoi una colonna uniforme di screenshot con la stessa larghezza o devi ridurre un'immagine ad alta risoluzione a dimensioni di visualizzazione ragionevoli.
+
+## Didascalie
+
+Inserisci un'immagine nel componente `<Frame>` per aggiungere un bordo e una didascalia sotto di essa:
+
+```mdx
+<Frame caption="Dashboard overview showing project statistics">
+  ![Dashboard](/images/tabs-preview.webp)
+</Frame>
+```
+
+<Frame caption="Esempio di immagine con bordo e didascalia">
+  ![Jamdesk](/images/jd-blueprint-transparent.webp)
+
+</Frame>
+
+`Frame` disegna un bordo discreto intorno all'immagine e posiziona il testo della didascalia sotto di essa. Funziona con qualsiasi contenuto al suo interno, non solo con le immagini.
+
+## Modalità chiara/scura
+
+I siti di documentazione spesso richiedono varianti diverse delle immagini per ogni schema di colori: un logo su sfondo bianco non viene visualizzato correttamente in modalità scura.
+
+### L'attributo `srcDark`
+
+È l'approccio più semplice. Jamdesk sostituisce la sorgente dell'immagine in base al tema attivo:
+
+```mdx
+<img
+  src="/images/logo-light.webp"
+  srcDark="/images/logo-dark.webp"
+  alt="Company logo"
+/>
+```
+
+Il browser carica solo l'immagine corrispondente allo schema di colori corrente.
+
+### L'elemento HTML `<picture>`
+
+Se ti serve HTML standard che funzioni anche al di fuori di Jamdesk, usa `<picture>` con una media query:
+
+```mdx
+<picture>
+  <source srcset="/images/logo-dark.webp" media="(prefers-color-scheme: dark)" />
+  <img src="/images/logo-light.webp" alt="Company logo" />
+</picture>
+```
+
+L'approccio `<picture>` rispetta l'impostazione dello schema di colori del sistema operativo. L'attributo `srcDark` risponde invece al selettore del tema di Jamdesk, che di solito è ciò che serve per la documentazione.
+
+## Formati supportati
+
+| Formato | Ideale per | Note |
+|--------|-----------|------|
+| PNG | Screenshot, acquisizioni dell'interfaccia | Qualità senza perdita, supporta la trasparenza. File più grandi. |
+| JPEG | Fotografie | Buona compressione, non supporta la trasparenza. |
+| SVG | Icone, diagrammi, loghi | Formato vettoriale che si ridimensiona a qualsiasi dimensione senza perdita di qualità. File molto piccoli. |
+| GIF | Animazioni semplici | Può diventare rapidamente voluminoso. Per loop con più di alcuni fotogrammi, valuta brevi loop `.mp4`. |
+| WebP | Uso generale | Più piccolo di PNG e JPEG a qualità comparabile. Funziona in tutti i browser moderni. |
+
+<Tip>
+WebP offre il miglior rapporto tra dimensioni e qualità per la maggior parte delle immagini della documentazione. Se ti serve la trasparenza, WebP la gestisce, quindi non è necessario usare PNG.
+</Tip>
+
+## Buone pratiche
+
+<AccordionGroup>
+  <Accordion title="Scrivi testo alternativo significativo" icon="universal-access">
+    Il testo alternativo ha due scopi: gli screen reader lo usano per l'accessibilità e viene mostrato come segnaposto quando l'immagine non può essere caricata. Descrivi ciò che l'immagine mostra effettivamente.
+
+    ```markdown
+    {/* Good -- says what's in the image */}
+    ![API response showing user data in JSON format](/images/tabs-preview.webp)
+
+    {/* Bad -- tells you nothing */}
+    ![Screenshot](/images/tabs-preview.webp)
+    ```
+
+    Per le immagini decorative che non aggiungono informazioni, come motivi di sfondo e divisori, usa un testo alternativo vuoto: `![](/images/decoration.webp)`.
+  </Accordion>
+
+  <Accordion title="Mantieni ridotte le dimensioni dei file" icon="gauge-high">
+    Le immagini pesanti rallentano il caricamento delle pagine, soprattutto sulle connessioni mobili. Dimensioni consigliate:
+
+    - **Screenshot/interfaccia:** PNG o WebP, meno di 500KB
+    - **Foto:** JPEG o WebP, meno di 200KB
+    - **Icone e diagrammi:** SVG quando possibile
+
+    [Squoosh](https://squoosh.app) e [TinyPNG](https://tinypng.com) comprimono le immagini senza perdite visibili di qualità. Comprimi gli screenshot con uno di questi strumenti prima di eseguire il commit.
+
+    In alternativa, lascia che Jamdesk gestisca l'operazione durante la build. Abilita la [conversione automatica in WebP](/it/builds/image-optimization) nel tuo `docs.json`: qualsiasi file PNG o JPG sottoposto a commit verrà ottimizzato a ogni build.
+  </Accordion>
+
+  <Accordion title="Usa dimensioni uniformi" icon="ruler-combined">
+    Gli screenshot che alternano larghezze diverse hanno un aspetto disordinato. Scegli una larghezza di acquisizione standard, ad esempio 1200px, e usala in tutta la documentazione. Jamdesk ridimensiona automaticamente le immagini per adattarle all'area dei contenuti, quindi dimensioni sorgente uniformi producono risultati visualizzati uniformi.
+  </Accordion>
+
+  <Accordion title="Controlla l'immagine condivisa sui social" icon="share-nodes">
+    Jamdesk genera automaticamente una scheda social brandizzata da 1200×630 per ogni pagina e puoi sostituirla per singola pagina con `og:image` nel frontmatter. Dopo una build, inserisci l'URL della pagina nello strumento gratuito [OpenGraph Preview](https://jamdesk.com/utilities/opengraph-preview) per vedere come viene visualizzata la scheda su X, Facebook, LinkedIn, Slack, Discord e altri servizi. Consulta [Ottimizzazione SEO](/it/content/seo) per la configurazione completa.
+  </Accordion>
+</AccordionGroup>
+
+## Organizzazione dei file
+
+Raggruppa le immagini in sottodirectory che rispecchiano la struttura dei contenuti. In questo modo sarà più facile trovarle man mano che la documentazione cresce:
+
+```bash
+your-docs/
+├── images/
+│   ├── getting-started/
+│   │   ├── step-1.png
+│   │   └── step-2.png
+│   ├── api/
+│   │   └── response.png
+│   └── logo.svg
+└── docs.json
+```
+
+Fai riferimento a esse usando il percorso completo dalla radice del progetto:
+
+```markdown
+![GitHub repository access](/images/getting-started/step-1.png)
+```
+
+<Warning>
+Evita gli spazi nei nomi dei file immagine. Usa i trattini: `api-response.webp`, non `api response.webp`.
+</Warning>
+
+## Qual è il prossimo passo?
+
+<Columns cols={3}>
+  <Card title="Incorporamenti YouTube" icon="youtube" href="/it/content/youtube">
+    Incorpora video e Shorts di YouTube
+  </Card>
+  <Card title="Video" icon="video" href="/it/content/videos">
+    File MP4 e WebM locali
+  </Card>
+  <Card title="iFrame" icon="code" href="/it/content/iframes">
+    Vimeo, CodePen, Figma e altro
+  </Card>
+</Columns>

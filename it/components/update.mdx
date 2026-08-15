@@ -1,0 +1,207 @@
+---
+title: Aggiornamento
+description: Voci di changelog in stile cronologia con date, descrizioni e tag di categoria, integrate con il sommario per la navigazione.
+---
+
+Il componente Update crea voci di changelog in stile cronologia, integrate automaticamente con il sommario. Ogni voce può avere un'etichetta con la data, una descrizione e tag di categoria, risultando adatta a pagine "Novità", changelog di API e note di rilascio.
+
+Usa Update per:
+- **Documentare i rilasci** con numeri di versione o date
+- **Creare changelog** che i lettori possono consultare tramite il sommario
+- **Annunciare funzionalità** con tag categorizzati (nuova funzionalità, correzione, modifica incompatibile)
+
+<Tip>
+Hai creato un changelog da queste voci? Puoi visualizzarlo nel tuo prodotto con un pulsante "What's new?" e un indicatore di contenuti non letti. Consulta [Incorpora il tuo changelog](/it/development/embed-page).
+</Tip>
+
+## Utilizzo di base
+
+<Update label="10 gennaio 2025">
+Aggiunto il supporto alla modalità scura per tutti i temi.
+</Update>
+
+```mdx
+<Update label="January 10, 2025">
+Added support for dark mode across all themes.
+</Update>
+```
+
+## Con descrizione
+
+Aggiungi un contesto sotto la data:
+
+<Update label="5 gennaio 2025" description="Modifica incompatibile">
+La funzione `getData()` ora richiede un oggetto options.
+</Update>
+
+```mdx
+<Update label="January 5, 2025" description="Breaking change">
+The `getData()` function now requires an options object.
+</Update>
+```
+
+## Con tag
+
+Classifica le voci con i tag:
+
+<Update label="20 dicembre 2024" tags={["breaking", "api"]}>
+- Rimossa l'opzione deprecata `legacyMode`
+- Aggiornato il flusso di autenticazione
+</Update>
+
+```mdx
+<Update label="December 20, 2024" tags={["breaking", "api"]}>
+- Removed deprecated `legacyMode` option
+- Updated authentication flow
+</Update>
+```
+
+## Più voci
+
+Impila i componenti Update per creare un changelog completo:
+
+<Update label="15 dicembre 2024" tags={["feature"]}>
+Nuova funzionalità di esportazione per i formati PDF e CSV.
+</Update>
+
+<Update label="10 dicembre 2024" tags={["fix"]}>
+Corretta la gestione dei fusi orari nei post programmati.
+</Update>
+
+<Update label="1 dicembre 2024" tags={["deprecation"]}>
+Gli endpoint API `v1` sono ora deprecati. Esegui la migrazione a `v2` entro marzo 2025.
+</Update>
+
+## Link di ancoraggio e sommario
+
+Ogni Update genera un ID di ancoraggio dalla propria etichetta (`label="January 10, 2025"` crea `#january-10-2025`). Le etichette vengono visualizzate anche nel sommario per consentire una navigazione rapida.
+
+## Proprietà
+
+<ParamField name="label" type="string">
+  Etichetta della data o della versione (crea un ID di ancoraggio).
+</ParamField>
+
+<ParamField name="description" type="string">
+  Testo secondario sotto l'etichetta.
+</ParamField>
+
+<ParamField name="tags" type="string[]">
+  Tag di categoria visualizzati come badge.
+</ParamField>
+
+<ParamField name="date" type="string">
+  Stringa di data ISO (ad esempio `"2025-03-15"`) utilizzata per `pubDate` nel feed RSS. Non viene visualizzata; `label` rimane il testo mostrato.
+</ParamField>
+
+## Feed RSS
+
+Consenti ai lettori di iscriversi agli aggiornamenti del changelog. Aggiungi `rss: true` a qualsiasi pagina con componenti Update: Jamdesk genera automaticamente un `feed.xml` durante le build.
+
+```yaml
+---
+title: Changelog
+rss: true
+---
+```
+
+Quando è abilitato:
+- Accanto al titolo della pagina viene visualizzata un'icona RSS che rimanda al feed
+- Al `<head>` viene aggiunto un tag `<link rel="alternate">` per il rilevamento automatico, così i lettori RSS e i browser possono trovare il feed
+- Ogni `<Update>` diventa un elemento RSS con la propria etichetta come titolo e un link di ancoraggio che rimanda alla voce
+
+### Impostazione delle date di pubblicazione
+
+Usa la proprietà `date` per impostare `<pubDate>` per ogni voce del feed. Senza `date`, la voce viene inclusa nel feed ma senza indicazione temporale.
+
+```mdx
+<Update label="March 2025" date="2025-03-15" tags={["feature"]}>
+Added dark mode support across all themes.
+</Update>
+```
+
+### Contenuto del feed
+
+I feed RSS contengono solo testo normale. La formattazione Markdown, i componenti MDX, i blocchi di codice e l'HTML vengono rimossi dalla descrizione del feed, quindi scrivi la prima frase come un riepilogo chiaro che funzioni anche senza formattazione.
+
+### URL del feed
+
+Il feed è disponibile all'indirizzo `/feed.xml` (o `/docs/feed.xml` se il tuo sito utilizza [hostAtDocs](/it/deploy/custom-domains)).
+
+Il feed generato ha questo aspetto:
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Acme Docs Changelog</title>
+    <link>https://docs.acme.com</link>
+    <description>Updates and changelog for Acme Docs</description>
+    <item>
+      <title>March 2025 — New dashboard</title>
+      <link>https://docs.acme.com/changelog#march-2025</link>
+      <pubDate>Sat, 15 Mar 2025 00:00:00 GMT</pubDate>
+      <description>Added dark mode support across all themes.</description>
+    </item>
+  </channel>
+</rss>
+```
+
+### Integrazione con altri strumenti
+
+Gli iscritti possono usare l'URL del feed con qualsiasi servizio compatibile con RSS:
+
+- Slack: aggiungi l'[app RSS](https://slack.com/apps/A0F81R7U7-rss) `/feed` a un canale.
+- Discord: usa [MonitoRSS](https://monitorss.xyz/) o un bot simile per pubblicare automaticamente gli aggiornamenti.
+- Email: collega il feed a [Zapier](https://zapier.com/) o [IFTTT](https://ifttt.com/) per inviare email agli iscritti quando vengono aggiunte nuove voci.
+- Browser: Safari, Vivaldi e Firefox (tramite estensioni) supportano nativamente gli RSS.
+
+<Tip>
+  Puoi aggiungere `rss: true` a più pagine. Tutte le voci Update delle pagine abilitate per RSS vengono combinate in un unico `feed.xml` dell'intero sito.
+</Tip>
+
+## Best practice
+
+<AccordionGroup>
+  <Accordion title="Usa etichette univoche" icon="fingerprint" defaultOpen>
+    Ogni etichetta crea un ID di ancoraggio, quindi usa etichette univoche per garantire collegamenti diretti corretti:
+    - Usa date specifiche: `January 10, 2025` (non solo `January 2025`)
+    - Includi i numeri di versione: `v2.1.0` rispetto a `v2.0.0`
+    - Le etichette duplicate creano ID duplicati, interrompendo la navigazione tramite ancoraggi
+  </Accordion>
+
+  <Accordion title="Usa formati di data coerenti" icon="calendar">
+    Scegli un formato e utilizzalo sempre:
+    - `January 10, 2025` (consigliato)
+    - `2025-01-10` (formato ISO)
+    - `v2.0.0` (per changelog basati sulle versioni)
+  </Accordion>
+
+  <Accordion title="Usa tag significativi" icon="tags">
+    Tag comuni con codifica automatica dei colori:
+
+    | Tag | Colore | Utilizzo |
+    |-----|-------|---------|
+    | `breaking` | Rosso | Modifiche incompatibili |
+    | `feature` / `new` | Verde | Nuove funzionalità |
+    | `deprecation` / `deprecated` | Ambra | Funzionalità deprecate |
+    | Altri tag | Grigio | Categorie generiche come `api`, `fix` |
+  </Accordion>
+
+  <Accordion title="Mantieni le voci facilmente consultabili" icon="eye">
+    - Inizia con la modifica più importante
+    - Usa elenchi puntati per più elementi
+    - Inserisci link alla documentazione dettagliata per le modifiche complesse
+  </Accordion>
+</AccordionGroup>
+
+## Cosa fare dopo?
+
+<Columns cols={2}>
+  <Card title="Panoramica dei componenti" icon="puzzle-piece" href="/it/components/overview">
+    Consulta tutti i componenti disponibili
+  </Card>
+  <Card title="Nozioni di base su MDX" icon="file-code" href="/it/content/mdx-basics">
+    Scopri come usare i componenti in MDX
+  </Card>
+</Columns>

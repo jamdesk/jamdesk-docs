@@ -1,0 +1,178 @@
+---
+title: Codex
+description: >-
+  Codex è l'agente cloud di OpenAI per attività asincrone di documentazione su più file direttamente nei repository GitHub.
+---
+
+[Codex](https://openai.com/index/introducing-codex/) è l'agente cloud di OpenAI per la programmazione. Funziona direttamente con i repository GitHub, quindi puoi lavorare sulla documentazione del tuo progetto senza configurare prima un ambiente locale.
+
+La differenza tra Codex e [Claude Code](/it/ai/claude-code) riguarda soprattutto il flusso di lavoro. Codex viene eseguito nel cloud e lavora in modo asincrono: descrivi un'attività, ti allontani e rivedi una PR quando è pronta. È adatto alle attività batch (dividere un README di 500 righe in una dozzina di pagine o generare una pagina di risoluzione dei problemi dagli ultimi sei mesi di issue GitHub), ma non è l'ideale per il confronto continuo necessario a perfezionare una singola pagina. Se devi gestire un'attività batch su più file senza doverla seguire passo passo, Codex è la scelta giusta. Per lavorare in modo interattivo su una singola pagina, usa invece [Claude Code](/it/ai/claude-code).
+
+## Configurazione rapida
+
+<Steps>
+  <Step title="Apri il repository">
+    Apri il repository della documentazione Jamdesk in Codex. Codex funziona direttamente con i repository GitHub.
+  </Step>
+  <Step title="Aggiungi le istruzioni per l'agente">
+    Crea un file `AGENTS.md` nella directory principale del progetto con gli standard di documentazione, così Codex seguirà le tue convenzioni.
+  </Step>
+  <Step title="Connetti il server MCP">
+    Aggiungi l'endpoint MCP della documentazione a `.codex/config.toml`, così Codex potrà cercare nella documentazione pubblicata.
+  </Step>
+</Steps>
+
+## Modello AGENTS.md
+
+Crea `AGENTS.md` nella directory principale del progetto:
+
+```markdown AGENTS.md
+# Jamdesk Documentation Project
+
+Jamdesk docs project. Pages are MDX (Markdown + React components). Config is in `docs.json`.
+
+## How This Project Works
+
+- `docs.json`: navigation structure, theme, colors, branding. Pages must be listed here to appear in the sidebar.
+- `*.mdx` files: documentation pages. Every page needs `title` and `description` frontmatter.
+- `images/`: static assets. Always use `.webp` format.
+- `snippets/`: reusable MDX fragments. Import with `<Snippet file="name.mdx" />`.
+
+## Page Template
+
+Every page follows this structure:
+
+    ---
+    title: Clear, Specific Title
+    description: One sentence. Used in search results and social previews.
+    ---
+
+    Opening paragraph: what this page covers and who it's for. No heading needed.
+
+    ## First Section
+
+    Content. Use components where they help, not for decoration.
+
+    ## What's Next?
+
+    <Columns cols={2}>
+      <Card title="Related Page" icon="arrow-right" href="/path">
+        Why the reader would go here next
+      </Card>
+    </Columns>
+
+The opening paragraph comes right after frontmatter with no heading. "What's Next?" is always the last section. Card descriptions explain why, not what.
+
+## Writing Style
+
+Start with why. What problem does this solve? Show the answer first, then unpack the how.
+
+Use progressive disclosure: simple example up top, advanced options tucked into Accordions or later sections.
+
+Active voice. "Run this command", not "This command should be run".
+
+One idea per paragraph. If you find yourself reaching for "also" or "additionally", that's the cue to start a new paragraph instead.
+
+Code examples have to actually work. Every block should be complete and copy-pasteable, never partial or pseudocode.
+
+And write like a person. No filler ("It's important to note that", "This allows you to"). No hedging ("you might want to consider"). If a paragraph reads like a chatbot wrote it, rewrite it shorter.
+
+## Components
+
+Only use these. Do not invent others.
+
+Layout: Card, Columns, Tabs, Tab, Accordion, AccordionGroup, Steps, Step, Expandable, Frame, CodeGroup
+Callouts: Note, Info, Warning, Tip, Check, Danger
+
+| Use | For | Don't use for |
+|-----|-----|---------------|
+| Tabs | Mutually exclusive choices (npm/yarn, OS) | Sequential content |
+| Steps | Ordered procedures | Unordered lists |
+| Accordion | Optional/advanced detail | Core content |
+| Card + Columns | Navigation links, feature grids | Inline content |
+| Note/Tip/Warning | Important context | Every other paragraph |
+
+Cards always go inside Columns:
+
+    <Columns cols={2}>
+      <Card title="Page Title" icon="icon-name" href="/path">
+        Brief description
+      </Card>
+    </Columns>
+
+Icons are Font Awesome Light names: "rocket", "code", "terminal", "book-open", "gear"
+
+## Adding Pages
+
+1. Create the `.mdx` file
+2. Add the page path (no `.mdx` extension) to `docs.json` in the right navigation group
+3. Link to it from related pages via "What's Next?" cards
+
+If you skip step 2, the page won't show up in the sidebar. Read `docs.json` before creating pages so you understand the navigation structure.
+
+## Common Mistakes
+
+- Inventing components like `<CodeBlock>`, `<Alert>`, `<Section>`. They don't exist.
+- Using `<Card>` without a `<Columns>` wrapper.
+- Skipping `description` in frontmatter, which breaks search results and link previews.
+- Using raw HTML tags instead of MDX components.
+- Writing "click here" links instead of descriptive link text.
+```
+
+<Tip>
+  Aggiungi la terminologia del prodotto, le convenzioni per i nomi delle API e tutte le regole di stile specifiche della tua documentazione.
+</Tip>
+
+## Configurazione MCP
+
+Aggiungi il tuo endpoint della documentazione a `.codex/config.toml`:
+
+```toml .codex/config.toml
+[mcp_servers.my-docs]
+url = "https://your-project.jamdesk.app/_mcp"
+```
+
+Sostituisci `your-project` con il sottodominio Jamdesk oppure, se hai un dominio personalizzato attivo, usalo al suo posto: `url = "https://docs.acme.com/_mcp"`. Consulta [Server MCP](/it/ai/mcp-server) per i dettagli sull'endpoint.
+
+## Prompt di esempio
+
+Codex esegue le attività in modo asincrono. Questo cambia il modo in cui devi formulare i prompt: invece di uno scambio interattivo continuo, avvii un'attività lunga e la controlli in un secondo momento. Per questo, i prompt più efficaci chiedono di lavorare su una parte specifica.
+
+Un buon primo tentativo: *"Scrivi la documentazione per l'API di autenticazione basandoti sul codice sorgente in /src/auth"*. Codex legge la base di codice, individua i file rilevanti e genera pagine coerenti. Per qualcosa di più complesso, indirizzalo alla cronologia reale dei bug: *"Crea una pagina di risoluzione dei problemi che descriva i 5 errori più comuni nelle nostre issue GitHub"* tende a produrre una pagina più realistica di quella che scriveresti a memoria.
+
+Le ristrutturazioni su più file funzionano particolarmente bene in questa modalità. Copia questo prompt in Codex per un'attività con criteri di revisione chiari:
+
+<Prompt title="Ristruttura un README di grandi dimensioni">
+Ristruttura il `README.md` di 500 righe in pagine di documentazione Jamdesk incentrate su argomenti specifici.
+
+Criteri di accettazione:
+
+- Conserva ogni dettaglio tecnico, comando, avviso ed esempio di codice univoco presente nel README.
+- Raggruppa i contenuti in pagine `.mdx` incentrate sulle attività, usando nomi file descrittivi.
+- Assegna a ogni pagina il frontmatter `title` e `description`, un paragrafo introduttivo e schede What's Next.
+- Aggiungi ogni nuova pagina al gruppo appropriato in `docs.json` e mantieni un ordine logico.
+- Usa solo i componenti Jamdesk già elencati in `components/overview.mdx`; non inventare componenti.
+- Correggi i link interni per la nuova struttura dei file e segnala ogni link sorgente che non riesci a risolvere.
+- Non eliminare il README originale finché tutti i contenuti non sono stati rappresentati e le nuove pagine non superano la convalida del progetto e i controlli sui link non funzionanti.
+</Prompt>
+
+## Skill `/update-jamdesk`
+
+Per aggiornare automaticamente la documentazione quando cambia il codice, installa la skill `/update-jamdesk`:
+
+```bash
+npx skills add jamdesk/skills --skill update-jamdesk -a codex
+```
+
+Consulta [Aggiornamenti automatici](/it/ai/automated-updates) per la guida completa.
+
+## Cosa fare ora
+
+<Columns cols={2}>
+  <Card title="Scrivere con l'AI" icon="wand-magic-sparkles" href="/it/ai/writing-with-ai">
+    Strategie di prompting efficaci con tutti gli strumenti
+  </Card>
+  <Card title="Claude Code" icon="terminal" href="/it/ai/claude-code">
+    Modello CLAUDE.md e flussi di lavoro con il contesto dell'intero progetto
+  </Card>
+</Columns>

@@ -1,0 +1,101 @@
+---
+title: Pagine nascoste
+description: Nascondi le pagine dalla barra laterale e dai risultati di ricerca senza eliminarle. Gestisci la visibilità con frontmatter, docs.json o i controlli SEO.
+---
+
+Alcune pagine non appartengono alla barra laterale pubblica: bozze, manuali interni o guide obsolete che devi ancora collegare. Le pagine nascoste restano raggiungibili tramite URL diretto, ma scompaiono dalla navigazione, dalla ricerca, dalla sitemap e dal contesto AI fornito agli LLM.
+
+## Nascondere una singola pagina
+
+Aggiungi `hidden: true` al frontmatter della pagina:
+
+```mdx
+---
+title: Internal handbook
+hidden: true
+---
+```
+
+La pagina viene visualizzata normalmente quando qualcuno visita il relativo URL, ma Jamdesk:
+
+- La rimuove dalla barra laterale
+- Aggiunge `<meta name="robots" content="noindex, follow">` per impedire ai motori di ricerca di indicizzarla
+- La esclude da `sitemap.xml`, `llms.txt`, `llms-full.txt` e dalla ricerca sul sito
+
+## Nascondere un intero gruppo o una scheda
+
+Imposta `"hidden": true` su un gruppo o una scheda in `docs.json`:
+
+```json
+{
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Public",
+        "groups": [{ "group": "Guides", "pages": ["intro", "quickstart"] }]
+      },
+      {
+        "tab": "Internal",
+        "hidden": true,
+        "groups": [{ "group": "Runbooks", "pages": ["oncall", "postmortems"] }]
+      }
+    ]
+  }
+}
+```
+
+Ogni pagina sotto il nodo nascosto eredita questa regola. Lo stesso flag funziona su `tabs`, `groups`, `anchors`, `dropdowns`, `products`, `languages` e `versions`.
+
+## Mantenere le pagine nascoste nella ricerca
+
+Se vuoi che una scheda o un gruppo nascosto non compaia nella barra laterale, ma venga comunque indicizzato per la ricerca sul sito, le risposte AI e la sitemap, aggiungi `"searchable": true`:
+
+```json
+{
+  "tab": "Internal",
+  "hidden": true,
+  "searchable": true,
+  "groups": [{ "group": "Runbooks", "pages": ["oncall"] }]
+}
+```
+
+Il frontmatter `hidden: true` su una pagina figlia ha comunque la precedenza. `searchable` riattiva solo i discendenti che non hanno scelto di non essere indicizzati.
+
+## Controlli a livello di progetto
+
+Entrambi i flag si trovano sotto `seo` in `docs.json`:
+
+| Flag | Predefinito | Effetto |
+|---|---|---|
+| `seo.indexing` | `"navigable"` | Solo le pagine elencate nella navigazione compaiono negli artefatti. Imposta `"all"` per includere ogni file MDX nel repository. |
+| `seo.indexHiddenPages` | `false` | Imposta `true` per includere le pagine `hidden: true` nella sitemap, in llms.txt e nella ricerca, e rimuovere il tag auto-noindex. |
+
+Esempio:
+
+```json
+{
+  "seo": {
+    "indexing": "all"
+  }
+}
+```
+
+## Riferimento rapido
+
+| Scenario | Frontmatter | docs.json | Visibile nella barra laterale | URL diretto | Nella sitemap |
+|---|---|---|---|---|---|
+| Pagina normale | — | elencata | Sì | Sì | Sì |
+| Nascosta tramite frontmatter | `hidden: true` | elencata | No | Sì | No |
+| Pagina non presente nella navigazione (orfana) | — | omessa | No | Sì | No |
+| Gruppo nascosto | — | `hidden: true` sul gruppo | No | Sì | No |
+| Gruppo nascosto e ricercabile | — | `hidden: true, searchable: true` | No | Sì | Sì |
+| Il progetto abilita l'indicizzazione completa | — | qualsiasi | Come sopra | Sì | Sì |
+
+## Quando usare ciascuna opzione
+
+- **Bozze e anteprime:** frontmatter `hidden: true` sulle singole pagine
+- **Sezioni interne** per un team ristretto: un gruppo o una scheda nascosti
+- **Documentazione di conformità** che deve essere pubblica, ma non promossa: gruppo nascosto con `searchable: true`
+- **Indicizzazione dell'intero repository** solo per fornire contesto all'AI: `seo.indexing: "all"`
+
+Le pagine nascoste non sono un controllo degli accessi. Chiunque disponga dell'URL può leggerle. Per un controllo degli accessi reale, consulta [Protezione con password](/it/setup/password-protection).

@@ -1,0 +1,121 @@
+---
+title: EmailSubscribe
+description: Aggiungi un modulo per newsletter o changelog a qualsiasi pagina di documentazione con EmailSubscribe: acquisizione nativa per sette provider, embed per gli altri.
+---
+
+`<EmailSubscribe>` inserisce un modulo di iscrizione tramite email in una pagina di documentazione con un singolo tag MDX. Quando hai [collegato un provider](/it/integrations/email-signups) nel dashboard, esegue il rendering di un modulo ospitato da Jamdesk che scrive i nuovi iscritti direttamente nel tuo pubblico. Se non hai collegato alcun provider, può invece ospitare l'embed da incollare di un altro servizio. È pensato per le pagine di changelog e note di rilascio, dove i lettori vogliono sapere cosa c'è di nuovo.
+
+## Avvio rapido
+
+Collega prima un provider nel dashboard, quindi aggiungi il tag con l'id del provider:
+
+```mdx
+<EmailSubscribe provider="resend" />
+```
+
+Viene visualizzato un campo email con etichetta e un pulsante Subscribe. Al momento dell'invio, l'indirizzo viene aggiunto al pubblico che hai collegato. Lo stesso tag funziona per qualsiasi provider nativo (`mailchimp`, `kit`, `loops`, `beehiiv`, `brevo` o `sendgrid`) dopo aver collegato quel provider.
+
+Aggiungi un'intestazione e una riga descrittiva facoltative:
+
+```mdx
+<EmailSubscribe
+  provider="resend"
+  title="Get release notes"
+  description="One email when we ship something new. No spam."
+/>
+```
+
+## Proprietà
+
+| Prop | Type | Purpose |
+|------|------|---------|
+| `provider` | string | ID del provider: `resend`, `mailchimp`, `kit`, `loops`, `beehiiv`, `brevo`, `sendgrid`, `buttondown` o `substack`. |
+| `title` | string | Intestazione facoltativa visualizzata sopra il modulo. |
+| `description` | string | Riga descrittiva facoltativa sotto l'intestazione. |
+| `collapsed` | boolean | Solo per i provider nativi. Inizia come un pulsante Subscribe compatto che si espande nel modulo completo al clic. |
+| `username` | string | Nome utente dell'account Buttondown / Substack (provider disponibili solo tramite embed). |
+| `snippet` | string | Markup embed non elaborato di qualsiasi provider. La soluzione alternativa (vedi sotto). |
+| `className` | string | Classe CSS aggiuntiva sul contenitore. |
+
+## Nativo vs. embed
+
+Il `provider` passato determina il comportamento del modulo:
+
+- **Provider nativi** (`resend`, `mailchimp`, `kit`, `loops`, `beehiiv`, `brevo`, `sendgrid`) eseguono il rendering di un modulo ospitato da Jamdesk. Jamdesk acquisisce l'indirizzo e lo aggiunge tramite la chiave collegata. Questo è il percorso che richiede un provider [collegato nel dashboard](/it/integrations/email-signups).
+- **Provider disponibili solo tramite embed** (`buttondown`, `substack`) eseguono il rendering del modulo o dell'iframe del servizio. Non è necessario collegare alcuna chiave: fornisci il tuo `username` e il visitatore invia i dati direttamente al provider.
+
+<Note>
+Se specifichi un provider nativo che non hai ancora collegato nel dashboard, il modulo non acquisirà l'indirizzo. Collega prima il provider, così le iscrizioni avranno una destinazione.
+</Note>
+
+### Provider disponibili solo tramite embed
+
+Buttondown e Substack funzionano senza una connessione al dashboard. Passa il nome utente del tuo account:
+
+```mdx
+<EmailSubscribe provider="buttondown" username="acme" />
+<EmailSubscribe provider="substack" username="acme" />
+```
+
+### Soluzione alternativa: incolla qualsiasi embed
+
+Per un provider per cui Jamdesk non dispone di una scorciatoia, incolla il relativo markup embed in `snippet`. Verrà visualizzato così com'è nella pagina pubblicata:
+
+```mdx
+<EmailSubscribe snippet={`<form action="https://example.com/subscribe">...</form>`} />
+```
+
+<Warning>
+Un `snippet` esegue il codice del provider nella tua pagina. Alcuni provider distribuiscono uno script eseguito una sola volta, che non viene rieseguito quando un lettore passa da una pagina all'altra senza un ricaricamento completo. Inserisci gli embed basati su script in una pagina dedicata caricata direttamente (come il tuo changelog), invece che nel mezzo di un flusso di navigazione.
+</Warning>
+
+## Modalità compatta
+
+Un campo email completo con un pulsante Subscribe occupa molto spazio se inserito al centro di una pagina. Imposta `collapsed` per fare in modo che il modulo nativo inizi come un singolo pulsante Subscribe. Quando il lettore fa clic, visualizza il campo completo direttamente nella pagina, senza ricaricarla:
+
+```mdx
+<EmailSubscribe provider="resend" collapsed title="Subscribe to updates" />
+```
+
+L'etichetta del pulsante deriva da `title` (se non lo imposti, torna a "Subscribe to updates"). Questa opzione è solo per i moduli nativi. I provider embed eseguono il rendering del proprio markup, quindi Jamdesk non ha nulla da comprimere.
+
+## Iscritti esistenti
+
+Dopo che un lettore si è iscritto tramite un modulo nativo, il browser lo ricorda. Alla visita successiva, invece del modulo completo visualizza una breve riga: *You're subscribed to the newsletter.* Nessuno riceve una richiesta di iscrizione a qualcosa a cui ha già aderito.
+
+Se vuole aggiungere un secondo indirizzo, la riga contiene il controllo "Use a different email?", che riapre immediatamente il modulo completo. La memoria è specifica per browser (si trova in `localStorage`, non nel tuo pubblico), quindi cancellando i dati del sito o cambiando browser il modulo viene visualizzato di nuovo. Non è necessaria alcuna configurazione: tutti i moduli nativi funzionano in questo modo.
+
+## Posizionamento automatico nelle pagine di changelog
+
+Invece di aggiungere manualmente il tag a ogni pagina di rilascio, monta automaticamente il modulo nelle pagine di changelog. In `docs.json`, imposta `placement` dell'integrazione newsletter su `changelog`:
+
+```json
+{
+  "integrations": {
+    "newsletter": {
+      "provider": "resend",
+      "title": "Get release notes",
+      "placement": "changelog"
+    }
+  }
+}
+```
+
+Con `placement: "changelog"`, il modulo viene montato su ogni pagina di changelog (qualsiasi pagina con `rss: true`). Per ometterlo in una di queste pagine, imposta `newsletter: false` nel frontmatter della pagina. Se una pagina contiene già un `<EmailSubscribe>` aggiunto manualmente, il posizionamento automatico si disattiva per evitare di visualizzare due moduli.
+
+Il blocco completo `integrations.newsletter` accetta gli stessi campi del componente (`provider`, `title`, `description`, `collapsed`, `username`, `snippet`, `height`), oltre a `placement` (`none`, il valore predefinito, oppure `changelog`).
+
+<Tip>
+Non devi impostare l'intestazione e la riga descrittiva in `docs.json`. La scheda **Email Signups** nel dashboard contiene i campi Form title e Form subtitle, e un modulo posizionato automaticamente usa questi valori quando `docs.json` non li specifica. Imposta `title`/`description` qui solo se vuoi che il `docs.json` di questo sito abbia la precedenza sui testi del dashboard.
+</Tip>
+
+## Qual è il prossimo passo?
+
+<Columns cols={2}>
+  <Card title="Collega un provider" icon="envelope" href="/it/integrations/email-signups">
+    Configura Resend, Mailchimp, Kit, Loops, beehiiv, Brevo o SendGrid
+  </Card>
+  <Card title="Aggiorna componente" icon="timeline" href="/it/components/update">
+    Scrivi le voci del changelog che i tuoi iscritti vogliono conoscere
+  </Card>
+</Columns>

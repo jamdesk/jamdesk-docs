@@ -1,0 +1,311 @@
+---
+title: Autenticazione JWT
+description: >-
+  Proteggi la documentazione con il tuo sistema di accesso. Abilita
+  l'autenticazione JWT in docs.json e firma token a breve durata per sessioni utente.
+---
+
+<Note>
+  L'autenticazione JWT richiede un piano a pagamento e un progetto Jamdesk [connesso a un repository Git](/it/setup/connecting-github). La configurazione risiede in `docs.json`, quindi segue il normale flusso di build e deploy.
+</Note>
+
+Se il tuo prodotto dispone già di un proprio sistema di accesso, l'autenticazione JWT ti consente di proteggere la documentazione tramite questo sistema invece di distribuire una passphrase condivisa. Il tuo backend firma un token a breve durata quando un utente autenticato accede alla documentazione. Jamdesk lo verifica una volta, crea una sessione e da quel momento il visitatore può navigare normalmente. I visitatori non hanno mai bisogno di un account Jamdesk o di una password condivisa.
+
+## Differenze rispetto alla protezione con password
+
+La [protezione con password](/it/setup/password-protection) assegna a ogni visitatore la stessa passphrase condivisa, una soluzione adatta alla documentazione interna, alle anteprime di staging o a un singolo gruppo di partner. L'autenticazione JWT è specifica per utente: identità, durata della sessione e accesso alle pagine di ogni visitatore provengono da un token firmato dal *tuo* backend. L'accesso alla documentazione può seguire gli account cliente, i piani o i ruoli esistenti, invece di usare un unico segreto condiviso.
+
+Le due modalità si escludono a vicenda: `auth.password` e `auth.jwt` non possono essere abilitate contemporaneamente. Se stai passando da una modalità all'altra, consulta [Migrazione dalla protezione con password](#migrazione-dalla-protezione-con-password).
+
+## Procedura di configurazione
+
+<Steps>
+  <Step title="Abilita auth.jwt in docs.json">
+    ```json docs.json
+    {
+      "$schema": "https://jamdesk.com/docs.json",
+      "name": "Acme Docs",
+      "theme": "jam",
+      "auth": {
+        "jwt": {
+          "enabled": true,
+          "loginUrl": "https://app.example.com/docs-login",
+          "public": ["/changelog/*"]
+        }
+      }
+    }
+    ```
+
+    `loginUrl` è obbligatorio quando `enabled: true` e deve essere un URL assoluto `https://`. I visitatori non autenticati vengono reindirizzati qui con `?redirect=<path>`, affinché il flusso di accesso sappia dove rimandarli. `public` è facoltativo: indica i percorsi o i glob (`*` per un segmento, `**` per qualsiasi profondità) che restano accessibili senza effettuare l'accesso.
+  </Step>
+
+  <Step title="Genera la chiave di firma">
+    Apri **Project Settings** nel dashboard e individua la scheda **JWT authentication**. Fai clic su **Generate signing key**.
+
+    Jamdesk crea una coppia di chiavi Ed25519, conserva solo la chiave *pubblica* e mostra la chiave *privata* una sola volta. Copiala immediatamente nel tuo gestore dei segreti. Jamdesk non memorizza né invia via email la chiave privata e non può recuperarla se la perdi. In tal caso, genera una nuova chiave (l'operazione invalida quella precedente, quindi aggiorna contemporaneamente la chiave di firma del tuo backend).
+  </Step>
+
+  <Step title="Esegui il commit e ricrea la build">
+    ```bash
+    git add docs.json
+    git commit -m "Turn on JWT authentication"
+    git push
+    ```
+
+    Quando la build viene pubblicata, il sito protegge ogni pagina. Le richieste senza una sessione valida vengono reindirizzate al tuo `loginUrl`.
+  </Step>
+</Steps>
+
+## Integra il flusso di accesso
+
+Quando un utente autenticato accede alla documentazione, il tuo backend firma un JWT e reindirizza il browser all'URL di callback del sito della documentazione, inserendo il token nel frammento dell'URL (dopo `#`). I frammenti non arrivano mai nei log del server o a un proxy inverso, perché i browser non li inviano con la richiesta.
+
+Il token deve essere firmato con EdDSA (Ed25519, in corrispondenza con la chiave generata nel dashboard) e il suo claim `exp` dovrebbe essere impostato a non più di circa 10 secondi nel futuro. Si tratta di una finestra di handshake, non della durata della sessione. La durata effettiva della sessione è controllata separatamente dal campo `expiresAt` nel payload (consulta il [riferimento del payload](#riferimento-del-payload) di seguito).
+
+<CodeGroup>
+```typescript TypeScript (jose)
+import { SignJWT, importPKCS8 } from "jose";
+
+// Store this in your secret manager. It's the private key Jamdesk showed
+// you once when you generated it in Project Settings.
+const privateKey = await importPKCS8(process.env.JAMDESK_JWT_PRIVATE_KEY!, "EdDSA");
+
+async function signDocsToken(user: { groups: string[] }) {
+  return new SignJWT({
+    host: "acme.jamdesk.app", // or your custom domain, e.g. "docs.example.com"
+    expiresAt: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7, // 7-day session
+    groups: user.groups,
+    apiPlaygroundInputs: {
+      header: { Authorization: `Bearer ${user.apiToken}` },
+    },
+  })
+    .setProtectedHeader({ alg: "EdDSA" })
+    .setExpirationTime("10s") // handshake window, not session length
+    .sign(privateKey);
+}
+
+// In your "open docs" route/button handler:
+app.get("/docs-login", requireAuth, async (req, res) => {
+  const token = await signDocsToken(req.user);
+  const redirect = req.query.redirect ?? "/";
+  res.redirect(
+    `https://acme.jamdesk.app/_jd/auth/callback?redirect=${encodeURIComponent(
+      String(redirect)
+    )}#${token}`
+  );
+});
+```
+
+```python Python (pyjwt)
+import time
+import jwt  # PyJWT >= 2.4, with the cryptography extra installed
+
+with open("jamdesk_jwt_private_key.pem", "rb") as f:
+    PRIVATE_KEY = f.read()
+
+def sign_docs_token(user):
+    payload = {
+        "host": "acme.jamdesk.app",  # or your custom domain
+        "exp": int(time.time()) + 10,  # handshake window, not session length
+        "expiresAt": int(time.time()) + 60 * 60 * 24 * 7,  # 7-day session
+        "groups": user.groups,
+        "apiPlaygroundInputs": {
+            "header": {"Authorization": f"Bearer {user.api_token}"},
+        },
+    }
+    return jwt.encode(payload, PRIVATE_KEY, algorithm="EdDSA")
+
+@app.route("/docs-login")
+def docs_login():
+    token = sign_docs_token(current_user)
+    redirect_path = request.args.get("redirect", "/")
+    return redirect(
+        f"https://acme.jamdesk.app/_jd/auth/callback"
+        f"?redirect={quote(redirect_path)}#{token}"
+    )
+```
+</CodeGroup>
+
+<Warning>
+  Firma il token esclusivamente lato server. La chiave privata non deve mai raggiungere un browser o un repository pubblico. Chiunque ne sia in possesso può creare sessioni per il tuo sito di documentazione.
+</Warning>
+
+## Flusso di reindirizzamento
+
+1. Un visitatore richiede una pagina protetta (ad esempio `/quickstart`) senza una sessione valida. Jamdesk risponde reindirizzandolo a `{loginUrl}?redirect=%2Fquickstart`.
+2. Il tuo flusso di accesso autentica il visitatore (secondo la procedura abituale), firma un JWT e lo reindirizza a `https://<your-docs-host>/_jd/auth/callback?redirect=%2Fquickstart#<jwt>`.
+3. La pagina di callback legge il token dal frammento lato client e lo invia all'endpoint di scambio del token di Jamdesk. Jamdesk verifica la firma e i claim e, in caso di esito positivo, imposta un cookie di sessione firmato.
+4. Il browser viene reindirizzato alla destinazione originale, `/quickstart`, ora con una sessione valida. Il valore `redirect` viene conservato dall'inizio alla fine, così i visitatori arrivano esattamente alla pagina da cui erano partiti.
+
+Se il tuo backend non riesce a determinare un valore `redirect` (ad esempio perché qualcuno ha aggiunto direttamente ai segnalibri la pagina di accesso), omettilo e Jamdesk userà `/`.
+
+## Pagine pubbliche
+
+Alcune pagine, come una pagina di stato o un changelog pubblico, dovrebbero restare accessibili senza effettuare l'accesso. Esistono tre modi per contrassegnare una pagina come pubblica e tutti confluiscono in un unico elenco di autorizzazione:
+
+**Frontmatter**, per una pagina alla volta:
+
+```yaml
+---
+title: Changelog
+public: true
+---
+```
+
+**Gruppi di navigazione**, per un'intera sezione:
+
+```json docs.json
+{
+  "navigation": {
+    "groups": [
+      { "group": "Changelog", "public": true, "pages": ["changelog"] }
+    ]
+  }
+}
+```
+
+**Glob espliciti**, in `auth.jwt.public[]`:
+
+```json docs.json
+{
+  "auth": {
+    "jwt": {
+      "enabled": true,
+      "loginUrl": "https://app.example.com/docs-login",
+      "public": ["/changelog/*", "/status"]
+    }
+  }
+}
+```
+
+## Accesso basato sui gruppi
+
+Alcune pagine dovrebbero essere visibili solo a determinati utenti autenticati, ad esempio una guida operativa per amministratori o un riferimento riservato ai clienti enterprise. Aggiungi `groups` al frontmatter della pagina:
+
+```yaml
+---
+title: Admin API Keys
+groups: ["admin"]
+---
+```
+
+La sessione del visitatore contiene l'array `groups` inserito dal tuo backend nel payload JWT. Se una pagina dichiara `groups` e la sessione del visitatore non contiene alcun gruppo corrispondente, il visitatore riceve un 404 anziché un 401 o una schermata di sblocco. È intenzionale: una pagina con restrizioni di gruppo non rivela la propria esistenza agli utenti esterni al gruppo.
+
+Dettagli che influiscono sull'utilizzo di `groups`:
+
+- Le pagine di gruppo vengono escluse dalla sitemap, dalla ricerca, dalla chat AI e da MCP, anche per gli utenti appartenenti al gruppo. L'esclusione da queste superfici di scoperta è una decisione presa al momento della build, non per singolo visitatore. Un membro del gruppo `admin` può comunque aprire direttamente `/admin/api-keys` (tramite URL o link interno), ma la pagina non comparirà nei risultati di ricerca, nelle risposte della chat o in `llms.txt`. Se vuoi che una pagina riservata sia trovabile dal proprio pubblico, collegala da un'altra pagina già accessibile a quel pubblico.
+- Un `groups: []` vuoto non applica alcuna restrizione, non significa «nessuno può vedere questa pagina». Per rimuovere la restrizione di gruppo, elimina completamente il campo `groups` anziché impostarlo su un array vuoto.
+- Per impedire l'accesso a tutti, annulla la pubblicazione della pagina. Non esiste un valore di `groups` che significhi «nessuno»: l'appartenenza ai gruppi è additiva e qualsiasi corrispondenza concede l'accesso.
+- Le copie localizzate ereditano automaticamente i `groups` della pagina di base, a meno che la traduzione non dichiari i propri `groups` nel frontmatter. La traduzione di una pagina riservata non la rende accidentalmente pubblica.
+- Mantieni brevi i nomi dei gruppi. I gruppi vengono trasmessi nel cookie di sessione: fino a 32 gruppi per sessione, con 64 caratteri ciascuno. Il superamento di uno dei due limiti non accorcia l'elenco: Jamdesk rifiuta l'intero token con un 401 e non concede alcuna sessione.
+
+## Precompilazione dell'API playground
+
+Se la documentazione include un [API playground](/it/api-reference/playground), puoi precompilarlo per i visitatori autenticati, evitando che debbano incollare la propria chiave API. Includi `apiPlaygroundInputs` nel payload JWT:
+
+```json
+{
+  "host": "acme.jamdesk.app",
+  "apiPlaygroundInputs": {
+    "header": { "Authorization": "Bearer sk_live_user_specific_token" },
+    "query": { "org_id": "acme-corp" },
+    "path": { "workspace_id": "ws_123" }
+  }
+}
+```
+
+- `header.Authorization` precompila il campo di autenticazione del playground. Se presente, il prefisso `Bearer ` viene rimosso automaticamente.
+- `query` e `path` precompilano i nomi dei parametri corrispondenti sull'endpoint corrente.
+- Le sezioni `server` e `cookie` non sono supportate. Vengono applicate solo `header`, `query` e `path`.
+- La precompilazione non sovrascrive mai un valore già inserito dal visitatore nel playground.
+
+## Riferimento del payload
+
+| Campo | Obbligatorio | Descrizione |
+|---|---|---|
+| `host` | Sì | Deve corrispondere esattamente all'host della richiesta (senza distinzione tra maiuscole e minuscole): il tuo sottodominio `*.jamdesk.app` o il tuo dominio personalizzato. Un token firmato per un host viene rifiutato su qualsiasi altro host. |
+| `expiresAt` | No | Timestamp Unix (in secondi) che indica la durata della *sessione* risultante. Il limite è di 30 giorni; il valore predefinito è 7 giorni se omesso. È indipendente dal claim `exp` a breve durata del token. |
+| `groups` | No | Array di nomi di gruppo che la sessione deve contenere, fino a 32 elementi di 64 caratteri ciascuno. Il superamento di uno dei due limiti rifiuta l'intero token (401, nessuna sessione) anziché troncare l'elenco. |
+| `apiPlaygroundInputs` | No | Valori per la precompilazione dell'API playground. La dimensione serializzata è limitata a 2 KB. Se supera il limite, il campo viene ignorato senza errori e la sessione viene comunque concessa. |
+
+## Disconnessione
+
+I visitatori autenticati visualizzano un link **Log out** nell'intestazione della documentazione. Il link li porta a `/_jd/auth/logout`, che cancella il cookie di sessione e li reindirizza al tuo `loginUrl`. Puoi anche collegarlo direttamente dalla tua app se vuoi offrire altrove un link per «uscire dalla documentazione». È una semplice richiesta `GET` che non richiede body o intestazioni.
+
+## Comportamento delle funzionalità con autenticazione
+
+| Funzionalità | Comportamento |
+|---|---|
+| `llms.txt` / `llms-full.txt` / sitemap | Protetti come il resto del sito: non sono raggiungibili senza una sessione valida, come qualsiasi altra pagina. |
+| Pagine con restrizioni di gruppo | Escluse da tutti gli artefatti precedenti, oltre che dalla ricerca e dalla chat AI, indipendentemente dai gruppi della sessione richiedente (consulta [Accesso basato sui gruppi](#accesso-basato-sui-gruppi)). |
+| `robots.txt` | Sempre pubblico. I motori di ricerca possono vedere che esiste un sito di documentazione protetto, ma non possono visualizzarne i contenuti. |
+
+## Risoluzione dei problemi
+
+<Accordion title="Ho ruotato la chiave di firma, ma le vecchie sessioni sembrano ancora funzionare">
+  La rotazione e la revoca diventano effettive entro circa 15 secondi, non istantaneamente, perché il gate al bordo memorizza brevemente nella cache la configurazione di autenticazione per mantenere rapide tutte le richieste alle pagine. L'azione **Rotate** nel dashboard invalida comunque ogni sessione esistente; attendi fino a 15 secondi prima di considerare un bug la persistenza di una vecchia sessione valida.
+</Accordion>
+
+<Accordion title="Il dashboard mostra un banner &quot;Runtime out of sync&quot;">
+  Significa che l'ultima chiave di firma non ha ancora raggiunto la cache del runtime, in genere perché un errore temporaneo di scrittura ha interrotto la generazione o la rotazione della chiave. Jamdesk ritenta automaticamente la sincronizzazione ogni volta che apri la pagina delle impostazioni; se il banner rimane, fai clic su **Retry sync**. Se non scompare dopo il nuovo tentativo, ruota la chiave dalla stessa scheda.
+</Accordion>
+
+<Accordion title="I visitatori ricevono un 401 anche con un token che so essere valido">
+  Controlla il claim `host` rispetto all'host esatto richiesto. Se la documentazione è raggiungibile sia tramite un dominio personalizzato (`docs.example.com`) sia tramite il sottodominio `*.jamdesk.app` sottostante, un token firmato per uno dei due verrà rifiutato sull'altro: il binding di `host` è esatto e non distingue tra maiuscole e minuscole, ma non riconosce gli alias. Firma i token per l'host a cui colleghi effettivamente la documentazione oppure firma due varianti se usi link verso entrambi.
+</Accordion>
+
+<Accordion title="Sono bloccato in un ciclo di reindirizzamento tra la pagina di accesso e il sito della documentazione">
+  La route di callback di Jamdesk rifiuta di reindirizzare nuovamente a se stessa: un valore `redirect` che punta a `/_jd/auth/callback` (o alla pagina in stile sblocco sottostante) viene riscritto in `/` anziché essere rispettato. Se il ciclo persiste, verifica che il flusso di accesso non stia reindirizzando a sua volta al `loginUrl` della documentazione (ad esempio una pagina di accesso che torna immediatamente a `/docs-login` quando non trova una sessione della documentazione). Il lato documentazione è protetto; il ciclo si trova quasi sempre nel flusso di accesso.
+</Accordion>
+
+<Accordion title="Sono abilitate sia auth.password sia auth.jwt">
+  Si tratta di un `config_error` che blocca la build. Scegli una sola modalità; se stai effettuando il passaggio, consulta [Migrazione dalla protezione con password](#migrazione-dalla-protezione-con-password) per la sequenza operativa sicura.
+</Accordion>
+
+## Nota sulla sicurezza
+
+`apiPlaygroundInputs`, incluso qualsiasi valore Authorization inserito al suo interno, è leggibile dal codice JavaScript eseguito sul sito della documentazione tramite l'endpoint delle informazioni di sessione che alimenta la precompilazione del playground. La precompilazione è comoda, ma non è adatta a segreti con privilegi elevati.
+
+Invia credenziali specifiche per utente e con il minimo privilegio, limitate alle operazioni consentite a quel visitatore; non usare mai una chiave amministrativa valida per l'intera organizzazione. Considera visibile alla persona che consulta la documentazione qualsiasi elemento inserito in `apiPlaygroundInputs`, perché lo è.
+
+## Migrazione dalla protezione con password
+
+Il passaggio da una password condivisa all'autenticazione JWT non richiede downtime e il sito resta protetto per tutta la durata dell'operazione. Eseguilo in quest'ordine:
+
+<Steps>
+  <Step title="Genera la chiave di firma JWT">
+    Esegui prima questo passaggio, mentre la protezione con password è ancora attiva. La generazione di una chiave non modifica gli elementi protetti; la password resta attiva per tutto il tempo.
+  </Step>
+  <Step title="Modifica docs.json e ricrea la build">
+    ```json docs.json
+    {
+      "auth": {
+        "password": { "enabled": false },
+        "jwt": { "enabled": true, "loginUrl": "https://app.example.com/docs-login" }
+      }
+    }
+    ```
+
+    Esegui il commit e il push. Nel momento in cui questa build viene pubblicata, la protezione passa in modo atomico dalla password a JWT, senza alcun intervallo in cui il sito non sia protetto. Le sessioni già sbloccate con la password terminano al momento del passaggio; da quel momento i visitatori vengono autenticati tramite il tuo flusso di accesso.
+  </Step>
+  <Step title="Cancella la password">
+    Dopo aver verificato che il flusso JWT funzioni dall'inizio alla fine, torna a **Project Settings** e cancella la password memorizzata. A questo punto è inattiva (la modalità password è disabilitata in `docs.json`), ma cancellandola rimuovi completamente l'hash memorizzato.
+  </Step>
+</Steps>
+
+## Prossimi passi
+
+<Columns cols={2}>
+  <Card title="Panoramica del controllo accessi" icon="shield" href="/it/setup/access-control">
+    Confronta l'autenticazione JWT con la protezione tramite password, SSO e il modello multi-progetto.
+  </Card>
+  <Card title="Protezione con password" icon="lock" href="/it/setup/password-protection">
+    L'alternativa basata su passphrase condivisa: più semplice da configurare, senza integrazione backend.
+  </Card>
+  <Card title="SSO (Enterprise)" icon="key" href="/it/setup/sso">
+    Accesso basato sul provider di identità per i clienti enterprise.
+  </Card>
+  <Card title="Domini personalizzati" icon="globe" href="/it/deploy/custom-domains">
+    Pubblica la documentazione sul tuo dominio prima di collegare il flusso di accesso.
+  </Card>
+</Columns>

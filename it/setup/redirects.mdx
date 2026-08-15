@@ -1,0 +1,189 @@
+---
+title: Reindirizzamenti
+description: Configura reindirizzamenti URL per pagine spostate, percorsi rinominati e URL legacy. Supporta corrispondenze esatte e basate su pattern.
+---
+
+I reindirizzamenti inoltrano gli utenti dagli URL precedenti a quelli nuovi. Usali quando riorganizzi la documentazione, rinomini le pagine o mantieni i link delle versioni precedenti della documentazione.
+
+## Configurazione
+
+Aggiungi i reindirizzamenti al tuo `docs.json`:
+
+```json docs.json
+{
+  "redirects": [
+    {
+      "source": "/old-page",
+      "destination": "/new-page"
+    },
+    {
+      "source": "/guides/setup",
+      "destination": "/getting-started"
+    }
+  ]
+}
+```
+
+## Tipi di reindirizzamento
+
+### Corrispondenza esatta
+
+Reindirizza un URL specifico:
+
+```json
+{
+  "source": "/api/v1/users",
+  "destination": "/api/v2/users"
+}
+```
+
+`/api/v1/users` → `/api/v2/users`
+
+### Corrispondenza con caratteri jolly
+
+Usa `*` per trovare corrispondenze nei segmenti del percorso:
+
+```json
+{
+  "source": "/blog/*",
+  "destination": "/articles/*"
+}
+```
+
+`/blog/hello-world` → `/articles/hello-world`
+
+### Corrispondenza del prefisso
+
+Reindirizza tutti i percorsi che si trovano sotto un prefisso:
+
+```json
+{
+  "source": "/v1/*",
+  "destination": "/v2/*"
+}
+```
+
+`/v1/api/users` → `/v2/api/users`
+
+## Codici di stato HTTP
+
+Per impostazione predefinita, i reindirizzamenti restituiscono `308` (reindirizzamento permanente). Specifica uno stato diverso:
+
+```json
+{
+  "source": "/old-page",
+  "destination": "/new-page",
+  "statusCode": 307
+}
+```
+
+| Stato | Tipo | Caso d'uso |
+|--------|------|----------|
+| `301` | Permanente (GET) | Spostamento permanente, cambia POST in GET |
+| `302` | Temporaneo (GET) | Spostamento temporaneo, cambia POST in GET |
+| `307` | Temporaneo | Spostamento temporaneo, conserva il metodo HTTP |
+| `308` | Permanente | Spostamento permanente, conserva il metodo HTTP |
+
+Usa `308` per la maggior parte dei reindirizzamenti della documentazione. Usa `307` per gli spostamenti temporanei durante le migrazioni.
+
+## Pattern comuni
+
+### Riorganizzazione della documentazione
+
+Quando ristrutturi la navigazione:
+
+```json
+{
+  "redirects": [
+    { "source": "/setup", "destination": "/getting-started" },
+    { "source": "/setup/install", "destination": "/getting-started/installation" },
+    { "source": "/setup/config", "destination": "/getting-started/configuration" }
+  ]
+}
+```
+
+### Migrazione della versione dell'API
+
+Quando ritiri una versione dell'API:
+
+```json
+{
+  "redirects": [
+    { "source": "/api/v1/*", "destination": "/api/v2/*" }
+  ]
+}
+```
+
+### Reindirizzamenti esterni
+
+Reindirizza a URL esterni:
+
+```json
+{
+  "source": "/community",
+  "destination": "https://discord.gg/your-server"
+}
+```
+
+### Conservazione della SEO
+
+Quando le pagine hanno già un buon posizionamento nei risultati di ricerca:
+
+```json
+{
+  "redirects": [
+    {
+      "source": "/tutorials/getting-started-with-api",
+      "destination": "/quickstart",
+      "statusCode": 301
+    }
+  ]
+}
+```
+
+## Ordine dei reindirizzamenti
+
+I reindirizzamenti vengono valutati in ordine. Le regole più specifiche devono precedere i caratteri jolly:
+
+```json
+{
+  "redirects": [
+    { "source": "/api/v1/special-endpoint", "destination": "/api/special" },
+    { "source": "/api/v1/*", "destination": "/api/v2/*" }
+  ]
+}
+```
+
+Viene applicata la prima regola corrispondente.
+
+## Limitazioni
+
+- I reindirizzamenti si applicano solo ai percorsi della documentazione
+- I parametri di query vengono conservati automaticamente
+- I frammenti hash vengono conservati automaticamente
+- Massimo 1000 reindirizzamenti per progetto
+
+## Test dei reindirizzamenti
+
+Dopo aver aggiunto i reindirizzamenti:
+
+1. Esegui il deploy delle modifiche
+2. Visita direttamente il vecchio URL
+3. Verifica di arrivare alla nuova destinazione
+4. Controlla il codice di stato HTTP negli strumenti per sviluppatori del browser
+
+```bash
+# Check redirect with curl
+curl -I https://docs.example.com/old-page
+```
+
+## Prossimi passi?
+
+<Columns cols={2}>
+  <Card title="Domini personalizzati" icon="globe" href="/it/deploy/custom-domains">
+    Configura il tuo dominio
+  </Card>
+  <Card title="Navigazione" icon="sitemap" href="/it/navigation/overview">
+    Organizza la struttura della documentazione
+  </Card>
+</Columns>

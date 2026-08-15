@@ -1,0 +1,231 @@
+---
+title: "Avvio rapido: deploy in 5 min"
+sidebarTitle: Avvio rapido
+description: "Crea un sito di documentazione Jamdesk e pubblicalo sul tuo sottodominio. Non servono strumenti di build: bastano GitHub e due file."
+---
+
+**Jamdesk è un software per la documentazione** che pubblica un repository GitHub di file Markdown come sito di documentazione ospitato, generando automaticamente un output leggibile dall'AI (`llms.txt`, endpoint `.md` per ogni pagina e un server MCP).
+
+Pubblica un sito di documentazione con soli due file: `docs.json` e una pagina MDX. Scegli il percorso in base al tuo punto di partenza.
+
+## Prerequisiti
+
+Ti serviranno:
+- Un account [GitHub](https://github.com)
+- Un repository con la tua documentazione (oppure ne creeremo uno)
+
+## Opzione 1: parti dal template Starter
+
+Il modo più rapido per iniziare. Il [template starter](https://github.com/jamdesk/starter-docs) include contenuti di esempio, una specifica OpenAPI ed esempi di ogni componente, così puoi vedere come funzionano prima di sostituirli con i tuoi contenuti.
+
+<Steps>
+  <Step title="Crea un account Jamdesk">
+    Vai su [dashboard.jamdesk.com](https://dashboard.jamdesk.com) e registrati con GitHub.
+  </Step>
+
+  <Step title="Crea un progetto dal template">
+    Fai clic su **New Project** → **From Template** → **Starter Docs**.
+
+    Jamdesk crea per te un repository GitHub con tutto già configurato.
+  </Step>
+
+  <Step title="Il sito è online">
+    La tua documentazione viene pubblicata su `your-project.jamdesk.app`. Modifica i file MDX, esegui il push e il sito verrà ricostruito automaticamente.
+  </Step>
+</Steps>
+
+<Tip>
+Puoi anche clonare direttamente lo starter: `git clone https://github.com/jamdesk/starter-docs.git my-docs`
+</Tip>
+
+<Tip>
+**Vuoi mantenere private alcune pagine?** Aggiungi `private: true` al frontmatter di qualsiasi file MDX, poi imposta una password in **Project Settings** dopo la build successiva. Consulta [Controllo degli accessi](/it/setup/access-control) per tutte e quattro le opzioni (pubblico, password per l'intero sito, misto, SSO).
+</Tip>
+
+## Opzione 2: collega un repository esistente
+
+Hai già un repository con documentazione pronta per Jamdesk? Collegalo direttamente. Se stai migrando da Mintlify o da un'altra piattaforma di documentazione, usa prima l'opzione 3.
+
+<Steps>
+  <Step title="Crea un account Jamdesk">
+    Vai su [dashboard.jamdesk.com](https://dashboard.jamdesk.com) e registrati con GitHub.
+  </Step>
+
+  <Step title="Crea un progetto">
+    Fai clic su **New Project** e collega il tuo repository.
+
+    1. Seleziona il tuo repository GitHub
+    2. Scegli il branch da pubblicare
+    3. Jamdesk rileva automaticamente il tuo `docs.json`
+
+    Se il tuo repository non contiene ancora `docs.json`, aggiungi il file minimo da [Contenuto di un progetto Docs](#contenuto-di-un-progetto-docs) prima di collegarlo.
+
+    Per i permessi del repository, la selezione del branch e i percorsi della documentazione, consulta [Collega GitHub](/it/setup/connecting-github).
+  </Step>
+
+  <Step title="Il sito è online">
+    La tua documentazione viene pubblicata su `your-project.jamdesk.app` con `llms.txt` generato automaticamente, così gli strumenti di AI possono leggere la documentazione.
+
+    Ogni push sul branch collegato avvia una ricostruzione automatica.
+  </Step>
+</Steps>
+
+## Opzione 3: esegui la migrazione da Mintlify o da un'altra piattaforma
+
+Hai già documentazione in Mintlify, GitBook, Docusaurus, ReadMe, Confluence o un'altra piattaforma? Inizia dalla guida alla migrazione prima di creare un nuovo progetto. La guida illustra il comando `jamdesk migrate` per Mintlify e i passaggi manuali per gli altri strumenti di documentazione. Dopo la migrazione, collega il repository migrato usando [l'opzione 2](#opzione-2-collega-un-repository-esistente).
+
+<Columns cols={2}>
+  <Card title="Guida alla migrazione" icon="right-left" href="/it/setup/migration">
+    Converti la documentazione Mintlify o esegui manualmente la migrazione da un'altra piattaforma di documentazione
+  </Card>
+</Columns>
+
+## Contenuto di un progetto Docs
+
+Un progetto Jamdesk minimo contiene due elementi:
+
+```bash
+my-docs/
+├── docs.json           # Configuration
+└── introduction.mdx    # Your first page
+```
+
+Per i siti più grandi, consulta [Struttura delle directory](/it/setup/directory-structure) per cartelle, asset e snippet consigliati.
+
+### docs.json
+
+Il file di configurazione che definisce il tuo sito:
+
+```json
+{
+  "$schema": "https://jamdesk.com/docs.json",
+  "name": "My Docs",
+  "theme": "jam",
+  "navigation": {
+    "groups": [
+      {
+        "group": "Getting Started",
+        "pages": ["introduction"]
+      }
+    ]
+  }
+}
+```
+
+Consulta il [riferimento di docs.json](/it/config/docs-json-reference) per tutte le opzioni di configurazione.
+
+### Pagine MDX
+
+Pagine di documentazione scritte in MDX:
+
+```mdx
+---
+title: Introduction
+description: Welcome to the docs
+---
+
+# Welcome
+
+This is your first documentation page.
+```
+
+Consulta [Nozioni di base su MDX](/it/content/mdx-basics) per frontmatter, titoli, link e sintassi dei componenti.
+
+## Sviluppo locale
+
+La CLI di Jamdesk ti consente di visualizzare in anteprima le modifiche localmente prima di eseguire il push su GitHub. È utile per individuare gli errori di sintassi MDX prima che raggiungano il sito online. Per tutti i metodi di installazione e i comandi, consulta la [panoramica della CLI di Jamdesk](https://jamdesk.com/docs/cli/overview).
+
+Visualizza le modifiche in anteprima localmente:
+
+<Tabs>
+  <Tab title="npm">
+    ```bash
+    npm install -g jamdesk
+    cd my-docs
+    jamdesk dev
+    ```
+  </Tab>
+  <Tab title="Homebrew">
+    ```bash
+    brew tap jamdesk/tap
+    brew install jamdesk
+    cd my-docs
+    jamdesk dev
+    ```
+  </Tab>
+  <Tab title="npx">
+    ```bash
+    cd my-docs
+    npx jamdesk dev
+    ```
+  </Tab>
+</Tabs>
+
+Apri **http://localhost:3000** per visualizzare la documentazione con l'hot reload.
+
+## Aggiungi altre pagine
+
+1. Crea un nuovo file MDX:
+
+```mdx
+---
+title: Getting Started
+description: Learn the basics
+---
+
+Your content here...
+```
+
+2. Aggiungilo a `docs.json`:
+
+```json docs.json
+{
+  "navigation": {
+    "groups": [
+      {
+        "group": "Getting Started",
+        "pages": ["introduction", "getting-started"]
+      }
+    ]
+  }
+}
+```
+
+3. Esegui il push su GitHub: la nuova pagina verrà pubblicata automaticamente.
+
+Per altri modelli di collegamento, inclusi anchor e schede, consulta [Link e navigazione](/it/content/links).
+
+## Dominio personalizzato
+
+Aggiungi il tuo dominio in **Settings** → **Domains**:
+
+1. Inserisci il tuo dominio (ad esempio `docs.example.com`)
+2. Aggiungi i record DNS mostrati
+3. Attendi la verifica (fino a 48 ore)
+
+I certificati SSL vengono forniti automaticamente. [Guida completa →](/it/deploy/custom-domains)
+
+## Hai bisogno di aiuto?
+
+Hai un problema? Consulta il [Centro assistenza](/it/help/overview) per le guide alla configurazione, alla fatturazione e alla risoluzione dei problemi. Oppure parla con una persona: apri il widget della chat nell'angolo inferiore di qualsiasi pagina Jamdesk o inviaci un'email all'indirizzo [support@jamdesk.com](mailto:support@jamdesk.com). Rispondiamo rapidamente.
+
+## Riferimento completo
+
+Tutto ciò che puoi creare ed eseguire è descritto in tre riferimenti: ogni [componente MDX](/it/components/overview), ogni [comando della CLI](/it/cli/overview) e ogni [opzione di configurazione di `docs.json`](/it/config/docs-json-reference).
+
+## Qual è il prossimo passo?
+
+<Columns cols={2}>
+  <Card title="Tutorial completo" icon="route" href="/it/end-to-end-tutorial">
+    Flusso di lavoro completo dalla configurazione al dominio personalizzato
+  </Card>
+  <Card title="Nozioni di base su MDX" icon="file-code" href="/it/content/mdx-basics">
+    Scrivi documentazione in MDX
+  </Card>
+  <Card title="Componenti" icon="puzzle-piece" href="/it/components/overview">
+    Scopri i componenti disponibili
+  </Card>
+  <Card title="Riferimento della configurazione" icon="gear" href="/it/config/docs-json-reference">
+    Tutte le opzioni di docs.json
+  </Card>
+</Columns>

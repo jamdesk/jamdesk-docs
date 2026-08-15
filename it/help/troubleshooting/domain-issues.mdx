@@ -1,0 +1,117 @@
+---
+title: Problemi di dominio
+description: Risolvi i problemi dei domini personalizzati: stato "Pending", errori del certificato SSL, configurazioni CNAME errate e sito sbagliato.
+---
+
+I domini personalizzati richiedono un record CNAME configurato correttamente e un certificato SSL valido.
+
+## Dominio non verificato
+
+Se il dominio mostra lo stato "Pending" o "Not verified":
+
+<Steps>
+  <Step title="Controlla i record DNS">
+    Verifica che il record CNAME punti al tuo URL Jamdesk:
+    ```text
+    docs.example.com  CNAME  your-project.jamdesk.app
+    ```
+  </Step>
+  <Step title="Attendi la propagazione">
+    Le modifiche DNS possono richiedere fino a 48 ore per propagarsi in tutto il mondo.
+  </Step>
+  <Step title="Testa il DNS">
+    Usa uno strumento come `dig` o [dnschecker.org](https://dnschecker.org) per verificare i record.
+  </Step>
+</Steps>
+
+## Errori del certificato SSL
+
+### Certificato non in fase di provisioning
+
+Jamdesk usa Let's Encrypt per la gestione automatica dell'SSL. Se il provisioning non riesce:
+
+1. Verifica che il DNS sia configurato correttamente
+2. Attendi 15 minuti per il provisioning
+3. Controlla che il dominio non sia bloccato dalle regole del firewall
+
+### Certificato scaduto
+
+I certificati vengono rinnovati automaticamente. Se il tuo è scaduto:
+
+1. Vai su **Settings** → **Domains**
+2. Fai clic su **Refresh Certificate**
+3. Se l'operazione non riesce, contatta il supporto
+
+### Avvisi di contenuto misto
+
+Il dominio funziona, ma mostra avvisi di sicurezza:
+
+- Controlla la presenza di link `http://` nei contenuti
+- Aggiorna tutti gli URL delle risorse per usare `https://`
+
+## Dominio non caricabile
+
+### "Site can't be reached"
+
+1. Verifica che i record DNS siano corretti
+2. Controlla che il dominio non sia stato eliminato in Jamdesk
+3. Svuota la cache DNS del browser
+
+### Viene mostrato il sito sbagliato
+
+Il DNS potrebbe puntare a un server precedente:
+
+1. Aggiorna il CNAME con il tuo URL Jamdesk
+2. Rimuovi eventuali record A in conflitto
+3. Attendi la propagazione DNS
+
+## Errori DNS comuni
+
+<Accordion title="Usare un record A invece di un CNAME">
+  Jamdesk richiede un record CNAME, non un record A. CNAME ci consente di instradare correttamente il traffico.
+</Accordion>
+
+<Accordion title="Includere il protocollo">
+  Non includere `https://` nel valore CNAME. Usa solo il dominio:
+
+  ✓ `your-project.jamdesk.app`
+  ✗ `https://your-project.jamdesk.app`
+</Accordion>
+
+<Accordion title="Record in conflitto">
+  Se hai record A e CNAME per lo stesso sottodominio, rimuovi il record A.
+</Accordion>
+
+## Domini con sottopercorso
+
+Per i domini con un sottopercorso (ad esempio, `example.com/docs`):
+
+1. Configura un proxy inverso (Cloudflare, nginx ecc.)
+2. Consulta [Hosting con sottopercorso](/it/deploy/subpath-hosting) per le istruzioni di configurazione
+
+<Warning>
+La configurazione del sottopercorso richiede impostazioni aggiuntive esterne a Jamdesk.
+</Warning>
+
+## I problemi persistono?
+
+<Card title="Contatta il supporto" icon="headset" href="/it/help/support/contact">
+  Includi il nome del dominio e la configurazione DNS attuale
+</Card>
+
+## Articoli correlati
+
+<Columns cols={2}>
+  <Card title="Risoluzione dei problemi DNS" icon="server" href="/it/help/troubleshooting/dns-issues">
+    Controlli della propagazione, conflitti CNAME e soluzioni specifiche del provider
+  </Card>
+  <Card title="Configurazione domini personalizzati" icon="globe" href="/it/deploy/custom-domains">
+    Procedura completa di configurazione dal dashboard
+  </Card>
+  <Card title="Riferimento degli errori" icon="book" href="/it/help/troubleshooting/error-reference">
+    Elenco completo dei codici di errore
+  </Card>
+  <Card title="Contatta il supporto" icon="headset" href="/it/help/support/contact">
+    Inoltra i problemi irrisolti al supporto
+  </Card>
+</Columns>

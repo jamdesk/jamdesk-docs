@@ -1,0 +1,142 @@
+---
+title: Deploy CLI
+description: >-
+  Scopri come il comando CLI deploy di Jamdesk impacchetta, carica e compila la
+  documentazione, inclusi flag, fasi di build e codici di errore.
+---
+
+Il comando `deploy` impacchetta la documentazione, la carica su Jamdesk e avvia una build dal terminale. Usalo per iterazioni rapide, per testare modifiche o per progetti non collegati a un repository GitHub.
+
+## Avvio rapido
+
+```bash
+jamdesk login        # First time only
+jamdesk deploy       # From your project directory
+```
+
+## Opzioni
+
+| Flag | Descrizione |
+|------|-------------|
+| `--detach` | Accoda la build e termina immediatamente (stampa un link al dashboard) |
+| `--full-rebuild` | Forza una ricostruzione completa, ignorando la cache della build |
+| `--project <id>` | Esegue il deploy su un progetto specifico tramite ID (salta la selezione interattiva) |
+| `--allow-empty` | Consente il deploy senza pagine di contenuto `.mdx`. Per impostazione predefinita, la CLI rifiuta il deploy di un progetto vuoto, così una directory di lavoro errata non può pubblicare accidentalmente un sito vuoto (gli snippet non contano come pagine di contenuto) |
+
+`jamdesk push` è un alias di `jamdesk deploy`.
+
+## Come funziona
+
+<Steps>
+  <Step title="Autenticazione">
+    Verifica che la sessione sia valida. Se il token è scaduto, ti verrà richiesto di eseguire `jamdesk login`.
+  </Step>
+  <Step title="Caricamento della configurazione">
+    Legge e convalida `docs.json` dalla directory corrente.
+  </Step>
+  <Step title="Risoluzione del progetto">
+    Legge `projectId` da `docs.json`. Se manca (primo deploy), la CLI ti chiede di selezionare uno dei tuoi progetti. La scelta viene salvata nuovamente in `docs.json`, così il deploy successivo salta la richiesta.
+
+    Usa `--project <id>` per sostituire questo valore.
+  </Step>
+  <Step title="Pacchettizzazione dei file">
+    Crea un tarball compresso della documentazione, rispettando `.gitignore`. Se alcuni file sembrano contenere segreti, la CLI stampa un avviso (ma non blocca il caricamento).
+  </Step>
+  <Step title="Caricamento">
+    Invia il tarball a Jamdesk tramite un URL presigned. La dimensione massima del caricamento è di 100 MB.
+  </Step>
+  <Step title="Build">
+    Accoda una build e ne verifica lo stato, stampando ogni fase al completamento. Premi Ctrl+C per interrompere il controllo; la build continua in background.
+  </Step>
+  <Step title="Completato">
+    Stampa l'URL pubblico quando la build termina.
+  </Step>
+</Steps>
+
+## Fasi della build
+
+Durante il controllo dello stato, vedrai completarsi ogni fase in sequenza:
+
+| Fase | Descrizione |
+|-------|-------------|
+| Estrazione dei file | Estrazione del tarball caricato |
+| Convalida della configurazione | Controllo dello schema e dei contenuti di `docs.json` |
+| Preparazione dei contenuti | Elaborazione dei file MDX e degli asset |
+| Build della documentazione | Compilazione delle pagine e generazione degli artefatti statici |
+| Caricamento su CDN | Invio dell'output della build alla rete edge |
+| Aggiornamento della cache | Eliminazione dei contenuti obsoleti dal CDN |
+
+## Esclusioni dei file
+
+I seguenti elementi vengono sempre esclusi dai caricamenti, indipendentemente dal contenuto di `.gitignore`:
+
+`.git`, `node_modules`, `.next`, `.env`, `.env.*`, `*.pem`, `*.key`, `credentials.json`, `.gcloud`, `.DS_Store`, `Thumbs.db`
+
+Anche tutto ciò che è incluso nel tuo `.gitignore` viene escluso.
+
+### Avvisi sui file segreti
+
+La CLI mostra un avviso (ma non blocca l'operazione) quando rileva file che sembrano contenere segreti:
+
+- File `.env` e `.env.*`
+- File `*.pem` e `*.key`
+- `credentials.json`
+- `service_account*.json`
+- File che iniziano con `secret`
+
+Aggiungili a `.gitignore` per nascondere l'avviso ed escluderli dai caricamenti.
+
+## Riferimento degli errori
+
+| Errore | Codice | Causa | Soluzione |
+|-------|------|-------|-----|
+| Accesso non effettuato | `AUTH_REQUIRED` | Nessuna credenziale salvata | `jamdesk login` |
+| Sessione scaduta | `AUTH_EXPIRED` | Aggiornamento del token non riuscito | `jamdesk login` |
+| Accesso negato | `FORBIDDEN` | Non sei membro di questo progetto | Controlla l'appartenenza al progetto nel dashboard |
+| Progetto non trovato | `NOT_FOUND` | ID progetto non valido | Verifica l'ID o rimuovi `projectId` da docs.json |
+| Build in corso | `BUILD_IN_PROGRESS` | È in esecuzione un'altra build | Attendi o controlla il dashboard |
+| Caricamento troppo grande | `TOO_LARGE` | Il server ha rifiutato il caricamento (limite di 100 MB) | Escludi i file grandi tramite `.gitignore` |
+| Progetto troppo grande | `PROJECT_TOO_LARGE` | Il tarball supera i 100 MB durante la pacchettizzazione | Escludi i file grandi tramite `.gitignore` |
+| Nessun progetto | `NO_PROJECTS` | Non ci sono progetti nel tuo account | Crea prima un progetto nel dashboard |
+| Nessun file | `EMPTY_PROJECT` | Tutti i file sono stati esclusi | Controlla `.gitignore` |
+| Nessuna pagina di contenuto | `NO_CONTENT` | Non sono state trovate pagine di contenuto `.mdx` (gli snippet non contano) | Esegui il comando dalla directory della documentazione oppure passa `--allow-empty` se la pubblicazione vuota è intenzionale |
+| Configurazione non valida | `CONFIG_NOT_FOUND` | `docs.json` mancante o non valido | Esegui il comando dalla root del progetto e controlla la configurazione |
+| Caricamento non riuscito | `UPLOAD_FAILED` | Problema di rete durante il caricamento | Controlla la connessione Internet e riprova |
+| Build non riuscita | `BUILD_FAILED` | Errore del servizio di build | Controlla i log della build nel dashboard |
+
+## Risoluzione dei problemi
+
+<AccordionGroup>
+  <Accordion title='"Una build è già in corso"'>
+    È possibile eseguire una sola build alla volta per progetto. Attendi il completamento della build corrente; controlla lo stato nel dashboard, in **Deployments**.
+  </Accordion>
+
+  <Accordion title='"docs.json non trovato o non valido"'>
+    Assicurati di eseguire il comando dalla directory che contiene `docs.json`. Esegui `jamdesk validate` per verificare la presenza di errori di configurazione.
+  </Accordion>
+
+  <Accordion title='"Caricamento troppo grande"'>
+    Il limite di 100 MB si applica al tarball compresso di tutti i file non esclusi. Controlla quali file vengono inclusi. Immagini, video o file di dati di grandi dimensioni sono cause comuni; aggiungili a `.gitignore` per escluderli.
+  </Accordion>
+
+  <Accordion title="Il deploy si blocca durante il controllo dello stato">
+    Premi Ctrl+C per uscire; la build continua a essere eseguita in background. Controlla lo stato nel dashboard. Se il problema si verifica regolarmente, la rete potrebbe interrompere le richieste di controllo dello stato.
+  </Accordion>
+
+  <Accordion title='"Nessun progetto trovato"'>
+    Devi avere almeno un progetto nel tuo account Jamdesk. Creane uno su [dashboard.jamdesk.com](https://dashboard.jamdesk.com).
+  </Accordion>
+</AccordionGroup>
+
+Per ulteriori informazioni sulla risoluzione dei problemi della CLI, consulta la [guida CLI del Centro assistenza](/it/help/troubleshooting/cli-issues).
+
+## Prossimi passi
+
+<Columns cols={2}>
+  <Card title="Flusso di deploy" icon="rotate" href="/it/development/deployment">
+    Auto-deploy da GitHub e stato del deploy
+  </Card>
+  <Card title="Autenticazione" icon="key" href="/it/cli/authentication">
+    Flusso di accesso, sessioni e risoluzione dei problemi
+  </Card>
+</Columns>

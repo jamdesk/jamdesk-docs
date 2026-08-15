@@ -1,0 +1,138 @@
+---
+title: llms.txt
+sidebarTitle: llms.txt
+description: Ogni sito Jamdesk genera automaticamente llms.txt e llms-full.txt. Gli strumenti di IA usano questi file per comprendere la documentazione.
+---
+
+Se vuoi che strumenti di IA come ChatGPT, Claude o Copilot forniscano risposte accurate sul tuo prodotto, hanno bisogno di un accesso strutturato alla documentazione, non solo dei contenuti inclusi nei dati di addestramento.
+
+Ogni sito Jamdesk genera `llms.txt` e `llms-full.txt` seguendo la specifica [llmstxt.org](https://llmstxt.org). Gli strumenti di IA leggono questi file invece di eseguire il crawling delle singole pagine.
+
+<Note>
+  Google ora verifica `llms.txt` come parte dei [controlli di navigazione agentica di Lighthouse](https://developer.chrome.com/docs/lighthouse/agentic-browsing/llms-txt). I siti che pubblicano un `llms.txt` valido sono più facilmente individuabili dagli agenti di IA e, sempre più spesso, da Google stesso quando classifica i contenuti destinati alle risposte basate sull'IA. Jamdesk ti offre questa funzionalità gratuitamente.
+</Note>
+
+<Tip>
+  **Controlla il tuo punteggio.** Scopri quanto è pronta per gli agenti una qualsiasi documentazione con lo strumento gratuito [AI Score](https://jamdesk.com/ai-score). La pubblicazione di un `llms.txt` valido è una delle prime verifiche eseguite. È disponibile anche un'[estensione Chrome AI Score](https://chromewebstore.google.com/detail/jamdesk-ai-score/mhihkkgpcbmapmojnakhjfhjmiagkhlj) per valutare i siti mentre navighi.
+</Tip>
+
+## Cosa genera Jamdesk
+
+| File | Contenuto |
+|------|-----------|
+| `llms.txt` | Titoli delle pagine, descrizioni e URL (un indice strutturato) |
+| `llms-full.txt` | Contenuto completo della documentazione in un unico file |
+
+Jamdesk genera entrambi i file durante la build e li distribuisce dalla stessa CDN della documentazione.
+
+## Verifica dei file
+
+Verifica che i file esistano dopo la prima build:
+
+<Tabs>
+  <Tab title="Dominio radice">
+    Se la documentazione si trova nella radice del dominio (ad esempio `docs.acme.com` o `acme.jamdesk.app`):
+
+    ```bash
+    curl https://docs.acme.com/llms.txt
+    curl https://docs.acme.com/llms-full.txt
+    ```
+  </Tab>
+  <Tab title="Sottopercorso /docs">
+    Se la documentazione si trova in `/docs` sul sito principale (come in questo sito, `jamdesk.com/docs`):
+
+    ```bash
+    curl https://jamdesk.com/docs/llms.txt
+    curl https://jamdesk.com/docs/llms-full.txt
+    ```
+  </Tab>
+</Tabs>
+
+## Formato dei file
+
+Il file `llms.txt` elenca ogni pagina con titolo, descrizione e URL, raggruppati in sezioni che rispecchiano la navigazione:
+
+```text
+# Your Project Documentation
+
+> Documentation for Your Project
+
+## Get Started
+
+- [Getting Started](https://your-project.jamdesk.app/getting-started): Set up your first project in 5 minutes
+- [Configuration](https://your-project.jamdesk.app/configuration): Configure your project settings
+
+## API Reference
+
+- [Authentication](https://your-project.jamdesk.app/authentication): How to authenticate API requests
+```
+
+Il file `llms-full.txt` contiene il contenuto Markdown completo di ogni pagina, concatenato con i limiti tra le pagine contrassegnati dai titoli.
+
+## Struttura
+
+`llms.txt` segue la proposta [llmstxt.org](https://llmstxt.org/): un titolo H1,
+un riepilogo in blockquote e le schede e i gruppi di navigazione come sezioni
+`##` con link Markdown.
+
+I siti multilingue hanno un indice per ogni lingua. Il file `llms.txt` nella radice elenca
+la lingua predefinita e include alla fine un link a ogni indice tradotto, ad esempio
+`/fr/llms.txt` per il francese. Ogni file di lingua rimanda ai file delle altre lingue.
+
+## Direttiva per gli agenti in ogni pagina
+
+Ogni pagina contiene anche una nota invisibile e non rilevabile dagli screen reader per gli agenti di IA, con un riferimento a `llms.txt`, e ogni esportazione Markdown inizia con un blockquote che rimanda all'indice. Gli agenti che raggiungono il tuo HTML trovano il percorso Markdown senza eseguire il crawling.
+
+## Come viene creato
+
+- Generato durante la build insieme all'HTML
+- Distribuito dalla CDN con la stessa politica di caching della documentazione
+- Aggiornato automaticamente a ogni build
+- Non richiede configurazione; tutte le pagine sono incluse per impostazione predefinita
+
+## Disattivazione di llms.txt
+
+`llms.txt` e `llms-full.txt` vengono pubblicati per impostazione predefinita. Per interromperne la generazione (ad esempio, se non vuoi che gli strumenti di IA acquisiscano i tuoi contenuti), imposta `seo.ai.llmsTxt` su `false` nel file `docs.json`:
+
+```json docs.json
+{
+  "seo": {
+    "ai": {
+      "llmsTxt": false
+    }
+  }
+}
+```
+
+Alla build successiva, Jamdesk non genera i due file e gli URL attivi `/llms.txt` e `/llms-full.txt` restituiscono `404`.
+
+<Note>
+  **L'acquisizione da parte dell'IA e l'indicizzazione nella ricerca sono controlli separati.** `seo.ai.llmsTxt` gestisce solo i file `llms.txt`/`llms-full.txt` letti dagli strumenti di IA. Non modifica il modo in cui i motori di ricerca indicizzano il sito; questo è controllato dai [metadati `robots` e dal valore `noindex` per pagina](/it/content/seo#controllo-dellindicizzazione). Una pagina può essere indicizzata da Google ed esclusa dall'acquisizione da parte dell'IA, o viceversa.
+</Note>
+
+## Crawler IA
+
+Il file `robots.txt` predefinito di Jamdesk consente l'accesso a tutti i principali crawler IA (Claude, ChatGPT, Copilot, Gemini). La documentazione è accessibile agli strumenti di IA fin da subito.
+
+<Accordion title="In che modo llms.txt differisce da sitemap.xml">
+  `sitemap.xml` elenca gli URL che i motori di ricerca devono sottoporre a crawling e indicizzare. Non include contenuti, ma solo link e metadati come le date dell'ultima modifica.
+
+  `llms.txt` è progettato per i modelli di IA. Include i titoli e le descrizioni delle pagine e, in `llms-full.txt`, il contenuto effettivo. Gli strumenti di IA possono leggere il file completo per comprendere la documentazione senza effettuare più richieste HTTP.
+</Accordion>
+
+## E adesso?
+
+<Columns cols={2}>
+  <Card title="AI Score" icon="gauge-high" href="/it/ai/ai-score">
+    Scopri quanto è pronta per gli agenti la documentazione, con un punteggio a ogni build
+  </Card>
+  <Card title="AI Chat" icon="comment" href="/it/ai/chat">
+    Assistente di chat integrato per le domande dei visitatori
+  </Card>
+  <Card title="Server MCP" icon="robot" href="/it/ai/mcp-server">
+    Consenti agli strumenti di IA di cercare e interrogare la documentazione in modo interattivo
+  </Card>
+  <Card title="Sorgente Markdown" icon="file-code" href="/it/ai/markdown-source">
+    Recupera il Markdown originale delle singole pagine
+  </Card>
+</Columns>

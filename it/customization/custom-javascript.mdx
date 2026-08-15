@@ -1,0 +1,120 @@
+---
+title: JavaScript personalizzato
+description: Aggiungi JavaScript personalizzato al sito della documentazione per widget di chat, analytics, integrazioni di terze parti e altre funzioni lato client.
+---
+
+Jamdesk ti consente di aggiungere JavaScript personalizzato eseguito su ogni pagina del sito della documentazione. Usalo per widget di chat, analytics o qualsiasi altro script lato client di cui hai bisogno.
+
+## Aggiungere JavaScript personalizzato
+
+Crea un file JavaScript nella directory della documentazione e fai riferimento a esso in `docs.json`:
+
+```json docs.json
+{
+  "styling": {
+    "js": "/script.js"
+  }
+}
+```
+
+```javascript script.js
+// Your custom JavaScript runs on every page
+console.log('Hello from custom JS!');
+```
+
+Lo script viene inserito direttamente nell'HTML della pagina, quindi viene eseguito durante il caricamento della pagina.
+
+## Rilevamento automatico
+
+Se non configuri `styling.js`, Jamdesk rileva automaticamente i file `.js` nella directory principale del progetto. Ti basta aggiungere un file `script.js` accanto a `docs.json`, che verrà incluso.
+
+```bash
+my-docs/
+├── docs.json
+├── script.js      ← auto-detected
+├── introduction.mdx
+└── getting-started.mdx
+```
+
+Quando `styling.js` è configurato in `docs.json`, il rilevamento automatico viene disabilitato e vengono utilizzati solo i file specificati.
+
+<Note>Il rilevamento automatico include **tutti** i file `.js` nella directory principale del progetto. Se accanto alla documentazione hai script di utilità come `eslint.config.js` o `postcss.config.js`, usa `styling.js` in `docs.json` per specificare esattamente quali file includere.</Note>
+
+## Più file
+
+Includi più script passando un array:
+
+```json docs.json
+{
+  "styling": {
+    "js": ["/chat.js", "/analytics.js"]
+  }
+}
+```
+
+Con il rilevamento automatico, tutti i file `.js` nella directory principale vengono inclusi in ordine alfabetico. Se hai `analytics.js` e `chat.js`, vengono caricati in quest'ordine.
+
+## Esempi
+
+### Widget di chat (Crisp)
+
+```javascript script.js
+window.$crisp = [];
+window.CRISP_WEBSITE_ID = "your-website-id";
+(function () {
+  var d = document;
+  var s = d.createElement("script");
+  s.src = "https://client.crisp.chat/l.js";
+  s.async = 1;
+  d.getElementsByTagName("head")[0].appendChild(s);
+})();
+```
+
+### Analytics personalizzati
+
+```javascript script.js
+// Track outbound link clicks
+document.addEventListener('click', function (e) {
+  var link = e.target.closest('a[href^="http"]');
+  if (link && !link.href.includes(window.location.hostname)) {
+    console.log('Outbound click:', link.href);
+    // Send to your analytics service
+  }
+});
+```
+
+### Widget di feedback
+
+```javascript script.js
+// Load a feedback widget after the page is ready
+window.addEventListener('load', function () {
+  var s = document.createElement('script');
+  s.src = 'https://your-feedback-tool.com/widget.js';
+  s.setAttribute('data-project', 'your-project-id');
+  document.body.appendChild(s);
+});
+```
+
+## Come funziona
+
+I file JavaScript vengono letti durante il processo di build e incorporati direttamente nell'HTML di ogni pagina. Il tag script viene inserito alla fine di `<body>`, quindi il DOM è disponibile quando il codice viene eseguito.
+
+Durante lo sviluppo locale (`jamdesk dev`), gli script vengono rilevati automaticamente e ricaricati a caldo al successivo aggiornamento del browser.
+
+## Limitazioni
+
+- Gli script vengono eseguiti su **ogni pagina**: non è possibile indirizzarli a pagine specifiche
+- Per rendere effettive le modifiche è necessaria una **nuova build** (o un aggiornamento del browser durante lo sviluppo locale)
+- Gli script vengono **incorporati** nell'HTML e non vengono distribuiti come file separati
+- Per gli analytics, valuta l'utilizzo delle [integrazioni](/it/integrations/google-analytics) integrate, che gestiscono automaticamente il consenso e le prestazioni
+
+## Cosa fare ora?
+
+<Columns cols={2}>
+  <Card title="CSS personalizzato" icon="paintbrush" href="/it/customization/custom-css">
+    Sostituisci gli stili del tema con CSS personalizzato
+  </Card>
+  <Card title="Integrazioni" icon="plug" href="/it/integrations/google-analytics">
+    Analytics integrati e integrazioni di terze parti
+  </Card>
+</Columns>

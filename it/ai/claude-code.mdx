@@ -1,0 +1,175 @@
+---
+title: Claude Code
+description: Configura Claude Code per scrivere e mantenere la documentazione Jamdesk. Include un modello CLAUDE.md e la connessione al server MCP.
+---
+
+[Claude Code](https://claude.ai/code) è la CLI di Anthropic per Claude. Poiché legge l'intera directory del progetto, rileva lo stile di scrittura esistente e la struttura `docs.json` direttamente dai file, quindi scrive pagine coerenti con quelle già presenti.
+
+La documentazione di Jamdesk viene gestita esattamente con questa configurazione. Il modello CLAUDE.md riportato di seguito è simile a quello che utilizziamo internamente. Personalizzalo per il tuo progetto, ma ti consigliamo di mantenere le regole sulla struttura delle pagine, la convenzione delle card "What's Next?" e l'elenco rigoroso dei componenti.
+
+Rispetto a [Codex](/it/ai/codex), il punto di forza di Claude Code è l'iterazione interattiva. Puoi creare una bozza, leggere il risultato, chiedere modifiche a una sezione e farla riscrivere nella stessa sessione, mantenendo il contesto completo del progetto. Codex è la scelta migliore per i processi batch automatici su più file; questa pagina descrive il flusso di lavoro per tutto il resto.
+
+## Configurazione rapida
+
+<Steps>
+  <Step title="Installa Claude Code">
+    Installa da [claude.ai/code](https://claude.ai/code).
+  </Step>
+  <Step title="Collega la documentazione tramite MCP">
+    Aggiungi la documentazione come origine dati MCP:
+
+    ```bash
+    claude mcp add --transport http my-docs https://your-project.jamdesk.app/_mcp
+    ```
+
+    Sostituisci `your-project` con il tuo sottodominio Jamdesk oppure, se hai già attivo un dominio personalizzato, usa quello: `https://docs.acme.com/_mcp`. Claude può ora cercare e leggere direttamente la documentazione pubblicata. Consulta [Server MCP](/it/ai/mcp-server) per i dettagli.
+  </Step>
+  <Step title="Aggiungi un file CLAUDE.md">
+    Crea un file `CLAUDE.md` nella directory principale del progetto della documentazione. In questo modo Claude avrà sempre il contesto relativo agli standard della documentazione, ai componenti disponibili e allo stile di scrittura.
+  </Step>
+</Steps>
+
+## Modello CLAUDE.md
+
+Aggiungi questo file alla directory principale del progetto della documentazione Jamdesk:
+
+```markdown CLAUDE.md
+# Documentation Project
+
+Jamdesk docs project. Pages are MDX (Markdown + React components). Config is in `docs.json`.
+
+## How This Project Works
+
+- `docs.json`: navigation structure, theme, colors, branding. Pages must be listed here to appear in the sidebar.
+- `*.mdx` files: documentation pages. Every page needs `title` and `description` frontmatter.
+- `images/`: static assets. Always use `.webp` format.
+- `snippets/`: reusable MDX fragments. Import with `<Snippet file="name.mdx" />`.
+
+## Page Template
+
+Every page follows this structure:
+
+    ---
+    title: Clear, Specific Title
+    description: One sentence. Used in search results and social previews.
+    ---
+
+    Opening paragraph: what this page covers and who it's for. No heading needed.
+
+    ## First Section
+
+    Content. Use components where they help, not for decoration.
+
+    ## What's Next?
+
+    <Columns cols={2}>
+      <Card title="Related Page" icon="arrow-right" href="/path">
+        Why the reader would go here next
+      </Card>
+    </Columns>
+
+The opening paragraph comes right after frontmatter, with no heading before it. "What's Next?" is always the last section. Card descriptions explain why, not what ("Set up search for your docs", not "Search configuration page").
+
+## Writing Style
+
+Start with why. What problem does this page solve? Show that first, then walk through how to use the feature.
+
+Use progressive disclosure: a simple example near the top, advanced options tucked into Accordions or later sections.
+
+Active voice. "Run this command", not "This command should be run".
+
+One idea per paragraph. If you reach for "also" or "additionally", start a new paragraph instead.
+
+Code examples must actually work. Never show partial code or pseudocode. Every block should be complete and copy-pasteable.
+
+Write like a person. Skip filler like "It's important to note that", "This allows you to", or "seamlessly". Drop the hedging ("you might want to consider"). Read your output back, and if it sounds like a chatbot wrote it, rewrite it shorter and more direct.
+
+## Components
+
+Layout: Card, Columns, Tabs, Tab, Accordion, AccordionGroup, Steps, Step, Expandable, Frame, CodeGroup
+Callouts: Note, Info, Warning, Tip, Check, Danger
+
+When to use each:
+
+| Component | Use for | Don't use for |
+|-----------|---------|---------------|
+| Tabs | Mutually exclusive choices (npm/yarn, languages) | Sequential content |
+| Steps | Ordered procedures | Unordered lists of features |
+| Accordion | Optional/advanced detail | Core content readers need |
+| Card (in Columns) | Navigation links, feature grids | Inline content |
+| Note/Tip/Warning | Important context the reader might miss | Every other paragraph |
+
+Cards always go inside Columns:
+
+    <Columns cols={2}>
+      <Card title="Page Title" icon="icon-name" href="/path">
+        Brief description
+      </Card>
+    </Columns>
+
+Icons are Font Awesome Light names: "rocket", "code", "terminal", "book-open", "gear"
+
+## Adding Pages
+
+1. Create the `.mdx` file
+2. Add the page path (no `.mdx` extension) to `docs.json` in the right navigation group
+3. Link to it from related pages via "What's Next?" cards
+
+**If you skip step 2, the page won't show up in the sidebar.** Read `docs.json` before creating pages so you understand the navigation structure.
+
+## Before You're Done
+
+Check your work:
+- [ ] Frontmatter has both `title` and `description`
+- [ ] Opening paragraph exists (no heading before it)
+- [ ] Page ends with "What's Next?" cards
+- [ ] New pages are added to `docs.json` navigation
+- [ ] Code examples are complete and copy-pasteable
+- [ ] No invented components; only the ones listed above
+- [ ] No raw HTML tags; use MDX components
+- [ ] Images use `.webp` format
+
+## Common Mistakes
+
+- Inventing components like `<CodeBlock>`, `<Alert>`, or `<Section>`. They don't exist. Use the components listed above.
+- Wrapping code in components. Code blocks are standard Markdown triple backticks. Don't wrap them in `<CodeGroup>` unless you're showing multiple language alternatives.
+- Skipping description frontmatter. Every page needs it; it appears in search results and link previews.
+- Using `<Card>` without `<Columns>`. Cards must be inside a `<Columns>` wrapper.
+- Writing "click here" links. Use descriptive link text: [Migration guide](/setup/migration), not [click here](/setup/migration).
+```
+
+<Tip>
+  Personalizza il modello per il tuo progetto. Aggiungi il nome del prodotto, le convenzioni API, la terminologia e le linee guida specifiche della tua documentazione.
+</Tip>
+
+## Prompt di esempio
+
+Dopo aver configurato CLAUDE.md e la connessione MCP, non è necessario spiegare tutto nei dettagli. Claude ha già il contesto del progetto, quindi i prompt brevi funzionano meglio di quelli lunghi.
+
+Un punto di partenza comune: *"Scrivi una guida introduttiva per [feature]"*. Poiché Claude ha già letto le altre pagine, ne riprende il tono senza che sia necessario indicarglielo. Per rilevare variazioni, chiedigli di confrontare una singola pagina con il resto del sito. Claude tende a individuare le piccole incoerenze che gli autori non notano durante l'autorevisione, ad esempio l'uso diverso di un componente o un cambio di tono tra sezioni.
+
+I prompt che sorprendono di più sono quelli per la pulizia dei contenuti. *"Converti questo README in pagine della documentazione"* trasforma un singolo file in un insieme strutturato con navigazione. Se gli indichi una pagina esistente e gli chiedi di creare una FAQ basata su Accordion, recupererà problemi reali dal repository, molto più vicini alle domande degli utenti rispetto a ciò che scriveresti partendo da una pagina vuota.
+
+## Skill `/update-jamdesk`
+
+Per automatizzare gli aggiornamenti della documentazione quando cambia il codice, installa la skill `/update-jamdesk`:
+
+```bash
+npx skills add jamdesk/skills --skill update-jamdesk
+```
+
+Dopo aver implementato una funzionalità visibile agli utenti, esegui `/update-jamdesk`: Claude individuerà le pagine da creare o modificare. Consulta [Aggiornamenti automatici](/it/ai/automated-updates) per la guida completa.
+
+## What's Next?
+
+<Columns cols={3}>
+  <Card title="Plugin Claude Code" icon="puzzle-piece" href="/it/claude-code-plugin">
+    Installa il plugin Jamdesk per consultare componenti, configurazione e CLI
+  </Card>
+  <Card title="Cursor" icon="text-cursor" href="/it/ai/cursor">
+    File delle regole di Cursor e scorciatoie per la modifica in linea
+  </Card>
+  <Card title="Server MCP" icon="robot" href="/it/ai/mcp-server">
+    Riferimento degli endpoint, limiti di frequenza ed esempi con curl
+  </Card>
+</Columns>

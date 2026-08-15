@@ -1,0 +1,89 @@
+---
+title: Panoramica del deploy
+description: "Opzioni di hosting per la documentazione: sottodominio Jamdesk, dominio personalizzato con SSL o sottopercorso /docs sul sito esistente tramite reverse proxy."
+---
+
+Jamdesk pubblica automaticamente la documentazione su un sottodominio `*.jamdesk.app`. Quando sei pronto per andare online con il tuo dominio, puoi scegliere un sottodominio personalizzato (come `docs.example.com`) oppure ospitare la documentazione in un sottopercorso del sito principale: `/docs` per impostazione predefinita o qualsiasi segmento personalizzato.
+
+## Opzioni di deploy
+
+| Opzione | Ideale per | Complessità di configurazione |
+|--------|----------|------------------|
+| **Sottodominio Jamdesk** (`your-project.jamdesk.app`) | Lancio rapido, nessuna configurazione DNS | Bassa |
+| **Sottodominio personalizzato** (`docs.example.com`) | Documentazione di produzione con il tuo brand | Media |
+| **Hosting in un sottopercorso** (`example.com/docs`, personalizzabile) | Mantenere la documentazione sul dominio principale | Alta |
+
+## Hosting predefinito (nessuna configurazione)
+
+Ogni progetto viene pubblicato su un sottodominio Jamdesk non appena colleghi un repository. È l'opzione più semplice per la documentazione interna, le anteprime o i primi lanci.
+
+## Dominio personalizzato (sottodominio)
+
+Usa il tuo sottodominio (ad esempio `docs.example.com`) per un URL pubblico e personalizzato. Dovrai aggiungere i record DNS e verificare la proprietà nel dashboard Jamdesk.
+
+<Note>
+La verifica DNS e SSL vengono gestiti automaticamente non appena i record sono configurati. Consulta [Domini personalizzati](/it/deploy/custom-domains) per la configurazione.
+</Note>
+
+## Hosting in un sottopercorso
+
+Ospita la documentazione in un sottopercorso del tuo dominio inoltrando il traffico a Jamdesk tramite proxy: `example.com/docs` per impostazione predefinita o un segmento personalizzato come `example.com/help`. Usa questa opzione quando vuoi che la documentazione risieda sotto il dominio principale dedicato al marketing.
+
+<Info>
+L'hosting in un sottopercorso richiede un livello proxy o CDN per inoltrare le richieste e impostare l'header `X-Jamdesk-Forwarded-Host`. Consulta [Hosting in un sottopercorso](/it/deploy/subpath-hosting).
+</Info>
+
+### Esempio di configurazione proxy (nginx)
+
+```nginx nginx.conf
+location /docs {
+    proxy_pass https://YOUR_SLUG.jamdesk.app;
+    proxy_set_header X-Jamdesk-Forwarded-Host $host;
+}
+
+location /_next/ {
+    proxy_pass https://YOUR_SLUG.jamdesk.app;
+}
+
+location /_jd/ {
+    proxy_pass https://YOUR_SLUG.jamdesk.app;
+}
+```
+
+Per una configurazione completa con SSL, header e indicazioni specifiche per il provider, consulta la guida [Hosting in un sottopercorso](/it/deploy/subpath-hosting).
+
+## Guide per provider
+
+Scegli la tua infrastruttura per implementare l'hosting in un sottopercorso:
+
+<Columns cols={2}>
+  <Card title="Cloudflare" icon="cloud" href="/it/deploy/cloudflare">
+    Usa Cloudflare Workers per inoltrare il traffico /docs
+  </Card>
+  <Card title="AWS" icon="aws" href="/it/deploy/aws">
+    Configura CloudFront con Route 53
+  </Card>
+  <Card title="Vercel" icon="triangle" href="/it/deploy/vercel">
+    Aggiungi rewrite o middleware edge
+  </Card>
+  <Card title="Reverse proxy" icon="server" href="/it/deploy/reverse-proxy">
+    nginx, Apache o altri server proxy
+  </Card>
+</Columns>
+
+## Qual è il prossimo passo?
+
+<Columns cols={2}>
+  <Card title="Ciclo di build e deploy" icon="rotate" href="/it/deploy/lifecycle">
+    Come vengono attivati ed eseguiti i build
+  </Card>
+  <Card title="Hosting in un sottopercorso" icon="folder-tree" href="/it/deploy/subpath-hosting">
+    Ospita la documentazione in /docs sul dominio principale
+  </Card>
+  <Card title="Domini personalizzati" icon="globe" href="/it/deploy/custom-domains">
+    Configura docs.yourdomain.com
+  </Card>
+  <Card title="Risoluzione dei problemi DNS" icon="server" href="/it/help/troubleshooting/dns-issues">
+    Risolvi i problemi di propagazione e verifica DNS
+  </Card>
+</Columns>

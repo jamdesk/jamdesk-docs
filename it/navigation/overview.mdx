@@ -1,0 +1,235 @@
+---
+title: Navigazione
+description: La navigazione in Jamdesk usa schede, gruppi e pagine per organizzare la documentazione. Puoi aggiungere link esterni tramite ancore.
+---
+
+La barra laterale e la barra superiore sono definite interamente in `docs.json`. La gerarchia di navigazione ha tre livelli: schede per le sezioni di primo livello, gruppi per le cartelle comprimibili e pagine per le singole voci. Le ancore aggiungono link esterni visualizzati in ogni pagina.
+
+Gli screenshot mostrano l'interfaccia in inglese.
+
+## Panoramica della struttura
+
+```json docs.json
+{
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "icon": "book-open",
+        "groups": [
+          {
+            "group": "Getting Started",
+            "pages": ["introduction", "quickstart"]
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+## Concetti
+
+### Schede
+
+Sezioni di navigazione di primo livello. Controlla la loro posizione con l'impostazione `tabsPosition`:
+
+| Valore   | Posizione                  |
+| -------- | -------------------------- |
+| `"top"`  | Nella barra delle schede dell'intestazione |
+| `"left"` | In cima alla barra laterale |
+
+La posizione predefinita dipende dal tema:
+
+| Tema   | Predefinita |
+| ------ | ----------- |
+| jam    | `"left"`    |
+| nebula | `"left"`    |
+| pulsar | `"top"`     |
+| halo   | `"left"`    |
+
+```json
+{
+  "tabsPosition": "left",
+  "navigation": {
+    "tabs": [
+      { "tab": "Guides", "icon": "book", "groups": [...] },
+      { "tab": "API", "icon": "code", "groups": [...] }
+    ]
+  }
+}
+```
+
+<Note>
+  Per impostazione predefinita, le icone della barra laterale vengono visualizzate nella variante Font Awesome Solid. Puoi sostituire il peso di qualsiasi
+  icona con un prefisso di stile (`light/book`) o con il
+  [formato oggetto dell'icona](/it/content/icons#forma-a-oggetto-delle-icone).
+</Note>
+
+### Link esterni (ancore)
+
+Aggiungi link esterni visualizzati in cima alla barra laterale in tutte le pagine:
+
+```json
+{
+  "anchors": [
+    { "name": "Blog", "href": "https://blog.example.com", "icon": "newspaper" },
+    { "name": "Status", "href": "https://status.example.com", "icon": "signal" }
+  ]
+}
+```
+
+| Campo  | Tipo   | Obbligatorio | Descrizione                   |
+| ------ | ------ | ------------ | ----------------------------- |
+| `name` | string | Sì           | Testo visualizzato per il link |
+| `href` | string | Sì           | URL (si apre in una nuova scheda) |
+| `icon` | string | No           | Nome dell'icona Font Awesome  |
+
+### Gruppi
+
+Un gruppo è un insieme denominato di voci della barra laterale all'interno di una scheda. I gruppi aggiungono un secondo livello alla gerarchia della barra laterale e consentono di nascondere le sezioni più profonde dietro cartelle in stile fisarmonica.
+
+```json
+{
+  "group": "Authentication",
+  "pages": ["auth/overview", "auth/tokens"]
+}
+```
+
+#### Comportamento di sezioni e fisarmoniche
+
+I gruppi di primo livello sono sezioni permanenti: il titolo e le relative pagine sono sempre visibili e facendo clic sul titolo si passa alla prima pagina del gruppo. I gruppi denominati annidati sono fisarmoniche comprimibili. Un gruppo annidato è chiuso per impostazione predefinita, a meno che non contenga la pagina corrente o non imposti `expanded: true`. Al caricamento iniziale e quando cambia il percorso, l'intera catena di antenati della pagina corrente si apre automaticamente, mostrando il link attivo; i visitatori possono comunque comprimere manualmente il gruppo annidato attivo.
+
+| Tipo di gruppo             | Comportamento predefinito |
+| -------------------------- | -------------------------- |
+| **Gruppo di primo livello** | Sempre aperto, senza chevron. Facendo clic sul titolo si passa alla prima pagina del gruppo. |
+| **Gruppo denominato annidato** | Compresso finché non è attivo, non viene aperto manualmente o non viene configurato con `expanded: true`. Facendo clic su un gruppo chiuso lo si apre, mentre facendo clic su un gruppo aperto lo si chiude; la navigazione avviene solo facendo clic su una pagina. |
+| **Contenitore senza nome** | Le relative pagine vengono sempre visualizzate perché non dispone di un'etichetta o di un controllo di apertura. |
+
+Usa i gruppi di primo livello per le sezioni principali della barra laterale e i gruppi annidati per mantenere consultabili le sezioni più lunghe. Lo stato di apertura persiste durante la navigazione nell'app e viene reimpostato dopo un aggiornamento completo della pagina.
+
+<Frame caption="Un gruppo annidato nel suo stato compresso. Il chevron è rivolto verso destra e le pagine figlie sono nascoste.">
+  <img src="/images/navigation/sidebar-group-collapsed.webp" alt="Barra laterale con il gruppo 'Privacy & Access' compresso: il chevron è rivolto verso destra e le pagine figlie sono nascoste" width="320" height="900" />
+</Frame>
+
+<Frame caption="Lo stesso gruppo dopo la navigazione a una delle sue pagine figlie. Il chevron ruota e le pagine figlie vengono visualizzate sotto.">
+  <img src="/images/navigation/sidebar-group-expanded.webp" alt="Barra laterale con il gruppo 'Privacy & Access' espanso: il chevron è ruotato verso il basso e tre pagine figlie sono visibili sotto" width="320" height="900" />
+</Frame>
+
+#### Campi dei gruppi
+
+| Campo | Tipo | Obbligatorio | Descrizione |
+| --- | --- | --- | --- |
+| `group` | string | Sì | Etichetta visualizzata nella barra laterale. |
+| `pages` | array | Sì | Elenco dei percorsi delle pagine e/o degli oggetti dei gruppi annidati (consulta [Gruppi annidati](#gruppi-annidati) per la struttura annidata). |
+| `icon` | string | No | Nome dell'icona Font Awesome visualizzata accanto all'etichetta del gruppo. |
+| `tag` | string | No | Piccolo badge accanto all'etichetta (ad esempio `"New"`, `"Beta"`). |
+| `root` | string | No | Percorso della pagina a cui il gruppo rimanda facendo clic sull'etichetta, invece di passare alla prima pagina figlia. |
+| `hidden` | boolean | No | Nasconde il gruppo dalla barra laterale per impostazione predefinita. Le pagine restano raggiungibili tramite link diretto. |
+| `public` | boolean | No | Contrassegna il gruppo come accessibile pubblicamente. Per impostazione predefinita, usa l'impostazione della scheda padre. |
+| `expanded` | boolean | No | Apre per impostazione predefinita un gruppo denominato annidato al primo caricamento della pagina. I gruppi di primo livello sono sempre aperti, quindi il flag non ha alcun effetto visibile. I gruppi antenati della pagina corrente si aprono automaticamente al caricamento iniziale e quando cambia il percorso. |
+
+### Pagine
+
+Singole pagine della documentazione, identificate dal percorso del file (senza `.mdx`):
+
+```json
+"pages": ["introduction", "guides/quickstart", "api/endpoints"]
+```
+
+Per impostazione predefinita, il titolo della barra laterale viene generato dal nome del file: i trattini diventano spazi e ogni parola viene scritta con l'iniziale maiuscola. Ad esempio, `"api/getting-started"` viene visualizzato come "Getting Started".
+
+Per impostare un titolo personalizzato nella barra laterale, usa un oggetto invece di una stringa:
+
+```json
+"pages": [
+  "guides/quickstart",
+  { "page": "deploy/aws", "title": "AWS Route 53 & CloudFront" },
+  { "page": "content/seo", "title": "SEO" },
+  { "page": "api/users", "title": "List Users", "method": "GET" }
+]
+```
+
+Questa opzione è utile per acronimi, nomi propri e badge degli endpoint API.
+
+| Campo | Tipo | Obbligatorio | Descrizione |
+| --- | --- | --- | --- |
+| `page` | string | Sì | Percorso del file senza `.mdx` |
+| `title` | string | No | Titolo personalizzato nella barra laterale |
+| `icon` | string | No | Nome dell'icona Font Awesome |
+| `tag` | string | No | Piccolo badge accanto al titolo (ad esempio "New", "Beta") |
+| `method` | string | No | Badge del metodo HTTP: GET, POST, PUT, PATCH o DELETE |
+
+## Più schede
+
+Crea sezioni separate per destinatari diversi:
+
+```json
+{
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Guides",
+        "icon": "book",
+        "groups": [
+          { "group": "Getting Started", "pages": ["intro", "quickstart"] }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "icon": "code",
+        "groups": [{ "group": "Endpoints", "pages": ["api/auth", "api/users"] }]
+      }
+    ]
+  }
+}
+```
+
+## Link esterni nelle schede
+
+Collega direttamente dalle schede documentazione o risorse esterne:
+
+```json
+{
+  "navigation": {
+    "tabs": [
+      { "tab": "Docs", "icon": "book", "groups": [...] },
+      { "tab": "GitHub", "icon": "github", "href": "https://github.com/example/repo" }
+    ]
+  }
+}
+```
+
+Le schede esterne si aprono in una nuova scheda del browser.
+
+## Gruppi annidati
+
+Organizza la documentazione complessa con strutture annidate:
+
+```json
+{
+  "group": "SDKs",
+  "pages": [
+    "sdks/overview",
+    {
+      "group": "JavaScript",
+      "pages": ["sdks/js/install", "sdks/js/usage"]
+    },
+    {
+      "group": "Python",
+      "pages": ["sdks/python/install", "sdks/python/usage"]
+    }
+  ]
+}
+```
+
+## Cosa fare ora?
+
+<Columns cols={2}>
+  <Card title="Connect GitHub" icon="github" href="/it/setup/connecting-github">
+    Collega il tuo repository per build automatiche
+  </Card>
+  <Card title="Directory Structure" icon="folder-tree" href="/it/setup/directory-structure">
+    Organizza la documentazione in modo scalabile
+  </Card>
+</Columns>

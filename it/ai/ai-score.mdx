@@ -1,0 +1,104 @@
+---
+title: AI Score
+sidebarTitle: AI Score
+description: Jamdesk valuta quanto bene gli agenti AI leggono la documentazione secondo AFDocs a ogni build. Visualizza il voto, risolvi i problemi e segui i progressi.
+---
+
+Gli assistenti AI rispondono sempre più spesso alle domande sul tuo prodotto direttamente dalla documentazione, ma solo quando riescono a leggerla davvero. AI Score misura proprio questo. Dopo ogni build, Jamdesk analizza il sito pubblicato secondo lo standard aperto di preparazione agli agenti [AFDocs](https://afdocs.dev) e assegna un punteggio da 0 a 100, un voto in lettere e un'analisi dettagliata dei problemi su cui intervenire.
+
+Gli screenshot mostrano l'interfaccia in inglese.
+
+<Tip>
+  **Provalo prima su qualsiasi sito.** Lo strumento gratuito [AI Score](https://jamdesk.com/ai-score) valuta qualsiasi URL di documentazione secondo lo stesso standard, mentre l'[estensione AI Score per Chrome](https://chromewebstore.google.com/detail/jamdesk-ai-score/mhihkkgpcbmapmojnakhjfhjmiagkhlj) valuta i siti mentre navighi. In Jamdesk, il punteggio viene calcolato automaticamente sulla tua documentazione.
+</Tip>
+
+## Come funziona il punteggio
+
+AI Score viene eseguito automaticamente, senza configurazione. Dopo ogni build riuscita, Jamdesk attende che la nuova versione sia online, quindi analizza la documentazione pubblicata e registra il risultato.
+
+- **Viene eseguito a ogni build.** Ogni deploy ricalcola il punteggio del sito, quindi una regressione viene rilevata non appena viene pubblicata.
+- **Punteggio da 0 a 100 e voto in lettere** (da A+ a F), misurati secondo lo standard aperto AFDocs. È lo stesso motore alla base dello strumento pubblico gratuito.
+- **Esegui di nuovo in qualsiasi momento.** Apri la pagina **AI Score** del progetto e fai clic su **Run score now** per valutare di nuovo il sito online senza attendere una build.
+
+Lo trovi nel dashboard, sotto il progetto → **AI Score**.
+
+## Leggere il punteggio
+
+<Frame>
+  <img src="/images/ai-score/dashboard.webp" alt="Il dashboard di AI Score mostra un indicatore circolare con punteggio 94 e voto A, una linea di andamento su sei build e schede di categoria espandibili, una delle quali mostra un controllo non superato con un pulsante Copy prompt to fix" />
+</Frame>
+
+La pagina AI Score è composta da tre parti:
+
+- **Indicatore circolare del punteggio.** Il punteggio e il voto attuali, oltre alla variazione rispetto all'ultima build.
+- **Linea di andamento.** Il punteggio delle build recenti, così puoi notare subito un calo.
+- **Schede delle categorie.** I controlli sono raggruppati in sette aree, ciascuna con il proprio voto. Espandine una per vedere i singoli controlli e sapere se sono stati superati, hanno generato un avviso o non sono stati superati.
+
+Nel piè di pagina sono indicati gli elementi analizzati, il numero di pagine campionate e la versione della specifica AFDocs.
+
+### Cosa misura il punteggio
+
+Ogni categoria raggruppa controlli correlati alla preparazione per gli agenti:
+
+| Categoria | Cosa include |
+|---|---|
+| Individuabilità dei contenuti | `llms.txt` e i segnali che indirizzano gli agenti verso i contenuti |
+| Disponibilità Markdown | Una versione Markdown pulita di ogni pagina che gli agenti possano leggere |
+| Dimensioni della pagina e rischio di troncamento | Pagine abbastanza piccole da rientrare nella finestra di contesto di un agente |
+| Struttura dei contenuti | Titoli, ordine e contenuti che iniziano nelle prime sezioni della pagina |
+| Stabilità degli URL e reindirizzamenti | URL stabili e reindirizzamenti corretti sullo stesso host |
+| Osservabilità e stato dei contenuti | Codici di stato, caching e corrispondenza tra ciò che vedono lettori e agenti |
+| Autenticazione e accesso | Se gli agenti riescono o meno a raggiungere le pagine |
+
+## Risolvere i problemi
+
+Ogni controllo che genera un avviso o non viene superato include una spiegazione in linguaggio semplice e una correzione descritta in termini di MDX e `docs.json`. Vengono mostrati due tipi di risultati:
+
+- **Problemi da risolvere nei contenuti.** Ad esempio, una pagina il cui contenuto effettivo inizia troppo in basso, una pagina troppo grande che dovrebbe essere divisa oppure contenuti visualizzati da un componente interattivo che non compaiono nel Markdown della pagina. Il testo della correzione indica il passaggio successivo e le pagine a cui si applica.
+- **Problemi gestiti da Jamdesk.** `llms.txt`, l'esportazione Markdown, i codici di stato e il caching vengono generati automaticamente. Se uno di questi controlli non viene superato, di solito significa che si è verificato un problema temporaneo durante la build: esegui di nuovo il punteggio dopo la build successiva e contatta l'assistenza se il problema persiste.
+
+### Copiare il prompt per la correzione
+
+Ogni controllo correggibile ha un pulsante **Copy prompt to fix**. Il pulsante copia un prompt pronto da incollare, che identifica il controllo, il risultato e la procedura per risolverlo in MDX o `docs.json`. Incollalo in un agente di programmazione AI ([Claude Code](/it/ai/claude-code), il [plugin Claude di Jamdesk](/it/claude-code-plugin), [Cursor](/it/ai/cursor) o [Codex](/it/ai/codex)) e lascia che apporti la modifica, quindi esegui il push per ricostruire il sito e ricalcolare il punteggio.
+
+## Ricevere un'email quando cambia il punteggio
+
+Il tuo team non deve controllare il dashboard. Jamdesk invia ai membri del progetto il nuovo punteggio e il problema più importante da risolvere quando una build produce il primo punteggio, modifica il punteggio di almeno 3 punti oppure lo riporta al valore perfetto di 100.
+
+- **Attivalo per ogni progetto.** L'interruttore **Email team when score changes** si trova nella parte superiore della pagina AI Score. È attivo per impostazione predefinita.
+- **Le piccole variazioni non inviano notifiche.** Una variazione di uno o due punti non invia un'email da sola, ma non viene ignorata: Jamdesk confronta ogni nuovo punteggio con l'ultimo per cui ti ha inviato un'email, quindi le variazioni graduali si sommano e ricevi una notifica quando la variazione totale raggiunge 3 punti.
+
+<Note>
+  Le esecuzioni manuali e i punteggi attivati dalle build possono entrambi inviare email; le scansioni arretrate e quelle dello strumento pubblico non ne inviano mai.
+</Note>
+
+## Risoluzione dei problemi
+
+<AccordionGroup>
+  <Accordion title="Il punteggio indica che non è stato possibile leggere il sito">
+    Una scansione può risultare vuota se il sito era momentaneamente irraggiungibile, restituiva un errore o bloccava lo scanner. Jamdesk **non** salva questi risultati, quindi un problema temporaneo non fisserà un punteggio errato né danneggerà la linea di andamento. L'ultimo buon punteggio resta visualizzato; fai clic su **Run score now** per riprovare.
+  </Accordion>
+  <Accordion title="Il punteggio è basso perché la documentazione è protetta da password">
+    Gli agenti AI non possono leggere le pagine protette da password, quindi il punteggio ne tiene conto. Se limitare l'accesso è una scelta intenzionale (per documentazione interna o non ancora rilasciata), è normale e accettabile che il punteggio sia basso.
+  </Accordion>
+  <Accordion title="Un controllo non superato non è modificabile">
+    Alcuni controlli riguardano comportamenti della piattaforma gestiti da Jamdesk (`llms.txt`, esportazione Markdown, codici di stato e caching). Questi controlli vengono superati per impostazione, quindi un errore indica quasi sempre un problema temporaneo durante la build. Esegui di nuovo il punteggio dopo la build successiva e contatta l'assistenza se il problema persiste.
+  </Accordion>
+</AccordionGroup>
+
+## Cosa fare ora?
+
+<Columns cols={2}>
+  <Card title="llms.txt" icon="file-lines" href="/it/ai/llms-txt">
+    L'indice che gli strumenti AI leggono per comprendere l'intero sito
+  </Card>
+  <Card title="Sorgente Markdown" icon="file-code" href="/it/ai/markdown-source">
+    Il Markdown originale che gli agenti recuperano per ogni pagina
+  </Card>
+  <Card title="Aggiornamenti automatici" icon="arrows-rotate" href="/it/ai/automated-updates">
+    Mantieni aggiornata la documentazione quando cambia il prodotto
+  </Card>
+  <Card title="Strumento AI Score" icon="gauge-high" href="https://jamdesk.com/ai-score">
+    Valuta gratuitamente qualsiasi sito di documentazione
+  </Card>
+</Columns>

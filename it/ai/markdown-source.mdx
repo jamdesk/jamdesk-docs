@@ -1,0 +1,118 @@
+---
+title: Sorgente Markdown
+description: Accedi alla sorgente Markdown grezza di qualsiasi pagina della documentazione aggiungendo .md all'URL, per strumenti IA, script e pipeline di contenuti.
+---
+
+Gli strumenti IA elaborano Markdown in modo più efficiente rispetto all'HTML renderizzato. Jamdesk rende disponibile la sorgente Markdown grezza di ogni pagina aggiungendo `.md` a qualsiasi URL. Non è richiesta alcuna autenticazione.
+
+## Estensione URL `.md`
+
+Aggiungi `.md` all'URL di qualsiasi pagina della documentazione per ottenere la sorgente grezza anziché l'HTML renderizzato:
+
+```bash
+# Rendered page
+https://acme.jamdesk.app/getting-started
+
+# Raw Markdown source
+https://acme.jamdesk.app/getting-started.md
+```
+
+Funziona con percorsi di qualsiasi profondità. Ecco come appare la risposta:
+
+```bash
+curl https://acme.jamdesk.app/getting-started.md
+```
+
+```markdown
+---
+title: Getting Started
+description: Set up your first project in 5 minutes.
+---
+
+Welcome to the getting started guide.
+
+## Prerequisites
+
+<Note>You'll need Node.js 18 or later.</Note>
+```
+
+La risposta è il file sorgente esatto del repository, inclusi il frontmatter e i tag dei componenti.
+
+### Domini personalizzati
+
+I contenuti grezzi funzionano anche sui domini personalizzati. Usa lo stesso URL visualizzato dai lettori, aggiungendo `.md`:
+
+```bash
+# Docs served at root
+curl https://docs.example.com/getting-started.md
+
+# Docs served at /docs subpath
+curl https://docs.example.com/docs/getting-started.md
+```
+
+## Formato dei contenuti
+
+Il contenuto grezzo è Markdown esteso con tag dei componenti come `<Note>`, `<Steps>` e `<Tabs>`. I parser Markdown standard trattano i tag dei componenti come HTML grezzo. Consulta [Nozioni di base su Markdown](/it/content/mdx-basics) per il riferimento completo alla sintassi.
+
+## Specifiche OpenAPI nelle pagine di riferimento API
+
+Quando recuperi il Markdown di una pagina di riferimento API, ovvero una pagina il cui frontmatter dichiara una specifica `api:` o `openapi:`, Jamdesk aggiunge un breve piè di pagina che indirizza gli agenti IA a ogni specifica OpenAPI del progetto, raggruppata in un unico download:
+
+```markdown
+---
+
+📦 **OpenAPI specs:** Every OpenAPI specification referenced by this documentation is available as a single download — https://acme.jamdesk.app/api-specs.zip
+```
+
+È lo stesso `api-specs.zip` offerto dall'azione [Download API spec](/it/ai/ai-actions#download-api-spec), generato da zero a ogni richiesta. Lo scopo è ampliare la portata: un agente che legge una pagina relativa a un endpoint scopre di poter recuperare il contratto completo leggibile dalle macchine con una singola richiesta, invece di analizzare ogni endpoint. Il piè di pagina appare solo nelle pagine di riferimento API dei progetti che dispongono di almeno una specifica; le guide standard non vengono modificate.
+
+## Dettagli della risposta
+
+### Header
+
+| Header | Valore | Scopo |
+|--------|-------|---------|
+| `Content-Type` | `text/markdown; charset=utf-8` | Identifica il contenuto come Markdown |
+| `Cache-Control` | `public, max-age=3600, s-maxage=86400` | Memorizzato nella cache del browser per 1 ora e nella cache del CDN per 1 giorno (URL `.md`) |
+| `Vary` | `Accept` | Lo stesso URL restituisce HTML o Markdown in base all'header `Accept` della richiesta |
+| `X-Robots-Tag` | `noindex, nofollow` | Impedisce l'indicizzazione da parte dei motori di ricerca |
+| `Content-Disposition` | `inline` | Visualizza il contenuto nel browser anziché scaricarlo |
+| `X-Frame-Options` | `DENY` | Impedisce l'incorporamento negli iframe |
+| `Content-Security-Policy` | `default-src 'none'` | Blocca l'esecuzione degli script |
+
+Se richiedi l'URL canonico di una pagina (senza `.md`) con l'header `Accept: text/markdown`, ottieni lo stesso Markdown, ma con `Cache-Control: private, no-store`. Condivide una chiave della cache con la pagina HTML, quindi la risposta non viene mai memorizzata nella cache.
+
+### Risposte di errore
+
+| Status | Significato |
+|--------|---------|
+| `308` | Reindirizzamento dello slash finale (ad esempio, `/intro.md/` reindirizza a `/intro.md`) |
+| `404` | La pagina non esiste (restituisce un breve errore in testo semplice, non Markdown) |
+| `500` | Errore del server (restituisce una pagina di errore HTML) |
+
+## Utilizzo con gli strumenti IA
+
+Gli URL della sorgente Markdown si abbinano bene al [server MCP](/it/ai/mcp-server). Usa `searchDocs` per trovare le pagine per parola chiave, quindi recupera la sorgente grezza della pagina corrispondente:
+
+```bash
+# 1. Search for a topic via MCP
+curl -X POST https://acme.jamdesk.app/_mcp \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"searchDocs","arguments":{"query":"authentication"}}}'
+
+# 2. Fetch the raw source of the top result
+curl https://acme.jamdesk.app/guides/authentication.md
+```
+
+In questo modo gli strumenti IA ottengono sia l'accesso alla ricerca sia l'accesso alla sorgente completa della documentazione. Entrambi gli URL funzionano anche su un dominio personalizzato attivo: `https://docs.acme.com/_mcp` e `https://docs.acme.com/guides/authentication.md`.
+
+## Qual è il prossimo passo?
+
+<Columns cols={2}>
+  <Card title="Server MCP" icon="robot" href="/it/ai/mcp-server">
+    Collega direttamente gli assistenti IA alla documentazione
+  </Card>
+  <Card title="Nozioni di base su Markdown" icon="pen-nib" href="/it/content/mdx-basics">
+    Riferimento alla sintassi MDX per le pagine della documentazione
+  </Card>
+</Columns>

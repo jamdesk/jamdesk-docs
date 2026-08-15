@@ -1,0 +1,183 @@
+---
+title: Frammenti
+description: Blocchi di contenuto riutilizzabili da importare in più pagine. Conserva testo, componenti o codice comuni nella directory snippets.
+---
+
+I frammenti sono blocchi di contenuto riutilizzabili archiviati in una directory `/snippets`. Importali in qualsiasi pagina MDX per evitare di duplicare i contenuti.
+
+## Creazione dei frammenti
+
+Crea una directory `/snippets` nella radice della documentazione:
+
+```bash
+my-docs/
+├── docs.json
+├── introduction.mdx
+└── snippets/
+    ├── prerequisites.mdx
+    ├── installation.mdx
+    └── support-cta.mdx
+```
+
+Scrivi il contenuto dei frammenti come in qualsiasi file MDX, ma senza frontmatter:
+
+```mdx snippets/prerequisites.mdx
+Before you begin, make sure you have:
+
+- Node.js 20 or higher
+- A GitHub account
+- A text editor (VS Code recommended)
+```
+
+## Utilizzo dei frammenti
+
+Importa e utilizza i frammenti nelle tue pagine:
+
+```mdx getting-started.mdx
+---
+title: Getting Started
+---
+
+## Prerequisites
+
+import Prerequisites from '/snippets/prerequisites.mdx';
+
+<Prerequisites />
+
+## Installation
+
+Continue with your page content...
+```
+
+## Componenti dei frammenti
+
+I frammenti possono contenere componenti Jamdesk:
+
+```mdx snippets/support-cta.mdx
+<Columns cols={2}>
+  <Card title="Documentation" icon="book" href="/docs">
+    Browse our guides
+  </Card>
+  <Card title="Contact Support" icon="headset" href="/support">
+    Get help from our team
+  </Card>
+</Columns>
+```
+
+Utilizzalo in più pagine:
+
+```mdx
+import SupportCTA from '/snippets/support-cta.mdx';
+
+## Need Help?
+
+<SupportCTA />
+```
+
+## Frammenti interattivi
+
+Per i frammenti che richiedono hook React (`useState`, `useEffect`, ecc.), usa file `.tsx` con la direttiva `'use client'`:
+
+```tsx snippets/counter.tsx
+'use client';
+
+import { useState } from 'react';
+
+export function Counter() {
+  const [count, setCount] = useState(0);
+  return (
+    <button onClick={() => setCount(c => c + 1)}>
+      Count: {count}
+    </button>
+  );
+}
+```
+
+Importa in MDX:
+
+```mdx
+import { Counter } from '/snippets/counter';
+
+<Counter />
+```
+
+<Note>
+La direttiva `'use client'` è obbligatoria per qualsiasi componente che utilizza gli hook React. Senza di essa, verranno visualizzati errori "useState is not defined".
+</Note>
+
+## Frammenti parametrizzati
+
+Passa le props per rendere dinamici i frammenti:
+
+```mdx snippets/api-key-warning.mdx
+export const ApiKeyWarning = ({ service }) => (
+  <Warning>
+    Never commit your {service} API key to version control. Use environment variables instead.
+  </Warning>
+);
+```
+
+Utilizzali con le props:
+
+```mdx
+import { ApiKeyWarning } from '/snippets/api-key-warning.mdx';
+
+<ApiKeyWarning service="Stripe" />
+```
+
+## Organizzazione dei frammenti
+
+Per i progetti più grandi, organizza i frammenti in sottodirectory:
+
+```bash
+snippets/
+├── components/
+│   ├── cta-cards.mdx
+│   └── feature-table.mdx
+├── warnings/
+│   ├── api-key.mdx
+│   └── deprecation.mdx
+└── shared/
+    ├── prerequisites.mdx
+    └── support-links.mdx
+```
+
+Importali utilizzando il percorso completo:
+
+```mdx
+import CtaCards from '/snippets/components/cta-cards.mdx';
+import ApiKeyWarning from '/snippets/warnings/api-key.mdx';
+```
+
+## Casi d'uso comuni
+
+| Caso d'uso | Esempio |
+|----------|---------|
+| Prerequisiti | Requisiti di sistema, configurazione dell'account |
+| Procedure di installazione | Comandi di installazione della CLI su più piattaforme |
+| Autenticazione API | Configurazione dell'autenticazione ripetuta in più endpoint |
+| CTA per l'assistenza | Link di contatto alla fine delle pagine di risoluzione dei problemi |
+| Avvisi di deprecazione | Avvisi per funzionalità obsolete |
+| Esempi di codice | Pattern di codice riutilizzabili |
+
+## Frammento o componente inline
+
+| Funzionalità | Frammento | Componente inline |
+|---------|---------|------------------|
+| Riutilizzabile in più pagine | Sì | No (specifico della pagina) |
+| Può utilizzare gli hook React | Sì (con `'use client'`) | No |
+| Può importare pacchetti esterni | Sì (file `.tsx`) | No |
+| Sintassi | Istruzione di importazione | `export const` in MDX |
+
+Usa i **frammenti** per i contenuti che compaiono in più pagine. Usa i **componenti inline** per componenti presentazionali utilizzati una sola volta all'interno di una singola pagina.
+
+## Qual è il prossimo passo?
+
+<Columns cols={2}>
+  <Card title="Componenti React personalizzati" icon="code" href="/it/content/react-components">
+    Definisci componenti inline in MDX
+  </Card>
+  <Card title="Basi di MDX" icon="file-code" href="/it/content/mdx-basics">
+    Scopri i fondamenti di MDX
+  </Card>
+</Columns>

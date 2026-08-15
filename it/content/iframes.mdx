@@ -1,0 +1,154 @@
+---
+title: iFrame e incorporamenti
+sidebarTitle: iFrame
+description: Incorpora contenuti esterni come Vimeo, CodePen, Figma e Loom nella documentazione con stile automatico e dimensionamento reattivo.
+---
+
+Ogni `<iframe>` nella documentazione riceve automaticamente uno stile visivo: angoli arrotondati, un bordo e una spaziatura coerenti con il resto della pagina. Non è necessario aggiungere div wrapper o classi di utilità.
+
+## Stile automatico
+
+Jamdesk applica una cornice coerente a tutti gli iframe al momento del rendering. Ecco cosa riceve ogni iframe:
+
+| Proprietà | Valore | Descrizione |
+|----------|-------|-------------|
+| Raggio del bordo | `0.5rem` | Angoli arrotondati sul contenuto |
+| Larghezza della cornice | `8px` | Spaziatura visiva attorno al contenuto |
+| Bordo | `1px` | Bordo discreto nel colore del tema |
+| Spaziatura | `1rem + 9px` | Margine sopra e sotto |
+
+Il colore della cornice proviene da `--color-bg-secondary`, mentre la linea del bordo usa `--color-border`. Entrambe sono proprietà CSS personalizzate collegate al tema, quindi le modalità chiara e scura usano i colori corretti senza richiedere altre operazioni.
+
+## Incorporare contenuti esterni
+
+Un incorporamento di base usa un tag iframe HTML standard:
+
+```html
+<iframe
+  src="https://example.com/embed"
+  width="100%"
+  height="400"
+  title="Description of embedded content"
+/>
+```
+
+Includi sempre un attributo `title`. Gli screen reader lo annunciano e aiuta chiunque analizzi il codice sorgente della pagina a capire cosa contiene ogni incorporamento.
+
+## Dimensionamento reattivo
+
+La maggior parte dei provider di incorporamenti restituisce contenuti con un rapporto d'aspetto fisso. L'utility Tailwind `aspect-video` mantiene l'iframe in formato 16:9 indipendentemente dalla larghezza della viewport, mentre `w-full` lo estende fino a riempire il contenitore principale:
+
+```html
+<iframe
+  className="w-full aspect-video"
+  src="https://example.com/embed"
+  title="16:9 responsive embed"
+/>
+```
+
+`w-full` imposta `width: 100%` tramite Tailwind. Senza questa classe, l'iframe usa la larghezza predefinita del browser (di solito 300px), risultando danneggiato sugli schermi larghi.
+
+Per i contenuti che non sono in formato 16:9, come un prototipo Figma o un dashboard, usa la sintassi Tailwind per i rapporti d'aspetto arbitrari:
+
+```html
+<iframe
+  className="w-full aspect-[4/3]"
+  src="https://example.com/embed"
+  title="4:3 responsive embed"
+/>
+```
+
+Sostituisci `4/3` con il rapporto più adatto al contenuto. Usa `aspect-[1/1]` per gli incorporamenti quadrati, `aspect-[21/9]` per i formati ultrawide e così via.
+
+## Vimeo
+
+I video Vimeo vengono incorporati tramite un iframe standard che punta all'URL del player:
+
+```html
+<iframe
+  className="w-full aspect-video rounded-xl"
+  src="https://player.vimeo.com/video/VIDEO_ID"
+  title="Vimeo video player"
+  allow="autoplay; fullscreen; picture-in-picture"
+  allowFullScreen
+/>
+```
+
+Sostituisci `VIDEO_ID` con l'ID numerico di qualsiasi URL Vimeo (il numero dopo `vimeo.com/`). L'attributo `allow` concede al player incorporato i permessi per la modalità a schermo intero e l'immagine nell'immagine.
+
+<Tip>
+Per i video YouTube, usa il componente [`<YouTube>` dedicato](/it/content/youtube) invece di un iframe semplice. Carica il player in modo differito e rimuove i suggerimenti di video correlati.
+</Tip>
+
+## Incorporamenti comuni
+
+<AccordionGroup>
+  <Accordion title="CodePen" icon="codepen">
+    Recupera l'URL di incorporamento dal pulsante "Embed" di CodePen. Il parametro `default-tab` controlla quale pannello viene mostrato per primo (`result`, `html`, `css` o `js`).
+
+    ```html
+    <iframe
+      height="400"
+      style={{width: '100%'}}
+      src="https://codepen.io/USERNAME/embed/PEN_ID?default-tab=result"
+      title="CodePen Embed"
+      allowFullScreen
+    />
+    ```
+  </Accordion>
+
+  <Accordion title="CodeSandbox" icon="cube">
+    Gli incorporamenti CodeSandbox supportano parametri di query per la dimensione del carattere, il tema e il file da visualizzare. L'attributo `sandbox` controlla le operazioni consentite all'iframe. CodeSandbox richiede diverse autorizzazioni per eseguire il codice nel browser.
+
+    ```html
+    <iframe
+      src="https://codesandbox.io/embed/SANDBOX_ID?fontsize=14&theme=dark"
+      style={{width: '100%', height: '500px', border: 0, borderRadius: '4px', overflow: 'hidden'}}
+      title="CodeSandbox"
+      allow="accelerometer; ambient-light-sensor; camera; encrypted-media; geolocation; gyroscope; hid; microphone; midi; payment; usb; vr; xr-spatial-tracking"
+      sandbox="allow-forms allow-modals allow-popups allow-presentation allow-same-origin allow-scripts"
+    />
+    ```
+  </Accordion>
+
+  <Accordion title="Figma" icon="figma">
+    Apri un file Figma, fai clic su **Share**, quindi su **Get embed code**. L'URL va inserito nell'attributo `src`. Gli incorporamenti Figma funzionano al meglio con un'altezza di `450px` o superiore; le altezze inferiori tagliano la barra degli strumenti.
+
+    ```html
+    <iframe
+      style={{border: '1px solid rgba(0, 0, 0, 0.1)'}}
+      width="100%"
+      height="450"
+      src="https://www.figma.com/embed?embed_host=share&url=FIGMA_URL"
+      allowFullScreen
+    />
+    ```
+  </Accordion>
+
+  <Accordion title="Loom" icon="video">
+    Copia l'ID del video da qualsiasi link di condivisione Loom (la stringa dopo `loom.com/share/`). Per impostazione predefinita, gli incorporamenti Loom vengono riprodotti automaticamente al passaggio del mouse.
+
+    ```html
+    <iframe
+      src="https://www.loom.com/embed/VIDEO_ID"
+      width="100%"
+      height="400"
+      allowFullScreen
+    />
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Prossimi passaggi
+
+<Columns cols={3}>
+  <Card title="Immagini" icon="image" href="/it/content/images">
+    Immagini Markdown, dimensioni e didascalie
+  </Card>
+  <Card title="Incorporamenti YouTube" icon="youtube" href="/it/content/youtube">
+    Video e Shorts di YouTube
+  </Card>
+  <Card title="Video" icon="video" href="/it/content/videos">
+    File MP4 e WebM locali
+  </Card>
+</Columns>
