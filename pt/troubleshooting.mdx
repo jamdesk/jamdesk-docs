@@ -1,0 +1,82 @@
+---
+title: Solução de problemas
+description: Correções rápidas para problemas comuns do Jamdesk, incluindo falhas de build, verificação de DNS, conexões com GitHub e dados de análise ausentes.
+---
+
+Comece aqui quando algo não estiver funcionando. Cada seção apresenta uma solução rápida e um link para o guia detalhado na Central de Ajuda.
+
+<Note>
+  Para dúvidas sobre conta, cobrança ou produto que não estejam cobertas aqui, acesse diretamente a [Central de Ajuda](/pt/help/faq).
+</Note>
+
+## Falhas de build
+
+Seu dashboard mostra um build como "Failed". A maioria das falhas ocorre por um de três motivos: uma página MDX com uma importação ou um componente inválido, uma edição inválida em `docs.json` (colchetes não fechados, vírgulas à direita após o último item do array) ou uma página listada na navegação de `docs.json` que não existe como arquivo `.mdx`. Os dois primeiros problemas aparecem localmente com `jamdesk dev` antes mesmo de chegarem a um build implantado. Executá-lo uma vez antes de fazer push costuma evitar uma rodada extra.
+
+<Tip>
+O log de build no seu dashboard mostra o arquivo e a linha exatos onde o erro ocorreu. Comece por ali. Quase sempre ele aponta o problema real, não apenas o sintoma.
+</Tip>
+
+Para códigos de erro específicos, consulte [Falhas de build](/pt/help/troubleshooting/build-failures) e a [Referência de erros](/pt/help/troubleshooting/error-reference).
+
+## Domínio personalizado não é verificado
+
+O domínio continua como "Pending" depois que você adicionou os registros DNS? Siga estas etapas na ordem:
+
+1. Confirme se você adicionou o registro **TXT** `_jamdesk.<hostname>`. O roteamento não é ativado sem ele, e a ausência do TXT é a causa mais comum de um domínio Pending. O hostname é o domínio completo que você está verificando (para `docs.example.com`, o nome do registro TXT é `_jamdesk.docs.example.com`).
+2. Confirme se você adicionou um registro **CNAME** (não um registro A) para subdomínios.
+3. Se você usa Cloudflare, defina o proxy como **DNS only** (nuvem cinza) para ambos os registros.
+4. Verifique a propagação em [whatsmydns.net](https://www.whatsmydns.net/).
+
+```bash
+# Verify the TXT verification record
+dig TXT _jamdesk.docs.yourdomain.com
+
+# Verify your CNAME is resolving
+dig CNAME docs.yourdomain.com
+```
+
+Um detalhe menos óbvio que vale a pena conhecer: mesmo depois que `dig` mostrar que seus registros estão sendo resolvidos, o dashboard ainda pode informar "Pending" por até 30 minutos. O verificador fica atrás de resolvedores DNS upstream que armazenam em cache respostas DNS negativas, e essa janela de cache precisa expirar antes que uma nova verificação seja bem-sucedida. Se tudo for resolvido localmente, mas o dashboard ainda não tiver sido atualizado, aguarde meia hora antes de presumir um problema mais complexo.
+
+[Solucionar problemas de DNS](/pt/help/troubleshooting/dns-issues) aborda problemas específicos de cada provedor.
+
+## A especificação OpenAPI válida falha na validação
+
+`jamdesk dev` rejeita uma especificação que você sabe que é válida, com erros como `#/servers/0/variables/host must NOT have unevaluated properties` — geralmente em variáveis de servidor que contêm uma `description` ou em uma licença que tem apenas um `name`. A especificação está correta; o problema está na cópia do CLI do metaesquema OpenAPI 3.1. O npm 12 bloqueia scripts de instalação de pacotes por padrão, ignorando a etapa que corrige dois defeitos conhecidos nesse esquema.
+
+Atualize o CLI — a versão 1.1.167 e posteriores corrigem o esquema no momento da validação, portanto a etapa de instalação deixa de ser relevante:
+
+```bash
+npm install -g jamdesk@latest
+```
+
+Se você estiver fixado em uma versão mais antiga, `npm install -g --allow-scripts=jamdesk jamdesk` permite que a etapa de instalação seja executada.
+
+## Repositório do GitHub não aparece
+
+Se o repositório não estiver na lista quando você criar um projeto, o aplicativo GitHub do Jamdesk provavelmente não está instalado na organização do repositório, ou o acesso ao repositório está definido como "Selected repositories" sem incluir o seu. Autorize novamente em [github.com/settings/installations](https://github.com/settings/installations) e conceda acesso a "All repositories" ou ao repositório específico de que você precisa.
+
+Consulte [Problemas do GitHub](/pt/help/troubleshooting/github-issues) para problemas de Webhook e permissões.
+
+## Dados de análise ausentes
+
+Há alguns motivos comuns para seu dashboard mostrar zero visitantes. Os dados de análise podem levar até 24 horas para aparecer após o primeiro deploy de um site, portanto projetos recém-criados podem parecer vazios por algum tempo. Bloqueadores de anúncios e o Do Not Track impedem que parte das visitas seja contabilizada, então seus números sempre ficarão abaixo dos logs do servidor. Se nenhum desses casos se aplicar, confirme se o site está realmente implantado e acessível publicamente.
+
+[Problemas de análise](/pt/help/troubleshooting/analytics-issues) explica em mais detalhes os dados atrasados ou ausentes.
+
+## Problemas de login
+
+Não consegue entrar ou está sendo redirecionado de volta para a tela de login? Limpe o cache e os cookies de `dashboard.jamdesk.com` e tente novamente em uma janela anônima. Se você entrar com o GitHub, o e-mail do GitHub precisa corresponder ao e-mail da sua conta do Jamdesk.
+
+Consulte [Problemas de login](/pt/help/troubleshooting/login-issues) para ver as etapas de recuperação da conta.
+
+## Ainda com problemas?
+
+<Columns cols={2}>
+  <Card title="Central de Ajuda" icon="life-ring" href="/pt/help/faq">
+    Consulte todos os guias de solução de problemas
+  </Card>
+  <Card title="Entrar em contato com o suporte" icon="headset" href="/pt/help/support/contact">
+    Fale diretamente com a equipe do Jamdesk
+  </Card>
+</Columns>

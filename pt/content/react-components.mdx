@@ -1,0 +1,253 @@
+---
+title: Componentes React customizados
+description: >-
+  Defina e use componentes React personalizados em arquivos MDX com renderização no servidor, estilos Tailwind e acesso aos componentes integrados do Jamdesk.
+---
+
+Defina componentes React personalizados diretamente em arquivos MDX. Exporte um componente de função de seta no início do arquivo e use-o em linha. Os componentes são renderizados no servidor durante o build, com acesso a todos os componentes integrados do Jamdesk e às classes Tailwind.
+
+## Uso básico
+
+Defina um componente usando `export const` no início do arquivo MDX:
+
+```mdx
+export const Highlight = ({ children, color }) => (
+  <span style={{ backgroundColor: color, padding: '0.2em 0.4em', borderRadius: '4px' }}>
+    {children}
+  </span>
+);
+
+This text has a <Highlight color="#ffeb3b">yellow highlight</Highlight> in it.
+```
+
+<Note>
+Os nomes dos componentes devem usar PascalCase (começar com uma letra maiúscula).
+</Note>
+
+## Exemplo: cartão hero
+
+Este é um exemplo mais complexo, com várias props e classes Tailwind:
+
+```mdx
+export const HeroCard = ({ title, description, href, icon }) => (
+  <a
+    href={href}
+    className="group block p-6 rounded-lg border border-gray-200 hover:border-blue-500 transition-colors"
+  >
+    <div className="flex items-center gap-3 mb-2">
+      <Icon icon={icon} />
+      <h3 className="font-semibold text-lg">{title}</h3>
+    </div>
+    <p className="text-gray-600">{description}</p>
+  </a>
+);
+
+<div className="grid grid-cols-2 gap-4">
+  <HeroCard
+    title="Getting started"
+    description="Learn the basics"
+    href="/quickstart"
+    icon="rocket"
+  />
+  <HeroCard
+    title="Components"
+    description="Explore available components"
+    href="/components/overview"
+    icon="puzzle-piece"
+  />
+</div>
+```
+
+## Como usar componentes integrados
+
+Seus componentes personalizados têm acesso a todos os componentes integrados do Jamdesk. Não é necessário importar nada:
+
+```mdx
+export const FeatureCard = ({ title, children }) => (
+  <Card title={title} icon="star">
+    {children}
+    <Tip>This tip is inside a custom component!</Tip>
+  </Card>
+);
+
+<FeatureCard title="My Feature">
+  <Note>Notes work inside custom components too!</Note>
+</FeatureCard>
+```
+
+Componentes integrados por categoria:
+
+| Categoria | Componentes |
+|----------|-----------|
+| Destaques | `Note`, `Tip`, `Info`, `Warning`, `Check`, `Danger` |
+| Layout | `Card`, `Columns`, `Tabs`, `Tab`, `Accordion`, `Steps`, `Step`, `View` |
+| Mídia | `Frame`, `Icon`, `Badge`, `Tooltip` |
+| Código | `CodeGroup` |
+| Documentação de API | `ParamField`, `ResponseField`, `Expandable` |
+
+## Limitações
+
+- **Somente funções de seta**: use a sintaxe `export const`. A sintaxe `export function` não é compatível.
+- **Sem imports**: não é possível importar pacotes externos ou outros arquivos.
+- **Sem hooks**: os hooks do React (`useState`, `useEffect`, `useRef`, etc.) não estão disponíveis. Os componentes são renderizados no servidor durante o build, e os hooks só funcionam no cliente. Para componentes interativos, use arquivos de snippet (consulte a seção de solução de problemas abaixo).
+- **Somente no servidor**: os componentes são renderizados no servidor; não há interatividade no cliente nem manipuladores de eventos.
+- **Somente Tailwind**: use classes CSS do Tailwind para estilização; CSS-in-JS não está disponível.
+- **Sintaxe estrita**: erros de sintaxe em componentes em linha farão o build falhar com uma mensagem de erro clara.
+- **Nomes em PascalCase**: os nomes dos componentes devem começar com uma letra maiúscula e conter somente letras e números (sem sublinhados).
+
+<Warning>
+**Precisa de hooks do React?** Os componentes em linha não podem usar `useState`, `useEffect` ou outros hooks, pois são renderizados no servidor durante o build. Para componentes interativos que precisam de estado ou efeitos, crie um arquivo de snippet com a diretiva `'use client'` (consulte a seção de solução de problemas abaixo).
+</Warning>
+
+## Práticas recomendadas
+
+<Steps>
+<Step title="Mantenha os componentes simples">
+Os componentes em linha devem ser apenas de apresentação. Para lógicas complexas, solicite um componente integrado.
+</Step>
+<Step title="Use HTML semântico">
+Garanta que seus componentes sejam acessíveis usando elementos HTML e atributos ARIA adequados.
+</Step>
+<Step title="Faça testes completos">
+Visualize sua documentação localmente para verificar se os componentes são renderizados corretamente nos modos claro e escuro.
+</Step>
+</Steps>
+
+## Solução de problemas
+
+<Accordion title="Erro de componente não encontrado">
+**Erro:** `Expected component 'MyComponent' to be defined`
+
+**Causas:**
+- O nome do componente não usa PascalCase (deve começar com uma letra maiúscula)
+- Erro de sintaxe na definição do componente
+- Tag de fechamento ou parêntese ausente
+
+**Solução:** verifique se sua exportação segue este padrão:
+```mdx
+export const MyComponent = ({ prop }) => (
+  <div>{prop}</div>
+);
+```
+</Accordion>
+
+<Accordion title="O build falha com erro de sintaxe">
+**Erro:** o build falha mencionando Babel ou sintaxe JSX.
+
+**Causas:**
+- Sintaxe JSX inválida no componente
+- Tags ou colchetes não fechados
+- Uso de recursos JavaScript sem suporte
+
+**Solução:** verifique se seu JSX é válido. Problemas comuns:
+- Todas as tags devem ser fechadas (`<img />`, não `<img>`)
+- Use `className` em vez de `class`
+- Envolva vários elementos em um fragmento `<>...</>` ou em um elemento pai
+</Accordion>
+
+<Accordion title="O componente substitui um aviso integrado">
+**Aviso:** `Inline component(s) override built-in: Note`
+
+**Causa:** seu componente em linha tem o mesmo nome de um componente integrado.
+
+**Solução:** renomeie seu componente para evitar conflitos:
+```mdx
+// Instead of: export const Note = ...
+export const CustomNote = ({ children }) => (
+  <div className="my-note">{children}</div>
+);
+```
+</Accordion>
+
+<Accordion title="Os estilos não são aplicados">
+**Problema:** as classes Tailwind não funcionam.
+
+**Causas:**
+- Uso de CSS-in-JS ou objetos de estilo em linha (suporte limitado)
+- A classe Tailwind não foi incluída no build
+
+**Solução:** use classes utilitárias padrão do Tailwind. Para estilos personalizados, use a prop `style` em linha com valores simples:
+```mdx
+export const Highlight = ({ children }) => (
+  <span style={{ backgroundColor: '#ffeb3b' }}>{children}</span>
+);
+```
+</Accordion>
+
+<Accordion title="O componente não é renderizado (export function)">
+**Problema:** o componente definido com `export function` não é renderizado.
+
+**Causa:** somente a sintaxe de função de seta `export const` é compatível.
+
+**Solução:** converta sua função para a sintaxe de função de seta:
+```mdx
+// Instead of:
+export function MyComponent({ prop }) {
+  return <div>{prop}</div>;
+}
+
+// Use:
+export const MyComponent = ({ prop }) => (
+  <div>{prop}</div>
+);
+```
+</Accordion>
+
+<Accordion title="O nome do componente tem caracteres inválidos">
+**Problema:** o componente com sublinhados ou caracteres especiais não funciona.
+
+**Causa:** os nomes dos componentes devem ser identificadores PascalCase válidos (somente letras e números).
+
+**Solução:** use somente letras e números no nome do componente:
+```mdx
+// Instead of: export const Hero_Card = ...
+// Instead of: export const my-component = ...
+export const HeroCard = ({ title }) => (
+  <div>{title}</div>
+);
+```
+</Accordion>
+
+<Accordion title="useState não está definido (ou useEffect, useRef, etc.)">
+**Erro:** `ReferenceError: useState is not defined`
+
+**Causa:** os hooks do React não estão disponíveis em componentes em linha. Os componentes em linha são renderizados no servidor durante o processo de build, e os hooks só funcionam em componentes React no cliente.
+
+**Solução:** para componentes interativos que precisam de estado ou efeitos, crie um arquivo de snippet:
+
+1. Crie um arquivo no diretório `/snippets` (por exemplo, `/snippets/counter.tsx`)
+2. Adicione `'use client'` no início do arquivo
+3. Importe-o e use-o no seu MDX
+
+```tsx title="/snippets/counter.tsx"
+'use client';
+
+import { useState } from 'react';
+
+export function Counter() {
+  const [count, setCount] = useState(0);
+  return (
+    <button onClick={() => setCount(c => c + 1)}>
+      Count: {count}
+    </button>
+  );
+}
+```
+
+```mdx title="your-page.mdx"
+import { Counter } from '/snippets/counter';
+
+<Counter />
+```
+</Accordion>
+
+## O que vem a seguir?
+
+<Columns cols={2}>
+  <Card title="Snippets" icon="scissors" href="/pt/content/snippets">
+    Componentes reutilizáveis entre páginas, incluindo componentes interativos com hooks
+  </Card>
+  <Card title="Visão geral dos componentes" icon="puzzle-piece" href="/pt/components/overview">
+    Explore os componentes integrados
+  </Card>
+</Columns>

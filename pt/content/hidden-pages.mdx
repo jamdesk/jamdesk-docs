@@ -1,0 +1,101 @@
+---
+title: Páginas ocultas
+description: Mantenha páginas fora da barra lateral e dos resultados de pesquisa sem excluí-las. Gerencie a visibilidade com frontmatter, docs.json ou controles de SEO.
+---
+
+Algumas páginas não pertencem à barra lateral pública: rascunhos, manuais internos e guias obsoletos aos quais você ainda precisa vincular. As páginas ocultas continuam acessíveis pelo URL direto, mas desaparecem da navegação, da pesquisa, do sitemap e do contexto de IA fornecido aos LLMs.
+
+## Ocultar uma única página
+
+Adicione `hidden: true` ao frontmatter da página:
+
+```mdx
+---
+title: Internal handbook
+hidden: true
+---
+```
+
+A página é renderizada normalmente quando alguém acessa seu URL, mas o Jamdesk:
+
+- Remove-a da barra lateral
+- Adiciona `<meta name="robots" content="noindex, follow">` para que os mecanismos de pesquisa a ignorem
+- Exclui-a de `sitemap.xml`, `llms.txt`, `llms-full.txt` e da pesquisa no site
+
+## Ocultar um grupo ou uma aba inteira
+
+Defina `"hidden": true` em um grupo ou uma aba no `docs.json`:
+
+```json
+{
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Public",
+        "groups": [{ "group": "Guides", "pages": ["intro", "quickstart"] }]
+      },
+      {
+        "tab": "Internal",
+        "hidden": true,
+        "groups": [{ "group": "Runbooks", "pages": ["oncall", "postmortems"] }]
+      }
+    ]
+  }
+}
+```
+
+Todas as páginas sob o nó oculto herdam a regra. O mesmo sinalizador funciona em `tabs`, `groups`, `anchors`, `dropdowns`, `products`, `languages` e `versions`.
+
+## Manter páginas ocultas na pesquisa
+
+Se quiser remover uma aba ou um grupo oculto da barra lateral, mas ainda indexá-lo para a pesquisa do site, respostas de IA e o sitemap, adicione `"searchable": true`:
+
+```json
+{
+  "tab": "Internal",
+  "hidden": true,
+  "searchable": true,
+  "groups": [{ "group": "Runbooks", "pages": ["oncall"] }]
+}
+```
+
+O `hidden: true` do frontmatter em uma página filha ainda tem prioridade. `searchable` apenas reabre os descendentes que não optaram por sair individualmente.
+
+## Controles para todo o projeto
+
+Ambos os sinalizadores ficam em `seo` no `docs.json`:
+
+| Sinalizador | Padrão | Efeito |
+|---|---|---|
+| `seo.indexing` | `"navigable"` | Somente as páginas listadas na navegação aparecem nos artefatos. Defina como `"all"` para incluir todos os arquivos MDX do seu repositório. |
+| `seo.indexHiddenPages` | `false` | Defina como `true` para incluir páginas com `hidden: true` no sitemap, em llms.txt e na pesquisa, além de remover a tag automática de noindex. |
+
+Exemplo:
+
+```json
+{
+  "seo": {
+    "indexing": "all"
+  }
+}
+```
+
+## Referência rápida
+
+| Cenário | Frontmatter | docs.json | Visível na barra lateral | URL direto | No sitemap |
+|---|---|---|---|---|---|
+| Página normal | — | listada | Sim | Sim | Sim |
+| Oculta via frontmatter | `hidden: true` | listada | Não | Sim | Não |
+| Página fora da navegação (órfã) | — | omitida | Não | Sim | Não |
+| Grupo oculto | — | `hidden: true` no grupo | Não | Sim | Não |
+| Grupo oculto e pesquisável | — | `hidden: true, searchable: true` | Não | Sim | Sim |
+| Projeto opta por indexar tudo | — | qualquer valor | Igual ao acima | Sim | Sim |
+
+## Quando usar cada opção
+
+- **Rascunhos e prévias:** `hidden: true` no frontmatter de páginas individuais
+- **Seções internas** para uma equipe pequena: um grupo ou uma aba ocultos
+- **Documentos de conformidade** que devem ser públicos, mas não promovidos: grupo oculto com `searchable: true`
+- **Indexação do repositório inteiro** apenas para fundamentação de IA: `seo.indexing: "all"`
+
+Páginas ocultas não são um controle de acesso. Qualquer pessoa que tenha o URL pode lê-las. Para obter controle de acesso real, consulte [Proteção por senha](/pt/setup/password-protection).

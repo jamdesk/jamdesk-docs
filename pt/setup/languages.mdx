@@ -1,0 +1,308 @@
+---
+title: Suporte a vários idiomas
+description: Sirva documentação em vários idiomas com um seletor de idioma, navegação própria para cada idioma e conteúdo traduzido.
+---
+
+Se a sua documentação precisa alcançar usuários em mais de um idioma, você pode definir árvores de navegação separadas por localidade e permitir que os leitores alternem entre elas usando um menu suspenso na barra superior.
+
+<Note>
+  O Jamdesk não traduz o conteúdo por você. Você fornece os arquivos MDX traduzidos; o Jamdesk gerencia o roteamento, a navegação, o seletor de idioma e os estilos RTL. Traga as traduções do seu próprio fluxo de trabalho (tradutores humanos, tradução automática ou um LLM) e coloque-as em diretórios com prefixo de idioma.
+</Note>
+
+## Configuração
+
+Envolva a navegação em uma matriz `languages`, com cada idioma contendo sua própria estrutura de navegação:
+
+```json docs.json
+{
+  "navigation": {
+    "languages": [
+      {
+        "language": "en",
+        "tabs": [
+          {
+            "tab": "Documentation",
+            "groups": [
+              {
+                "group": "Getting Started",
+                "pages": ["introduction", "quickstart"]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "language": "es",
+        "tabs": [
+          {
+            "tab": "Documentación",
+            "groups": [
+              {
+                "group": "Comenzar",
+                "pages": ["es/introduction", "es/quickstart"]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+## Idiomas compatíveis
+
+| Código | Idioma | Código | Idioma |
+|------|----------|------|----------|
+| `en` | Inglês | `ko` | Coreano |
+| `es` | Espanhol | `pt-BR` | Português (Brasil) |
+| `fr` | Francês | `ru` | Russo |
+| `de` | Alemão | `ar` | Árabe |
+| `it` | Italiano | `hi` | Hindi |
+| `jp` | Japonês | `id` | Indonésio |
+| `cn` | Chinês (simplificado) | `tr` | Turco |
+| `zh-Hant` | Chinês (tradicional) | `vi` | Vietnamita |
+| `nl` | Holandês | `pl` | Polonês |
+| `sv` | Sueco | `cs` | Tcheco |
+| `no` | Norueguês | `ro` | Romeno |
+| `he` | Hebraico | `ua` | Ucraniano |
+| `lv` | Letão | `uz` | Uzbeque |
+
+## Estrutura de diretórios
+
+Organize o conteúdo traduzido em diretórios com prefixo de idioma:
+
+```bash
+my-docs/
+├── docs.json
+├── introduction.mdx          # English (default)
+├── quickstart.mdx
+├── es/
+│   ├── introduction.mdx      # Spanish
+│   └── quickstart.mdx
+├── fr/
+│   ├── introduction.mdx      # French
+│   └── quickstart.mdx
+└── de/
+    ├── introduction.mdx      # German
+    └── quickstart.mdx
+```
+
+Referencie as páginas na navegação usando o caminho completo (com o prefixo de idioma):
+
+```json
+{
+  "language": "es",
+  "tabs": [
+    {
+      "tab": "Documentación",
+      "groups": [
+        {
+          "group": "Comenzar",
+          "pages": ["es/introduction", "es/quickstart"]
+        }
+      ]
+    }
+  ]
+}
+```
+
+## Configurações específicas por idioma
+
+Cada idioma pode ter sua própria configuração:
+
+```json
+{
+  "navigation": {
+    "languages": [
+      {
+        "language": "en",
+        "tabs": [...]
+      },
+      {
+        "language": "es",
+        "tabs": [...]
+      }
+    ]
+  }
+}
+```
+
+<Note>
+Os banners são definidos globalmente no nível superior de `docs.json` (consulte [Banner](/pt/config/docs-json-reference#banner)), não por idioma. Um único banner é exibido em todas as páginas de todos os idiomas.
+</Note>
+
+## Traduzindo rótulos da barra de navegação
+
+Os links da navegação superior e o CTA principal aceitam um objeto `labels` opcional com substituições por idioma. Quando o leitor está em uma URL com prefixo de idioma (por exemplo, `/fr/...`), a substituição correspondente é usada; caso contrário, o `label` padrão é exibido.
+
+```json docs.json
+{
+  "navbar": {
+    "links": [
+      {
+        "label": "Blog",
+        "labels": { "fr": "Blog", "es": "Blog" },
+        "href": "/blog"
+      },
+      {
+        "label": "Pricing",
+        "labels": { "fr": "Tarifs", "es": "Precios" },
+        "href": "/pricing"
+      }
+    ],
+    "primary": {
+      "type": "button",
+      "label": "Dashboard",
+      "labels": { "fr": "Tableau de bord", "es": "Panel" },
+      "href": "https://app.example.com"
+    }
+  }
+}
+```
+
+As strings de interface integradas (o botão **Search**, o botão **Ask AI** e o menu suspenso de abas **More**) são traduzidas automaticamente para todos os idiomas compatíveis. Não é necessário configurá-las.
+
+## Idioma padrão
+
+O primeiro idioma da matriz é o padrão. Os usuários que acessarem sua documentação verão primeiro esse idioma. O seletor de idioma permite que eles alterem a seleção.
+
+## Estrutura de URL
+
+Os prefixos de idioma aparecem nas URLs:
+
+| Idioma | URL |
+|----------|-----|
+| Inglês (padrão) | `docs.example.com/introduction` |
+| Espanhol | `docs.example.com/es/introduction` |
+| Francês | `docs.example.com/fr/introduction` |
+
+## Traduções parciais
+
+Não é necessário traduzir todas as páginas. Se uma página não existir em um idioma, os usuários verão uma mensagem de fallback com um link para a versão em inglês.
+
+Para páginas que não devem ser traduzidas (como a referência da API), você pode referenciar a mesma página em todos os idiomas:
+
+```json
+{
+  "language": "es",
+  "tabs": [
+    {
+      "tab": "API",
+      "groups": [
+        {
+          "group": "Endpoints",
+          "pages": ["api/users", "api/posts"]  // Same as English
+        }
+      ]
+    }
+  ]
+}
+```
+
+## Traduzindo especificações OpenAPI
+
+As páginas de endpoint orientadas por OpenAPI (aquelas com uma diretiva `openapi:` no frontmatter) exibem conteúdo de um arquivo de especificação YAML ou JSON. Para traduzir o resumo do endpoint, as descrições, as dicas de parâmetros e as descrições dos campos do esquema, forneça um arquivo de especificação específico para o idioma junto ao arquivo em inglês.
+
+### Nomenclatura de arquivos
+
+Coloque a especificação traduzida ao lado da original, inserindo o código do idioma antes da extensão:
+
+```bash
+openapi/
+├── api.yaml           # English (default)
+├── api.fr.yaml        # French
+├── api.es.yaml        # Spanish
+└── api.zh.yaml        # Simplified Chinese
+```
+
+Não é necessária nenhuma alteração de configuração ou em `docs.json`. O Jamdesk resolve a especificação correspondente no momento da renderização com base no prefixo de idioma da URL. Uma página em `/fr/api-reference/create-ticket` procura primeiro por `api.fr.yaml` e usa `api.yaml` como fallback se não houver tradução.
+
+### O que traduzir na especificação
+
+Traduza a prosa legível por humanos. Mantenha todos os valores estruturais idênticos entre os idiomas.
+
+| Traduzir | Manter idêntico |
+|-----------|----------------|
+| `info.title`, `info.description` | versão `openapi` / `swagger`, `servers[*].url` |
+| `summary`, `description` de cada operação | caminhos de URL, métodos HTTP, `operationId`, `tags` |
+| `description` de cada parâmetro | nomes de parâmetros (`name`), nomes de campos, chaves de propriedades do esquema |
+| `description` de cada resposta | chaves de códigos de status (`"200"`, `"400"` etc.) |
+| `requestBody.description` | valores de `enum` (`low`, `normal`, `high`), `type`, `format` |
+| `description` do esquema e `description` das propriedades | ponteiros `$ref`, conteúdo das cargas `example` / `examples` |
+
+### Comportamento de fallback
+
+Se uma página for solicitada por uma URL localizada, mas não existir uma especificação traduzida, o Jamdesk renderizará a especificação em inglês dentro do shell da página traduzida. Os usuários verão um bloco de endpoint em vários idiomas, em vez de um erro 404. Esse comportamento corresponde ao comportamento mais amplo de traduções parciais das páginas MDX.
+
+<Note>
+  A visualização local da CLI `jamdesk` (`jamdesk dev`) resolve as especificações OpenAPI apenas pelo nome do arquivo. Ela ainda não aplica a busca pelo sufixo de idioma. Ao trabalhar localmente nas traduções, use a URL de visualização de produção do Jamdesk (`<project>.jamdesk.app/<lang>/...`) ou substitua temporariamente o arquivo de origem. Isso afeta apenas o desenvolvimento local; as renderizações hospedadas e de ISR selecionam corretamente a especificação traduzida.
+</Note>
+
+### Removendo uma especificação específica de idioma
+
+Excluir `api.<lang>.yaml` faz com que a página use a especificação em inglês no próximo carregamento (não é necessário um novo build). Para traduzir novamente do zero, exclua o arquivo e gere-o novamente. Não é necessária nenhuma alteração em `docs.json` — a resolução da especificação é baseada exclusivamente no nome do arquivo.
+
+### Exemplo
+
+Origem `openapi/tickets.yaml`:
+
+```yaml
+info:
+  title: Tickets API
+  description: Manage support tickets.
+paths:
+  /tickets:
+    post:
+      summary: Create a ticket
+      description: Create a new support ticket.
+      operationId: createTicket
+```
+
+Tradução francesa `openapi/tickets.fr.yaml`:
+
+```yaml
+info:
+  title: API Tickets
+  description: Gérez les tickets de support.
+paths:
+  /tickets:
+    post:
+      summary: Créer un ticket
+      description: Créer un nouveau ticket de support.
+      operationId: createTicket
+```
+
+Observe que `/tickets`, `post` e `createTicket` permanecem idênticos. Apenas a prosa é alterada.
+
+## Fluxo de trabalho de tradução
+
+<Steps>
+  <Step title="Comece pelo inglês">
+    Escreva primeiro a documentação em inglês. Ela se torna sua fonte de verdade.
+  </Step>
+  <Step title="Adicione diretórios de idiomas">
+    Crie diretórios para cada idioma de destino (`es/`, `fr/` etc.).
+  </Step>
+  <Step title="Traduza o conteúdo">
+    Copie os arquivos em inglês para os diretórios de idiomas e traduza-os. Mantenha os mesmos nomes de arquivo.
+  </Step>
+  <Step title="Atualize o docs.json">
+    Adicione entradas de idioma à configuração de navegação.
+  </Step>
+</Steps>
+
+## Idiomas RTL
+
+Idiomas escritos da direita para a esquerda, como árabe e hebraico, são compatíveis. O Jamdesk aplica automaticamente estilos RTL quando esses idiomas estão ativos.
+
+## O que vem a seguir?
+
+<Columns cols={2}>
+  <Card title="Visão geral da navegação" icon="sitemap" href="/pt/navigation/overview">
+    Configure abas, grupos e a estrutura das páginas
+  </Card>
+  <Card title="Referência do docs.json" icon="gear" href="/pt/config/docs-json-reference">
+    Opções completas de configuração
+  </Card>
+</Columns>

@@ -1,0 +1,130 @@
+---
+title: Integração com Google Tag Manager
+description: Adicione o ID do contêiner GTM a docs.json para carregar o Google Tag Manager em todas as páginas. Gerencie tags de análise e rastreamento no GTM.
+---
+
+Adicione o ID do contêiner GTM a `docs.json` para carregar o Google Tag Manager em todas as páginas do seu site de documentação. A partir daí, sua equipe de marketing poderá configurar análises, pixels de conversão e rastreamento de eventos inteiramente no GTM.
+
+<Info>
+Os IDs de contêiner do GTM começam com `GTM-`. Se você precisa apenas do Google Analytics, consulte [Integração com Google Analytics](/pt/integrations/google-analytics) para uma configuração mais simples.
+</Info>
+
+## Quando usar o GTM
+
+Use o Google Tag Manager quando precisar de:
+
+- **Várias ferramentas de rastreamento** - GA4, Facebook Pixel, LinkedIn etc.
+- **Controle pela equipe de marketing** - Permita que profissionais de marketing adicionem tags sem ajuda de desenvolvedores
+- **Acionadores avançados** - Rastreie cliques em botões, envios de formulários e visualizações de vídeos
+- **Integração com testes A/B** - Conecte ferramentas como o Google Optimize
+
+Para análises básicas, adicionar o GA4 diretamente é mais simples.
+
+## Como obter o ID do contêiner
+
+1. Acesse o [Google Tag Manager](https://tagmanager.google.com/)
+2. Selecione sua conta e seu contêiner (ou crie novos)
+3. Copie o **Container ID** na parte superior da página (começa com `GTM-`)
+
+## Como adicionar o GTM à documentação
+
+Adicione o ID do contêiner ao seu `docs.json`:
+
+```json docs.json
+{
+  "name": "My Docs",
+  "integrations": {
+    "gtm": {
+      "tagId": "GTM-XXXXXXX"
+    }
+  }
+}
+```
+
+Substitua `GTM-XXXXXXX` pelo ID real do seu contêiner.
+
+## Consentimento de cookies
+
+Você é responsável por configurar banners de consentimento de cookies, caso precise deles. O Jamdesk carrega seu contêiner GTM em todas as páginas, portanto todas as tags configuradas por você serão acionadas para todos os visitantes. Se seus leitores estiverem sujeitos ao GDPR, CCPA ou a regulamentações semelhantes, configure o [modo de consentimento](https://support.google.com/tagmanager/answer/10718549) no GTM ou use uma plataforma de gerenciamento de consentimento. O Jamdesk também pode condicionar o próprio GTM ao consentimento. Consulte [Consentimento de cookies](/pt/integrations/cookie-consent).
+
+## Como configurar o GA4 pelo GTM
+
+Se quiser usar o GA4 pelo GTM em vez de adicioná-lo diretamente:
+
+1. No GTM, acesse **Tags** → **New**
+2. Escolha **Google Analytics: GA4 Configuration**
+3. Insira seu ID de medição do GA4 (começa com `G-`)
+4. Defina o acionador como **All Pages**
+5. **Publish** seu contêiner
+
+<Warning>
+Se você configurar o GA4 pelo GTM, não o adicione também diretamente ao `docs.json`. Isso causa rastreamento duplicado.
+</Warning>
+
+## Como verificar a instalação
+
+### Usando o modo de visualização do GTM
+
+1. No GTM, clique em **Preview** no canto superior direito
+2. Insira a URL do seu site de documentação
+3. Uma janela de depuração mostra quais tags são acionadas em cada página
+
+### Usando as ferramentas de desenvolvedor do navegador
+
+1. Abra seu site com as ferramentas de desenvolvedor (F12)
+2. Acesse a aba **Network**
+3. Filtre por `gtm.js` ou `googletagmanager`
+4. Você deverá ver as requisições sendo feitas
+
+## Tags comuns do GTM para documentação
+
+### Rastrear links externos
+
+Crie uma tag para rastrear quando os usuários clicam em links externos:
+
+1. **Tag**: Google Analytics: GA4 Event
+2. **Event Name**: `click`
+3. **Trigger**: Click - Just Links, em que Click URL não contém seu domínio
+
+### Rastrear o uso da pesquisa
+
+Rastreie quando os usuários interagem com o recurso de pesquisa:
+
+1. **Tag**: Google Analytics: GA4 Event
+2. **Event Name**: `search`
+3. **Trigger**: Custom event correspondente à interação com sua pesquisa
+
+### Rastrear o tempo na página
+
+Entenda quanto tempo os usuários passam lendo:
+
+1. **Tag**: Google Analytics: GA4 Event
+2. **Event Name**: `timing`
+3. **Trigger**: Timer trigger (por exemplo, a cada 30 segundos)
+
+## Solução de problemas
+
+<Accordion title="Tags não são acionadas">
+  1. **Verifique o ID do contêiner** - Deve começar com `GTM-`
+  2. **Publique seu contêiner** - Alterações não publicadas não aparecerão no seu site
+  3. **Use o modo de visualização** - A visualização do GTM mostra quais tags são acionadas em cada página
+</Accordion>
+
+<Accordion title="Dados duplicados no Google Analytics">
+  Se o GA4 estiver configurado das duas formas:
+  - Diretamente em `docs.json` (`integrations.ga4`)
+  - Pelo GTM como uma tag do GA4
+
+  Você obterá visualizações de página duplicadas. Remova uma das configurações.
+</Accordion>
+
+## Artigos relacionados
+
+<Columns cols={2}>
+  <Card title="Google Analytics" icon="chart-simple" href="/pt/integrations/google-analytics">
+    Adicione o GA4 diretamente sem o GTM
+  </Card>
+  <Card title="Análises do projeto" icon="chart-line" href="/pt/setup/project-analytics">
+    Veja as análises integradas do Jamdesk
+  </Card>
+</Columns>

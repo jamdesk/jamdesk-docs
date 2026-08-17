@@ -1,0 +1,188 @@
+---
+title: Links e navegação
+description: Crie links entre páginas, aponte para títulos específicos e referencie URLs externas, com navegação por Cards e verificação de links quebrados.
+---
+
+O MDX é compatível com links Markdown padrão e padrões específicos do Jamdesk para criar links entre páginas, apontar para títulos e referenciar URLs externas.
+
+## Links internos
+
+Crie links para outras páginas da documentação usando caminhos relativos:
+
+```markdown
+Read the [getting started guide](/quickstart) first.
+
+See the [Card component](/components/card) for more options.
+```
+
+<Tip>
+Use caminhos relativos à raiz da documentação, sem a extensão `.mdx`.
+</Tip>
+
+### Link para títulos
+
+Crie um link direto para uma seção usando âncoras:
+
+```markdown
+See [configuration options](/config/docs-json-reference#colors)
+```
+
+Os títulos geram âncoras automaticamente a partir do texto:
+- `## Getting Started` → `#getting-started`
+- `## API Reference` → `#api-reference`
+
+## Links externos
+
+Crie links para sites externos:
+
+```markdown
+Check the [GitHub repository](https://github.com/example/repo).
+```
+
+Os links externos são abertos automaticamente em uma nova aba com configurações de segurança.
+
+## Links com Cards
+
+Para uma navegação mais destacada, use Cards em vez de links inline:
+
+```mdx
+<Card title="Quickstart" icon="rocket" href="/quickstart">
+  Get up and running in 5 minutes
+</Card>
+```
+
+<Card title="Quickstart" icon="rocket" href="/pt/quickstart">
+  Comece a usar em 5 minutos
+</Card>
+
+### Grupos de Cards
+
+Agrupe links relacionados:
+
+```mdx
+<Columns cols={2}>
+  <Card title="Installation" icon="download" href="/cli/overview">
+    Install the CLI
+  </Card>
+  <Card title="Configuration" icon="gear" href="/config/docs-json-reference">
+    Configure your project
+  </Card>
+</Columns>
+```
+
+<Columns cols={2}>
+  <Card title="Instalação" icon="download" href="/pt/cli/overview">
+    Instale o CLI
+  </Card>
+  <Card title="Configuração" icon="gear" href="/pt/config/docs-json-reference">
+    Configure seu projeto
+  </Card>
+</Columns>
+
+## Práticas recomendadas
+
+<AccordionGroup>
+  <Accordion title="Use texto descritivo nos links" icon="font" defaultOpen>
+    Indique aos leitores para onde o link leva:
+
+    ```markdown
+    {/* Good */}
+    Learn more in our [authentication guide](/quickstart).
+
+    {/* Avoid */}
+    For more info, [click here](/quickstart).
+    ```
+  </Accordion>
+
+  <Accordion title="Aponte para o nível correto" icon="sitemap">
+    Aponte para a seção relevante mais específica:
+
+    ```markdown
+    {/* Good - links to specific section */}
+    Configure [OAuth settings](/quickstart#whats-next).
+
+    {/* Less helpful - links to entire page */}
+    See the [auth docs](/quickstart) for OAuth settings.
+    ```
+  </Accordion>
+
+  <Accordion title="Mantenha os links atualizados" icon="rotate">
+    Links quebrados frustram os leitores. Execute verificações de links regularmente:
+
+    ```bash
+    jamdesk broken-links
+    ```
+
+    Isso verifica sua documentação e relata todos os links internos quebrados.
+  </Accordion>
+</AccordionGroup>
+
+## Verificar links quebrados
+
+O CLI do Jamdesk pode verificar se há links quebrados:
+
+```bash
+jamdesk broken-links
+```
+
+Exemplo de saída:
+
+```text
+docs/getting-started.mdx:15 - /docs/quikstart
+  Did you mean: /docs/quickstart
+
+Found 1 broken link in 45 files.
+```
+
+Execute este comando antes de fazer o deploy para detectar erros de digitação e referências desatualizadas.
+
+### Corrigir links quebrados automaticamente
+
+Quando um link quebrado tem um destino correto inequívoco (uma âncora com erro de digitação ou uma divergência de âncora entre localidades porque uma página traduzida renomeou seus títulos), `jamdesk fix` o corrige para você:
+
+```bash
+jamdesk fix --dry-run   # preview every planned fix, write nothing
+jamdesk fix             # apply after a y/N confirmation
+```
+
+O comando só reescreve um link quando a âncora corrigida é um título real na página de destino, deixando os casos ambíguos para revisão manual. Consulte [Corrigir links quebrados automaticamente](/pt/cli/fix-broken-links).
+
+### Como os links internos são detectados
+
+Links sem `https://` são tratados como internos e validados em relação às páginas da documentação. O validador verifica se a página de destino existe na navegação do `docs.json`.
+
+Para sites que usam `hostAtDocs` (documentação hospedada em um subcaminho como `/docs`), os links internos recebem automaticamente o prefixo durante a execução. Escreva os caminhos relativos à raiz da documentação; o prefixo `/docs` será adicionado automaticamente:
+
+```markdown
+{/* Just write the docs path — auto-prefixed to /docs/config/docs-json-reference */}
+See the [Reference](/config/docs-json-reference).
+```
+
+<Note>
+  Links que não são da documentação (como páginas de marketing) devem usar URLs completas: `https://example.com/pricing`.
+  Qualquer link `/path` no conteúdo da documentação é tratado como um link interno da documentação.
+</Note>
+
+## Renomear páginas
+
+Quando você renomeia uma página, os links são quebrados. Use o CLI para atualizar todas as referências:
+
+```bash
+jamdesk rename api/old-name.mdx api/new-name.mdx
+```
+
+Isso:
+- Renomeia o arquivo
+- Atualiza a navegação do `docs.json`
+- Corrige os links em todas as outras páginas
+
+## O que vem a seguir?
+
+<Columns cols={2}>
+  <Card title="Otimização de SEO" icon="magnifying-glass-chart" href="/pt/content/seo">
+    Melhore a descoberta e os metadados
+  </Card>
+  <Card title="Frontmatter" icon="file-lines" href="/pt/content/frontmatter">
+    Defina títulos, descrições e campos de SEO
+  </Card>
+</Columns>

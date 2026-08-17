@@ -1,0 +1,880 @@
+---
+title: Referência de docs.json
+description: "Referência completa de cada campo do docs.json: temas, cores, navegação, abas, integração com OpenAPI, marca, SEO, analytics e chat de IA."
+---
+
+O arquivo `docs.json` é a configuração central do seu site de documentação Jamdesk.
+
+<Tip>
+  As principais configurações do seu docs.json são exibidas no Dashboard, em
+  **Project Settings → Configuration Highlights**. Essa visualização é somente
+  leitura e é atualizada automaticamente após cada build bem-sucedido.
+</Tip>
+
+## Campos obrigatórios
+
+### name
+
+**Tipo:** `string` (obrigatório)
+
+O nome do seu site de documentação. Exibido no cabeçalho e na aba do navegador.
+
+```json
+{ "name": "Acme API Docs" }
+```
+
+### theme
+
+**Tipo:** `"jam" | "nebula" | "pulsar" | "halo"` (obrigatório)
+
+<Tabs>
+  <Tab title="jam">
+    Design limpo e moderno com a fonte Inter. Navegação baseada no cabeçalho.
+
+    **Ideal para:** a maioria dos sites de documentação e referências de API
+  </Tab>
+  <Tab title="nebula">
+    Visual leve e descontraído com JetBrains Mono.
+
+    **Ideal para:** documentação narrativa e guias
+  </Tab>
+  <Tab title="pulsar">
+    Visual marcante e de alto contraste com navegação na barra lateral.
+
+    **Ideal para:** referências técnicas densas
+  </Tab>
+  <Tab title="halo">
+    Visual acolhedor e suave com Figtree, superfícies bastante arredondadas e conteúdo elevado em um cartão.
+
+    **Ideal para:** leitura confortável de textos longos e documentação de produtos acessível
+  </Tab>
+</Tabs>
+
+### colors
+
+**Tipo:** `object` (obrigatório)
+
+| Campo | Tipo | Obrigatório | Descrição |
+|-------|------|-------------|-----------|
+| `primary` | string (hex) | Sim | Cor principal da marca |
+| `light` | string (hex) | Não | Cor de destaque do tema claro |
+| `dark` | string (hex) | Não | Cor de destaque do tema escuro |
+
+```json
+{
+  "colors": {
+    "primary": "#635BFF",
+    "light": "#7C75FF",
+    "dark": "#4F46E5"
+  }
+}
+```
+
+## Marca
+
+### favicon
+
+**Tipo:** `string` ou `object`
+
+Caminho para o arquivo do favicon (SVG recomendado). Forneça uma única imagem para ambos os modos ou variantes separadas `light` / `dark`.
+
+| Campo | Tipo | Descrição |
+|-------|------|-----------|
+| `light` | string | Favicon para o modo claro (obrigatório ao usar o formato de objeto) |
+| `dark` | string | Favicon para o modo escuro (opcional; usa `light` como fallback) |
+
+```json
+{ "favicon": "/images/favicon.svg" }
+```
+
+```json
+{
+  "favicon": {
+    "light": "/images/favicon.svg",
+    "dark": "/images/favicon-dark.svg"
+  }
+}
+```
+
+### logo
+
+**Tipo:** `object`
+
+| Campo | Tipo | Descrição |
+|-------|------|-----------|
+| `light` | string | Logo para o modo claro |
+| `dark` | string | Logo para o modo escuro |
+| `href` | string | URL aberta ao clicar no logo |
+
+```json
+{
+  "logo": {
+    "light": "/images/logo-light.webp",
+    "dark": "/images/logo-dark.webp",
+    "href": "https://yoursite.com"
+  }
+}
+```
+
+## Tipografia
+
+### fonts
+
+**Tipo:** `object` (opcional)
+
+Substitua a fonte padrão do tema para o texto e os títulos. Cada tema inclui uma fonte padrão ajustada. Defina `fonts` somente quando precisar de uma aparência diferente.
+
+Use a mesma fonte em todo o site:
+
+```json
+{
+  "fonts": {
+    "family": "Lora"
+  }
+}
+```
+
+Separe títulos e corpo:
+
+```json
+{
+  "fonts": {
+    "heading": { "family": "Space Grotesk" },
+    "body": { "family": "Inter" }
+  }
+}
+```
+
+| Campo | Tipo | Descrição |
+|-------|------|-----------|
+| `family` | string | Nome da família da fonte. Qualquer Google Font funciona; o build faz o download automaticamente |
+| `weight` | number | Único peso a carregar (por exemplo, `400`). Omita para carregar `400, 500, 600, 700` |
+| `source` | string | URL ou caminho relativo a `/` para um arquivo de fonte hospedado por você. Ignora o Google Fonts |
+| `format` | `"woff"` \| `"woff2"` | Obrigatório quando `source` é definido |
+
+Tanto `heading` quanto `body` aceitam os mesmos campos. Consulte [Tematização → Tipografia](/pt/customization/theming#tipografia) para obter orientações sobre como escolher fontes.
+
+## Aparência
+
+### appearance
+
+**Tipo:** `object` (opcional)
+
+Controle o comportamento padrão do modo escuro do seu site.
+
+```json
+{
+  "appearance": {
+    "default": "dark",
+    "strict": true
+  }
+}
+```
+
+| Campo | Tipo | Padrão | Descrição |
+|-------|------|--------|-----------|
+| `default` | `"system"` \| `"light"` \| `"dark"` | `"system"` | Modo inicial para visitantes de primeira viagem |
+| `strict` | boolean | `false` | Quando `true`, oculta o alternador da barra de navegação para que os visitantes permaneçam em `default` |
+
+Consulte [Tematização → Modo escuro](/pt/customization/theming#modo-escuro) para saber como o alternador funciona.
+
+## Metadados da página
+
+### metadata
+
+**Tipo:** `object` (opcional)
+
+Controle os metadados exibidos em todas as páginas de documentação.
+
+```json
+{
+  "metadata": {
+    "timestamp": true
+  }
+}
+```
+
+| Campo | Tipo | Padrão | Descrição |
+|-------|------|--------|-----------|
+| `timestamp` | boolean | `false` | Quando `true`, exibe uma linha no estilo "Last updated on June 15, 2026" no rodapé de todas as páginas. A data vem do último commit do Git que alterou a página, portanto é atualizada automaticamente a cada build. |
+
+A data é exibida no site publicado e em `jamdesk dev`. Ela reflete o commit mais recente que alterou o arquivo de cada página, portanto as páginas que você não editou mantêm a data original.
+
+## Banner
+
+Exiba uma barra de anúncio do site fixada no topo de todas as páginas, acima do cabeçalho, em largura total e na cor de destaque do seu tema. Use-a para lançamentos, migrações, períodos de manutenção ou qualquer mensagem que todos os visitantes devam ver.
+
+```json
+{
+  "banner": {
+    "content": "🎉 Version 2.0 is live! Read the [changelog](/changelog).",
+    "dismissible": true
+  }
+}
+```
+
+| Campo | Tipo | Padrão | Descrição |
+|-------|------|--------|-----------|
+| `content` | string | - | **Obrigatório.** Texto do banner. Aceita formatação inline básica: links `[text](url)`, **negrito** (`**text**`) e *itálico* (`*text*`). Componentes MDX personalizados não são compatíveis. |
+| `dismissible` | boolean | `false` | Quando `true`, exibe um botão de fechar. Depois que um visitante fecha o banner, ele permanece oculto para essa pessoa até que você altere `content`. Editar a mensagem faz com que ele volte a ser exibido. |
+
+O banner é exibido no site publicado e em `jamdesk dev`. Ele é configurado globalmente (um banner para todo o site); banners por aba e por idioma ainda não são compatíveis.
+
+## OpenAPI
+
+### api.openapi
+
+**Tipo:** `string | string[]`
+
+Liste os arquivos de especificação OpenAPI 3.x que você quer que o Jamdesk valide e use nas páginas de endpoints. Use caminhos relativos ao seu `docs.json`.
+
+```json docs.json
+{
+  "api": {
+    "openapi": ["/openapi/api.yaml"]
+  }
+}
+```
+
+Depois de configurar, você pode gerar páginas de endpoints adicionando um campo `openapi` ao frontmatter de uma página:
+
+```mdx
+---
+title: Create Ticket
+openapi: /openapi/api.yaml POST /tickets
+---
+```
+
+Se você tiver apenas uma especificação listada, também poderá usar o formato curto:
+
+```mdx
+---
+title: Create Ticket
+openapi: POST /tickets
+---
+```
+
+Consulte [Exemplo de OpenAPI](/pt/api-reference/openapi-example) para ver uma página de endpoint funcional e [Estrutura de diretórios](/pt/setup/directory-structure) para saber onde colocar os arquivos.
+
+Se o seu site for multilíngue, coloque um arquivo `<spec>.<lang>.<ext>` ao lado de cada especificação de origem (por exemplo, `openapi/api.fr.yaml`), e o Jamdesk o disponibilizará nas URLs desse idioma. Consulte [Tradução de especificações OpenAPI](/pt/setup/languages#traduzindo-especificações-openapi).
+
+### api.examples.languages
+
+**Tipo:** `string[]`
+**Padrão:** `["curl", "python", "javascript"]`
+
+Escolha quais linguagens de programação aparecem nos exemplos de código de API gerados automaticamente nas páginas `openapi:`. A ordem do array determina a ordem de exibição das abas, e a primeira linguagem é selecionada por padrão.
+
+**Valores compatíveis:** `curl`, `bash`, `python`, `javascript`, `go`, `ruby`, `csharp`, `java`, `rust`, `php`
+
+<Note>`bash` é um alias de `curl`; ambos produzem a mesma saída. Use o rótulo de sua preferência.</Note>
+
+```json All supported languages
+{
+  "api": {
+    "examples": {
+      "languages": ["curl", "python", "javascript", "go", "ruby", "csharp", "java", "rust", "php"]
+    }
+  }
+}
+```
+
+```json Custom subset
+{
+  "api": {
+    "examples": {
+      "languages": ["python", "javascript", "go"]
+    }
+  }
+}
+```
+
+### api.examples.defaults
+
+**Tipo:** `"required" | "all"`
+**Padrão:** `"all"`
+
+Controle quais parâmetros aparecem nos exemplos de código gerados automaticamente.
+
+| Valor | Comportamento |
+|-------|---------------|
+| `"all"` | Os exemplos incluem todos os parâmetros com valores de placeholder |
+| `"required"` | Os exemplos incluem somente os parâmetros marcados como `required` na especificação |
+
+```json
+{
+  "api": {
+    "examples": {
+      "defaults": "required"
+    }
+  }
+}
+```
+
+### api.examples.prefill
+
+**Tipo:** `boolean`
+**Padrão:** `false`
+
+Quando `true`, o [API Playground](/pt/api-reference/playground) preenche previamente os campos de parâmetros com valores `example` da sua especificação OpenAPI.
+
+```json
+{
+  "api": {
+    "examples": {
+      "prefill": true
+    }
+  }
+}
+```
+
+### api.playground.display
+
+**Tipo:** `"interactive" | "simple" | "none"`
+**Padrão:** `"interactive"`
+
+Controla o [API Playground](/pt/api-reference/playground) nas páginas de endpoints. Um botão "Try it" aparece por padrão em todas as páginas `openapi:` e `api:`.
+
+| Valor | Comportamento |
+|-------|---------------|
+| `"interactive"` | Playground completo: preencha parâmetros, gere código e envie requests (padrão) |
+| `"simple"` | Preencha parâmetros e copie o código, mas sem botão Send |
+| `"none"` | Playground desativado |
+
+```json
+{
+  "api": {
+    "playground": {
+      "display": "interactive"
+    }
+  }
+}
+```
+
+Consulte [API Playground](/pt/api-reference/playground) para obter detalhes de uso e saber como substituir a configuração por página.
+
+### api.mdx.auth.method
+
+**Tipo:** `"bearer" | "basic" | "key" | "cobo"`
+
+Método de autenticação usado nos exemplos de código gerados automaticamente. Quando definido, os exemplos incluem o cabeçalho de autenticação apropriado.
+
+| Valor | Formato do cabeçalho |
+|-------|----------------------|
+| `"bearer"` | `Authorization: Bearer <token>` |
+| `"basic"` | `Authorization: Basic <base64>` |
+| `"key"` | Cabeçalho personalizado (consulte `api.mdx.auth.name`) |
+| `"cobo"` | Autenticação específica do Cobo |
+
+```json
+{
+  "api": {
+    "mdx": {
+      "auth": {
+        "method": "bearer"
+      }
+    }
+  }
+}
+```
+
+### api.mdx.auth.name
+
+**Tipo:** `string`
+
+Nome personalizado do cabeçalho para autenticação baseada em chave. Usado somente quando `api.mdx.auth.method` é `"key"`.
+
+```json
+{
+  "api": {
+    "mdx": {
+      "auth": {
+        "method": "key",
+        "name": "X-API-Key"
+      }
+    }
+  }
+}
+```
+
+## Navegação
+
+### tabsPosition
+
+**Tipo:** `"top" | "left"`
+
+Controla onde as abas de navegação são exibidas.
+
+| Valor | Descrição |
+|-------|-----------|
+| `"top"` | As abas aparecem na barra de abas do cabeçalho |
+| `"left"` | As abas aparecem no topo da barra lateral |
+
+O valor padrão depende do seu tema:
+
+| Tema | Padrão |
+|------|--------|
+| jam | `"left"` |
+| nebula | `"left"` |
+| pulsar | `"top"` |
+| halo | `"left"` |
+
+```json
+{ "tabsPosition": "left" }
+```
+
+### anchors
+
+**Tipo:** `array`
+
+Links externos exibidos no topo da barra lateral em todas as páginas.
+
+| Campo | Tipo | Obrigatório | Descrição |
+|-------|------|-------------|-----------|
+| `name` | string | Sim | Texto exibido |
+| `href` | string | Sim | URL (link externo) |
+| `icon` | string | Não | Nome do ícone do Font Awesome |
+
+```json
+{
+  "anchors": [
+    { "name": "Blog", "href": "https://blog.example.com", "icon": "newspaper" }
+  ]
+}
+```
+
+### navigation (estrutura)
+
+**Tipo:** `object`
+
+A estrutura de navegação da sua documentação. Consulte [Navegação](/pt/navigation/overview) para obter documentação detalhada.
+
+As páginas podem ser strings (com título gerado automaticamente a partir do nome do arquivo) ou objetos com um título personalizado:
+
+```json
+"pages": [
+  "introduction",
+  { "page": "content/mdx-basics", "title": "MDX Basics" }
+]
+```
+
+<Accordion title="Exemplo básico de navegação">
+```json
+{
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Docs",
+        "icon": "book-open",
+        "groups": [
+          {
+            "group": "Getting Started",
+            "pages": ["introduction", "quickstart"]
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+</Accordion>
+
+## Barra de navegação e rodapé
+
+### navbar
+
+**Tipo:** `object`
+
+| Campo | Tipo | Descrição |
+|-------|------|-----------|
+| `links` | array | Links de navegação |
+| `links[].label` | string | Texto padrão do botão |
+| `links[].labels` | object | Substituições opcionais por idioma, identificadas pelo código do idioma (por exemplo, `fr`, `es`). Usa `label` como fallback |
+| `links[].icon` | icon | Ícone opcional exibido ao lado do rótulo |
+| `links[].href` | string | URL de destino |
+| `primary` | object | Botão de CTA principal |
+| `primary.label` | string | Texto padrão do botão |
+| `primary.labels` | object | Substituições opcionais por idioma, identificadas pelo código do idioma. Usa `label` como fallback |
+
+```json
+{
+  "navbar": {
+    "links": [
+      {
+        "label": "Blog",
+        "labels": { "fr": "Blog", "es": "Blog" },
+        "href": "/blog"
+      },
+      {
+        "label": "Pricing",
+        "labels": { "fr": "Tarifs", "es": "Precios" },
+        "href": "/pricing"
+      }
+    ],
+    "primary": {
+      "type": "button",
+      "label": "Dashboard",
+      "labels": { "fr": "Tableau de bord", "es": "Panel" },
+      "href": "https://app.example.com"
+    }
+  }
+}
+```
+
+<Note>
+  `labels` é opcional. Documentações em um único idioma podem omiti-lo. Quando definido, o idioma da URL atual (por exemplo, `/fr/...`) seleciona a substituição correspondente.
+</Note>
+
+### footer
+
+**Tipo:** `object`
+
+Configure o rodapé da página com links de redes sociais e colunas de links personalizados.
+
+```json
+{
+  "footer": {
+    "socials": {
+      "github": "https://github.com/yourorg",
+      "x": "https://x.com/yourhandle",
+      "discord": "https://discord.gg/yourserver"
+    },
+    "links": [
+      {
+        "header": "Resources",
+        "items": [
+          { "label": "Blog", "href": "https://example.com/blog" },
+          { "label": "Changelog", "href": "/changelog" }
+        ]
+      }
+    ]
+  }
+}
+```
+
+| Campo | Tipo | Descrição |
+|-------|------|-----------|
+| `socials` | object | URLs das plataformas de redes sociais |
+| `links` | array | Configurações das colunas de links |
+| `links[].header` | string | Título da coluna |
+| `links[].items` | array | Array de objetos `{ label, href }` |
+
+**Plataformas sociais compatíveis:** `github`, `x`, `twitter`, `linkedin`, `discord`, `slack`, `youtube`, `instagram`, `facebook`, `reddit`, `telegram`, `bluesky`, `threads`, `medium`, `hacker-news`, `website`
+
+## Estilo
+
+### styling.latex
+
+**Tipo:** `boolean`
+
+Ative a renderização de fórmulas LaTeX com KaTeX. Quando ativada, você pode usar `$...$` para fórmulas inline e `$$...$$` para equações em bloco.
+
+```json
+{
+  "styling": {
+    "latex": true
+  }
+}
+```
+
+Consulte [Matemática e LaTeX](/pt/content/math) para obter detalhes de uso.
+
+### styling.js
+
+**Tipo:** `string | string[]`
+
+Arquivo(s) JavaScript personalizado(s) a incluir em todas as páginas. Os caminhos são relativos ao diretório de documentação e devem começar com `/`.
+
+```json
+{
+  "styling": {
+    "js": "/script.js"
+  }
+}
+```
+
+Passe um array para vários arquivos:
+
+```json
+{
+  "styling": {
+    "js": ["/chat.js", "/analytics.js"]
+  }
+}
+```
+
+Sem esse campo, o Jamdesk detecta automaticamente arquivos `.js` na raiz do projeto. Consulte [JavaScript personalizado](/pt/customization/custom-javascript) para obter detalhes.
+
+## Pesquisa
+
+### search
+
+**Tipo:** `object` (opcional)
+
+Personalize a barra de pesquisa da documentação. A pesquisa funciona imediatamente; você só precisa desse campo para alterar o texto de placeholder ou exibir páginas populares no estado vazio.
+
+| Campo | Tipo | Padrão | Descrição |
+|-------|------|--------|-----------|
+| `prompt` | string | `Search documentation…` | Texto de placeholder exibido no campo de pesquisa |
+| `popularPages` | array | Quick Start, Introduction | Links de acesso rápido exibidos antes de o visitante inserir uma consulta |
+
+```json
+{
+  "search": {
+    "prompt": "Ask me anything…",
+    "popularPages": [
+      { "title": "Quick Start", "slug": "quickstart", "icon": "rocket" },
+      { "title": "Authentication", "slug": "guides/authentication", "icon": "key" }
+    ]
+  }
+}
+```
+
+#### Páginas populares
+
+Cada entrada em `popularPages` aceita:
+
+| Campo | Tipo | Obrigatório | Descrição |
+|-------|------|-------------|-----------|
+| `title` | string | Sim | Rótulo exibido para o link |
+| `slug` | string | Sim | Caminho da página, sem barra inicial ou extensão `.mdx` (por exemplo, `quickstart` ou `guides/authentication` para o arquivo `guides/authentication.mdx`) |
+| `icon` | string | Não | Nome do ícone do Font Awesome exibido ao lado do link (por exemplo, `rocket` ou `bell`) |
+
+O campo `icon` também aceita o objeto completo `{ "name", "style", "library" }`. Consulte [Formato de objeto do ícone](/pt/content/icons#formato-de-objeto-de-ícone). Quando `popularPages` é omitido, o Jamdesk exibe Quick Start e Introduction por padrão.
+
+## Chat
+
+### chat
+
+**Tipo:** `object` (opcional)
+
+Configure o assistente de chat de IA integrado. O chat é ativado por padrão em todos os sites; você só precisa desse campo para personalizar as perguntas iniciais ou desativá-lo.
+
+| Campo | Tipo | Padrão | Descrição |
+|-------|------|--------|-----------|
+| `enabled` | boolean | `true` | Defina como `false` para remover o painel de chat do seu site |
+| `starterQuestions` | string[] | gerado automaticamente | Até 4 perguntas exibidas quando o chat é aberto (5 a 200 caracteres cada). Geradas automaticamente durante os builds quando omitidas. Defina como `[]` para não exibir nenhuma |
+
+```json
+{
+  "chat": {
+    "starterQuestions": [
+      "How do I get started?",
+      "What API endpoints are available?"
+    ]
+  }
+}
+```
+
+Consulte [Chat de IA](/pt/ai/chat) para saber como o chat funciona e o que os visitantes veem.
+
+## Menu de ações de IA
+
+### contextual
+
+**Tipo:** `object` (opcional)
+
+Configure o menu suspenso de ações de IA exibido em todas as páginas. Ele é ativado por padrão com todas as opções; você só precisa desse campo para personalizar quais opções aparecem ou desativá-lo.
+
+| Campo | Tipo | Padrão | Descrição |
+|-------|------|--------|-----------|
+| `enabled` | boolean | `true` | Defina como `false` para remover o menu de ações de IA do seu site |
+| `options` | array | todas as integradas | Lista de chaves de opções e/ou objetos de opções personalizados |
+
+**Chaves de opções integradas:** `copy`, `view`, `chatgpt`, `claude`, `perplexity`, `gemini`, `mcp`, `cursor`, `vscode`
+
+```json
+{
+  "contextual": {
+    "options": ["copy", "claude", "mcp", "cursor"]
+  }
+}
+```
+
+Adicione opções personalizadas junto às integradas:
+
+```json
+{
+  "contextual": {
+    "options": [
+      "copy",
+      "claude",
+      {
+        "title": "Ask on Discord",
+        "description": "Get help from the community",
+        "icon": "discord",
+        "href": "https://discord.gg/your-server"
+      }
+    ]
+  }
+}
+```
+
+Consulte [Menu de ações de IA](/pt/ai/ai-actions) para ver a lista completa de opções e o formato das opções personalizadas.
+
+## Verificação ortográfica
+
+### spellcheck
+
+**Tipo:** `object` (opcional)
+
+Configure o comando de CLI `jamdesk spellcheck`. Você só precisa desse campo para adicionar palavras específicas do projeto à lista de exclusão.
+
+| Campo | Tipo | Descrição |
+|-------|------|-----------|
+| `ignore` | string[] | Palavras a ignorar durante a verificação ortográfica (nomes de produtos, termos técnicos etc.) |
+
+```json
+{
+  "spellcheck": {
+    "ignore": ["Acme", "kubectl", "Terraform"]
+  }
+}
+```
+
+A CLI inclui mais de 180 termos técnicos integrados (API, GraphQL, Kubernetes, React etc.) e ignora automaticamente o nome do projeto informado no campo `name`. Adicione somente palavras específicas do seu projeto.
+
+Consulte [Visão geral da CLI: verificação ortográfica](/pt/cli/overview) para obter detalhes de uso e saber mais sobre o modo interativo de correção.
+
+## Imagens
+
+### images.convertToWebp
+
+**Tipo:** `boolean` (opcional, padrão `false`)
+
+Ative a conversão automática de assets WebP para PNG e JPG durante os builds. Os arquivos convertidos geralmente ficam 60–80% menores que os originais, sem perda de qualidade visível. As referências no seu MDX, CSS personalizado, JavaScript personalizado e `docs.json` são reescritas automaticamente, portanto você não precisa alterar nenhum caminho.
+
+Favicons, `og:image` e `twitter:image` permanecem no formato original. Nem todo crawler de redes sociais ou cliente de e-mail renderiza WebP de forma confiável, e um cartão de pré-visualização quebrado é pior que um JPG um pouco maior.
+
+```json
+{
+  "images": {
+    "convertToWebp": true
+  }
+}
+```
+
+Consulte [Conversão automática de imagens](/pt/builds/image-optimization) para saber o que é convertido, como o cache funciona e como acompanhar o progresso do build.
+
+## Controle de acesso
+
+### auth.password
+
+**Tipo:** `object` (opcional)
+
+Ative a proteção do seu site por senha compartilhada. A configuração é somente declarativa. Você ainda precisa definir a senha real no [dashboard](/pt/setup/password-protection#rotação-e-revogação-de-sessões) depois da execução do próximo build.
+
+Defina `auth.password.enabled: true` para bloquear todo o site ou liste caminhos em `auth.password.private[]` para proteger somente determinadas páginas. Ambos acionam o mesmo prompt de senha do dashboard no próximo build.
+
+```json
+{
+  "auth": {
+    "password": {
+      "enabled": true,
+      "hint": "Ask your account manager",
+      "public": ["/marketing/**", "/changelog"]
+    }
+  }
+}
+```
+
+| Campo | Tipo | Descrição |
+|-------|------|-----------|
+| `enabled` | `boolean` | Modo para todo o site. Quando `true`, todas as páginas exigem a senha (exceto as marcadas como públicas). |
+| `hint` | `string` (máx. 200 caracteres) | Dica em texto simples exibida na tela de desbloqueio. HTML não é permitido. |
+| `public` | `string[]` | Globs de caminhos que ignoram a senha. Aceita `*` (um segmento) e `**` (recursivo). Uma `/` isolada é rejeitada. |
+| `private` | `string[]` | Caminhos exatos que exigem a senha. Definir esse campo sem `enabled` ativa o modo de páginas específicas. |
+
+Consulte [Proteção por senha](/pt/setup/password-protection) para ver o passo a passo completo, incluindo o fluxo do dashboard e como `public: true` / `private: true` no frontmatter interagem com esses arrays.
+
+## Exemplo completo
+
+<Accordion title="Exemplo completo de docs.json" defaultOpen>
+```json
+{
+  "$schema": "https://jamdesk.com/docs.json",
+  "name": "Acme Documentation",
+  "description": "Learn how to use Acme",
+  "theme": "jam",
+  "colors": {
+    "primary": "#635BFF"
+  },
+  "favicon": "/images/favicon.svg",
+  "logo": {
+    "light": "/images/logo-light.webp",
+    "dark": "/images/logo-dark.webp"
+  },
+  "api": {
+    "openapi": ["/openapi/api.yaml"],
+    "playground": {
+      "display": "interactive"
+    },
+    "examples": {
+      "languages": ["curl", "python", "javascript"],
+      "prefill": true
+    }
+  },
+  "styling": {
+    "latex": true,
+    "js": "/script.js"
+  },
+  "chat": {
+    "starterQuestions": ["How do I get started?", "What endpoints are available?"]
+  },
+  "contextual": {
+    "options": ["copy", "claude", "chatgpt", "mcp", "cursor"]
+  },
+  "spellcheck": {
+    "ignore": ["Acme"]
+  },
+  "anchors": [
+    { "name": "Blog", "href": "https://blog.acme.com", "icon": "newspaper" }
+  ],
+  "navbar": {
+    "links": [
+      { "label": "Support", "href": "/support" }
+    ],
+    "primary": {
+      "type": "button",
+      "label": "Dashboard",
+      "href": "https://app.acme.com"
+    }
+  },
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Docs",
+        "icon": "book-open",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": ["introduction", "quickstart"]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "icon": "code",
+        "groups": [
+          {
+            "group": "Endpoints",
+            "pages": ["api/users", "api/posts"]
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+</Accordion>
+
+## O que vem a seguir?
+
+<Columns cols={2}>
+  <Card title="Visão geral da navegação" icon="sitemap" href="/pt/navigation/overview">
+    Estruture a navegação da sua documentação
+  </Card>
+  <Card title="Menu de ações de IA" icon="wand-magic-sparkles" href="/pt/ai/ai-actions">
+    Personalize o menu suspenso de IA em todas as páginas
+  </Card>
+</Columns>

@@ -1,0 +1,146 @@
+---
+title: Chat com IA
+sidebarTitle: Chat com IA
+description: Todo site de documentação Jamdesk inclui um assistente de chat com IA integrado. Os visitantes fazem perguntas e recebem citações da sua documentação.
+---
+
+Todo site Jamdesk inclui um assistente de chat que responde às perguntas dos visitantes com base na sua documentação. Ele recupera as seções relevantes, envia-as ao Claude e transmite uma resposta com links para as páginas de origem. O chat é habilitado por padrão em todos os planos, sem custo adicional.
+
+As respostas do assistente de chat são exibidas assim:
+
+<YouTube id="XphRq59HO9g" />
+
+As capturas de tela mostram a interface em inglês.
+
+## Casos de uso
+
+<Tabs>
+  <Tab title="Integração da API">
+    Um desenvolvedor que integra sua API pergunta *"How do I authenticate requests?"* e recebe as etapas exatas com um exemplo de código, além de um link para a página de origem.
+  </Tab>
+  <Tab title="Solução de problemas">
+    *"My build is failing with a timeout error"*
+
+    Em vez de consultar várias páginas, o visitante recebe em segundos a correção relevante do seu guia de solução de problemas.
+  </Tab>
+  <Tab title="Referência rápida">
+    Usuários recorrentes fazem perguntas como *"What parameters does the /users endpoint accept?"* e o chat recupera a documentação do endpoint e retorna diretamente a tabela de parâmetros.
+  </Tab>
+</Tabs>
+
+## Como funciona
+
+<Steps>
+  <Step title="O build indexa sua documentação">
+    Durante cada build, o Jamdesk divide suas páginas em seções e armazena essas seções como embeddings pesquisáveis.
+  </Step>
+  <Step title="O visitante faz uma pergunta">
+    O botão "Ask AI" (ou Cmd+I / Ctrl+I) abre um painel de chat em qualquer página.
+  </Step>
+  <Step title="A IA responde com base na sua documentação">
+    As seções relevantes são recuperadas e enviadas ao Claude como contexto. A resposta é transmitida com links de citação para as páginas de origem.
+  </Step>
+</Steps>
+
+## Recursos
+
+| Recurso | Detalhe |
+|---------|--------|
+| Respostas transmitidas | As respostas chegam em tempo real |
+| Links de citação | Cada resposta inclui um link para as páginas da documentação usadas |
+| Desambiguação | Quando uma pergunta corresponde a vários tópicos, a IA pergunta qual deles o visitante quer dizer |
+| Contexto da conversa | Histórico de 10 mensagens, persistido por aba do navegador |
+| Perguntas iniciais | Geradas automaticamente a partir da sua documentação ou definidas por você em docs.json |
+| Atalhos de teclado | Cmd+I / Ctrl+I para alternar, Escape para fechar |
+| Renderização de Markdown | Blocos de código, tabelas e listas são renderizados nas respostas |
+
+![Chat panel empty state with starter questions](/images/ai/chat-panel.webp)
+
+## Configuração
+
+O chat funciona imediatamente, sem necessidade de configuração. Adicione um bloco `chat` ao seu `docs.json` somente quando quiser personalizar as perguntas iniciais ou desativar o chat. O campo `chat` é opcional, e ambas as configurações têm valores padrão adequados.
+
+```json docs.json
+{
+  "chat": {
+    "enabled": true,
+    "starterQuestions": [
+      "How do I get started?",
+      "What API endpoints are available?"
+    ]
+  }
+}
+```
+
+| Campo | Tipo | Padrão | Descrição |
+|-------|------|---------|-------------|
+| `enabled` | boolean | `true` | Defina como `false` para remover o botão Ask AI, o painel de chat e o atalho de teclado do seu site |
+| `starterQuestions` | string[] | auto-generated | Até 4 perguntas exibidas quando o painel é aberto (5 a 200 caracteres cada). Geradas automaticamente a partir da sua documentação quando omitidas; defina como `[]` para não exibir nenhuma |
+
+### Perguntas iniciais
+
+As perguntas iniciais são os prompts sugeridos exibidos no painel de chat antes que o visitante digite qualquer coisa: exemplos de um clique que indicam o que ele pode perguntar. Quando você omite `starterQuestions` do seu `docs.json`, o Jamdesk as gera automaticamente a partir da sua documentação a cada build, mantendo-as relevantes à medida que sua documentação cresce.
+
+Para definir as suas próprias perguntas, liste-as no array `starterQuestions`. Isso é útil quando sua equipe de suporte recebe as mesmas perguntas repetidamente e você quer destacá-las primeiro:
+
+```json docs.json
+{
+  "chat": {
+    "starterQuestions": [
+      "How do notifications work?",
+      "Tell me more about analytics"
+    ]
+  }
+}
+```
+
+Você pode definir até 4 perguntas iniciais, cada uma com entre 5 e 200 caracteres. Para não exibir nenhuma pergunta inicial, defina `starterQuestions` como um array vazio (`[]`).
+
+### Desativar o chat
+
+O chat é habilitado por padrão em todos os planos. Para desativá-lo, defina `enabled` como `false`. Isso remove o botão Ask AI, o painel de chat e o atalho `Cmd+I` / `Ctrl+I`:
+
+```json docs.json
+{
+  "chat": {
+    "enabled": false
+  }
+}
+```
+
+<Note>
+Desativar o chat não afeta a pesquisa. O chat com IA e a pesquisa são recursos separados, portanto sua documentação continua totalmente pesquisável mesmo com o chat desativado.
+</Note>
+
+## Limites
+
+| Limite | Valor |
+|-------|-------|
+| Comprimento máximo da mensagem | 2.000 caracteres |
+| Comprimento máximo da resposta | 2.048 tokens |
+| Limite de solicitações | 10 solicitações / 60 segundos por visitante por site |
+| Histórico da conversa | 10 mensagens por aba |
+| Perguntas iniciais | 4 no máximo |
+
+O chat funciona em [domínios personalizados](/pt/deploy/custom-domains). O endpoint `/_chat` é da mesma origem, portanto funciona em qualquer domínio no qual sua documentação esteja hospedada.
+
+<Accordion title="Como funciona o pipeline de recuperação">
+  Durante cada build, o Jamdesk divide suas páginas em seções e armazena embeddings vetoriais para cada uma delas. Quando um visitante faz uma pergunta, o sistema executa uma pesquisa híbrida (combinação de correspondência de palavras-chave e similaridade semântica) para encontrar as seções mais relevantes em toda a sua documentação. Essas seções são enviadas ao Claude como contexto, com instruções para responder somente com base na documentação fornecida. As citações são extraídas pela correspondência entre as referências de páginas na resposta do Claude e as seções recuperadas.
+</Accordion>
+
+## O que vem a seguir?
+
+<Columns cols={2}>
+  <Card title="llms.txt" icon="file-lines" href="/pt/ai/llms-txt">
+    Índice de páginas gerado automaticamente para ferramentas de IA
+  </Card>
+  <Card title="MCP Server" icon="robot" href="/pt/ai/mcp-server">
+    Permita que ferramentas de IA pesquisem e consultem sua documentação programaticamente
+  </Card>
+  <Card title="docs.json Reference" icon="file-lines" href="/pt/config/docs-json-reference">
+    Todos os campos de configuração, incluindo as configurações de chat
+  </Card>
+  <Card title="How Jamdesk Works" icon="gear" href="/pt/how-jamdesk-works">
+    O pipeline de build que alimenta a indexação do chat
+  </Card>
+</Columns>

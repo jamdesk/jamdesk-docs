@@ -1,0 +1,189 @@
+---
+title: Redirecionamentos
+description: Configure redirecionamentos de URL para páginas movidas, rotas renomeadas e URLs legadas, com suporte a correspondências exatas e por padrão.
+---
+
+Os redirecionamentos encaminham os usuários de URLs antigas para novas. Use-os ao reorganizar a documentação, renomear páginas ou manter links de versões anteriores da documentação.
+
+## Configuração
+
+Adicione redirecionamentos ao seu `docs.json`:
+
+```json docs.json
+{
+  "redirects": [
+    {
+      "source": "/old-page",
+      "destination": "/new-page"
+    },
+    {
+      "source": "/guides/setup",
+      "destination": "/getting-started"
+    }
+  ]
+}
+```
+
+## Tipos de redirecionamento
+
+### Correspondência exata
+
+Redireciona uma URL específica:
+
+```json
+{
+  "source": "/api/v1/users",
+  "destination": "/api/v2/users"
+}
+```
+
+`/api/v1/users` → `/api/v2/users`
+
+### Correspondência curinga
+
+Use `*` para corresponder a segmentos de caminho:
+
+```json
+{
+  "source": "/blog/*",
+  "destination": "/articles/*"
+}
+```
+
+`/blog/hello-world` → `/articles/hello-world`
+
+### Correspondência por prefixo
+
+Redireciona todos os caminhos sob um prefixo:
+
+```json
+{
+  "source": "/v1/*",
+  "destination": "/v2/*"
+}
+```
+
+`/v1/api/users` → `/v2/api/users`
+
+## Códigos de status HTTP
+
+Por padrão, os redirecionamentos retornam `308` (redirecionamento permanente). Especifique um status diferente:
+
+```json
+{
+  "source": "/old-page",
+  "destination": "/new-page",
+  "statusCode": 307
+}
+```
+
+| Status | Tipo | Caso de uso |
+|--------|------|----------|
+| `301` | Permanente (GET) | Movido permanentemente, altera POST para GET |
+| `302` | Temporário (GET) | Movido temporariamente, altera POST para GET |
+| `307` | Temporário | Movido temporariamente, preserva o método HTTP |
+| `308` | Permanente | Movido permanentemente, preserva o método HTTP |
+
+Use `308` para a maioria dos redirecionamentos de documentação. Use `307` para movimentações temporárias durante migrações.
+
+## Padrões comuns
+
+### Reorganizar a documentação
+
+Ao reestruturar sua navegação:
+
+```json
+{
+  "redirects": [
+    { "source": "/setup", "destination": "/getting-started" },
+    { "source": "/setup/install", "destination": "/getting-started/installation" },
+    { "source": "/setup/config", "destination": "/getting-started/configuration" }
+  ]
+}
+```
+
+### Migração de versão da API
+
+Ao descontinuar uma versão da API:
+
+```json
+{
+  "redirects": [
+    { "source": "/api/v1/*", "destination": "/api/v2/*" }
+  ]
+}
+```
+
+### Redirecionamentos externos
+
+Redirecione para URLs externas:
+
+```json
+{
+  "source": "/community",
+  "destination": "https://discord.gg/your-server"
+}
+```
+
+### Preservar o SEO
+
+Quando as páginas têm classificações existentes nos mecanismos de pesquisa:
+
+```json
+{
+  "redirects": [
+    {
+      "source": "/tutorials/getting-started-with-api",
+      "destination": "/quickstart",
+      "statusCode": 301
+    }
+  ]
+}
+```
+
+## Ordem dos redirecionamentos
+
+Os redirecionamentos são avaliados em ordem. As regras mais específicas devem vir antes dos curingas:
+
+```json
+{
+  "redirects": [
+    { "source": "/api/v1/special-endpoint", "destination": "/api/special" },
+    { "source": "/api/v1/*", "destination": "/api/v2/*" }
+  ]
+}
+```
+
+A primeira regra correspondente vence.
+
+## Limitações
+
+- Os redirecionamentos aplicam-se somente a caminhos da documentação
+- Os parâmetros de consulta são preservados automaticamente
+- Os fragmentos de hash são preservados automaticamente
+- Máximo de 1000 redirecionamentos por projeto
+
+## Testar redirecionamentos
+
+Depois de adicionar redirecionamentos:
+
+1. Faça o deploy das suas alterações
+2. Acesse a URL antiga diretamente
+3. Verifique se você chega ao novo destino
+4. Confira o código de status HTTP nas ferramentas de desenvolvimento do navegador
+
+```bash
+# Check redirect with curl
+curl -I https://docs.example.com/old-page
+```
+
+## O que vem a seguir?
+
+<Columns cols={2}>
+  <Card title="Domínios personalizados" icon="globe" href="/pt/deploy/custom-domains">
+    Configure seu próprio domínio
+  </Card>
+  <Card title="Navegação" icon="sitemap" href="/pt/navigation/overview">
+    Organize a estrutura da sua documentação
+  </Card>
+</Columns>

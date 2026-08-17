@@ -1,0 +1,104 @@
+---
+title: Pontuação de IA
+sidebarTitle: Pontuação de IA
+description: O Jamdesk avalia como agentes de IA leem sua documentação segundo o padrão aberto AFDocs a cada build. Veja a nota, corrija problemas e acompanhe a evolução.
+---
+
+Os assistentes de IA respondem cada vez mais a perguntas sobre seu produto diretamente a partir da documentação, mas somente quando conseguem realmente lê-la. O AI Score mede isso. Após cada build, o Jamdesk verifica seu site publicado em relação ao padrão aberto de prontidão para agentes [AFDocs](https://afdocs.dev) e fornece uma pontuação de 0 a 100, uma nota por letra e uma análise detalhada de cada problema para você corrigir.
+
+As capturas de tela mostram a interface em inglês.
+
+<Tip>
+  **Experimente primeiro em qualquer site.** A ferramenta gratuita [AI Score](https://jamdesk.com/ai-score) avalia qualquer URL de documentação segundo o mesmo padrão, e a [extensão AI Score para Chrome](https://chromewebstore.google.com/detail/jamdesk-ai-score/mhihkkgpcbmapmojnakhjfhjmiagkhlj) avalia os sites enquanto você navega. Dentro do Jamdesk, a pontuação é executada automaticamente na sua própria documentação.
+</Tip>
+
+## Como a pontuação funciona
+
+O AI Score é executado automaticamente, sem configuração. Após cada build bem-sucedido, o Jamdesk aguarda a nova versão entrar no ar, verifica sua documentação publicada e registra o resultado.
+
+- **É executado a cada build.** Cada deploy calcula novamente a pontuação do seu site, para que uma regressão apareça assim que for publicada.
+- **Pontuação de 0 a 100 e nota por letra** (de A+ a F), medidas segundo o padrão aberto AFDocs. É o mesmo mecanismo usado pela ferramenta pública gratuita.
+- **Execute novamente quando quiser.** Abra a página **AI Score** do seu projeto e clique em **Run score now** para avaliar novamente o site ativo sem esperar por um build.
+
+Encontre essa opção no dashboard, em seu projeto → **AI Score**.
+
+## Leia sua pontuação
+
+<Frame>
+  <img src="/images/ai-score/dashboard.webp" alt="O dashboard do AI Score mostrando um indicador circular de pontuação em 94 com nota A, uma linha de tendência ao longo de seis builds e cartões de categoria expansíveis, um deles exibindo uma verificação com falha e um botão Copy prompt to fix" />
+</Frame>
+
+A página AI Score tem três partes:
+
+- **Indicador circular de pontuação.** Sua pontuação e nota atuais, além da alteração desde o último build.
+- **Linha de tendência.** Sua pontuação ao longo dos builds recentes, para que uma queda apareça rapidamente.
+- **Cartões de categoria.** Suas verificações agrupadas em sete áreas, cada uma com sua própria nota. Expanda uma delas para ver as verificações individuais e se foram aprovadas, emitiram um aviso ou falharam.
+
+Um rodapé informa o que foi verificado, quantas páginas foram analisadas por amostragem e a versão da especificação AFDocs.
+
+### O que a pontuação mede
+
+Cada categoria agrupa verificações relacionadas à prontidão para agentes:
+
+| Categoria | O que abrange |
+|---|---|
+| Capacidade de descoberta do conteúdo | `llms.txt` e os sinais que direcionam os agentes ao seu conteúdo |
+| Disponibilidade em Markdown | Uma versão limpa em Markdown de cada página para leitura pelos agentes |
+| Tamanho da página e risco de truncamento | Páginas pequenas o suficiente para caber na janela de contexto de um agente |
+| Estrutura do conteúdo | Títulos, ordenação e conteúdo que começa no início da página |
+| Estabilidade de URL e redirecionamentos | URLs estáveis e redirecionamentos corretos no mesmo host |
+| Observabilidade e integridade do conteúdo | Códigos de status, cache e paridade entre o que leitores e agentes veem |
+| Autenticação e acesso | Se as páginas podem ser acessadas pelos agentes |
+
+## Corrija os problemas
+
+Cada verificação que emite um aviso ou falha vem acompanhada de uma explicação em linguagem simples e de uma correção descrita em termos do seu MDX e `docs.json`. Dois tipos de descobertas são exibidos:
+
+- **Itens que você corrige no conteúdo.** Por exemplo, uma página cujo conteúdo real começa muito abaixo, uma página grande demais que deveria ser dividida ou conteúdo renderizado por um componente interativo que não aparece no Markdown da página. O texto da correção informa a próxima etapa e a quais páginas ela se aplica.
+- **Itens que o Jamdesk resolve para você.** `llms.txt`, exportação em Markdown, códigos de status e cache são gerados automaticamente. Se um desses itens falhar, isso geralmente significa um problema temporário no build. Execute novamente a pontuação após o próximo build e entre em contato com o suporte se o problema persistir.
+
+### Copie o prompt de correção
+
+Cada verificação corrigível tem um botão **Copy prompt to fix**. Ele copia um prompt pronto para colar, que identifica a verificação, o problema encontrado e como resolvê-lo no seu MDX ou `docs.json`. Cole-o em um agente de programação com IA ([Claude Code](/pt/ai/claude-code), o [plugin Jamdesk para Claude](/pt/claude-code-plugin), [Cursor](/pt/ai/cursor) ou [Codex](/pt/ai/codex)) e deixe que ele faça a edição; depois, envie as alterações para executar um novo build e recalcular a pontuação.
+
+## Receba um e-mail quando sua pontuação mudar
+
+Sua equipe não precisa acompanhar o dashboard. O Jamdesk envia um e-mail aos membros do seu projeto com a nova pontuação e o problema mais importante a corrigir sempre que um build gerar sua primeira pontuação, alterar sua pontuação em 3 ou mais pontos ou fizer com que ela volte ao valor perfeito de 100.
+
+- **Ative por projeto.** O interruptor **Email team when score changes** fica no topo da página AI Score. Ele vem ativado por padrão.
+- **Pequenas oscilações não geram avisos.** Uma alteração de um ou dois pontos não envia um e-mail por si só, mas também não é esquecida: o Jamdesk compara cada nova pontuação com a última sobre a qual enviou um e-mail. Assim, uma queda gradual se acumula e você é avisado quando a alteração total chega a 3 pontos.
+
+<Note>
+  As execuções manuais e as pontuações acionadas por builds podem enviar e-mails; as verificações retroativas e as verificações da ferramenta pública nunca enviam.
+</Note>
+
+## Solução de problemas
+
+<AccordionGroup>
+  <Accordion title="A pontuação informa que não foi possível ler meu site">
+    Uma verificação pode retornar vazia se o site esteve momentaneamente indisponível, retornou um erro ou bloqueou o verificador. O Jamdesk **não** salva esses resultados, portanto uma instabilidade temporária não fixa uma pontuação incorreta nem prejudica sua linha de tendência. Sua última pontuação válida continua sendo exibida; clique em **Run score now** para tentar novamente.
+  </Accordion>
+  <Accordion title="Minha pontuação está baixa porque minha documentação é protegida por senha">
+    Agentes de IA não conseguem ler páginas protegidas por senha, por isso a pontuação reflete essa condição. Se restringir o acesso for intencional (para documentação interna ou de pré-lançamento), uma pontuação baixa é esperada e não representa um problema.
+  </Accordion>
+  <Accordion title="Uma verificação falhou e não posso agir sobre ela">
+    Algumas verificações abrangem comportamentos da plataforma controlados pelo Jamdesk (`llms.txt`, exportação em Markdown, códigos de status e cache). Elas são aprovadas por definição, portanto uma falha quase sempre indica um problema temporário no build. Execute novamente a pontuação após o próximo build e entre em contato com o suporte se o problema persistir.
+  </Accordion>
+</AccordionGroup>
+
+## O que vem a seguir?
+
+<Columns cols={2}>
+  <Card title="llms.txt" icon="file-lines" href="/pt/ai/llms-txt">
+    O índice que as ferramentas de IA leem para entender todo o seu site
+  </Card>
+  <Card title="Fonte Markdown" icon="file-code" href="/pt/ai/markdown-source">
+    O Markdown bruto que os agentes buscam para qualquer página
+  </Card>
+  <Card title="Atualizações automáticas" icon="arrows-rotate" href="/pt/ai/automated-updates">
+    Mantenha a documentação atualizada conforme seu produto muda
+  </Card>
+  <Card title="Ferramenta AI Score" icon="gauge-high" href="https://jamdesk.com/ai-score">
+    Avalie gratuitamente qualquer site de documentação
+  </Card>
+</Columns>

@@ -1,0 +1,209 @@
+---
+title: Servidor MCP
+sidebarTitle: Servidor MCP
+description: Cada site Jamdesk inclui um servidor MCP integrado. Assistentes de IA como Claude e Cursor podem pesquisar e ler sua documentação diretamente.
+---
+
+Cada site Jamdesk inclui um servidor MCP (Model Context Protocol) integrado. Enquanto `llms.txt` fornece às ferramentas de IA uma captura estática da sua documentação, o MCP permite que elas pesquisem e consultem interativamente — útil quando os agentes de IA precisam encontrar respostas específicas em vez de ler tudo.
+
+## O que é MCP?
+
+O [Model Context Protocol](https://modelcontextprotocol.io) é um padrão aberto que permite que ferramentas de IA acessem fontes de dados externas. Sua documentação do Jamdesk expõe duas ferramentas via MCP:
+
+| Ferramenta | Finalidade |
+|------|---------|
+| `searchDocs` | Pesquisa a documentação por palavra-chave e retorna resultados classificados |
+| `getPage` | Recupera o conteúdo completo de uma página específica |
+
+## URL do endpoint
+
+Seu endpoint MCP é a URL da documentação com `/_mcp` anexado. Se você tiver um [domínio personalizado](/pt/deploy/custom-domains) ativo, use-o:
+
+| Configuração | Endpoint |
+|-------|----------|
+| Domínio personalizado em `docs.acme.com` | `https://docs.acme.com/_mcp` |
+| Sem domínio personalizado | `https://my-project.jamdesk.app/_mcp` |
+
+<Note>
+  Prefira o endpoint do domínio personalizado sempre que houver um conectado — isso mantém sua marca em todas as URLs que as ferramentas de IA veem e continua funcionando mesmo que você oculte posteriormente seu subdomínio `.jamdesk.app` com [Somente domínio personalizado](/pt/deploy/custom-domain-only).
+</Note>
+
+## Configuração rápida
+
+<Tabs>
+  <Tab title="Claude Code">
+    Adicione sua documentação como um servidor MCP:
+
+    ```bash
+    claude mcp add --transport http my-docs https://docs.acme.com/_mcp
+    ```
+
+    Substitua `docs.acme.com` pelo domínio da sua documentação — ou por `my-project.jamdesk.app` se você ainda não conectou um domínio personalizado.
+
+    Agora, quando você perguntar ao Claude sobre seu projeto, ele poderá pesquisar e ler sua documentação diretamente.
+  </Tab>
+  <Tab title="Cursor">
+    Adicione ao `.cursor/mcp.json` do seu projeto:
+
+    ```json
+    {
+      "mcpServers": {
+        "my-docs": {
+          "url": "https://docs.acme.com/_mcp"
+        }
+      }
+    }
+    ```
+
+    O Cursor se conectará automaticamente à sua documentação quando você abrir o projeto.
+  </Tab>
+</Tabs>
+
+## Ferramentas disponíveis
+
+### searchDocs
+
+Pesquise sua documentação e obtenha resultados classificados.
+
+**Parâmetros:**
+
+| Parâmetro | Tipo | Obrigatório | Descrição |
+|-----------|------|----------|-------------|
+| `query` | string | Sim | Termos de pesquisa (por exemplo, "authentication", "getting started") |
+| `limit` | number | Não | Máximo de resultados (padrão: 10, máximo: 50) |
+| `type` | string | Não | Filtra por tipo de conteúdo: `all`, `api`, `guide`, `quickstart`, `help`, `component` |
+
+**Exemplo de solicitação:**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "tools/call",
+  "params": {
+    "name": "searchDocs",
+    "arguments": {
+      "query": "authentication",
+      "limit": 5
+    }
+  }
+}
+```
+
+**Exemplo de resposta:**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "content": [{
+      "type": "text",
+      "text": "{\"query\":\"authentication\",\"total\":1,\"results\":[{\"title\":\"Authentication\",\"description\":\"How to authenticate API requests\",\"url\":\"/docs/api/authentication\",\"type\":\"api\",\"score\":0.95}]}"
+    }]
+  }
+}
+```
+
+### getPage
+
+Recupere o conteúdo completo de uma página específica da documentação.
+
+**Parâmetros:**
+
+| Parâmetro | Tipo | Obrigatório | Descrição |
+|-----------|------|----------|-------------|
+| `slug` | string | Sim | Caminho da página sem o prefixo `/docs` (por exemplo, `api/authentication`) |
+
+**Exemplo de solicitação:**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 2,
+  "method": "tools/call",
+  "params": {
+    "name": "getPage",
+    "arguments": {
+      "slug": "api/authentication"
+    }
+  }
+}
+```
+
+**Exemplo de resposta:**
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 2,
+  "result": {
+    "content": [{
+      "type": "text",
+      "text": "{\"title\":\"Authentication\",\"description\":\"How to authenticate\",\"content\":\"## Overview\\n\\nUse API keys to authenticate...\",\"url\":\"/docs/api/authentication\"}"
+    }]
+  }
+}
+```
+
+## Testar o endpoint
+
+Você pode testar seu endpoint MCP diretamente com curl:
+
+```bash
+# List available tools
+curl -X POST https://docs.acme.com/_mcp \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}'
+
+# Search for content
+curl -X POST https://docs.acme.com/_mcp \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"searchDocs","arguments":{"query":"getting started"}}}'
+```
+
+## Como funciona
+
+O endpoint MCP usa um índice de pesquisa criado junto com sua documentação:
+
+- **Classificação BM25** - Classifica os resultados por relevância
+- **Correspondência difusa** - Lida com erros de digitação (tolerância de 1 caractere)
+- **Priorização de campos** - Títulos e cabeçalhos de seção têm um peso maior que o conteúdo do corpo
+- **Filtragem por tipo** - Filtra os resultados por tipo de conteúdo (API, guia etc.)
+
+O índice é recriado a cada deploy.
+
+## Limites de taxa
+
+O endpoint MCP tem um limite de **60 solicitações por minuto** por endereço IP. Isso é suficiente para o uso normal por assistentes de IA. Se você exceder o limite, receberá uma resposta 429.
+
+## Solução de problemas
+
+<Accordion title="O servidor MCP não se conecta">
+  Verifique se a URL do endpoint está correta e acessível:
+
+  ```bash
+  curl https://docs.acme.com/_mcp
+  ```
+
+  Você deverá ver uma resposta JSON com informações do servidor. Caso contrário, verifique se sua documentação foi compilada pelo menos uma vez.
+</Accordion>
+
+<Accordion title="A pesquisa não retorna resultados">
+  O índice de pesquisa é gerado no momento da compilação. Se você adicionou conteúdo recentemente, acione uma nova compilação no dashboard do Jamdesk para atualizar o índice.
+</Accordion>
+
+<Accordion title="getPage retorna null">
+  Certifique-se de que o slug corresponde exatamente ao caminho da sua página (sem a extensão `.mdx`). Por exemplo, se sua página estiver em `api/authentication.mdx`, use `api/authentication` como slug.
+</Accordion>
+
+## O que vem a seguir?
+
+<Columns cols={2}>
+  <Card title="Escrever com IA" icon="wand-magic-sparkles" href="/pt/ai/writing-with-ai">
+    Dicas para usar ferramentas de IA na criação de documentação
+  </Card>
+  <Card title="llms.txt" icon="file-lines" href="/pt/ai/llms-txt">
+    Índice de páginas gerado automaticamente para ferramentas de IA
+  </Card>
+</Columns>

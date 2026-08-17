@@ -1,0 +1,238 @@
+---
+title: Problemas da CLI
+description: "Corrija falhas de login da CLI, erros de deploy, travamentos do servidor de desenvolvimento e outros problemas de linha de comando."
+---
+
+Encontrou um erro da CLI? Encontre seu problema abaixo.
+
+## Problemas de autenticação
+
+<AccordionGroup>
+  <Accordion title='"Not logged in" or "Session expired"'>
+    Suas credenciais armazenadas estão ausentes ou o token de atualização não é mais válido.
+
+    **Correção:** Execute `jamdesk login` para iniciar uma nova sessão. Isso substitui o conteúdo atual de `~/.jamdeskrc`.
+
+    Se o erro continuar aparecendo imediatamente após o login, verifique se `~/.jamdeskrc` foi gravado:
+
+    ```bash
+    cat ~/.jamdeskrc
+    ```
+
+    O arquivo deve conter um objeto `auth` com `refreshToken`, `email` e `uid`. Se estiver vazio ou ausente, talvez seu diretório pessoal tenha problemas de permissão.
+  </Accordion>
+
+  <Accordion title="O login expira">
+    A CLI inicia um servidor local na porta 9876 para receber o callback de autenticação do navegador. Se o callback nunca chegar, o login expirará após 2 minutos.
+
+    **Causas comuns:**
+    - Um firewall está bloqueando o servidor local
+    - A aba do navegador foi fechada antes da conclusão da autenticação
+    - A porta 9876 está em uso (a CLI escolhe outra porta automaticamente, mas a URL precisa corresponder)
+
+    **Correção:** Copie a URL exibida no terminal e abra-a manualmente. Verifique se o número da porta na URL corresponde à porta em que a CLI está escutando.
+  </Accordion>
+
+  <Accordion title="O navegador não abre durante o login">
+    Isso é normal em ambientes headless (sessões SSH, contêineres Docker, runners de CI). A URL de login sempre é exibida no terminal, mesmo quando nenhum navegador está disponível.
+
+    Copie-a e abra-a em qualquer navegador que consiga acessar sua máquina pela porta de callback.
+  </Accordion>
+
+  <Accordion title='"session expired" after password change'>
+    Alterar sua senha do Jamdesk invalida todos os tokens de atualização existentes. A CLI detecta isso (`TOKEN_EXPIRED` ou `INVALID_REFRESH_TOKEN`) e limpa automaticamente a autenticação armazenada.
+
+    Execute `jamdesk login` novamente.
+  </Accordion>
+</AccordionGroup>
+
+## Erros de deploy
+
+<AccordionGroup>
+  <Accordion title='"A build is already in progress"'>
+    Apenas um build é executado por vez em cada projeto. A CLI retorna esse erro (código `BUILD_IN_PROGRESS`) quando um build está na fila ou em execução.
+
+    **Correção:** Aguarde a conclusão do build atual. Verifique **Deployments** no dashboard para consultar o status. Se um build parecer travado, peça ao proprietário do projeto para verificar o dashboard.
+  </Accordion>
+
+  <Accordion title='"docs.json not found or invalid"'>
+    Não há `docs.json` no diretório atual ou ele contém erros de sintaxe JSON.
+
+    **Correção:**
+    1. Verifique se você está no diretório correto: `ls docs.json`
+    2. Execute `jamdesk validate` para obter detalhes específicos do erro
+    3. Verifique se há vírgulas ausentes, colchetes não fechados ou vírgulas finais (a CLI usa JSON, não JSON5, para docs.json)
+  </Accordion>
+
+  <Accordion title='"Upload too large"'>
+    Seu tarball compactado excede o limite de 100 MB. Tudo que não for excluído por `.gitignore` ou pela lista de exclusão integrada será empacotado.
+
+    **Correção:** Verifique o que está sendo incluído. Causas comuns: arquivos de vídeo, PDFs grandes, imagens não compactadas e despejos de dados. Adicione-os ao `.gitignore`.
+
+    Sempre excluídos, independentemente de `.gitignore`: `.git`, `node_modules`, `.next`, `.env*`, `*.pem`, `*.key`, `credentials.json`, `.DS_Store`.
+  </Accordion>
+
+  <Accordion title='"No files to deploy"'>
+    Todos os arquivos correspondem a um padrão de exclusão. Não sobrou nada para enviar.
+
+    **Correção:** Verifique seu `.gitignore`. Se ele estiver bloqueando arquivos MDX ou `docs.json`, a CLI não terá nada para usar.
+  </Accordion>
+
+  <Accordion title='"Project not found" or "Access denied"'>
+    O `projectId` em `docs.json` não corresponde a nenhum projeto da sua conta ou você não é membro desse projeto.
+
+    **Correção:**
+    - Remova o campo `projectId` de `docs.json` e execute `jamdesk deploy` novamente para escolher um novo projeto
+    - Verifique se você está conectado à conta correta: `jamdesk whoami`
+    - Verifique a participação no projeto pelo dashboard
+  </Accordion>
+
+  <Accordion title="O deploy trava durante a consulta do build">
+    O status do build é consultado a cada 2 segundos. Se sua rede estiver instável, até 3 falhas consecutivas de consulta serão toleradas antes que a CLI desista.
+
+    **Correção:** Pressione Ctrl+C. O build continuará sendo executado em segundo plano. Verifique o status no dashboard. Um link será exibido quando você sair.
+  </Accordion>
+
+  <Accordion title="Falha no build">
+    O upload foi concluído, mas o build falhou. Você verá o erro do serviço de build no terminal.
+
+    **Correção:** Verifique o log do build no dashboard, em **Deployments**. Causas comuns: erros de sintaxe MDX, páginas ausentes referenciadas na navegação e especificações OpenAPI inválidas. Execute `jamdesk validate` localmente para detectar esses problemas antes do deploy.
+  </Accordion>
+
+  <Accordion title="Avisos sobre arquivos secretos">
+    Você verá um aviso quando os arquivos parecerem conter segredos (`.env`, `*.pem`, `*.key`, `credentials.json` e arquivos que começam com `secret`). Isso é um aviso, não um bloqueio.
+
+    **Correção:** Adicione os arquivos ao `.gitignore` para excluí-los dos uploads. Se forem intencionais (por exemplo, arquivos de chave de exemplo na sua documentação), ignore o aviso.
+  </Accordion>
+</AccordionGroup>
+
+## Problemas do servidor de desenvolvimento
+
+<AccordionGroup>
+  <Accordion title="O servidor de desenvolvimento não inicia">
+    Vários fatores podem impedir a inicialização.
+
+    **Tente na seguinte ordem:**
+    1. `jamdesk doctor` para verificar a versão do Node.js (v20+ obrigatória) e o ambiente
+    2. `jamdesk clean` para limpar as dependências armazenadas em cache
+    3. `jamdesk dev --verbose` para obter uma saída de erro detalhada
+    4. `jamdesk dev --clean` para limpar o cache do build antes de iniciar
+  </Accordion>
+
+  <Accordion title="Porta já está em uso">
+    A CLI tenta usar 10 portas consecutivas a partir da porta solicitada (3000 por padrão). Se todas as 10 estiverem ocupadas, ela falhará.
+
+    **Correção:**
+    ```bash
+    # Find what's using the port
+    lsof -i :3000
+
+    # Pick a different port
+    jamdesk dev --port 3001
+    ```
+
+    Para definir um padrão permanente, adicione `"defaultPort": 3001` ao arquivo `~/.jamdeskrc`. Não substitua o arquivo; ele pode conter suas credenciais de autenticação.
+  </Accordion>
+
+  <Accordion title="Corrupção do cache do Turbopack">
+    Se o servidor de desenvolvimento for encerrado durante a compilação (encerramento forçado ou falha do sistema), o cache `.next` poderá ser corrompido. Na próxima inicialização, você verá `"corrupted database"` ou erros de panic.
+
+    **Correção:**
+    ```bash
+    jamdesk dev --clean
+    ```
+
+    Isso remove o diretório `.next` e inicia novamente do zero.
+  </Accordion>
+
+  <Accordion title="Primeira execução lenta">
+    A primeira execução de `jamdesk dev` instala as dependências de runtime em `~/.jamdesk/node_modules`. Isso acontece uma vez e pode levar de 1 a 2 minutos em conexões mais lentas.
+
+    As execuções seguintes ignoram a instalação, a menos que a versão da CLI seja alterada.
+  </Accordion>
+
+  <Accordion title="A instalação de dependências falha ou trava">
+    Se `npm install` travar durante a primeira execução, haverá um tempo limite de 5 minutos.
+
+    **Correção:**
+    1. Verifique sua conexão com a Internet
+    2. Execute `jamdesk clean` para limpar instalações parciais
+    3. Tente novamente
+    4. Se o npm estiver consistentemente lento, verifique a configuração do registro do npm: `npm config get registry`
+  </Accordion>
+</AccordionGroup>
+
+## Validação e verificação de links
+
+<AccordionGroup>
+  <Accordion title="Erros de sintaxe MDX">
+    O MDX trata `<` como o início de uma tag JSX. Escrever `<50%` causa um erro de análise.
+
+    **Correção:** Escape com `&lt;` ou reescreva. Execute `jamdesk validate` para obter números de linha e sugestões.
+  </Accordion>
+
+  <Accordion title="Links quebrados encontrados">
+    `jamdesk broken-links` encontrou links internos apontando para páginas que não existem.
+
+    **Correção:** Verifique os caminhos dos arquivos. Erros comuns: uso de maiúsculas e minúsculas incorreto (`Quickstart` em vez de `quickstart`), inclusão da extensão `.mdx` ou caminhos antigos que foram renomeados.
+
+    A CLI sugere correções para correspondências próximas (até 3 caracteres de diferença em relação a um erro de digitação).
+
+    **Corrija-os automaticamente.** Se um link quebrado tiver um destino correto inequívoco (uma âncora com erro de digitação ou divergência de âncora entre localidades), execute `jamdesk fix --dry-run` para visualizar as alterações e, em seguida, `jamdesk fix` para aplicá-las. Ele só reescreve links cuja âncora corrigida seja um título real na página de destino; casos ambíguos ficam para correção manual. Consulte [Correção automática de links quebrados](/pt/cli/fix-broken-links).
+  </Accordion>
+
+  <Accordion title="Falha na validação da especificação OpenAPI">
+    A CLI valida as especificações OpenAPI referenciadas em `docs.json`. As falhas incluem referências `$ref` inválidas, campos obrigatórios ausentes ou erros de sintaxe.
+
+    **Correção:** Execute `jamdesk openapi-check path/to/spec.yaml` para obter uma saída detalhada. Use o [Swagger Editor](https://editor.swagger.io) para depurar especificações complexas.
+
+    <Note>As especificações Swagger 2.0 exibem um aviso, mas ainda passam na validação.</Note>
+  </Accordion>
+</AccordionGroup>
+
+## Problemas gerais
+
+<AccordionGroup>
+  <Accordion title="Comando não encontrado: jamdesk">
+    Não está instalado globalmente ou seu shell não consegue encontrar o binário.
+
+    **Correção:**
+    ```bash
+    npm install -g jamdesk
+    ```
+
+    Se você instalou usando `curl`, verifique se `~/.jamdesk/bin` está no seu `PATH`.
+  </Accordion>
+
+  <Accordion title="Erros de permissão negada">
+    É necessário ter acesso de gravação a `~/.jamdesk` (cache) e `~/.jamdeskrc` (credenciais).
+
+    **Correção:**
+    ```bash
+    ls -la ~/.jamdesk ~/.jamdeskrc
+    sudo chown -R $(whoami) ~/.jamdesk ~/.jamdeskrc
+    ```
+  </Accordion>
+
+  <Accordion title="Falha na atualização">
+    `jamdesk update` encapsula `npm install -g jamdesk@latest`. Se o npm tiver problemas de permissão ou o registro estiver inacessível, o comando falhará.
+
+    **Correção:** Atualize manualmente:
+    ```bash
+    npm install -g jamdesk@latest
+    ```
+
+    Se isso também falhar, verifique `npm config get registry` e tente `sudo npm install -g jamdesk@latest`.
+  </Accordion>
+</AccordionGroup>
+
+## Ainda com problemas?
+
+<Columns cols={2}>
+  <Card title="Visão geral da CLI" icon="terminal" href="/pt/cli/overview">
+    Referência completa dos comandos
+  </Card>
+  <Card title="Contatar o suporte" icon="headset" href="/pt/help/support/contact">
+    Inclua a saída completa do erro
+  </Card>
+</Columns>

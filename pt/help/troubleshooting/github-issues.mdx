@@ -1,0 +1,148 @@
+---
+title: Problemas do GitHub
+description: Corrija problemas de organizações durante a configuração, repositórios ausentes, webhooks falhos, permissões e branches divergentes na integração GitHub do Jamdesk.
+---
+
+A maioria dos problemas de integração com o GitHub está relacionada a permissões, falhas de webhook ou divergências de branch.
+
+## Organização não aparece durante a configuração
+
+Durante o fluxo de configuração inicial, o Jamdesk mostra suas organizações do GitHub para que você escolha onde criar o repositório. A lista vem da API OAuth do GitHub, e o GitHub oculta organizações em dois casos:
+
+- Restrições do aplicativo OAuth: sua organização restringe o acesso de aplicativos de terceiros (padrão do GitHub para organizações novas) e ainda não aprovou o Jamdesk.
+- SAML SSO: sua organização exige autenticação SAML antes que a API a retorne.
+
+<Accordion title="Conceda acesso por conta própria (proprietários da organização)">
+  Se você for proprietário da organização, poderá aprovar o Jamdesk imediatamente:
+
+  1. Clique em **grant Jamdesk access on GitHub** abaixo do seletor de organização (ou acesse GitHub → **Settings** → **Applications** → **Authorized OAuth Apps** → **Jamdesk**)
+  2. Em **Organization access**, clique em **Grant** ao lado da sua organização
+  3. De volta ao fluxo de configuração do Jamdesk, clique em **refresh the list**. Sua organização aparecerá imediatamente
+
+  Se você for membro (e não proprietário), verá um botão **Request**; clicar nele enviará uma solicitação de aprovação aos administradores da organização.
+</Accordion>
+
+<Accordion title="Peça ao administrador da organização para aprovar o Jamdesk (membros)">
+  Se você for membro sem direitos de proprietário, envie primeiro uma solicitação de aprovação aos administradores:
+
+  1. Acesse GitHub → **Settings** → **Applications** → **Authorized OAuth Apps** → **Jamdesk**
+  2. Em **Organization access**, clique em **Request** ao lado da sua organização. Isso notificará os administradores da organização
+  3. Um administrador aprova a solicitação em **Settings** → **Third-party access** → **OAuth application policy** da organização (as solicitações pendentes mostram um botão **Approve**)
+  4. Retorne ao fluxo de configuração do Jamdesk e clique em **refresh the list**; sua organização deverá aparecer
+
+  Consulte o guia do GitHub sobre [como aprovar aplicativos OAuth para sua organização](https://docs.github.com/en/organizations/managing-oauth-access-to-your-organizations-data/approving-oauth-apps-for-your-organization) para ver instruções detalhadas.
+</Accordion>
+
+<Accordion title="Crie na sua conta pessoal e transfira depois">
+  Não quer esperar a aprovação do administrador? Escolha sua conta pessoal durante a configuração e transfira o repositório para sua organização depois:
+
+  1. Conclua a configuração do Jamdesk usando sua conta pessoal
+  2. Acesse o repositório criado no GitHub
+  3. Navegue até **Settings** → **General** → **Danger Zone**
+  4. Clique em **Transfer** e selecione sua organização como destino
+  5. No Jamdesk, desconecte e reconecte o repositório na página **Settings** do seu projeto
+
+  <Warning>
+    Desconectar e reconectar gera uma nova URL de documentação (por exemplo, `your-project.jamdesk.app` pode mudar). Se você já tiver compartilhado sua URL ou configurado um domínio personalizado, entre em contato com o [suporte](/pt/help/support/contact) antes de desconectar para que possamos preservar sua configuração.
+  </Warning>
+</Accordion>
+
+## Repositório não aparece
+
+Se o repositório não aparecer na lista:
+
+<Accordion title="Verifique as permissões do repositório">
+  1. Acesse GitHub → Settings → Applications → Jamdesk
+  2. Verifique se o acesso ao repositório foi concedido
+  3. Clique em **Configure** para adicionar mais repositórios
+</Accordion>
+
+<Accordion title="Repositórios da organização">
+  Para repositórios da organização:
+  1. Um administrador da organização deve aprovar o Jamdesk
+  2. Acesse as configurações da organização → Third-party access
+  3. Aprove a solicitação de acesso do Jamdesk
+</Accordion>
+
+<Accordion title="Repositórios privados">
+  Repositórios privados exigem autorização do GitHub. Autorize o Jamdesk novamente, se necessário.
+</Accordion>
+
+## Builds não são acionados
+
+Se os pushes não acionarem builds:
+
+<Steps>
+  <Step title="Verifique o webhook">
+    1. Acesse seu repositório no GitHub
+    2. Navegue até Settings → Webhooks
+    3. Encontre o webhook do Jamdesk
+    4. Verifique se há erros em "Recent Deliveries"
+  </Step>
+  <Step title="Verifique a branch">
+    Os builds são acionados somente na branch configurada. Verifique **Settings** no Jamdesk.
+  </Step>
+  <Step title="Sincronize novamente a conexão">
+    1. Acesse **Settings** do projeto no Jamdesk
+    2. Clique em **Re-sync GitHub**
+  </Step>
+</Steps>
+
+## Erros de webhook
+
+### 404 Not Found
+
+Não foi possível acessar o endpoint do webhook.
+
+**Correção:** sincronize novamente a conexão do GitHub nas configurações do projeto.
+
+### 401 Unauthorized
+
+Falha na autenticação.
+
+**Correção:**
+1. Acesse as configurações da sua conta do GitHub
+2. Navegue até Applications → Authorized OAuth Apps
+3. Revogue o Jamdesk
+4. Autorize novamente nas configurações do Jamdesk
+
+### 500 Server Error
+
+Problema temporário do Jamdesk.
+
+**Correção:** aguarde alguns minutos e faça push novamente ou acione um rebuild manual.
+
+## Erros de permissão
+
+**"Repository not found"** durante o build:
+
+- O repositório pode ter sido excluído ou renomeado
+- O Jamdesk pode ter perdido o acesso
+- Autorize novamente sua conexão do GitHub
+
+## Problemas de branch
+
+### Build na branch errada
+
+Verifique a branch configurada em **Settings** → **Repository**.
+
+### Branch renomeada ou excluída
+
+Atualize a configuração da branch para corresponder ao novo nome.
+
+## Ainda está com problemas?
+
+<Card title="Contatar o suporte" icon="headset" href="/pt/help/support/contact">
+  Inclua a URL do repositório e as mensagens de erro
+</Card>
+
+## Artigos relacionados
+
+<Columns cols={2}>
+  <Card title="Referência de erros" icon="book" href="/pt/help/troubleshooting/error-reference">
+    Lista completa de códigos de erro
+  </Card>
+  <Card title="Contatar o suporte" icon="headset" href="/pt/help/support/contact">
+    Encaminhe problemas não resolvidos
+  </Card>
+</Columns>

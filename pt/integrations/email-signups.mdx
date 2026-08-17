@@ -1,0 +1,106 @@
+---
+title: Inscrições por e-mail
+description: Conecte Resend, Mailchimp, Kit, Loops, beehiiv, Brevo ou SendGrid para coletar inscrições por e-mail da sua documentação diretamente no seu provedor.
+---
+
+O Jamdesk pode coletar endereços de e-mail do seu site de documentação e adicioná-los diretamente ao provedor de e-mail que você já usa. Nenhum serviço de formulários de terceiros fica entre eles. Conecte um provedor uma vez no dashboard e adicione um [formulário de inscrição](/pt/components/email-subscribe) a qualquer página. Você é proprietário da lista e dos envios; o Jamdesk apenas captura o endereço e o encaminha ao seu provedor.
+
+As capturas de tela mostram a interface em inglês.
+
+## Pré-requisitos
+
+- Uma conta em um dos [provedores compatíveis](#provedores-compatíveis)
+- Uma chave de API desse provedor com permissão para adicionar contatos
+- O identificador de público que a maioria dos provedores usa para selecionar uma lista (Audience ID, List ID, Form ID ou Publication ID)
+
+## Como a captura funciona
+
+Quando você conecta um provedor, o Jamdesk valida a chave de API com a API desse provedor antes de salvá-la. Depois disso, cada envio de formulário no seu site de documentação chama o provedor e adiciona o leitor ao seu público. Os envios têm limites de frequência por visitante e por projeto para bloquear abusos, e um campo honeypot oculto filtra bots.
+
+Veja como um formulário de inscrição aparece para seus leitores:
+
+<Frame caption="Um formulário de inscrição hospedado pelo Jamdesk, como os leitores o veem em um site de documentação publicado">
+  ![Formulário de inscrição intitulado "Get Jamdesk release notes", com a frase "New features and platform changes, straight to your inbox", um campo de e-mail e um botão Subscribe](/images/email-signups/changelog-signup-form.webp)
+</Frame>
+
+Você pode ver um formulário em funcionamento no [changelog do Jamdesk](/pt/reference/changelog).
+
+<Note>
+Sua chave de API é armazenada no backend do Jamdesk e usada apenas para adicionar contatos. Ela nunca é gravada no seu site publicado, no seu `docs.json` ou em qualquer código do lado do cliente, portanto não pode ser lida pelos visitantes.
+</Note>
+
+## Provedores compatíveis
+
+Sete provedores capturam inscrições **nativamente**. Os leitores enviam um formulário hospedado pelo Jamdesk e entram no seu público sem sair da documentação:
+
+| Provedor | O que você conecta |
+|----------|---------------------|
+| Resend | Chave de API (acesso total) + Audience ID |
+| Mailchimp | Chave de API (termina com o datacenter, por exemplo, `-us21`) + Audience (List) ID |
+| Kit (ConvertKit) | Chave de API v4 + Form ID |
+| Loops | Chave de API |
+| beehiiv | Chave de API + Publication ID |
+| Brevo | Chave de API v3 + Contact List ID |
+| SendGrid | Chave de API com acesso de gravação a Marketing Contacts + Marketing List ID |
+
+Dois outros provedores funcionam **somente com incorporação**. O Jamdesk renderiza o formulário ou iframe próprio deles em vez de capturar o endereço diretamente, portanto nenhuma chave é necessária:
+
+| Provedor | O que você fornece |
+|----------|---------------------|
+| Buttondown | O `username` da sua conta (na tag `<EmailSubscribe>`) |
+| Substack | O `username` da sua conta (na tag `<EmailSubscribe>`) |
+
+Consulte [EmailSubscribe](/pt/components/email-subscribe) para configurar a incorporação.
+
+## Conectar um provedor
+
+<Steps>
+  <Step title="Abrir o cartão Email Signups">
+    No dashboard, abra seu projeto e acesse **Integrations**. Encontre o cartão **Email Signups**.
+  </Step>
+  <Step title="Escolher seu provedor">
+    Selecione um provedor no menu suspenso **Provider**. O formulário será atualizado para solicitar exatamente os campos necessários para esse provedor, com um link indicando onde encontrar a chave de API.
+  </Step>
+  <Step title="Colar sua chave e o Audience ID">
+    Insira a chave de API e, na maioria dos provedores, o identificador de público (o Loops precisa apenas da chave). O campo da chave é mascarado.
+  </Step>
+  <Step title="Conectar">
+    Clique em **Connect**. O Jamdesk valida a chave com seu provedor antes de salvá-la. Se a chave estiver incorreta ou não tiver permissões para contatos, você verá um erro e nada será armazenado.
+  </Step>
+</Steps>
+
+Depois de conectado, o cartão exibirá um selo **Configured** com seu provedor e o Audience ID. Novas publicações da sua documentação renderizarão formulários de captura ativos.
+
+## Personalizar o texto do formulário
+
+O cartão tem dois campos opcionais, **Form title** e **Form subtitle**, que definem o título e a linha de apoio dos formulários posicionados automaticamente. Deixe-os em branco para que o formulário mostre apenas o campo e o botão; preencha-os para que os formulários do changelog os utilizem na próxima publicação; nenhuma edição no `docs.json` é necessária.
+
+Você pode alterar esse texto a qualquer momento. Edite os campos em um cartão conectado e clique em **Save copy**; não é necessário inserir novamente sua chave de API. Um `title` ou `description` definido diretamente no `docs.json` ou em uma tag `<EmailSubscribe>` ainda tem prioridade sobre o texto do dashboard, portanto as substituições por página continuam funcionando.
+
+## Adicionar um formulário à documentação
+
+Conectar um provedor não adiciona um formulário automaticamente. Você escolhe onde as inscrições aparecerão:
+
+- Escreva `<EmailSubscribe provider="resend" />` (usando o id do provedor conectado) em qualquer página.
+- Ou posicione automaticamente um formulário em todas as páginas do changelog definindo `placement: changelog` no `docs.json`.
+
+Os dois caminhos são explicados na [página do componente EmailSubscribe](/pt/components/email-subscribe).
+
+## Desconectar um provedor
+
+Para parar de coletar inscrições, abra o cartão **Email Signups** e clique em **Remove**. Os formulários deixarão de capturar dados na próxima publicação.
+
+<Warning>
+Desconectar remove a chave apenas do Jamdesk. Os assinantes que você já coletou permanecem no público do seu provedor. O Jamdesk nunca os exclui. Você pode reconectar a qualquer momento.
+</Warning>
+
+## O que vem a seguir
+
+<Columns cols={2}>
+  <Card title="Componente EmailSubscribe" icon="envelope" href="/pt/components/email-subscribe">
+    Adicione formulários de inscrição e monte-os automaticamente nas páginas do changelog
+  </Card>
+  <Card title="Componente Update" icon="timeline" href="/pt/components/update">
+    Escreva as entradas do changelog sobre as quais os leitores querem receber novidades
+  </Card>
+</Columns>

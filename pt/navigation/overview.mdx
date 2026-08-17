@@ -1,0 +1,235 @@
+---
+title: Navegação
+description: A navegação no Jamdesk usa abas, grupos e páginas para organizar sua documentação, com âncoras para adicionar links externos em todas as páginas.
+---
+
+A barra lateral e a barra superior são definidas inteiramente em `docs.json`. A hierarquia de navegação tem três níveis: abas para seções de nível superior, grupos para pastas recolhíveis e páginas para entradas individuais. As âncoras adicionam links externos que aparecem em todas as páginas.
+
+As capturas de tela mostram a interface em inglês.
+
+## Visão geral da estrutura
+
+```json docs.json
+{
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "icon": "book-open",
+        "groups": [
+          {
+            "group": "Getting Started",
+            "pages": ["introduction", "quickstart"]
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+## Conceitos
+
+### Abas
+
+Seções de navegação de nível superior. Controle a posição delas com a configuração `tabsPosition`:
+
+| Valor    | Posição                  |
+| -------- | ------------------------- |
+| `"top"`  | Na barra de abas do cabeçalho     |
+| `"left"` | Na parte superior da barra lateral |
+
+A posição padrão depende do seu tema:
+
+| Tema  | Padrão  |
+| ------ | -------- |
+| jam    | `"left"` |
+| nebula | `"left"` |
+| pulsar | `"top"`  |
+| halo   | `"left"` |
+
+```json
+{
+  "tabsPosition": "left",
+  "navigation": {
+    "tabs": [
+      { "tab": "Guides", "icon": "book", "groups": [...] },
+      { "tab": "API", "icon": "code", "groups": [...] }
+    ]
+  }
+}
+```
+
+<Note>
+  Os ícones da barra lateral são renderizados na variante Font Awesome Solid por padrão. Substitua o peso de qualquer
+  ícone usando um prefixo de estilo (`light/book`) ou o
+  [formato de objeto de ícone](/pt/content/icons#formato-de-objeto-de-ícone).
+</Note>
+
+### Links externos (âncoras)
+
+Adicione links externos que aparecem na parte superior da barra lateral em todas as páginas:
+
+```json
+{
+  "anchors": [
+    { "name": "Blog", "href": "https://blog.example.com", "icon": "newspaper" },
+    { "name": "Status", "href": "https://status.example.com", "icon": "signal" }
+  ]
+}
+```
+
+| Campo  | Tipo   | Obrigatório | Descrição               |
+| ------ | ------ | -------- | ------------------------- |
+| `name` | string | Sim      | Texto exibido para o link |
+| `href` | string | Sim      | URL (abre em uma nova aba)    |
+| `icon` | string | Não       | Nome do ícone Font Awesome    |
+
+### Grupos
+
+Um grupo é um conjunto identificado de entradas da barra lateral dentro de uma aba. Os grupos adicionam um segundo nível de hierarquia à barra lateral e permitem ocultar seções mais profundas atrás de pastas no estilo acordeão.
+
+```json
+{
+  "group": "Authentication",
+  "pages": ["auth/overview", "auth/tokens"]
+}
+```
+
+#### Comportamento de seções e acordeões
+
+Os grupos de nível superior são seções permanentes: o título e suas páginas estão sempre visíveis, e clicar no título leva à primeira página do grupo. Os grupos nomeados aninhados são acordeões recolhíveis. Um grupo aninhado começa fechado, a menos que contenha a página atual ou defina `expanded: true`. No carregamento inicial e nas mudanças de rota, toda a cadeia de ancestrais da página atual é aberta automaticamente para revelar o link ativo; os visitantes ainda podem recolher manualmente o grupo aninhado ativo.
+
+| Tipo de grupo | Comportamento padrão |
+| --- | --- |
+| **Grupo de nível superior** | Sempre aberto, sem chevron. Clicar no título navega para a primeira página do grupo. |
+| **Grupo nomeado aninhado** | Recolhido até ser ativo, aberto manualmente ou configurado com `expanded: true`. Clicar em um grupo fechado o abre e clicar em um grupo aberto o fecha; a navegação ocorre somente ao clicar em uma página. |
+| **Contêiner sem nome** | Sempre renderiza suas páginas porque não tem rótulo nem controle de alternância. |
+
+Use grupos de nível superior para as seções principais da barra lateral e grupos aninhados para manter seções mais longas fáceis de consultar. O estado de expansão persiste durante a navegação no aplicativo e é redefinido ao atualizar completamente a página.
+
+<Frame caption="Um grupo aninhado em seu estado recolhido. O chevron aponta para a direita e as páginas filhas estão ocultas.">
+  <img src="/images/navigation/sidebar-group-collapsed.webp" alt="Barra lateral com o grupo 'Privacy & Access' recolhido: chevron aponta para a direita e as páginas filhas estão ocultas" width="320" height="900" />
+</Frame>
+
+<Frame caption="O mesmo grupo após navegar para uma de suas páginas filhas. O chevron gira e as páginas filhas aparecem abaixo.">
+  <img src="/images/navigation/sidebar-group-expanded.webp" alt="Barra lateral com o grupo 'Privacy & Access' expandido: chevron girado para baixo e três páginas filhas visíveis abaixo" width="320" height="900" />
+</Frame>
+
+#### Campos de grupo
+
+| Campo | Tipo | Obrigatório | Descrição |
+| --- | --- | --- | --- |
+| `group` | string | Sim | Rótulo exibido na barra lateral. |
+| `pages` | array | Sim | Lista de caminhos de páginas e/ou objetos de grupos aninhados (consulte [Grupos aninhados](#grupos-aninhados) para ver o formato aninhado). |
+| `icon` | string | Não | Nome do ícone Font Awesome exibido ao lado do rótulo do grupo. |
+| `tag` | string | Não | Pequeno selo ao lado do rótulo (por exemplo, `"New"`, `"Beta"`). |
+| `root` | string | Não | Caminho da página para o qual o grupo direciona quando o rótulo é clicado (em vez de ir para a primeira página filha). |
+| `hidden` | boolean | Não | Oculta o grupo da barra lateral por padrão. As páginas continuam acessíveis por link direto. |
+| `public` | boolean | Não | Marca o grupo como acessível publicamente. Usa como padrão a configuração da aba pai. |
+| `expanded` | boolean | Não | Abre um grupo nomeado aninhado por padrão no primeiro carregamento da página. Os grupos de nível superior estão sempre abertos, portanto, o sinalizador não tem efeito visível neles. Os grupos ancestrais da página atual são abertos automaticamente no carregamento inicial e nas mudanças de rota. |
+
+### Páginas
+
+Páginas de documentação individuais, referenciadas pelo caminho do arquivo (sem `.mdx`):
+
+```json
+"pages": ["introduction", "guides/quickstart", "api/endpoints"]
+```
+
+Por padrão, o título da barra lateral é gerado a partir do nome do arquivo: os hífens viram espaços e cada palavra começa com letra maiúscula. Por exemplo, `"api/getting-started"` é exibido como "Getting Started".
+
+Para definir um título personalizado para a barra lateral, use um objeto em vez de uma string:
+
+```json
+"pages": [
+  "guides/quickstart",
+  { "page": "deploy/aws", "title": "AWS Route 53 & CloudFront" },
+  { "page": "content/seo", "title": "SEO" },
+  { "page": "api/users", "title": "List Users", "method": "GET" }
+]
+```
+
+Isso é útil para siglas, nomes próprios e selos de endpoints de API.
+
+| Campo | Tipo | Obrigatório | Descrição |
+| --- | --- | --- | --- |
+| `page` | string | Sim | Caminho do arquivo sem `.mdx` |
+| `title` | string | Não | Título personalizado da barra lateral |
+| `icon` | string | Não | Nome do ícone Font Awesome |
+| `tag` | string | Não | Pequeno selo ao lado do título (por exemplo, "New", "Beta") |
+| `method` | string | Não | Selo do método HTTP: GET, POST, PUT, PATCH ou DELETE |
+
+## Várias abas
+
+Crie seções separadas para diferentes públicos:
+
+```json
+{
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Guides",
+        "icon": "book",
+        "groups": [
+          { "group": "Getting Started", "pages": ["intro", "quickstart"] }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "icon": "code",
+        "groups": [{ "group": "Endpoints", "pages": ["api/auth", "api/users"] }]
+      }
+    ]
+  }
+}
+```
+
+## Links externos em abas
+
+Crie links para documentação ou recursos externos diretamente nas abas:
+
+```json
+{
+  "navigation": {
+    "tabs": [
+      { "tab": "Docs", "icon": "book", "groups": [...] },
+      { "tab": "GitHub", "icon": "github", "href": "https://github.com/example/repo" }
+    ]
+  }
+}
+```
+
+As abas externas são abertas em uma nova aba do navegador.
+
+## Grupos aninhados
+
+Organize documentações complexas com estruturas aninhadas:
+
+```json
+{
+  "group": "SDKs",
+  "pages": [
+    "sdks/overview",
+    {
+      "group": "JavaScript",
+      "pages": ["sdks/js/install", "sdks/js/usage"]
+    },
+    {
+      "group": "Python",
+      "pages": ["sdks/python/install", "sdks/python/usage"]
+    }
+  ]
+}
+```
+
+## O que vem a seguir?
+
+<Columns cols={2}>
+  <Card title="Conectar ao GitHub" icon="github" href="/pt/setup/connecting-github">
+    Vincule seu repositório para fazer builds automaticamente
+  </Card>
+  <Card title="Estrutura de diretórios" icon="folder-tree" href="/pt/setup/directory-structure">
+    Organize sua documentação para crescer
+  </Card>
+</Columns>

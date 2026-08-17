@@ -1,0 +1,117 @@
+---
+title: Problemas de domínio
+description: Corrija problemas de domínios personalizados — status «Pending», erros de certificado SSL, configurações CNAME incorretas e sites errados.
+---
+
+Os domínios personalizados precisam de um registro CNAME configurado corretamente e de um certificado SSL válido.
+
+## Domínio não verificado
+
+Se o domínio aparecer como "Pending" ou "Not verified":
+
+<Steps>
+  <Step title="Verifique os registros DNS">
+    Confirme se o registro CNAME aponta para a URL do seu Jamdesk:
+    ```text
+    docs.example.com  CNAME  your-project.jamdesk.app
+    ```
+  </Step>
+  <Step title="Aguarde a propagação">
+    As alterações de DNS podem levar até 48 horas para se propagarem globalmente.
+  </Step>
+  <Step title="Teste o DNS">
+    Use uma ferramenta como `dig` ou [dnschecker.org](https://dnschecker.org) para verificar seus registros.
+  </Step>
+</Steps>
+
+## Erros de certificado SSL
+
+### Certificado não sendo provisionado
+
+O Jamdesk usa o Let's Encrypt para SSL automático. Se o provisionamento falhar:
+
+1. Confirme se o DNS está configurado corretamente
+2. Aguarde 15 minutos para o provisionamento
+3. Verifique se o domínio não está bloqueado por regras de firewall
+
+### Certificado expirado
+
+Os certificados são renovados automaticamente. Se o seu expirou:
+
+1. Acesse **Settings** → **Domains**
+2. Clique em **Refresh Certificate**
+3. Se a operação falhar, entre em contato com o suporte
+
+### Avisos de conteúdo misto
+
+Seu domínio funciona, mas exibe avisos de segurança:
+
+- Verifique se há links `http://` no conteúdo
+- Atualize todos os URLs de recursos para usar `https://`
+
+## Domínio não carregando
+
+### "Site can't be reached"
+
+1. Confirme se os registros DNS estão corretos
+2. Verifique se o domínio não foi excluído do Jamdesk
+3. Limpe o cache DNS do navegador
+
+### Site errado sendo exibido
+
+Seu DNS pode estar apontando para um servidor antigo:
+
+1. Atualize o CNAME para a URL do seu Jamdesk
+2. Remova todos os registros A conflitantes
+3. Aguarde a propagação do DNS
+
+## Erros comuns de DNS
+
+<Accordion title="Usar um registro A em vez de CNAME">
+  O Jamdesk exige um registro CNAME, não um registro A. O CNAME permite encaminhar o tráfego corretamente.
+</Accordion>
+
+<Accordion title="Incluir o protocolo">
+  Não inclua `https://` no valor do CNAME. Use apenas o domínio:
+
+  ✓ `your-project.jamdesk.app`
+  ✗ `https://your-project.jamdesk.app`
+</Accordion>
+
+<Accordion title="Registros conflitantes">
+  Se você tiver registros A e CNAME para o mesmo subdomínio, remova o registro A.
+</Accordion>
+
+## Domínios em subcaminho
+
+Para domínios em um subcaminho (por exemplo, `example.com/docs`):
+
+1. Configure um proxy reverso (Cloudflare, nginx etc.)
+2. Consulte [Hospedagem em subcaminho](/pt/deploy/subpath-hosting) para obter instruções de configuração
+
+<Warning>
+A configuração de subcaminho exige uma configuração adicional fora do Jamdesk.
+</Warning>
+
+## Ainda está com problemas?
+
+<Card title="Contact Support" icon="headset" href="/pt/help/support/contact">
+  Inclua o nome do domínio e a configuração DNS atual
+</Card>
+
+## Artigos relacionados
+
+<Columns cols={2}>
+  <Card title="Solução de problemas de DNS" icon="server" href="/pt/help/troubleshooting/dns-issues">
+    Verificações de propagação, conflitos de CNAME e correções específicas do provedor
+  </Card>
+  <Card title="Configuração de domínios personalizados" icon="globe" href="/pt/deploy/custom-domains">
+    Guia completo de configuração pelo dashboard
+  </Card>
+  <Card title="Referência de erros" icon="book" href="/pt/help/troubleshooting/error-reference">
+    Lista completa de códigos de erro
+  </Card>
+  <Card title="Contact Support" icon="headset" href="/pt/help/support/contact">
+    Encaminhe problemas não resolvidos
+  </Card>
+</Columns>

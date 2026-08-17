@@ -1,0 +1,183 @@
+---
+title: Trechos
+description: Blocos de conteúdo reutilizáveis que você pode importar em várias páginas, armazenando texto, componentes ou código comuns no diretório de snippets.
+---
+
+Trechos são blocos de conteúdo reutilizáveis armazenados em um diretório `/snippets`. Importe-os em qualquer página MDX para evitar duplicar conteúdo.
+
+## Criar trechos
+
+Crie um diretório `/snippets` na raiz da documentação:
+
+```bash
+my-docs/
+├── docs.json
+├── introduction.mdx
+└── snippets/
+    ├── prerequisites.mdx
+    ├── installation.mdx
+    └── support-cta.mdx
+```
+
+Escreva o conteúdo do trecho como em qualquer arquivo MDX, mas sem frontmatter:
+
+```mdx snippets/prerequisites.mdx
+Before you begin, make sure you have:
+
+- Node.js 20 or higher
+- A GitHub account
+- A text editor (VS Code recommended)
+```
+
+## Usar trechos
+
+Importe e use trechos nas suas páginas:
+
+```mdx getting-started.mdx
+---
+title: Getting Started
+---
+
+## Prerequisites
+
+import Prerequisites from '/snippets/prerequisites.mdx';
+
+<Prerequisites />
+
+## Installation
+
+Continue with your page content...
+```
+
+## Componentes de trechos
+
+Os trechos podem conter componentes do Jamdesk:
+
+```mdx snippets/support-cta.mdx
+<Columns cols={2}>
+  <Card title="Documentation" icon="book" href="/docs">
+    Browse our guides
+  </Card>
+  <Card title="Contact Support" icon="headset" href="/support">
+    Get help from our team
+  </Card>
+</Columns>
+```
+
+Use-os em várias páginas:
+
+```mdx
+import SupportCTA from '/snippets/support-cta.mdx';
+
+## Need Help?
+
+<SupportCTA />
+```
+
+## Trechos interativos
+
+Para trechos que precisam de hooks do React (`useState`, `useEffect` etc.), use arquivos `.tsx` com a diretiva `'use client'`:
+
+```tsx snippets/counter.tsx
+'use client';
+
+import { useState } from 'react';
+
+export function Counter() {
+  const [count, setCount] = useState(0);
+  return (
+    <button onClick={() => setCount(c => c + 1)}>
+      Count: {count}
+    </button>
+  );
+}
+```
+
+Importe no MDX:
+
+```mdx
+import { Counter } from '/snippets/counter';
+
+<Counter />
+```
+
+<Note>
+A diretiva `'use client'` é obrigatória para qualquer componente que use hooks do React. Sem ela, você receberá erros `"useState is not defined"`.
+</Note>
+
+## Trechos parametrizados
+
+Passe props para tornar os trechos dinâmicos:
+
+```mdx snippets/api-key-warning.mdx
+export const ApiKeyWarning = ({ service }) => (
+  <Warning>
+    Never commit your {service} API key to version control. Use environment variables instead.
+  </Warning>
+);
+```
+
+Use com props:
+
+```mdx
+import { ApiKeyWarning } from '/snippets/api-key-warning.mdx';
+
+<ApiKeyWarning service="Stripe" />
+```
+
+## Organizar trechos
+
+Para projetos maiores, organize os trechos em subdiretórios:
+
+```bash
+snippets/
+├── components/
+│   ├── cta-cards.mdx
+│   └── feature-table.mdx
+├── warnings/
+│   ├── api-key.mdx
+│   └── deprecation.mdx
+└── shared/
+    ├── prerequisites.mdx
+    └── support-links.mdx
+```
+
+Importe usando o caminho completo:
+
+```mdx
+import CtaCards from '/snippets/components/cta-cards.mdx';
+import ApiKeyWarning from '/snippets/warnings/api-key.mdx';
+```
+
+## Casos de uso comuns
+
+| Caso de uso | Exemplo |
+|----------|---------|
+| Pré-requisitos | Requisitos do sistema, configuração da conta |
+| Etapas de instalação | Comandos de instalação da CLI em várias plataformas |
+| Autenticação da API | Configuração de autenticação repetida em vários endpoints |
+| CTAs de suporte | Links de contato no final de páginas de solução de problemas |
+| Avisos de descontinuação | Avisos sobre recursos desatualizados |
+| Exemplos de código | Padrões de código reutilizáveis |
+
+## Trecho vs. componente inline
+
+| Recurso | Trecho | Componente inline |
+|---------|---------|------------------|
+| Reutilizável em várias páginas | Sim | Não (específico da página) |
+| Pode usar hooks do React | Sim (com `'use client'`) | Não |
+| Pode importar pacotes externos | Sim (arquivos `.tsx`) | Não |
+| Sintaxe | Instrução de importação | `export const` no MDX |
+
+Use **trechos** para conteúdo que aparece em várias páginas. Use **componentes inline** para componentes de apresentação pontuais em uma única página.
+
+## Próximos passos?
+
+<Columns cols={2}>
+  <Card title="Componentes React personalizados" icon="code" href="/pt/content/react-components">
+    Defina componentes inline no MDX
+  </Card>
+  <Card title="Noções básicas de MDX" icon="file-code" href="/pt/content/mdx-basics">
+    Aprenda os fundamentos do MDX
+  </Card>
+</Columns>

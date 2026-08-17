@@ -1,0 +1,206 @@
+---
+title: Metadados do MDX
+description: Configure títulos, descrições, ícones, substituições da barra lateral e metadados de SEO com o bloco YAML no topo de cada arquivo MDX.
+---
+
+Todo arquivo MDX começa com um bloco YAML entre marcadores `---`. Esses metadados controlam o título da página, a aparência da barra lateral e como a página é exibida quando compartilhada nas redes sociais ou nos resultados de pesquisa.
+
+## Frontmatter básico
+
+Toda página precisa de pelo menos um título:
+
+```yaml
+---
+title: Getting Started
+description: Learn the basics in 5 minutes
+---
+```
+
+## Campos disponíveis
+
+### Obrigatórios
+
+| Campo | Tipo | Descrição |
+|-------|------|-----------|
+| `title` | string | Título da página exibido na navegação e na aba do navegador |
+
+### Recomendados
+
+| Campo | Tipo | Descrição |
+|-------|------|-----------|
+| `description` | string | Resumo breve para SEO e resultados de pesquisa (50-160 caracteres) |
+
+### Opcionais
+
+| Campo | Tipo | Padrão | Descrição |
+|-------|------|---------|-----------|
+| `icon` | string | - | Ícone do Font Awesome exibido ao lado do título da página na navegação da barra lateral |
+| `sidebarTitle` | string | `title` | Título mais curto para a navegação da barra lateral |
+| `mode` | string | - | Defina como `"wide"` para um layout de largura total |
+| `hideFooter` | boolean | `false` | Oculta o rodapé social desta página |
+| `rss` | boolean | `false` | Ativa a geração de um feed RSS a partir dos componentes [Update](/pt/components/update) nesta página |
+| `private` | boolean | `false` | Exige a [senha do site](/pt/setup/password-protection) para visualizar esta página. Definir isso em qualquer página ativa o modo de páginas específicas na próxima build. |
+| `public` | boolean | `false` | Isenta esta página da proteção por senha (usado quando todo o site é protegido por `auth.password.enabled`). Tem prioridade sobre `private: true` quando ambos são definidos. |
+
+### SEO e redes sociais
+
+Controle como a página aparece nos resultados de pesquisa e nas prévias de redes sociais. Defina-os como chaves de nível superior ou dentro de um bloco `seo:` aninhado. Ambas as opções funcionam, e os valores por página substituem os padrões `seo.metatags` do seu `docs.json`.
+
+| Campo | Tipo | Padrão | Descrição |
+|-------|------|---------|-----------|
+| `keywords` | string[] | - | Palavras-chave de pesquisa, emitidas como uma tag `<meta name="keywords">` |
+| `canonical` | string | auto | URL canônica desta página, substituindo a URL gerada automaticamente |
+| `noindex` | boolean | `false` | Exclui esta página dos mecanismos de pesquisa e do sitemap |
+| `og:*` / `twitter:*` | string | - | Tags de prévia social do Open Graph e do Twitter/X (por exemplo, `og:title`, `og:image`, `twitter:card`) |
+| `seo` | object | - | Bloco aninhado que contém qualquer um dos itens acima, além de tags meta personalizadas arbitrárias |
+
+```yaml
+---
+title: API Reference
+description: REST endpoints and authentication
+"og:image": /images/api-card.png
+"twitter:card": summary_large_image
+canonical: https://docs.acme.com/api-reference
+---
+```
+
+Consulte [Otimização de SEO](/pt/content/seo) para ver a lista completa de tags compatíveis e exemplos.
+
+<Tip>
+Após uma build, cole a URL da página na ferramenta gratuita [OpenGraph Preview](https://jamdesk.com/utilities/opengraph-preview) para ver como essas tags são renderizadas no X, Facebook, LinkedIn, Slack, Discord e muito mais.
+</Tip>
+
+## Exemplos
+
+### Página de documentação padrão
+
+```yaml
+---
+title: Authentication
+description: Secure your API with OAuth 2.0 and API keys
+icon: lock
+---
+```
+
+### Título longo com substituição na barra lateral
+
+```yaml
+---
+title: Configuring Single Sign-On with SAML 2.0
+sidebarTitle: SSO Setup
+description: Set up enterprise SSO for your organization
+---
+```
+
+O título completo aparece na página, enquanto o `sidebarTitle` mais curto mantém a navegação organizada.
+
+### Layout amplo
+
+```yaml
+---
+title: API Reference
+description: Complete API documentation
+mode: wide
+---
+```
+
+O modo amplo remove o índice e expande o conteúdo para ocupar toda a largura. É útil para páginas de referência de API ou conteúdo com tabelas largas.
+
+### Ocultar rodapé
+
+```yaml
+---
+title: Custom Landing
+description: A focused landing page experience
+hideFooter: true
+---
+```
+
+Use `hideFooter` em páginas de destino, páginas de changelog ou qualquer página em que você queira uma seção inferior mais limpa, sem links para redes sociais.
+
+## Práticas recomendadas de SEO
+
+<AccordionGroup>
+  <Accordion title="Escreva títulos atraentes" icon="heading" defaultOpen>
+    Seu título aparece em:
+    - Abas do navegador
+    - Resultados dos mecanismos de pesquisa
+    - Barra lateral de navegação
+    - Compartilhamentos nas redes sociais
+
+    Mantenha os títulos com menos de 60 caracteres. Coloque as palavras-chave importantes no início.
+
+    ```yaml
+    # Good - clear and keyword-rich
+    title: Deploy to Production
+
+    # Avoid - vague or too long
+    title: How to Deploy Your Application to Production Servers
+    ```
+  </Accordion>
+
+  <Accordion title="Crie descrições úteis" icon="align-left">
+    As descrições aparecem nos resultados de pesquisa e nas prévias de redes sociais. Busque de 50 a 160 caracteres que:
+    - Resumam o conteúdo da página
+    - Incluam palavras-chave relevantes
+    - Incentivem os usuários a clicar
+
+    ```yaml
+    # Good - actionable and specific
+    description: Deploy your docs to production in under 2 minutes with zero configuration
+
+    # Avoid - generic or missing
+    description: Documentation page
+    ```
+  </Accordion>
+
+  <Accordion title="Use ícones consistentes" icon="icons">
+    Os ícones ajudam os usuários a examinar rapidamente a navegação. Use o mesmo ícone em páginas relacionadas:
+
+    | Tópico | Ícone sugerido |
+    |-------|----------------|
+    | Getting started | `rocket` |
+    | Authentication | `lock` |
+    | API reference | `code` |
+    | Settings | `gear` |
+    | Billing | `credit-card` |
+
+    Navegue pelos ícones no [Font Awesome](https://fontawesome.com/icons).
+  </Accordion>
+</AccordionGroup>
+
+## Validação
+
+O Jamdesk valida o frontmatter durante a build. Erros comuns:
+
+<Accordion title="Campos obrigatórios ausentes">
+```text
+Error: Page "api/auth.mdx" is missing required field: title
+```
+
+**Correção:** Adicione o campo `title` ao frontmatter.
+</Accordion>
+
+<Accordion title="Sintaxe YAML inválida">
+```text
+Error: Invalid frontmatter in "guide.mdx": unexpected token
+```
+
+**Correção:** Verifique:
+- Aspas ausentes em strings com caracteres especiais
+- Indentação incorreta
+- Dois-pontos ausentes após as chaves
+
+Cole o bloco entre os marcadores `---` no [Validador de YAML](https://jamdesk.com/utilities/yaml-validator) gratuito para identificar a linha e a coluna do erro.
+</Accordion>
+
+## O que vem a seguir?
+
+<Columns cols={2}>
+  <Card title="Otimização de SEO" icon="magnifying-glass-chart" href="/pt/content/seo">
+    Otimize sua documentação para mecanismos de pesquisa
+  </Card>
+  <Card title="Fundamentos do MDX" icon="file-code" href="/pt/content/mdx-basics">
+    Aprenda os fundamentos do MDX
+  </Card>
+</Columns>

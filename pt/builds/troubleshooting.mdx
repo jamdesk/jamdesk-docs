@@ -1,0 +1,95 @@
+---
+title: Solução de problemas de build
+description: "Corrija falhas comuns de build relacionando mensagens de erro a causas e soluções, incluindo configuração, dependências, sintaxe MDX e ícones."
+---
+
+Quando um build falha, o log de build informa o que deu errado e onde. Encontre sua mensagem de erro abaixo e vá direto para a solução.
+
+## Visualizar detalhes do erro
+
+1. Abra a guia **Deployments** do seu projeto
+2. Clique no build com falha
+3. Leia a mensagem de erro e percorra o log de build
+
+O log indica o arquivo e a linha exatos que interromperam o build.
+
+## Erros comuns
+
+### Erros de configuração
+
+`Invalid docs.json` significa que o arquivo de configuração não pode ser analisado. A causa quase sempre é simples: uma vírgula extra, um colchete não fechado ou uma aspa ausente.
+
+<Steps>
+  <Step title="Verificar a sintaxe JSON">
+    Procure vírgulas, colchetes ou aspas ausentes.
+  </Step>
+  <Step title="Validar localmente">
+    Execute `jamdesk validate` para ver os erros exatos.
+  </Step>
+  <Step title="Corrigir e fazer push">
+    Corrija os erros e faça push para iniciar um novo build.
+  </Step>
+</Steps>
+
+### Páginas ausentes
+
+Um erro `Page not found` ocorre quando sua navegação aponta para um arquivo que não existe. Verifique se o nome do arquivo corresponde ao caminho em `docs.json`, se as maiúsculas e minúsculas estão exatamente iguais e se você omitiu a extensão `.mdx`.
+
+### Erros de sintaxe MDX
+
+`MDX compilation failed` indica MDX ou JSX malformado em uma página. Normalmente, trata-se de uma tag não fechada (um `<Card>` sem o `</Card>` correspondente), um caractere não escapado, como um `{` literal onde você queria usar `\{`, ou uma sintaxe de propriedades inválida.
+
+### Tempo limite do build
+
+`Build exceeded time limit` significa exatamente o que a mensagem indica: o build ultrapassou o tempo permitido. Imagens grandes e não otimizadas costumam ser a causa. Comprima-as, divida as páginas que ficaram muito grandes e remova as páginas que você não publica mais.
+
+## Avisos do build
+
+Os avisos nunca fazem um build falhar; seu site ainda será publicado. Eles sinalizam problemas que vale a pena corrigir e aparecem em três lugares: no e-mail de avisos do build, na entrada do build na guia **Deployments** e no seu terminal quando você executa `jamdesk validate` ou `jamdesk dev`.
+
+### Imagens ausentes
+
+`Image not found` avisa que uma página faz referência a uma imagem que não está presente no seu projeto.
+
+O Jamdesk verifica cada referência de imagem (Markdown `![alt](/images/photo.webp)` e o `src` nas tags `<img>` e `<Image>`) comparando-a com os arquivos do seu repositório. Quando o destino está ausente, o aviso informa a página, o número da linha e o caminho que não pôde ser resolvido, para que uma imagem quebrada nunca seja publicada como um 404 silencioso.
+
+Para corrigir o problema, envie a imagem ou redirecione o caminho para um arquivo existente. Os caminhos diferenciam maiúsculas de minúsculas e são resolvidos a partir da raiz do projeto (com uma `/` inicial) ou em relação à página. Uma referência a `photo.png` também continuará funcionando depois que a [otimização de imagens](/pt/builds/image-optimization) a converter para WebP.
+
+Referências a URLs externas, URIs `data:` e sintaxes de imagem exibidas dentro de blocos de código são ignoradas, para que os exemplos na sua própria documentação não gerem avisos incorretos.
+
+## Etapas de depuração
+
+<Accordion title="Etapa 1: Verificar o log de build">
+  O log informa o arquivo e a linha exatos associados ao erro. Comece por eles.
+</Accordion>
+
+<Accordion title="Etapa 2: Testar localmente">
+  Execute `jamdesk dev` para reproduzir a falha na sua própria máquina.
+</Accordion>
+
+<Accordion title="Etapa 3: Validar a configuração">
+  Execute `jamdesk validate` para verificar seu `docs.json` e, em seguida, `jamdesk broken-links` para detectar links internos quebrados.
+</Accordion>
+
+<Accordion title="Etapa 4: Verificar alterações recentes">
+  Consulte seu último commit. Você adicionou uma página ou alterou a configuração?
+</Accordion>
+
+## Ainda com problemas?
+
+Se nenhuma das opções acima resolver o problema:
+
+1. Copie o log de build completo
+2. Anote o ID do seu projeto (ele está na URL)
+3. [Entre em contato com o suporte](/pt/help/support/contact)
+
+## Artigos relacionados
+
+<Columns cols={2}>
+  <Card title="Referência de erros" icon="book" href="/pt/help/troubleshooting/error-reference">
+    Explicação de todos os códigos de erro
+  </Card>
+  <Card title="Monitorar builds" icon="chart-line" href="/pt/builds/monitoring">
+    Acompanhe o progresso do build
+  </Card>
+</Columns>

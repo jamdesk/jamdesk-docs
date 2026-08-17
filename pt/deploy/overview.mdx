@@ -1,0 +1,89 @@
+---
+title: Visão geral da implantação
+description: "Opções de hospedagem para sua documentação: subdomínio Jamdesk, domínio personalizado com SSL ou subcaminho /docs via proxy reverso no site existente."
+---
+
+O Jamdesk implanta sua documentação automaticamente em um subdomínio `*.jamdesk.app`. Quando estiver pronto para publicar em seu próprio domínio, você poderá escolher um subdomínio personalizado (como `docs.example.com`) ou hospedar a documentação em um subcaminho do seu site principal: `/docs` por padrão ou qualquer segmento personalizado à sua escolha.
+
+## Opções de implantação
+
+| Opção | Ideal para | Complexidade de configuração |
+|--------|----------|------------------|
+| **Subdomínio Jamdesk** (`your-project.jamdesk.app`) | Publicação mais rápida, sem trabalho com DNS | Baixa |
+| **Subdomínio personalizado** (`docs.example.com`) | Documentação de produção com sua marca | Média |
+| **Hospedagem em subcaminho** (`example.com/docs`, personalizável) | Manter a documentação no domínio principal | Alta |
+
+## Hospedagem padrão (sem configuração)
+
+Todo projeto fica disponível em um subdomínio Jamdesk assim que você conecta um repositório. Essa é a opção mais simples para documentação interna, prévias ou lançamentos iniciais.
+
+## Domínio personalizado (subdomínio)
+
+Use seu próprio subdomínio (por exemplo, `docs.example.com`) para ter uma URL pública associada à sua marca. Você adicionará registros DNS e verificará a propriedade no dashboard do Jamdesk.
+
+<Note>
+A verificação de DNS e o SSL são gerenciados automaticamente assim que os registros são configurados. Consulte [Domínios personalizados](/pt/deploy/custom-domains) para ver as instruções de configuração.
+</Note>
+
+## Hospedagem em subcaminho
+
+Hospede a documentação em um subcaminho do seu domínio encaminhando o tráfego para o Jamdesk por proxy: `example.com/docs` por padrão ou um segmento personalizado, como `example.com/help`. Use essa opção quando quiser que a documentação fique sob o domínio principal de marketing.
+
+<Info>
+A hospedagem em subcaminho requer uma camada de proxy ou CDN para encaminhar as solicitações e definir o cabeçalho `X-Jamdesk-Forwarded-Host`. Consulte [Hospedagem em subcaminho](/pt/deploy/subpath-hosting).
+</Info>
+
+### Exemplo de configuração de proxy (nginx)
+
+```nginx nginx.conf
+location /docs {
+    proxy_pass https://YOUR_SLUG.jamdesk.app;
+    proxy_set_header X-Jamdesk-Forwarded-Host $host;
+}
+
+location /_next/ {
+    proxy_pass https://YOUR_SLUG.jamdesk.app;
+}
+
+location /_jd/ {
+    proxy_pass https://YOUR_SLUG.jamdesk.app;
+}
+```
+
+Para ver uma configuração completa com SSL, cabeçalhos e orientações específicas do provedor, consulte o guia de [Hospedagem em subcaminho](/pt/deploy/subpath-hosting).
+
+## Guias por provedor
+
+Escolha sua infraestrutura para implementar a hospedagem em subcaminho:
+
+<Columns cols={2}>
+  <Card title="Cloudflare" icon="cloud" href="/pt/deploy/cloudflare">
+    Use o Cloudflare Workers para encaminhar o tráfego de /docs por proxy
+  </Card>
+  <Card title="AWS" icon="aws" href="/pt/deploy/aws">
+    Configure o CloudFront com o Route 53
+  </Card>
+  <Card title="Vercel" icon="triangle" href="/pt/deploy/vercel">
+    Adicione rewrites ou middleware de edge
+  </Card>
+  <Card title="Proxy reverso" icon="server" href="/pt/deploy/reverse-proxy">
+    nginx, Apache ou outros servidores proxy
+  </Card>
+</Columns>
+
+## Próximos passos?
+
+<Columns cols={2}>
+  <Card title="Ciclo de build e implantação" icon="rotate" href="/pt/deploy/lifecycle">
+    Como os builds são acionados e implantados
+  </Card>
+  <Card title="Hospedagem em subcaminho" icon="folder-tree" href="/pt/deploy/subpath-hosting">
+    Hospede a documentação em /docs no seu domínio principal
+  </Card>
+  <Card title="Domínios personalizados" icon="globe" href="/pt/deploy/custom-domains">
+    Configure docs.yourdomain.com
+  </Card>
+  <Card title="Solução de problemas de DNS" icon="server" href="/pt/help/troubleshooting/dns-issues">
+    Corrija problemas de propagação e verificação de DNS
+  </Card>
+</Columns>

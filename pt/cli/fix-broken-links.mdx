@@ -1,0 +1,110 @@
+---
+title: Corrigir links quebrados
+description: >-
+  Saiba como o jamdesk fix resolve automaticamente links internos quebrados e âncoras com erros, visualizando as alterações antes de aplicá-las.
+---
+
+`jamdesk fix` é o complemento de correção automática de `jamdesk broken-links`. Ele lê os mesmos avisos de links quebrados e reescreve qualquer arquivo cujo destino correto possa ser determinado sem ambiguidade. Casos ambíguos são sinalizados para revisão manual e permanecem inalterados.
+
+<Tip>
+  Prefere continuar no dashboard? [Corrigir com IA](/pt/builds/fix-with-ai) faz o mesmo reparo em um build, também cobre descrições de página ausentes e confirma as alterações no GitHub por você.
+</Tip>
+
+Ele corrige dois tipos de links internos quebrados:
+
+- **Âncoras com erros de digitação** — um fragmento que é um erro claro de digitação de um título real na página de destino (por exemplo, `#instalation` → `#installation`)
+- **Divergência de âncoras entre localidades** — uma página traduzida renomeou seus títulos, mas os links nessa localidade ainda apontam para o fragmento antigo em inglês (por exemplo, `/fr/ai/selectors#ai-strategies` → `/fr/ai/selectors#stratégies-ia`)
+
+## Etapa 1: Encontrar links quebrados
+
+Execute `jamdesk broken-links` para ver o que precisa ser corrigido:
+
+```bash
+jamdesk broken-links
+```
+
+Revise a saída. `jamdesk fix` direciona-se aos avisos em que uma âncora provavelmente correta pode ser associada a um título real.
+
+## Etapa 2: Visualizar as correções
+
+Execute com `--dry-run` para ver exatamente o que mudaria antes de alterar qualquer arquivo:
+
+```bash
+jamdesk fix --dry-run
+```
+
+**Exemplo de saída:**
+
+```text
+Planned fixes:
+
+  fr/ai/overview.mdx:9
+    /fr/ai/selectors#ai-strategies  →  /fr/ai/selectors#stratégies-ia
+
+(dry run — no files written)
+```
+
+Verifique cada correção planejada. Se uma alteração não parecer correta, corrija o link manualmente em vez de aplicá-la. `jamdesk fix` só reescreve links que consegue resolver sem ambiguidade.
+
+## Etapa 3: Aplicar as correções
+
+Execute sem `--dry-run` para aplicar as correções. Será solicitado que você confirme:
+
+```bash
+jamdesk fix
+```
+
+```text
+Apply 1 fix(es) to local files? (y/N)
+```
+
+Pressione `y` para gravar as alterações. Para ignorar a solicitação no CI ou em scripts, use `-y`:
+
+```bash
+jamdesk fix -y
+```
+
+Depois da aplicação, o comando exibe:
+
+```text
+Fixed 1 file(s); 0 warning(s) left for manual review.
+```
+
+Se o destino de um aviso for ambíguo, `jamdesk fix` não o altera, para que você possa resolvê-lo manualmente.
+
+## Etapa 4: Revisar o diff e fazer commit
+
+Verifique as alterações antes de fazer commit:
+
+```bash
+git diff
+```
+
+Confirme que cada link reescrito aponta para o destino esperado. Depois, faça o commit:
+
+```bash
+git add -A
+git commit -m "fix(docs): auto-fix broken internal links"
+```
+
+## Opções
+
+| Flag | Descrição |
+|------|-------------|
+| `--dry-run` | Visualiza as correções planejadas sem gravar arquivos |
+| `-y, --yes` | Aplica as correções sem solicitar confirmação |
+| `--types <list>` | Tipos de aviso separados por vírgula a serem corrigidos (padrão: todos os tipos compatíveis) |
+
+## O que vem a seguir?
+
+<Columns cols={2}>
+  <Card title="Corrigir com IA" icon="wand-magic-sparkles" href="/pt/builds/fix-with-ai">
+    Corrija problemas no dashboard e faça commit no GitHub
+  </Card>
+  <Card title="Visão geral da CLI" icon="terminal" href="/pt/cli/overview">
+    Referência completa dos comandos
+  </Card>
+  <Card title="Links e navegação" icon="link" href="/pt/content/links">
+    Como os links internos são detectados e resolvidos
+  </Card>
+</Columns>

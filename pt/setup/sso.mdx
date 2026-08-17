@@ -1,0 +1,106 @@
+---
+title: Login único (SSO)
+description: "Entre no dashboard do Jamdesk com seu provedor de identidade. Configure SAML ou OIDC em qualquer plano pago; o SSO do site de docs é Enterprise."
+---
+
+O login único tem duas modalidades no Jamdesk. O **SSO do dashboard** permite que sua equipe entre para gerenciar projetos por meio do seu provedor de identidade, e você mesmo configura tudo em Settings em qualquer plano pago. O **SSO do site de docs** permite que os leitores da sua documentação publicada se autentiquem pelo seu IdP, em vez de usarem uma senha compartilhada, e é configurado com nossa equipe nos planos Enterprise.
+
+## O que o SSO abrange
+
+<Columns cols={2}>
+  <Card title="SSO do dashboard" icon="gauge">
+    Sua equipe entra em `dashboard.jamdesk.com` usando seu provedor de identidade. É ideal quando você quer gerenciamento centralizado de contas, MFA obrigatório pelo seu IdP e desprovisionamento imediato quando um usuário sai da organização. Configure tudo em **Settings → Single Sign-On**. As etapas estão abaixo.
+  </Card>
+  <Card title="SSO do site de docs" icon="book-open">
+    Os leitores se autenticam pelo seu IdP antes de poderem visualizar a documentação protegida. O modelo de senha compartilhada é substituído por login individual, trilha de auditoria e desprovisionamento após a remoção. Configure com nossa equipe nos planos Enterprise.
+  </Card>
+</Columns>
+
+## Para quem é
+
+As duas modalidades são adequadas para organizações que já usam um provedor de identidade: Okta, Google Workspace, Microsoft Entra ID, Auth0 ou qualquer provedor SAML 2.0 / OIDC.
+
+O SSO do dashboard é adequado para equipes que querem controle central sobre quem gerencia projetos. Você tem MFA obrigatório por meio do seu próprio IdP e, quando o SSO é obrigatório, remover alguém do seu diretório também impede o login dessa pessoa no dashboard.
+
+O SSO do site de docs atende a uma necessidade diferente: uma trilha de auditoria mostrando quem leu quais documentos e acesso individual para equipes que deixaram de compartilhar uma única senha com um grande grupo de leitores.
+
+## Ativar o SSO do dashboard
+
+O SSO do dashboard é configurado por você em qualquer plano pago. Você confirma que é proprietário do seu domínio de e-mail, conecta seu provedor de identidade e pode exigir que todos nesse domínio entrem por ele.
+
+### Antes de começar
+
+- Um plano pago do Jamdesk.
+- Acesso de proprietário ao projeto. A conexão SSO fica no nível do proprietário da conta e abrange todos os projetos que você possui; por isso, somente o proprietário vê as configurações de Single Sign-On.
+- Acesso ao DNS do seu domínio para adicionar um registro TXT.
+- Acesso de administrador ao seu provedor de identidade (Okta, Microsoft Entra, Google Workspace, Auth0 ou qualquer provedor SAML 2.0 / OIDC).
+
+### Configurar a conexão
+
+<Steps>
+  <Step title="Abrir as configurações de Single Sign-On">
+    No dashboard, acesse **Settings → Single Sign-On** e informe o domínio de e-mail da sua empresa, por exemplo, `acme.com`. O Jamdesk cria uma conexão e mostra um registro DNS TXT para comprovar que você é proprietário do domínio.
+  </Step>
+  <Step title="Verificar seu domínio">
+    O dashboard mostra um nome e um valor de registro. Adicione o registro TXT correspondente ao DNS do seu domínio e clique em **Verify**. As alterações de DNS podem levar até uma hora para se propagar, portanto, a primeira tentativa pode falhar antes que o registro fique visível. Aguarde e tente novamente. Mantenha o registro depois da verificação: o Jamdesk o verifica periodicamente e desativa a conexão se ele desaparecer.
+  </Step>
+  <Step title="Configurar seu provedor de identidade">
+    Copie o **Entity ID** e a **ACS URL** mostrados no dashboard para um novo aplicativo SAML ou OIDC no seu IdP e cole os dados do seu IdP de volta no Jamdesk:
+
+    - **SAML 2.0**: Entity ID do IdP, URL de SSO e certificado de assinatura X.509 no formato PEM.
+    - **OIDC**: URL do emissor, ID do cliente e segredo do cliente.
+
+    Escolha seu provedor na lista para consultar um guia de configuração específico do fornecedor e clique em **Save & activate**. A conexão passa para **Active**.
+  </Step>
+  <Step title="Exigir SSO (opcional)">
+    Quando a conexão estiver **Active**, ative **Require SSO for all users on your domain** para direcionar ao seu IdP todas as pessoas com um e-mail nesse domínio. O login com senha e pelo Google deixará de funcionar para elas. Sua conta de proprietário continua isenta, e você pode adicionar até 20 **break-glass emails** para outros administradores que precisem de uma alternativa com senha caso seu IdP fique indisponível.
+  </Step>
+</Steps>
+
+<Warning>
+  Adicione pelo menos um e-mail de emergência antes de ativar a exigência. Se o seu provedor de identidade ficar indisponível e não existir uma conta de emergência, ninguém no domínio poderá entrar no dashboard.
+</Warning>
+
+### Como os usuários entram
+
+Quando o SSO do dashboard está ativo, o login começa pelo **e-mail**. Na tela de login, o usuário informa o e-mail corporativo. Se o domínio tiver uma conexão SSO, o Jamdesk o redirecionará automaticamente para o seu provedor de identidade, sem que seja necessário procurar um botão separado de "Sign in with SSO".
+
+Um ponto costuma causar confusão: entrar pelo seu IdP autentica o usuário, mas não concede acesso por si só. A pessoa ainda precisa ser convidada para um projeto. Um colega que se autenticar, mas nunca tiver sido convidado, verá "Your account isn't provisioned" e precisará de um [convite](/pt/help/projects/team-members) antes de entrar. Sempre que um login for bloqueado, o usuário será direcionado a uma página de erro de SSO que explica a próxima etapa.
+
+### Solução de problemas
+
+<AccordionGroup>
+  <Accordion title="O domínio não é verificado">
+    As alterações de DNS podem levar até uma hora para chegar ao Jamdesk, portanto, uma tentativa de verificação logo após a adição do registro costuma falhar. Aguarde e clique novamente em **Verify**. Se ainda falhar, confira se o nome e o valor do registro correspondem exatamente ao que aparece no dashboard. Alguns provedores de DNS acrescentam automaticamente seu domínio ao nome do registro, transformando `_jamdesk` em `_jamdesk.acme.com.acme.com`. Remova o sufixo duplicado se isso acontecer.
+  </Accordion>
+  <Accordion title="A conexão aparece como Disabled">
+    O Jamdesk verifica novamente o registro TXT do seu domínio após a configuração. Se o registro for removido ou alterado, a conexão passará para **Disabled** e os logins deixarão de ser direcionados ao seu IdP. Adicione o registro novamente ao DNS e clique em **Re-check status**, ou exclua a conexão e recomece.
+  </Accordion>
+  <Accordion title="Um colega vê 'Your account isn't provisioned'">
+    A pessoa se autenticou com seu provedor de identidade, mas nunca foi convidada para um projeto. O SSO comprova quem ela é; ele não cria acesso por si só. Convide-a em **Settings → Members** e peça que entre novamente. Consulte [Team Members](/pt/help/projects/team-members).
+  </Accordion>
+  <Accordion title="Alguém é bloqueado com 'Your organization requires SSO'">
+    A exigência está ativada, e a pessoa tentou entrar com uma senha ou pelo Google em vez de usar seu IdP. Ela deve usar o fluxo de login por e-mail para que o Jamdesk a redirecione ao seu provedor. Se realmente precisar de uma alternativa com senha (por exemplo, se o IdP estiver indisponível), adicione o endereço à lista de e-mails de emergência.
+  </Accordion>
+</AccordionGroup>
+
+## Ativar o SSO do site de docs
+
+O SSO para leitores do site de docs é configurado com nossa equipe. Cada IdP tem uma configuração um pouco diferente, e queremos garantir que os metadados, os mapeamentos de claims e os filtros de grupos da sua equipe estejam corretos antes de restringir o acesso à sua documentação publicada.
+
+[**Falar com vendas Enterprise →**](https://jamdesk.com/pricing)
+
+A página de preços lista os níveis atuais de planos e o caminho de contato para o Enterprise. A partir daí, nossa equipe orienta você na configuração do IdP, testa a integração em um subdomínio de preparação e a disponibiliza em produção quando você estiver pronto.
+
+## Alternativas
+
+Ainda não está pronto para o Enterprise? Você ainda pode restringir o acesso à sua documentação:
+
+<Columns cols={2}>
+  <Card title="Proteção por senha" icon="lock" href="/pt/setup/password-protection">
+    Restrição por senha compartilhada para todo o site ou para páginas específicas. Disponível sem um plano Enterprise.
+  </Card>
+  <Card title="Visão geral do controle de acesso" icon="shield" href="/pt/setup/access-control">
+    Compare lado a lado as quatro opções de acesso.
+  </Card>
+</Columns>

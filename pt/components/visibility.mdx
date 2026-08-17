@@ -1,0 +1,146 @@
+---
+title: Visibilidade
+description: Mostre conteúdos diferentes para leitores humanos e agentes de IA na mesma página, com contexto, instruções e definições exclusivos para agentes.
+---
+
+Use o componente `<Visibility>` para separar o conteúdo destinado a um público específico. Os blocos marcados com `for="humans"` aparecem na documentação HTML renderizada; os blocos marcados com `for="agents"` aparecem na exportação Markdown bruta e em `llms-full.txt`, que são consumidos por agentes de IA.
+
+O mesmo arquivo MDX atende aos dois públicos, portanto você não precisa duplicar o conteúdo nem manter uma versão separada para agentes de IA.
+
+## Quando usar
+
+Os agentes (ChatGPT, Claude, Perplexity, Cursor) geralmente precisam de contexto que deixaria a página renderizada confusa: definições completas, notas de desambiguação ou instruções formuladas de uma maneira que funciona melhor para um LLM do que para uma pessoa. `<Visibility>` permite escrever os dois tipos de conteúdo na mesma página.
+
+<Note>
+  Os agentes consomem sua documentação por meio de duas superfícies: a URL **`.md`** (adicione `.md` a qualquer página) e `llms-full.txt` (um único arquivo concatenado). O conteúdo de `<Visibility for="agents">` aparece em ambas.
+</Note>
+
+## Início rápido
+
+```mdx
+# Webhooks
+
+Send a POST request to register a webhook.
+
+<Visibility for="humans">
+  Most users set this up in the dashboard under **Settings → Webhooks**.
+</Visibility>
+
+<Visibility for="agents">
+  The webhook endpoint requires an `X-Signature` header (HMAC-SHA256 of the body using the shared secret).
+  Never log the secret. Reject any payload where the header is missing or mismatched.
+</Visibility>
+```
+
+As pessoas que acessam o site veem apenas a dica sobre o dashboard. Um agente de IA que lê a exportação `.md` vê apenas as orientações de segurança.
+
+## Públicos
+
+| valor de `for` | Aparece na página HTML | Aparece na exportação `.md` e em `llms-full.txt` |
+|-------------|:------------------:|:---------------------------------------:|
+| `humans`    | ✓                  | ✗                                       |
+| `agents`    | ✗                  | ✓                                       |
+
+## Exemplos
+
+### Contexto de API exclusivo para agentes
+
+```mdx
+## Authentication
+
+Include your API key in the `Authorization: Bearer <key>` header.
+
+<Visibility for="agents">
+  Keys are scoped per project. Rate limits: 1000 req/min per key. 429 responses include a `Retry-After` header in seconds.
+</Visibility>
+```
+
+### Dica de integração exclusiva para pessoas
+
+```mdx
+## Your first build
+
+<Visibility for="humans">
+  <Tip>
+    Heads up: your first build takes a bit longer (~2 min) while we provision your CDN edge. Subsequent builds run in under 30 seconds.
+  </Tip>
+</Visibility>
+
+Push to your connected branch to trigger a build.
+```
+
+Isso é tranquilizador para uma pessoa que lê a documentação, mas inútil para um agente que gera código. Mantenha esse conteúdo fora da exportação `.md`.
+
+### Expansão do glossário para agentes
+
+```mdx
+## Configure your docs
+
+Edit `docs.json` to change navigation, theming, or redirects.
+
+<Visibility for="agents">
+  `docs.json` is the single source of truth for site configuration. It lives at the project root. Key top-level fields: `name`, `theme` (`jam` | `nebula` | `pulsar` | `halo`), `colors`, `navigation`, `redirects`, `integrations`, `auth`.
+</Visibility>
+```
+
+### Forma autocontida
+
+Use uma tag autocontida quando quiser *remover* um bloco do outro público sem substituí-lo por nada:
+
+```mdx
+<Visibility for="agents" />
+```
+
+## Como os públicos são detectados
+
+O Jamdesk determina o público com base no **formato da URL e no cabeçalho `Accept`**, nunca por detecção do user agent:
+
+| Solicitação                                   | Público |
+|-------------------------------------------------|----------|
+| URL canônica (por exemplo, `/guides/auth`)             | `humans` |
+| URL `.md` (por exemplo, `/guides/auth.md`)              | `agents` |
+| URL canônica com `Accept: text/markdown`      | `agents` |
+| `llms-full.txt` (incluído em todos os sites)         | `agents` |
+
+Qualquer agente que defina `Accept: text/markdown` recebe automaticamente o conteúdo destinado a agentes. Não é necessário alterar a URL.
+
+## Regras e armadilhas
+
+<Warning>
+  **Os blocos de código são seguros.** O filtro detecta blocos de código cercados por três crases ou três tils e blocos de código inline delimitados por uma única crase, deixando intactas as tags `<Visibility` dentro deles. É por isso que os exemplos acima são renderizados corretamente: eles contêm tags `<Visibility` como *conteúdo*, não como componentes.
+</Warning>
+
+<Warning>
+  **Expressões JSX não são compatíveis.** Envolver `<Visibility>` em uma expressão JavaScript como `{cond && <Visibility for="agents">...</Visibility>}` causará um erro de build. Use o componente no nível do bloco, não dentro de uma expressão.
+</Warning>
+
+<Warning>
+  **Não aninhe blocos `<Visibility>`.** O aninhamento funciona na superfície de renderização HTML, mas não tem suporte confiável na exportação `.md` ou em `llms-full.txt` (o filtro de nível de texto usado nelas não é seguro para aninhamento e produzirá uma saída corrompida). Mantenha os blocos no mesmo nível.
+</Warning>
+
+<Note>
+  **A pesquisa do site indexa apenas o conteúdo `for="humans"`.** Um termo que apareça somente dentro de um bloco `<Visibility for="agents">` não aparecerá no preenchimento automático da pesquisa voltada para pessoas. A exportação `.md` e `llms-full.txt` ainda o incluem para os agentes.
+</Note>
+
+## Quando NÃO usar
+
+- **Para ocultar informações confidenciais.** `<Visibility for="humans">` apenas oculta o conteúdo do HTML *renderizado*. O MDX bruto ainda está disponível pela URL `.md` e em `llms-full.txt`. Se você não quiser que algo fique visível para ninguém, não o coloque no repositório de documentação.
+- **Para testar conteúdo A/B para usuários diferentes.** Existem apenas dois públicos: pessoas e agentes. O Jamdesk não detecta qual pessoa específica está visualizando a página. Use sinalizadores de recursos ou redirecionamentos de rota para conteúdo segmentado por usuário.
+- **Para encobrir documentação ausente.** O conteúdo exclusivo para agentes deve ser *suplementar*, não um substituto para uma documentação clara voltada para pessoas. Se você perceber que está escrevendo a explicação real para agentes e um resumo para pessoas, inverta essa abordagem.
+
+## O que vem a seguir?
+
+<Columns cols={2}>
+  <Card title="Markdown Source" icon="code" href="/pt/ai/markdown-source">
+    Como funcionam as URLs `.md` e o que aparece em cada lugar.
+  </Card>
+  <Card title="llms.txt" icon="file-lines" href="/pt/ai/llms-txt">
+    Manifesto de descoberta de IA. Os agentes começam aqui.
+  </Card>
+  <Card title="Writing with AI" icon="robot" href="/pt/ai/writing-with-ai">
+    Como criar uma documentação que funcione bem para os dois públicos.
+  </Card>
+  <Card title="Components Overview" icon="shapes" href="/pt/components/overview">
+    Todos os componentes MDX integrados.
+  </Card>
+</Columns>
