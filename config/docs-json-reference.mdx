@@ -260,6 +260,66 @@ See [OpenAPI Example](/api-reference/openapi-example) for a live endpoint page a
 
 If your site is multilingual, drop a `<spec>.<lang>.<ext>` file next to each source spec (e.g., `openapi/api.fr.yaml`) and Jamdesk serves it on that language's URLs. See [Translating OpenAPI Specs](/setup/languages#translating-openapi-specs).
 
+<Warning>
+An `asyncapi` key is accepted anywhere `openapi` is, but Jamdesk does not render AsyncAPI specs yet — nothing is generated from it. `jamdesk validate` warns when it finds one, so a config that looks supported doesn't stay that way until you build the site.
+</Warning>
+
+### navigation openapi (generated pages)
+
+**Type:** `object`
+
+Put an `openapi` object on a navigation **tab** and set `generate: true`, and Jamdesk builds one endpoint page per operation in that spec at build time — plus the sidebar groups to hold them. Nothing to author, nothing to commit.
+
+```json docs.json
+{
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "API Reference",
+        "openapi": { "source": "/openapi/api.yaml", "generate": true }
+      }
+    ]
+  }
+}
+```
+
+| Key | Type | Description |
+|-----|------|-------------|
+| `source` | string | Path to the spec, relative to your `docs.json` |
+| `generate` | boolean | `true` builds the pages and the sidebar. Without it the key stays inert |
+
+Generated pages live under the tab's own name, slugified, with a slug built from the method and path — the tab above puts `POST /tickets` at `/api-reference/post-tickets`. Operations are grouped by their first `tag`; specs with no tags fall back to the first meaningful path segment, so `/api/v1/auctions/{auctionId}` lands under **Auctions**. Titles come from the operation `summary` when the spec has one, otherwise from the method and path — and an operation that addresses a single resource is titled in the singular (`GET /users/{id}` → "Get User").
+
+<Note>
+`generate` is opt-in by construction. A bare `"openapi": "/openapi/api.yaml"` on a tab, or an object without `generate: true`, keeps doing exactly what it did before — so no existing config gains a hundred pages on its next build.
+</Note>
+
+A committed `.mdx` file always wins a slug collision, so you can adopt generation gradually: turn it on, then delete your hand-written endpoint pages one at a time as you're ready.
+
+If you later rename a path in your spec, the generated slug moves with it. Jamdesk keeps a per-operation slug history and emits a redirect from every former URL to the current one on each build, so inbound links and bookmarks survive the rename. Your own [redirects](/setup/redirects) and any live page still take precedence.
+
+**Current limits.** Generation runs on top-level `navigation.tabs` only — not on groups, anchors, or tabs nested under `languages` or `versions` — and produces pages for your default language only. A `directory` key is accepted by the schema but has no effect on where pages land.
+
+### api.mdx.server
+
+**Type:** `string`
+
+Base URL used in code examples on `api:` frontmatter pages (the MDX-authored kind, not `openapi:` pages, which take their servers from the spec).
+
+```json
+{
+  "api": {
+    "mdx": {
+      "server": "https://api.example.com"
+    }
+  }
+}
+```
+
+<Note>
+An array is accepted for compatibility, but only the first entry is ever used — everything after it is discarded. `jamdesk validate` warns when you list more than one.
+</Note>
+
 ### api.examples.languages
 
 **Type:** `string[]`
