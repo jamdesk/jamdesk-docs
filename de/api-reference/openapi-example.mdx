@@ -1,48 +1,69 @@
 ---
 title: OpenAPI-Beispiel
-description: Sehen Sie eine live generierte OpenAPI-Endpoint-Seite und erfahren Sie, wie Jamdesk Anfragen, Antworten und Authentifizierung aus Ihrer Spezifikation rendert.
+description: Sehen Sie eine aus OpenAPI generierte Endpoint-Seite und erfahren Sie, wie Jamdesk Anfragen, Antworten und Authentifizierung aus Ihrer Spezifikation rendert.
 openapi: /openapi/example-api.yaml POST /tickets
 ---
 
-Diese Seite zeigt einen live aus einer [OpenAPI-Spezifikation](https://spec.openapis.org/oas/latest.html) generierten Endpoint. Das Anfrage-Schema, die Antwortmodelle und die Codebeispiele im rechten Bereich werden vollständig automatisch aus der Spezifikation generiert, ohne dass eine manuelle Erstellung erforderlich ist.
+Diese Seite zeigt einen live aus einer [OpenAPI-Spezifikation](https://spec.openapis.org/oas/latest.html) generierten Endpoint. Das Anfrage-Schema, die Antwortmodelle und die Codebeispiele im rechten Bereich werden automatisch aus der Spezifikation generiert, ohne dass eine manuelle Erstellung erforderlich ist.
 
 <Info>
-Dieses Beispiel verwendet die Acme Support API. Aktualisieren Sie `api.openapi` in Ihrer `docs.json`, sodass die Datei Ihrer eigenen Spezifikation verwendet wird und echte Endpoints generiert werden.
+Dieses Beispiel verwendet die Acme Support API. Aktualisieren Sie `api.openapi` in Ihrer `docs.json`, sodass die Datei auf Ihre eigene Spezifikationsdatei verweist und echte Endpoints generiert werden.
 </Info>
 
 <Info>
-**Mehrsprachige Dokumentation?** Legen Sie neben Ihrer Quellspezifikation eine Datei im Format `<spec>.<lang>.<ext>` (z. B. `example-api.fr.yaml`) ab. Jamdesk rendert die übersetzte Version, wenn Benutzer die Seite unter `/fr/...` aufrufen. Weitere Informationen finden Sie unter [OpenAPI-Spezifikationen übersetzen](/de/setup/languages#übersetzen-von-openapi-spezifikationen).
+**Mehrsprachige Dokumentation?** Legen Sie neben Ihrer Quellspezifikation eine Datei im Format `<spec>.<lang>.<ext>` ab, z. B. `example-api.fr.yaml`. Jamdesk rendert die übersetzte Version, wenn Benutzer die Seite unter `/fr/...` aufrufen. Weitere Informationen finden Sie unter [OpenAPI-Spezifikationen übersetzen](/de/setup/languages#openapi-spezifikationen-übersetzen).
 </Info>
 
 <Tip>
-Auf dieser Seite ist das [API Playground](/de/api-reference/playground) aktiviert. Klicken Sie beim obigen Endpoint auf **Try it**, um die API live zu testen.
+Auf dieser Seite ist der [API Playground](/de/api-reference/playground) aktiviert. Klicken Sie beim obigen Endpoint auf **Try it**, um die API live zu testen.
 </Tip>
 
-## Was wird generiert?
+## Was generiert wird
 
-Aus einer einzigen `openapi`-Zeile im Frontmatter generiert Jamdesk automatisch:
+Aus einer einzelnen `openapi`-Zeile im Frontmatter generiert Jamdesk automatisch:
 
-- Ein Endpoint-Badge mit Methode und Pfad sowie farblicher Kennzeichnung
+- Ein Endpoint-Badge mit Methode und Pfad sowie entsprechender Farbcodierung
 - Parameterdokumentation für Pfad-, Query-, Header- und Body-Parameter
-- Anfrage- und Antwort-Schemas, einschließlich verschachtelter Objekte und Arrays
+- Anfrage- und Antwortschemas einschließlich verschachtelter Objekte und Arrays
 - Codebeispiele in cURL, Python, JavaScript, Go, Ruby, C#, Java, Rust und PHP (konfigurierbar über `api.examples.languages`)
-- Authentifizierungsdetails aus den Sicherheitsschemata der Spezifikation
+- Aus der Spezifikation übernommene Authentifizierungsdetails der Sicherheits-­Schemas
 
-Alle `$ref`-Referenzen in Ihrer Spezifikation werden automatisch aufgelöst, sodass Sie Schemas wie gewohnt mit `components/schemas` organisieren können.
+Alle `$ref`-Referenzen in Ihrer Spezifikation werden automatisch aufgelöst. Daher können Sie Schemas wie gewohnt mit `components/schemas` organisieren.
+
+Beschreibungen in Ihrer Spezifikation werden als Markdown gerendert und nicht als Rohtext ausgegeben. Beschreibungen von Operationen, Parametern, Anfrageinhalten, Antworten und Schemas unterstützen alle dasselbe **Fett**, `code`, Listen, Links und GFM-Tabellen, die Sie auch in einer `.mdx`-Seite verwenden würden.
 
 ## OpenAPI einrichten
 
-Legen Sie Ihre OpenAPI-3.x-Spezifikation (YAML oder JSON) im Verzeichnis `openapi/` ab, registrieren Sie sie in `docs.json` unter `api.openapi` und fügen Sie anschließend `openapi: /openapi/your-spec.yaml METHOD /path` zum Frontmatter einer beliebigen Seite hinzu. Eine vollständige Anleitung finden Sie im [Leitfaden zur OpenAPI-Einrichtung](/de/setup/directory-structure#openapi).
+Legen Sie Ihre OpenAPI-3.x-Spezifikation (YAML oder JSON) im Verzeichnis `openapi/` ab, registrieren Sie sie in `docs.json` unter `api.openapi` und fügen Sie im Frontmatter einer beliebigen Seite `openapi: /openapi/your-spec.yaml METHOD /path` hinzu. Ausführliche Informationen finden Sie im [OpenAPI-Einrichtungsleitfaden](/de/setup/directory-structure#openapi).
+
+## Für jede Operation eine Seite generieren
+
+Statt für jeden Endpoint eine eigene Seite zu erstellen, können Sie einen Navigations-Tab auf die Spezifikation verweisen lassen und Jamdesk die gesamte Referenz generieren lassen:
+
+```json docs.json
+{
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "API Reference",
+        "openapi": { "source": "/openapi/api.yaml", "generate": true }
+      }
+    ]
+  }
+}
+```
+
+Für jede Operation wird eine Seite erstellt, und die Seitenleiste wird nach Tag gruppiert. Festgeschriebene `.mdx`-Dateien haben bei kollidierenden Slugs Vorrang. So können Sie die Umstellung schrittweise vornehmen. Wenn Sie einen Pfad in Ihrer Spezifikation umbenennen, wird die alte URL weitergeleitet, anstatt dass sie nicht mehr funktioniert. Weitere Informationen zu den vollständigen Regeln und aktuellen Einschränkungen finden Sie unter [navigation openapi](/de/config/docs-json-reference#navigation-openapi-generated-pages).
 
 <Tip>
-  Schreiben Sie Ihre Spezifikation in YAML? Überprüfen Sie sie mit dem kostenlosen [YAML Validator](https://jamdesk.com/utilities/yaml-validator), um Einrückungs- und Syntaxfehler zu erkennen, bevor der Build sie verarbeitet.
+Verfassen Sie Ihre Spezifikation in YAML? Führen Sie sie durch den kostenlosen [YAML Validator](https://jamdesk.com/utilities/yaml-validator), um Einrückungs- und Syntaxfehler zu erkennen, bevor der Build sie verarbeitet.
 </Tip>
 
 ## Verwandte Seiten
 
 <Columns cols={2}>
   <Card title="API Playground" icon="flask-vial" href="/de/api-reference/playground">
-    Interaktives API-Testen auf Ihren Endpoint-Seiten aktivieren
+    Interaktive API-Tests auf Ihren Endpoint-Seiten aktivieren
   </Card>
   <Card title="Anfrage-/Antwortbeispiele" icon="code" href="/de/api-reference/request-response-examples">
     Von Hand erstelltes Endpoint-Beispiel mit MDX-Komponenten

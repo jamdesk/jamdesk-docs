@@ -1,41 +1,62 @@
 ---
 title: OpenAPI 示例
-description: 查看实时的 OpenAPI 生成端点页面，了解 Jamdesk 如何直接根据规范呈现请求、响应和身份验证。
+description: 查看实时的 OpenAPI 生成端点页面，了解 Jamdesk 如何直接从规范呈现请求、响应和身份验证。
 openapi: /openapi/example-api.yaml POST /tickets
 ---
 
-此页面展示了一个由 [OpenAPI 规范](https://spec.openapis.org/oas/latest.html)生成的实时端点。右侧面板中的请求架构、响应模型和代码示例均根据规范自动生成，无需手动编写。
+此页面展示了一个根据 [OpenAPI 规范](https://spec.openapis.org/oas/latest.html)生成的实时端点。右侧面板中的请求架构、响应模型和代码示例均根据规范自动生成，无需手动编写。
 
 <Info>
 此示例使用 Acme Support API。更新 `docs.json` 中的 `api.openapi`，指向你自己的规范文件，即可生成真实端点。
 </Info>
 
 <Info>
-**多语言文档？** 在源规范文件旁放置一个 `<spec>.<lang>.<ext>` 文件（例如 `example-api.fr.yaml`），用户通过 `/fr/...` 查看页面时，Jamdesk 会呈现翻译后的版本。请参阅[翻译 OpenAPI 规范](/cn/setup/languages#翻译-openapi-规范)。
+**多语言文档？** 在源规范旁边提供一个 `<spec>.<lang>.<ext>` 文件（例如 `example-api.fr.yaml`），用户在 `/fr/...` 下查看页面时，Jamdesk 会呈现翻译后的版本。请参阅[翻译 OpenAPI 规范](/cn/setup/languages#翻译-openapi-规范)。
 </Info>
 
 <Tip>
-此页面已启用 [API Playground](/cn/api-reference/playground)。点击上方端点中的 **Try it**，即可在线测试 API。
+此页面已启用 [API Playground](/cn/api-reference/playground)。点击上方端点中的 **Try it**，即可实时测试 API。
 </Tip>
 
 ## 生成的内容
 
 只需一行 `openapi` frontmatter，Jamdesk 就会自动生成：
 
-- 显示方法和路径并进行颜色编码的端点标记
+- 显示带颜色编码的方法和路径的端点徽章
 - 路径、查询、标头和正文参数的参数文档
 - 请求和响应架构，包括嵌套对象和数组
-- cURL、Python、JavaScript、Go、Ruby、C#、Java、Rust 和 PHP 的代码示例（可通过 `api.examples.languages` 配置）
+- cURL、Python、JavaScript、Go、Ruby、C#、Java、Rust 和 PHP 代码示例（可通过 `api.examples.languages` 配置）
 - 从规范的安全方案中提取的身份验证详细信息
 
 规范中的所有 `$ref` 引用都会自动解析，因此你可以像往常一样使用 `components/schemas` 组织架构。
 
+规范中的描述会以 Markdown 呈现，而不是作为原始文本打印出来——操作、参数、请求正文、响应和架构描述都支持与 `.mdx` 页面中相同的**粗体**、`code`、列表、链接和 GFM 表格。
+
 ## 设置 OpenAPI
 
-将 OpenAPI 3.x 规范（YAML 或 JSON）放入 `openapi/` 目录，在 `docs.json` 的 `api.openapi` 下注册该规范，然后将 `openapi: /openapi/your-spec.yaml METHOD /path` 添加到任意页面的 frontmatter 中。详细信息请参阅 [OpenAPI 设置指南](/cn/setup/directory-structure#openapi)。
+将 OpenAPI 3.x 规范（YAML 或 JSON）放入 `openapi/` 目录，在 `docs.json` 的 `api.openapi` 下注册，然后将 `openapi: /openapi/your-spec.yaml METHOD /path` 添加到任意页面的 frontmatter 中。有关完整详情，请参阅 [OpenAPI 设置指南](/cn/setup/directory-structure#openapi)。
+
+## 为每个操作生成页面
+
+无需为每个端点编写一个页面，只需将导航选项卡指向规范，即可让 Jamdesk 构建完整的参考文档：
+
+```json docs.json
+{
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "API Reference",
+        "openapi": { "source": "/openapi/api.yaml", "generate": true }
+      }
+    ]
+  }
+}
+```
+
+每个操作都会生成一个页面，侧边栏则按标签分组。发生 slug 冲突时，已提交的 `.mdx` 文件优先，因此你可以逐步采用此功能；如果重命名规范中的路径，旧 URL 会重定向，而不会失效。有关完整规则和当前限制，请参阅 [navigation openapi](/cn/config/docs-json-reference#navigation-openapi生成的页面)。
 
 <Tip>
-  使用 YAML 编写规范？通过免费的 [YAML Validator](https://jamdesk.com/utilities/yaml-validator) 检查规范，在构建解析前发现缩进和语法错误。
+  使用 YAML 编写规范？请先通过免费的 [YAML Validator](https://jamdesk.com/utilities/yaml-validator) 检查，以便在构建解析规范前发现缩进和语法错误。
 </Tip>
 
 ## 相关页面

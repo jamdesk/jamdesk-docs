@@ -1,13 +1,13 @@
 ---
 title: Fonte Markdown
-description: Acesse a fonte Markdown bruta de qualquer página de documentação adicionando .md à URL, para ferramentas de IA, scripts e pipelines de conteúdo.
+description: Acesse o Markdown bruto de qualquer página de documentação adicionando .md à URL, para ferramentas de IA, scripts e pipelines de conteúdo estruturado.
 ---
 
-As ferramentas de IA processam Markdown com mais eficiência do que HTML renderizado. O Jamdesk disponibiliza a fonte Markdown bruta de todas as páginas adicionando `.md` a qualquer URL. Não é necessária autenticação.
+As ferramentas de IA processam Markdown com mais eficiência do que HTML renderizado. O Jamdesk disponibiliza o código-fonte Markdown bruto de cada página adicionando `.md` a qualquer URL. Não é necessária autenticação.
 
 ## Extensão de URL `.md`
 
-Adicione `.md` à URL de qualquer página de documentação para obter a fonte bruta em vez do HTML renderizado:
+Adicione `.md` à URL de qualquer página de documentação para obter o código-fonte bruto em vez do HTML renderizado:
 
 ```bash
 # Rendered page
@@ -36,7 +36,7 @@ Welcome to the getting started guide.
 <Note>You'll need Node.js 18 or later.</Note>
 ```
 
-A resposta é o arquivo de origem exato do seu repositório, incluindo o frontmatter e as tags de componentes.
+A resposta é o arquivo-fonte exato do seu repositório, incluindo o frontmatter e as tags de componentes.
 
 ### Domínios personalizados
 
@@ -52,11 +52,17 @@ curl https://docs.example.com/docs/getting-started.md
 
 ## Formato do conteúdo
 
-O conteúdo bruto é Markdown estendido com tags de componentes, como `<Note>`, `<Steps>` e `<Tabs>`. Os analisadores Markdown padrão tratam as tags de componentes como HTML bruto. Consulte [Noções básicas de Markdown](/pt/content/mdx-basics) para ver a referência completa da sintaxe.
+O conteúdo bruto é Markdown estendido com tags de componentes, como `<Note>`, `<Steps>` e `<Tabs>`. Os analisadores Markdown padrão tratarão as tags de componentes como HTML bruto. Consulte [Fundamentos de Markdown](/pt/content/mdx-basics) para obter a referência completa de sintaxe.
 
-## Especificações OpenAPI nas páginas de referência da API
+## O que uma página de endpoint exporta
 
-Ao buscar o Markdown de uma página de referência da API (uma página cujo frontmatter declara uma especificação `api:` ou `openapi:`), o Jamdesk adiciona um rodapé curto que direciona os agentes de IA para todas as especificações OpenAPI do seu projeto, reunidas em um único download:
+Uma página `openapi:` quase não tem conteúdo próprio — o endpoint é renderizado a partir da sua especificação — portanto, a exportação Markdown é nivelada a partir da especificação. Um agente que a busca obtém o método e o caminho, os parâmetros com suas descrições, os esquemas de requisição e resposta e uma seção `## Authentication` que identifica os esquemas de segurança exigidos pela operação: o tipo de esquema, o nome do cabeçalho `apiKey`, o formato bearer e todos os escopos OAuth 2.
+
+As alternativas são identificadas como "Any one of", os esquemas que devem ser enviados juntos são listados em conjunto e uma operação que explicitamente opta por não usar segurança com `security: []` informa isso em vez de ficar em silêncio. Isso é tudo o que é necessário para criar uma requisição funcional sem abrir a especificação.
+
+## Especificações OpenAPI em páginas de referência de API
+
+Quando você busca o Markdown de uma página de referência de API (aquela cujo frontmatter declara uma especificação `api:` ou `openapi:`), o Jamdesk adiciona um rodapé curto que aponta os agentes de IA para todas as especificações OpenAPI do seu projeto, agrupadas como um único download:
 
 ```markdown
 ---
@@ -64,35 +70,35 @@ Ao buscar o Markdown de uma página de referência da API (uma página cujo fron
 📦 **OpenAPI specs:** Every OpenAPI specification referenced by this documentation is available as a single download — https://acme.jamdesk.app/api-specs.zip
 ```
 
-É o mesmo `api-specs.zip` disponibilizado pela ação [Baixar especificação da API](/pt/ai/ai-actions#baixar-especificação-da-api), montado novamente a cada solicitação. O objetivo é facilitar o acesso: um agente que lê uma página de endpoint descobre que pode obter o contrato completo legível por máquina em uma única solicitação, em vez de analisar todos os endpoints. O rodapé aparece apenas nas páginas de referência da API de projetos que têm pelo menos uma especificação; os guias comuns não são alterados.
+É o mesmo `api-specs.zip` oferecido pela ação [Baixar especificação da API](/pt/ai/ai-actions#baixar-especificação-da-api), montado novamente a cada requisição. O objetivo é facilitar o acesso: um agente que lê uma página de endpoint descobre que pode obter o contrato completo legível por máquina em uma única requisição, em vez de extrair cada endpoint. O rodapé aparece somente em páginas de referência de API de projetos que têm pelo menos uma especificação; os guias comuns não são alterados.
 
 ## Detalhes da resposta
 
 ### Cabeçalhos
 
-| Cabeçalho | Valor | Finalidade |
+| Header | Value | Purpose |
 |--------|-------|---------|
-| `Content-Type` | `text/markdown; charset=utf-8` | Identifica o conteúdo como Markdown |
-| `Cache-Control` | `public, max-age=3600, s-maxage=86400` | Armazenado em cache pelo navegador por 1 hora e pelo CDN por 1 dia (URLs `.md`) |
-| `Vary` | `Accept` | A mesma URL fornece HTML ou Markdown dependendo do cabeçalho `Accept` da solicitação |
-| `X-Robots-Tag` | `noindex, nofollow` | Impede a indexação pelos mecanismos de busca |
-| `Content-Disposition` | `inline` | Exibe o conteúdo no navegador em vez de baixá-lo |
-| `X-Frame-Options` | `DENY` | Impede a incorporação em iframes |
-| `Content-Security-Policy` | `default-src 'none'` | Bloqueia a execução de scripts |
+| `Content-Type` | `text/markdown; charset=utf-8` | Identifies content as Markdown |
+| `Cache-Control` | `public, max-age=3600, s-maxage=86400` | Browser-cached 1 hour, CDN-cached 1 day (`.md` URLs) |
+| `Vary` | `Accept` | The same URL serves HTML or Markdown depending on the request's `Accept` header |
+| `X-Robots-Tag` | `noindex, nofollow` | Prevents search engine indexing |
+| `Content-Disposition` | `inline` | Displays in browser instead of downloading |
+| `X-Frame-Options` | `DENY` | Prevents embedding in iframes |
+| `Content-Security-Policy` | `default-src 'none'` | Blocks script execution |
 
 Solicitar a URL canônica de uma página (sem `.md`) com o cabeçalho `Accept: text/markdown` retorna o mesmo Markdown, mas com `Cache-Control: private, no-store`. Ela compartilha uma chave de cache com a página HTML, portanto essa resposta nunca é armazenada em cache.
 
 ### Respostas de erro
 
-| Status | Significado |
+| Status | Meaning |
 |--------|---------|
-| `308` | Redirecionamento de barra final (por exemplo, `/intro.md/` redireciona para `/intro.md`) |
-| `404` | A página não existe (retorna um erro curto em texto simples, não em Markdown) |
-| `500` | Erro do servidor (retorna uma página de erro HTML) |
+| `308` | Trailing slash redirect (e.g., `/intro.md/` redirects to `/intro.md`) |
+| `404` | Page does not exist (returns a short plain-text error, not Markdown) |
+| `500` | Server error (returns an HTML error page) |
 
 ## Uso com ferramentas de IA
 
-As URLs de origem Markdown funcionam bem com o [servidor MCP](/pt/ai/mcp-server). Use `searchDocs` para encontrar páginas por palavra-chave e, em seguida, busque a fonte bruta da página correspondente:
+As URLs de código-fonte Markdown funcionam bem com o [servidor MCP](/pt/ai/mcp-server). Use `searchDocs` para encontrar páginas por palavra-chave e, em seguida, busque o código-fonte bruto da página correspondente:
 
 ```bash
 # 1. Search for a topic via MCP
@@ -104,7 +110,7 @@ curl -X POST https://acme.jamdesk.app/_mcp \
 curl https://acme.jamdesk.app/guides/authentication.md
 ```
 
-Isso fornece às ferramentas de IA acesso tanto à pesquisa quanto à fonte completa da documentação. As duas URLs também funcionam em um domínio personalizado ativo — `https://docs.acme.com/_mcp` e `https://docs.acme.com/guides/authentication.md`.
+Isso oferece às ferramentas de IA acesso tanto à busca quanto ao código-fonte completo da documentação. As duas URLs também funcionam em um domínio personalizado ativo — `https://docs.acme.com/_mcp` e `https://docs.acme.com/guides/authentication.md`.
 
 ## O que vem a seguir?
 
@@ -112,7 +118,7 @@ Isso fornece às ferramentas de IA acesso tanto à pesquisa quanto à fonte comp
   <Card title="Servidor MCP" icon="robot" href="/pt/ai/mcp-server">
     Conecte assistentes de IA diretamente à sua documentação
   </Card>
-  <Card title="Noções básicas de Markdown" icon="pen-nib" href="/pt/content/mdx-basics">
-    Referência da sintaxe MDX para páginas de documentação
+  <Card title="Fundamentos de Markdown" icon="pen-nib" href="/pt/content/mdx-basics">
+    Referência de sintaxe MDX para páginas de documentação
   </Card>
 </Columns>

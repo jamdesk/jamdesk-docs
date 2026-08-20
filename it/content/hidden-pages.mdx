@@ -1,9 +1,9 @@
 ---
 title: Pagine nascoste
-description: Nascondi le pagine dalla barra laterale e dai risultati di ricerca senza eliminarle. Gestisci la visibilità con frontmatter, docs.json o i controlli SEO.
+description: Mantieni le pagine fuori dalla barra laterale e dai risultati di ricerca senza eliminarle; gestisci la visibilità con frontmatter, docs.json o i controlli SEO.
 ---
 
-Alcune pagine non appartengono alla barra laterale pubblica: bozze, manuali interni o guide obsolete che devi ancora collegare. Le pagine nascoste restano raggiungibili tramite URL diretto, ma scompaiono dalla navigazione, dalla ricerca, dalla sitemap e dal contesto AI fornito agli LLM.
+Alcune pagine non appartengono alla barra laterale pubblica: bozze, manuali interni, guide obsolete che devi ancora collegare. Le pagine nascoste restano raggiungibili tramite URL diretto, ma scompaiono dalla navigazione, dalla ricerca, dalla sitemap e dal contesto AI fornito agli LLM.
 
 ## Nascondere una singola pagina
 
@@ -48,7 +48,7 @@ Ogni pagina sotto il nodo nascosto eredita questa regola. Lo stesso flag funzion
 
 ## Mantenere le pagine nascoste nella ricerca
 
-Se vuoi che una scheda o un gruppo nascosto non compaia nella barra laterale, ma venga comunque indicizzato per la ricerca sul sito, le risposte AI e la sitemap, aggiungi `"searchable": true`:
+Se vuoi escludere una scheda o un gruppo nascosto dalla barra laterale, ma mantenerlo indicizzato per la ricerca sul sito, le risposte AI e la sitemap, aggiungi `"searchable": true`:
 
 ```json
 {
@@ -59,16 +59,33 @@ Se vuoi che una scheda o un gruppo nascosto non compaia nella barra laterale, ma
 }
 ```
 
-Il frontmatter `hidden: true` su una pagina figlia ha comunque la precedenza. `searchable` riattiva solo i discendenti che non hanno scelto di non essere indicizzati.
+Il frontmatter `hidden: true` su una pagina figlia ha comunque la precedenza. `searchable` riattiva solo i discendenti che non hanno scelto autonomamente di non essere inclusi.
 
-## Controlli a livello di progetto
+## Escludere una pagina solo dalla ricerca
+
+A volte una pagina deve restare nella barra laterale ed essere indicizzabile, ma non deve comparire quando qualcuno esegue una ricerca o pone una domanda. Aggiungi `search: false` al frontmatter della pagina:
+
+```yaml
+---
+title: Legacy v1 endpoints
+search: false
+---
+```
+
+La pagina mantiene il proprio posto nella navigazione, nella sitemap, in `llms.txt` e nel feed RSS, e continua a essere indicizzata dai motori di ricerca. Ciò da cui viene esclusa sono le superfici di *lookup*: la ricerca sul sito, le risposte della chat AI e il server MCP.
+
+<Note>
+`search: false` svolge il compito opposto rispetto a `hidden: true`. `hidden` rimuove una pagina dalla navigazione e dalle superfici di indicizzazione; `search: false` lascia tutto invariato e impedisce solo il recupero della pagina. Non confonderlo con `searchable` a livello di navigazione, che reinserisce nella ricerca le pagine nascoste.
+</Note>
+
+## Controlli per l'intero progetto
 
 Entrambi i flag si trovano sotto `seo` in `docs.json`:
 
 | Flag | Predefinito | Effetto |
 |---|---|---|
-| `seo.indexing` | `"navigable"` | Solo le pagine elencate nella navigazione compaiono negli artefatti. Imposta `"all"` per includere ogni file MDX nel repository. |
-| `seo.indexHiddenPages` | `false` | Imposta `true` per includere le pagine `hidden: true` nella sitemap, in llms.txt e nella ricerca, e rimuovere il tag auto-noindex. |
+| `seo.indexing` | `"navigable"` | Solo le pagine elencate nella navigazione vengono incluse negli artefatti. Imposta `"all"` per includere ogni file MDX nel repository. |
+| `seo.indexHiddenPages` | `false` | Imposta `true` per includere le pagine con `hidden: true` nella sitemap, in llms.txt e nella ricerca, rimuovendo il tag automatico noindex. |
 
 Esempio:
 
@@ -86,16 +103,18 @@ Esempio:
 |---|---|---|---|---|---|
 | Pagina normale | — | elencata | Sì | Sì | Sì |
 | Nascosta tramite frontmatter | `hidden: true` | elencata | No | Sì | No |
-| Pagina non presente nella navigazione (orfana) | — | omessa | No | Sì | No |
+| Pagina non nella navigazione (orfana) | — | omessa | No | Sì | No |
 | Gruppo nascosto | — | `hidden: true` sul gruppo | No | Sì | No |
 | Gruppo nascosto e ricercabile | — | `hidden: true, searchable: true` | No | Sì | Sì |
+| Solo esclusa dalla ricerca | `search: false` | elencata | Sì | Sì | Sì |
 | Il progetto abilita l'indicizzazione completa | — | qualsiasi | Come sopra | Sì | Sì |
 
 ## Quando usare ciascuna opzione
 
 - **Bozze e anteprime:** frontmatter `hidden: true` sulle singole pagine
-- **Sezioni interne** per un team ristretto: un gruppo o una scheda nascosti
-- **Documentazione di conformità** che deve essere pubblica, ma non promossa: gruppo nascosto con `searchable: true`
+- **Sezioni interne** per un piccolo team: un gruppo o una scheda nascosti
+- **Documenti di conformità** che devono essere pubblici ma non promossi: gruppo nascosto con `searchable: true`
 - **Indicizzazione dell'intero repository** solo per fornire contesto all'AI: `seo.indexing: "all"`
+- **Pagine sostituite** che vuoi ancora rendere collegabili e indicizzare, ma non mostrare nella ricerca o all'AI: frontmatter `search: false`
 
-Le pagine nascoste non sono un controllo degli accessi. Chiunque disponga dell'URL può leggerle. Per un controllo degli accessi reale, consulta [Protezione con password](/it/setup/password-protection).
+Le pagine nascoste non sono un controllo degli accessi. Chiunque disponga dell'URL può leggerle. Per un controllo reale degli accessi, consulta [Protezione tramite password](/it/setup/password-protection).

@@ -1,9 +1,9 @@
 ---
 title: 隐藏页面
-description: 无需删除页面，即可将其从侧边栏和搜索结果中移除。通过 frontmatter、docs.json 或 seo 控制可见性。
+description: 无需删除页面，即可将其从侧边栏和搜索结果中隐藏，并通过 frontmatter、docs.json 或 seo 控制可见性。
 ---
 
-有些页面不适合出现在公开侧边栏中，例如草稿、内部手册，以及仍需通过链接访问的弃用指南。隐藏页面仍可通过直接 URL 访问，但会从导航、搜索、站点地图以及提供给 LLM 的 AI 上下文中消失。
+有些页面不适合出现在公共侧边栏中：例如草稿、内部手册，以及仍需保留链接的弃用指南。隐藏页面仍可通过直接 URL 访问，但会从导航、搜索、站点地图以及提供给 LLM 的 AI 上下文中消失。
 
 ## 隐藏单个页面
 
@@ -16,15 +16,15 @@ hidden: true
 ---
 ```
 
-有人访问页面 URL 时，页面仍会正常渲染，但 Jamdesk 会：
+当有人访问其 URL 时，页面仍会正常呈现，但 Jamdesk 会：
 
 - 将其从侧边栏中移除
-- 添加 `<meta name="robots" content="noindex, follow">`，让搜索引擎跳过该页面
+- 添加 `<meta name="robots" content="noindex, follow">`，使搜索引擎跳过该页面
 - 将其从 `sitemap.xml`、`llms.txt`、`llms-full.txt` 和站内搜索中排除
 
-## 隐藏整个组或标签页
+## 隐藏整个群组或标签页
 
-在 `docs.json` 的组或标签页上设置 `"hidden": true`：
+在 `docs.json` 的群组或标签页上设置 `"hidden": true`：
 
 ```json
 {
@@ -48,7 +48,7 @@ hidden: true
 
 ## 在搜索中保留隐藏页面
 
-如果希望隐藏标签页或组，使其不显示在侧边栏中，但仍被站内搜索、AI 回答和站点地图索引，请添加 `"searchable": true`：
+如果希望隐藏标签页或群组，使其不出现在侧边栏中，但仍被站内搜索、AI 回答和站点地图索引，请添加 `"searchable": true`：
 
 ```json
 {
@@ -61,14 +61,31 @@ hidden: true
 
 子页面 frontmatter 中的 `hidden: true` 仍具有更高优先级。`searchable` 只会重新开放那些自身未选择退出的后代页面。
 
+## 仅将页面从搜索中排除
+
+有时，页面应继续显示在侧边栏中并保持可索引，但不应在用户搜索或提问时出现。在其 frontmatter 中添加 `search: false`：
+
+```yaml
+---
+title: Legacy v1 endpoints
+search: false
+---
+```
+
+页面会保留在导航、站点地图、`llms.txt` 和 RSS feed 中，搜索引擎也仍会将其编入索引。它会离开的是*查找*界面：站内搜索、AI 聊天回答和 MCP 服务器。
+
+<Note>
+`search: false` 与 `hidden: true` 的作用相反。`hidden` 会将页面从导航和索引界面中移除；`search: false` 则不会改变这些内容，只会停止检索该页面。不要将其与导航级别的 `searchable` 混淆，后者会将隐藏页面重新纳入搜索。
+</Note>
+
 ## 项目级控制
 
 这两个标志都位于 `docs.json` 的 `seo` 下：
 
-| 标志 | 默认值 | 效果 |
+| 标志 | 默认值 | 作用 |
 |---|---|---|
-| `seo.indexing` | `"navigable"` | 只有列在导航中的页面才会出现在生成的资源中。设置为 `"all"` 可包含代码库中的每个 MDX 文件。 |
-| `seo.indexHiddenPages` | `false` | 设置为 `true` 可将 `hidden: true` 页面包含在站点地图、llms.txt 和搜索中，并移除自动添加的 noindex 标签。 |
+| `seo.indexing` | `"navigable"` | 只有列在导航中的页面才会出现在生成内容中。设置为 `"all"` 可包含仓库中的每个 MDX 文件。 |
+| `seo.indexHiddenPages` | `false` | 设置为 `true` 可将 `hidden: true` 页面包含在站点地图、llms.txt 和搜索中，并移除自动 noindex 标签。 |
 
 示例：
 
@@ -87,15 +104,17 @@ hidden: true
 | 普通页面 | — | 已列出 | 是 | 是 | 是 |
 | 通过 frontmatter 隐藏 | `hidden: true` | 已列出 | 否 | 是 | 否 |
 | 不在导航中的页面（孤立页面） | — | 未列出 | 否 | 是 | 否 |
-| 隐藏组 | — | 组上设置 `hidden: true` | 否 | 是 | 否 |
-| 隐藏且可搜索的组 | — | `hidden: true, searchable: true` | 否 | 是 | 是 |
-| 项目选择将所有内容纳入索引 | — | 任意 | 同上 | 是 | 是 |
+| 隐藏群组 | — | 群组上设置 `hidden: true` | 否 | 是 | 否 |
+| 隐藏且可搜索的群组 | — | `hidden: true, searchable: true` | 否 | 是 | 是 |
+| 仅从搜索中排除 | `search: false` | 已列出 | 是 | 是 | 是 |
+| 项目选择将所有内容编入索引 | — | 任意 | 同上 | 是 | 是 |
 
 ## 何时使用各项设置
 
-- **草稿和预览：** 在单个页面上设置 frontmatter `hidden: true`
-- **内部部分**适用于小型团队：使用隐藏组或标签页
-- **合规文档**应公开但不主动推广：使用 `searchable: true` 的隐藏组
-- **仅用于 AI 内容依据的完整代码库索引：** `seo.indexing: "all"`
+- **草稿和预览：** 在单个页面上使用 frontmatter `hidden: true`
+- **小型团队的内部版块：** 使用隐藏群组或标签页
+- **应公开但不应主动推广的合规文档：** 使用 `searchable: true` 的隐藏群组
+- **仅为 AI 提供完整仓库索引：** 使用 `seo.indexing: "all"`
+- **仍希望可链接和可索引，但不希望通过搜索或 AI 展示的旧页面：** 使用 frontmatter `search: false`
 
-隐藏页面不等同于访问控制。任何拥有 URL 的人都可以读取页面。如需真正的访问控制，请参阅[密码保护](/cn/setup/password-protection)。
+隐藏页面不是访问控制。任何拥有 URL 的人都可以阅读这些页面。如需真正的访问控制，请参阅[密码保护](/cn/setup/password-protection)。

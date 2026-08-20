@@ -1,11 +1,11 @@
 ---
 title: Markdown 源码
-description: 在文档页面 URL 后追加 .md，即可访问原始 Markdown 源码，供 AI 工具、脚本和内容流水线使用。
+description: 通过在 URL 后追加 .md，访问任意文档页面的原始 Markdown，供 AI 工具、脚本和内容流水线使用。
 ---
 
-与渲染后的 HTML 相比，AI 工具处理 Markdown 的效率更高。Jamdesk 允许在任意页面 URL 后追加 `.md`，以获取每个页面的原始 Markdown 源码。无需身份验证。
+AI 工具处理 Markdown 的效率高于渲染后的 HTML。Jamdesk 允许你在任意 URL 后追加 `.md`，以获取每个页面的原始 Markdown 源码。无需身份验证。
 
-## `.md` URL 扩展
+## `.md` URL 扩展名
 
 在任意文档页面 URL 后追加 `.md`，即可获取原始源码，而不是渲染后的 HTML：
 
@@ -36,11 +36,11 @@ Welcome to the getting started guide.
 <Note>You'll need Node.js 18 or later.</Note>
 ```
 
-响应内容是仓库中的原始文件，包括 frontmatter 和组件标签。
+响应内容是仓库中的确切源文件，包括 frontmatter 和组件标签。
 
 ### 自定义域名
 
-原始内容同样适用于自定义域名。使用读者看到的相同 URL，并在末尾追加 `.md`：
+自定义域名同样支持原始内容。使用读者看到的相同 URL，并在末尾追加 `.md`：
 
 ```bash
 # Docs served at root
@@ -52,11 +52,17 @@ curl https://docs.example.com/docs/getting-started.md
 
 ## 内容格式
 
-原始内容是扩展了组件标签的 Markdown，例如 `<Note>`、`<Steps>` 和 `<Tabs>`。标准 Markdown 解析器会将组件标签视为原始 HTML。有关完整语法参考，请参阅 [Markdown 基础](/cn/content/mdx-basics)。
+原始内容是扩展了 `<Note>`、`<Steps>` 和 `<Tabs>` 等组件标签的 Markdown。标准 Markdown 解析器会将组件标签视为原始 HTML。完整语法参考请参阅 [Markdown 基础](/cn/content/mdx-basics)。
+
+## 端点页面导出的内容
+
+`openapi:` 页面几乎没有自己的正文——端点由你的规范渲染，因此其 Markdown 导出内容会改为从规范扁平化生成。获取该页面的 agent 会得到方法和路径、带描述的参数、请求和响应架构，以及一个列出操作所需安全方案的 `## Authentication` 部分：方案类型、`apiKey` 标头名称、bearer 格式和所有 OAuth 2 作用域。
+
+备选方案会标记为 “Any one of”，必须全部发送的方案会列在一起，而明确使用 `security: []` 选择退出的操作也会明确说明，而不会默默省略。无需打开规范，构建可正常运行的请求所需的信息就全部包含在内。
 
 ## API 参考页面上的 OpenAPI 规范
 
-当你获取 API 参考页面的 Markdown 时（其 frontmatter 声明了 `api:` 或 `openapi:` 规范），Jamdesk 会附加一个简短页脚，指向项目中的每个 OpenAPI 规范，并将其打包为一个下载文件：
+当你获取 API 参考页面的 Markdown（其 frontmatter 声明了 `api:` 或 `openapi:` 规范）时，Jamdesk 会追加一个简短页脚，引导 AI agent 获取项目中的每个 OpenAPI 规范，并将其打包为单个下载文件：
 
 ```markdown
 ---
@@ -64,7 +70,7 @@ curl https://docs.example.com/docs/getting-started.md
 📦 **OpenAPI specs:** Every OpenAPI specification referenced by this documentation is available as a single download — https://acme.jamdesk.app/api-specs.zip
 ```
 
-这是 [下载 API 规范](/cn/ai/ai-actions#download-api-spec)操作提供的同一个 `api-specs.zip`，每次请求都会重新生成。这样做的意义在于扩大可访问范围：读取单个端点页面的代理可以了解到，它能够通过一次请求获取完整的机器可读契约，而不必抓取每个端点。该页脚仅出现在至少包含一个规范的项目的 API 参考页面上；普通指南不受影响。
+这与 [下载 API 规范](/cn/ai/ai-actions#download-api-spec) 操作提供的 `api-specs.zip` 相同，并且会在每次请求时重新生成。其意义在于扩大获取范围：读取单个端点页面的 agent 会知道可以通过一次请求获取完整的机器可读契约，而无需抓取每个端点。页脚仅出现在至少包含一个规范的项目的 API 参考页面上；普通指南不受影响。
 
 ## 响应详情
 
@@ -72,23 +78,23 @@ curl https://docs.example.com/docs/getting-started.md
 
 | Header | Value | Purpose |
 |--------|-------|---------|
-| `Content-Type` | `text/markdown; charset=utf-8` | 标识内容为 Markdown |
-| `Cache-Control` | `public, max-age=3600, s-maxage=86400` | 浏览器缓存 1 小时，CDN 缓存 1 天（`.md` URL） |
-| `Vary` | `Accept` | 同一 URL 根据请求的 `Accept` 标头提供 HTML 或 Markdown |
-| `X-Robots-Tag` | `noindex, nofollow` | 阻止搜索引擎建立索引 |
-| `Content-Disposition` | `inline` | 在浏览器中显示，而不是下载 |
-| `X-Frame-Options` | `DENY` | 阻止在 iframe 中嵌入 |
-| `Content-Security-Policy` | `default-src 'none'` | 阻止脚本执行 |
+| `Content-Type` | `text/markdown; charset=utf-8` | Identifies content as Markdown |
+| `Cache-Control` | `public, max-age=3600, s-maxage=86400` | Browser-cached 1 hour, CDN-cached 1 day (`.md` URLs) |
+| `Vary` | `Accept` | The same URL serves HTML or Markdown depending on the request's `Accept` header |
+| `X-Robots-Tag` | `noindex, nofollow` | Prevents search engine indexing |
+| `Content-Disposition` | `inline` | Displays in browser instead of downloading |
+| `X-Frame-Options` | `DENY` | Prevents embedding in iframes |
+| `Content-Security-Policy` | `default-src 'none'` | Blocks script execution |
 
-使用标头 `Accept: text/markdown` 请求页面的规范 URL（不带 `.md`）时，也会返回相同的 Markdown，但其 `Cache-Control` 为 `private, no-store`。它与 HTML 页面共享缓存键，因此该响应不会被缓存。
+使用标头 `Accept: text/markdown` 请求页面的规范 URL（不带 `.md`）时，也会返回相同的 Markdown，但 `Cache-Control` 为 `private, no-store`。它与 HTML 页面共享缓存键，因此该响应永远不会被缓存。
 
 ### 错误响应
 
 | Status | Meaning |
 |--------|---------|
-| `308` | 末尾斜杠重定向（例如，`/intro.md/` 重定向到 `/intro.md`） |
-| `404` | 页面不存在（返回简短的纯文本错误，而不是 Markdown） |
-| `500` | 服务器错误（返回 HTML 错误页面） |
+| `308` | Trailing slash redirect (e.g., `/intro.md/` redirects to `/intro.md`) |
+| `404` | Page does not exist (returns a short plain-text error, not Markdown) |
+| `500` | Server error (returns an HTML error page) |
 
 ## 与 AI 工具结合使用
 
@@ -104,15 +110,15 @@ curl -X POST https://acme.jamdesk.app/_mcp \
 curl https://acme.jamdesk.app/guides/authentication.md
 ```
 
-这样，AI 工具即可同时搜索文档并访问完整源码。这两个 URL 在实时自定义域名上同样有效：`https://docs.acme.com/_mcp` 和 `https://docs.acme.com/guides/authentication.md`。
+这样，AI 工具既可以搜索文档，也可以访问完整源码。两个 URL 在实时自定义域名上同样有效——`https://docs.acme.com/_mcp` 和 `https://docs.acme.com/guides/authentication.md`。
 
-## 下一步？
+## 接下来做什么？
 
 <Columns cols={2}>
-  <Card title="MCP 服务器" icon="robot" href="/cn/ai/mcp-server">
-    将 AI 助手直接连接到文档
+  <Card title="MCP Server" icon="robot" href="/cn/ai/mcp-server">
+    将 AI 助手直接连接到你的文档
   </Card>
-  <Card title="Markdown 基础" icon="pen-nib" href="/cn/content/mdx-basics">
+  <Card title="Markdown Basics" icon="pen-nib" href="/cn/content/mdx-basics">
     文档页面的 MDX 语法参考
   </Card>
 </Columns>
