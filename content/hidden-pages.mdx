@@ -78,6 +78,33 @@ The page keeps its place in navigation, your sitemap, `llms.txt`, and your RSS f
 `search: false` is the opposite job from `hidden: true`. `hidden` takes a page out of navigation and the indexing surfaces; `search: false` leaves all of that alone and only stops the page being retrieved. Don't confuse it with the navigation-level `searchable`, which opts hidden pages back *into* search.
 </Note>
 
+## How much of a page gets indexed
+
+Search doesn't index a page as one blob. It indexes it **section by section** — each heading becomes its own search entry, so a reader searching for "Rate limits" lands on that heading rather than the top of a long page.
+
+Two limits apply to that, and both are automatic:
+
+| Limit | Value | What happens past it |
+|---|---|---|
+| Entries per page | 50 | Sections are indexed in page order. Once the 50th is used, every remaining section is left out of search. |
+| Text per section | First 300 characters | Wording deeper into a section isn't matched. |
+
+The page itself takes one of the 50 slots, so 49 sections are indexed.
+
+The cap exists because search weighs every entry against the rest of your index. One page emitting hundreds of entries crowds the others out of results — a generated changelog can single-handedly account for half an index and push genuinely relevant pages off the first screen.
+
+<Warning>
+A page over the cap still renders in full. Only its later sections stop being findable, and nothing on the page tells your readers that.
+
+If a page has more than ~50 headings, either split it into several pages — better navigation anyway — or, if it's machine-generated and nobody searches it by hand, add `search: false` to keep the whole thing out of the index.
+</Warning>
+
+To put a term where search can weigh it properly, use the page title (weighted highest), then a heading, then the description. Body text is weighted lowest and only its first 300 characters per section count.
+
+<Note>
+`seo.metatags.keywords` does *not* feed site search. It emits an HTML `<meta name="keywords">` tag, which Google has stated it ignores for ranking. There's no way to attach extra search terms to a page — put the words you want matched in the title, a heading, or the description.
+</Note>
+
 ## Project-wide controls
 
 Both flags live under `seo` in `docs.json`:
