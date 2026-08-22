@@ -1,6 +1,6 @@
 ---
 title: Pagine nascoste
-description: Mantieni le pagine fuori dalla barra laterale e dai risultati di ricerca senza eliminarle; gestisci la visibilità con frontmatter, docs.json o i controlli SEO.
+description: Mantieni le pagine fuori dalla barra laterale e dai risultati di ricerca senza eliminarle, gestendo la visibilità con frontmatter, docs.json o controlli SEO.
 ---
 
 Alcune pagine non appartengono alla barra laterale pubblica: bozze, manuali interni, guide obsolete che devi ancora collegare. Le pagine nascoste restano raggiungibili tramite URL diretto, ma scompaiono dalla navigazione, dalla ricerca, dalla sitemap e dal contesto AI fornito agli LLM.
@@ -19,8 +19,8 @@ hidden: true
 La pagina viene visualizzata normalmente quando qualcuno visita il relativo URL, ma Jamdesk:
 
 - La rimuove dalla barra laterale
-- Aggiunge `<meta name="robots" content="noindex, follow">` per impedire ai motori di ricerca di indicizzarla
-- La esclude da `sitemap.xml`, `llms.txt`, `llms-full.txt` e dalla ricerca sul sito
+- Aggiunge `<meta name="robots" content="noindex, follow">` affinché i motori di ricerca la ignorino
+- La esclude da `sitemap.xml`, `llms.txt`, `llms-full.txt` e dalla ricerca nel sito
 
 ## Nascondere un intero gruppo o una scheda
 
@@ -44,11 +44,11 @@ Imposta `"hidden": true` su un gruppo o una scheda in `docs.json`:
 }
 ```
 
-Ogni pagina sotto il nodo nascosto eredita questa regola. Lo stesso flag funziona su `tabs`, `groups`, `anchors`, `dropdowns`, `products`, `languages` e `versions`.
+Ogni pagina sotto il nodo nascosto eredita la regola. Lo stesso flag funziona su `tabs`, `groups`, `anchors`, `dropdowns`, `products`, `languages` e `versions`.
 
 ## Mantenere le pagine nascoste nella ricerca
 
-Se vuoi escludere una scheda o un gruppo nascosto dalla barra laterale, ma mantenerlo indicizzato per la ricerca sul sito, le risposte AI e la sitemap, aggiungi `"searchable": true`:
+Se vuoi che una scheda o un gruppo nascosto non compaia nella barra laterale, ma rimanga indicizzato per la ricerca nel sito, le risposte AI e la sitemap, aggiungi `"searchable": true`:
 
 ```json
 {
@@ -59,11 +59,11 @@ Se vuoi escludere una scheda o un gruppo nascosto dalla barra laterale, ma mante
 }
 ```
 
-Il frontmatter `hidden: true` su una pagina figlia ha comunque la precedenza. `searchable` riattiva solo i discendenti che non hanno scelto autonomamente di non essere inclusi.
+Il frontmatter `hidden: true` su una pagina figlia ha comunque la precedenza. `searchable` riattiva solo i discendenti che non hanno scelto di escludersi.
 
 ## Escludere una pagina solo dalla ricerca
 
-A volte una pagina deve restare nella barra laterale ed essere indicizzabile, ma non deve comparire quando qualcuno esegue una ricerca o pone una domanda. Aggiungi `search: false` al frontmatter della pagina:
+A volte una pagina deve restare nella barra laterale e rimanere indicizzabile, ma non deve comparire quando qualcuno esegue una ricerca o pone una domanda. Aggiungi `search: false` al frontmatter:
 
 ```yaml
 ---
@@ -72,19 +72,46 @@ search: false
 ---
 ```
 
-La pagina mantiene il proprio posto nella navigazione, nella sitemap, in `llms.txt` e nel feed RSS, e continua a essere indicizzata dai motori di ricerca. Ciò da cui viene esclusa sono le superfici di *lookup*: la ricerca sul sito, le risposte della chat AI e il server MCP.
+La pagina conserva il suo posto nella navigazione, nella sitemap, in `llms.txt` e nel feed RSS, e i motori di ricerca continuano a indicizzarla. Viene esclusa solo dalle superfici di *lookup*: ricerca nel sito, risposte della chat AI e server MCP.
 
 <Note>
-`search: false` svolge il compito opposto rispetto a `hidden: true`. `hidden` rimuove una pagina dalla navigazione e dalle superfici di indicizzazione; `search: false` lascia tutto invariato e impedisce solo il recupero della pagina. Non confonderlo con `searchable` a livello di navigazione, che reinserisce nella ricerca le pagine nascoste.
+`search: false` svolge il compito opposto rispetto a `hidden: true`. `hidden` rimuove una pagina dalla navigazione e dalle superfici di indicizzazione; `search: false` lascia tutto invariato e impedisce solo che la pagina venga recuperata. Non confonderlo con `searchable` a livello di navigazione, che reinserisce le pagine nascoste nella ricerca.
 </Note>
 
-## Controlli per l'intero progetto
+## Quanto di una pagina viene indicizzato
+
+La ricerca non indicizza una pagina come un unico blocco. La indicizza **sezione per sezione**: ogni intestazione diventa una voce di ricerca distinta, così chi cerca "Rate limits" arriva a quell'intestazione invece che all'inizio di una pagina lunga.
+
+Si applicano due limiti, entrambi automatici:
+
+| Limite | Valore | Cosa succede oltre il limite |
+|---|---|---|
+| Voci per pagina | 50 | Le sezioni vengono indicizzate nell'ordine della pagina. Dopo l'utilizzo della 50ª, ogni sezione rimanente viene esclusa dalla ricerca. |
+| Testo per sezione | Primi 300 caratteri | Il testo più avanti nella sezione non viene incluso nelle corrispondenze. |
+
+La pagina occupa uno dei 50 slot, quindi vengono indicizzate 49 sezioni.
+
+Il limite esiste perché la ricerca valuta ogni voce rispetto al resto dell'indice. Una pagina che produce centinaia di voci sovraccarica i risultati a scapito delle altre: un changelog generato può rappresentare da solo metà di un indice e spingere le pagine realmente pertinenti fuori dalla prima schermata.
+
+<Warning>
+Una pagina oltre il limite continua a essere visualizzata per intero. Solo le sezioni successive non sono più trovabili, e nulla nella pagina informa i lettori del limite.
+
+Se una pagina contiene più di circa 50 intestazioni, dividila in più pagine — migliorerai comunque la navigazione — oppure, se è generata automaticamente e nessuno la cerca manualmente, aggiungi `search: false` per escluderla interamente dall'indice.
+</Warning>
+
+Per inserire un termine in modo che la ricerca gli attribuisca il peso corretto, usa prima il titolo della pagina (peso maggiore), poi un'intestazione e infine la descrizione. Il testo del corpo ha il peso minore e vengono conteggiati solo i primi 300 caratteri di ogni sezione.
+
+<Note>
+`seo.metatags.keywords` non alimenta la ricerca nel sito. Genera un tag HTML `<meta name="keywords">`, che Google ha dichiarato di ignorare per il ranking. Non è possibile aggiungere termini di ricerca extra a una pagina: inserisci le parole che vuoi rendere ricercabili nel titolo, in un'intestazione o nella descrizione.
+</Note>
+
+## Controlli a livello di progetto
 
 Entrambi i flag si trovano sotto `seo` in `docs.json`:
 
 | Flag | Predefinito | Effetto |
 |---|---|---|
-| `seo.indexing` | `"navigable"` | Solo le pagine elencate nella navigazione vengono incluse negli artefatti. Imposta `"all"` per includere ogni file MDX nel repository. |
+| `seo.indexing` | `"navigable"` | Solo le pagine elencate nella navigazione compaiono negli artefatti. Imposta `"all"` per includere ogni file MDX nel repository. |
 | `seo.indexHiddenPages` | `false` | Imposta `true` per includere le pagine con `hidden: true` nella sitemap, in llms.txt e nella ricerca, rimuovendo il tag automatico noindex. |
 
 Esempio:
@@ -103,18 +130,18 @@ Esempio:
 |---|---|---|---|---|---|
 | Pagina normale | — | elencata | Sì | Sì | Sì |
 | Nascosta tramite frontmatter | `hidden: true` | elencata | No | Sì | No |
-| Pagina non nella navigazione (orfana) | — | omessa | No | Sì | No |
+| Pagina non presente nella navigazione (orfana) | — | omessa | No | Sì | No |
 | Gruppo nascosto | — | `hidden: true` sul gruppo | No | Sì | No |
 | Gruppo nascosto e ricercabile | — | `hidden: true, searchable: true` | No | Sì | Sì |
-| Solo esclusa dalla ricerca | `search: false` | elencata | Sì | Sì | Sì |
+| Esclusa solo dalla ricerca | `search: false` | elencata | Sì | Sì | Sì |
 | Il progetto abilita l'indicizzazione completa | — | qualsiasi | Come sopra | Sì | Sì |
 
 ## Quando usare ciascuna opzione
 
-- **Bozze e anteprime:** frontmatter `hidden: true` sulle singole pagine
+- **Bozze e anteprime:** `hidden: true` nel frontmatter delle singole pagine
 - **Sezioni interne** per un piccolo team: un gruppo o una scheda nascosti
-- **Documenti di conformità** che devono essere pubblici ma non promossi: gruppo nascosto con `searchable: true`
-- **Indicizzazione dell'intero repository** solo per fornire contesto all'AI: `seo.indexing: "all"`
-- **Pagine sostituite** che vuoi ancora rendere collegabili e indicizzare, ma non mostrare nella ricerca o all'AI: frontmatter `search: false`
+- **Documenti di conformità** che devono essere pubblici ma non messi in evidenza: gruppo nascosto con `searchable: true`
+- **Indicizzazione dell'intero repository** solo per il grounding dell'AI: `seo.indexing: "all"`
+- **Pagine superate** che vuoi ancora rendere collegabili e indicizzare, ma non mostrare nella ricerca o all'AI: `search: false` nel frontmatter
 
-Le pagine nascoste non sono un controllo degli accessi. Chiunque disponga dell'URL può leggerle. Per un controllo reale degli accessi, consulta [Protezione tramite password](/it/setup/password-protection).
+Le pagine nascoste non sono un sistema di controllo degli accessi. Chiunque disponga dell'URL può leggerle. Per un vero controllo degli accessi, consulta [Protezione tramite password](/it/setup/password-protection).

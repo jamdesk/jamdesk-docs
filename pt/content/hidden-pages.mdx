@@ -1,9 +1,9 @@
 ---
 title: Páginas ocultas
-description: Mantenha páginas fora da barra lateral e dos resultados de busca sem excluí-las. Gerencie a visibilidade com frontmatter, docs.json ou controles de SEO.
+description: Mantenha páginas fora da barra lateral e dos resultados de busca sem excluí-las. Use frontmatter, docs.json ou controles de SEO para gerenciar a visibilidade.
 ---
 
-Algumas páginas não pertencem à barra lateral pública: rascunhos, manuais internos e guias obsoletos que você ainda precisa vincular. Páginas ocultas continuam acessíveis por URL direta, mas desaparecem da navegação, da busca, do sitemap e do contexto de IA fornecido aos LLMs.
+Algumas páginas não pertencem à barra lateral pública: rascunhos, manuais internos e guias obsoletos aos quais você ainda precisa vincular. As páginas ocultas continuam acessíveis por URL direta, mas desaparecem da navegação, da busca, do sitemap e do contexto de IA fornecido aos LLMs.
 
 ## Ocultar uma única página
 
@@ -18,9 +18,9 @@ hidden: true
 
 A página é renderizada normalmente quando alguém acessa sua URL, mas o Jamdesk:
 
-- Remove a página da barra lateral
+- Remove-a da barra lateral
 - Adiciona `<meta name="robots" content="noindex, follow">` para que os mecanismos de busca a ignorem
-- Exclui a página de `sitemap.xml`, `llms.txt`, `llms-full.txt` e da busca no site
+- Exclui-a de `sitemap.xml`, `llms.txt`, `llms-full.txt` e da busca no site
 
 ## Ocultar um grupo ou uma aba inteira
 
@@ -44,11 +44,11 @@ Defina `"hidden": true` em um grupo ou uma aba no `docs.json`:
 }
 ```
 
-Todas as páginas sob o nó oculto herdam essa regra. A mesma flag funciona em `tabs`, `groups`, `anchors`, `dropdowns`, `products`, `languages` e `versions`.
+Todas as páginas no nó oculto herdam essa regra. O mesmo sinalizador funciona em `tabs`, `groups`, `anchors`, `dropdowns`, `products`, `languages` e `versions`.
 
 ## Manter páginas ocultas na busca
 
-Se quiser que uma aba ou um grupo oculto fique fora da barra lateral, mas ainda seja indexado para a busca no site, respostas de IA e o sitemap, adicione `"searchable": true`:
+Se quiser remover uma aba ou um grupo oculto da barra lateral, mas ainda indexá-lo para a busca no site, as respostas de IA e o sitemap, adicione `"searchable": true`:
 
 ```json
 {
@@ -59,11 +59,11 @@ Se quiser que uma aba ou um grupo oculto fique fora da barra lateral, mas ainda 
 }
 ```
 
-O frontmatter `hidden: true` em uma página filha ainda tem prioridade. `searchable` apenas reabre os descendentes que não optaram por sair da busca.
+O `hidden: true` do frontmatter em uma página filha ainda tem precedência. `searchable` apenas reabre descendentes que não optaram por sair da busca.
 
 ## Manter uma página fora da busca בלבד
 
-Às vezes, uma página deve continuar na barra lateral e permanecer indexável, mas não deve aparecer quando alguém faz uma busca ou faz uma pergunta. Adicione `search: false` ao frontmatter:
+Às vezes, uma página deve continuar na barra lateral e permanecer indexável, mas deixar de aparecer quando alguém faz uma busca ou uma pergunta. Adicione `search: false` ao frontmatter:
 
 ```yaml
 ---
@@ -72,19 +72,46 @@ search: false
 ---
 ```
 
-A página mantém seu lugar na navegação, no sitemap, em `llms.txt` e no feed RSS, e continua sendo indexada pelos mecanismos de busca. O que ela deixa de integrar são as superfícies de *consulta*: a busca no site, as respostas do chat de IA e o servidor MCP.
+A página mantém seu lugar na navegação, no sitemap, em `llms.txt` e no feed RSS, e os mecanismos de busca continuam indexando-a. O que ela deixa são as superfícies de *consulta*: a busca no site, as respostas do chat de IA e o servidor MCP.
 
 <Note>
-`search: false` executa a tarefa oposta de `hidden: true`. `hidden` remove uma página da navegação e das superfícies de indexação; `search: false` mantém tudo isso intacto e apenas impede que a página seja recuperada. Não confunda essa opção com `searchable` no nível da navegação, que reinsere páginas ocultas na busca.
+`search: false` tem a função oposta de `hidden: true`. `hidden` remove uma página da navegação e das superfícies de indexação; `search: false` não altera nada disso e apenas impede que a página seja recuperada. Não confunda essa opção com `searchable` no nível da navegação, que inclui novamente páginas ocultas na busca.
+</Note>
+
+## Quanto de uma página é indexado
+
+A busca não indexa uma página como um bloco único. Ela a indexa **seção por seção** — cada título se torna sua própria entrada de busca, portanto, quem busca por "Rate limits" chega a esse título em vez do início de uma página longa.
+
+Duas limitações se aplicam, e ambas são automáticas:
+
+| Limite | Valor | O que acontece depois dele |
+|---|---|---|
+| Entradas por página | 50 | As seções são indexadas na ordem da página. Depois que a 50ª é usada, todas as seções restantes ficam fora da busca. |
+| Texto por seção | Primeiros 300 caracteres | O texto mais profundo na seção não é considerado na correspondência. |
+
+A própria página ocupa uma das 50 posições, portanto 49 seções são indexadas.
+
+O limite existe porque a busca compara o peso de cada entrada com o restante do seu índice. Uma página que emite centenas de entradas expulsa as outras dos resultados — um changelog gerado pode, sozinho, representar metade de um índice e tirar páginas realmente relevantes da primeira tela.
+
+<Warning>
+Uma página que ultrapassa o limite ainda é renderizada por completo. Apenas as seções posteriores deixam de ser encontráveis, e nada na página informa isso aos leitores.
+
+Se uma página tiver mais de ~50 títulos, divida-a em várias páginas — o que também melhora a navegação — ou, se ela for gerada por máquina e ninguém fizer buscas manuais nela, adicione `search: false` para mantê-la inteira fora do índice.
+</Warning>
+
+Para colocar um termo onde a busca possa atribuir a ele o peso adequado, use o título da página (maior peso), depois um título de seção e, por fim, a descrição. O texto do corpo tem o menor peso, e apenas seus primeiros 300 caracteres por seção são considerados.
+
+<Note>
+`seo.metatags.keywords` não alimenta a busca no site. Ele emite uma tag HTML `<meta name="keywords">`, que o Google declarou ignorar para fins de classificação. Não há como associar termos de busca adicionais a uma página — coloque as palavras que deseja que sejam correspondidas no título, em um título de seção ou na descrição.
 </Note>
 
 ## Controles para todo o projeto
 
-Ambas as flags ficam em `seo` no `docs.json`:
+Ambos os sinalizadores ficam em `seo` no `docs.json`:
 
-| Flag | Padrão | Efeito |
+| Sinalizador | Padrão | Efeito |
 |---|---|---|
-| `seo.indexing` | `"navigable"` | Apenas as páginas listadas na navegação aparecem nos artefatos. Defina como `"all"` para incluir todos os arquivos MDX no seu repositório. |
+| `seo.indexing` | `"navigable"` | Apenas as páginas listadas na navegação aparecem nos artefatos. Defina como `"all"` para incluir todos os arquivos MDX no repositório. |
 | `seo.indexHiddenPages` | `false` | Defina como `true` para incluir páginas `hidden: true` no sitemap, em llms.txt e na busca, além de remover a tag automática de noindex. |
 
 Exemplo:
@@ -103,18 +130,18 @@ Exemplo:
 |---|---|---|---|---|---|
 | Página normal | — | listada | Sim | Sim | Sim |
 | Oculta via frontmatter | `hidden: true` | listada | Não | Sim | Não |
-| Página não incluída na navegação (órfã) | — | omitida | Não | Sim | Não |
+| Página fora da navegação (órfã) | — | omitida | Não | Sim | Não |
 | Grupo oculto | — | `hidden: true` no grupo | Não | Sim | Não |
 | Grupo oculto e pesquisável | — | `hidden: true, searchable: true` | Não | Sim | Sim |
 | Apenas fora da busca | `search: false` | listada | Sim | Sim | Sim |
-| Projeto opta por indexar tudo | — | qualquer valor | Igual ao acima | Sim | Sim |
+| Projeto habilitado para indexar tudo | — | qualquer valor | Igual ao acima | Sim | Sim |
 
 ## Quando usar cada opção
 
-- **Rascunhos e prévias:** frontmatter `hidden: true` em páginas individuais
+- **Rascunhos e prévias:** `hidden: true` no frontmatter de páginas individuais
 - **Seções internas** para uma equipe pequena: um grupo ou uma aba ocultos
 - **Documentos de conformidade** que devem ser públicos, mas não promovidos: grupo oculto com `searchable: true`
-- **Indexação de todo o repositório** apenas para fundamentação de IA: `seo.indexing: "all"`
-- **Páginas substituídas** que você ainda quer manter vinculáveis e indexadas, mas não quer exibir na busca ou na IA: frontmatter `search: false`
+- **Indexação do repositório inteiro** apenas para fundamentação de IA: `seo.indexing: "all"`
+- **Páginas substituídas** que você ainda quer disponibilizar por link e indexar, mas não exibir na busca ou na IA: `search: false` no frontmatter
 
-Páginas ocultas não são um controle de acesso. Qualquer pessoa que tenha a URL pode lê-las. Para obter um controle de acesso real, consulte [Proteção por senha](/pt/setup/password-protection).
+Páginas ocultas não são um mecanismo de controle de acesso. Qualquer pessoa que tenha a URL pode lê-las. Para obter um controle de acesso real, consulte [Proteção por senha](/pt/setup/password-protection).
