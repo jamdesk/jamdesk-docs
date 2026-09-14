@@ -41,7 +41,7 @@ Los dos modos son mutuamente excluyentes: `auth.password` y `auth.jwt` no pueden
   <Step title="Generar la clave de firma">
     Abre **Project Settings** en el dashboard y busca la tarjeta **JWT authentication**. Haz clic en **Generate signing key**.
 
-    Jamdesk crea un par de claves Ed25519, conserva únicamente la clave *pública* y muestra la clave *privada* exactamente una vez. Cópiala inmediatamente en tu gestor de secretos. Jamdesk nunca almacena ni envía por correo electrónico la clave privada, y no puede recuperarla si la pierdes. Si ocurre, genera una clave nueva (esto invalida la anterior, así que actualiza al mismo tiempo la clave de firma de tu backend).
+    Jamdesk crea un par de claves Ed25519, conserva únicamente la clave *pública* y muestra la clave *privada* exactamente una vez. Cópiala inmediatamente en tu gestor de secretos. Jamdesk nunca almacena ni envía por correo electrónico la clave privada, y no puede recuperarla si la pierdes. Si ocurre, rota la clave. La rotación es un cambio inmediato y sin periodo de solapamiento, así que lee [Rotar la clave de firma](#rotar-la-clave-de-firma) antes de hacer clic.
   </Step>
 
   <Step title="Confirmar cambios y volver a generar">
@@ -69,7 +69,7 @@ import { SignJWT, importPKCS8 } from "jose";
 // you once when you generated it in Project Settings.
 const privateKey = await importPKCS8(process.env.JAMDESK_JWT_PRIVATE_KEY!, "EdDSA");
 
-async function signDocsToken(user: { groups: string[] }) {
+async function signDocsToken(user: { groups: string[]; apiToken: string }) {
   return new SignJWT({
     host: "acme.jamdesk.app", // or your custom domain, e.g. "docs.example.com"
     expiresAt: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7, // 7-day session
@@ -97,7 +97,10 @@ app.get("/docs-login", requireAuth, async (req, res) => {
 
 ```python Python (pyjwt)
 import time
+from urllib.parse import quote
+
 import jwt  # PyJWT >= 2.4, with the cryptography extra installed
+from flask import redirect, request  # or your framework's equivalents
 
 with open("jamdesk_jwt_private_key.pem", "rb") as f:
     PRIVATE_KEY = f.read()
@@ -196,6 +199,8 @@ Detalles que afectan al uso de `groups`:
 - Un `groups: []` vacío significa que no hay ninguna restricción, no que «nadie pueda verla». Para eliminar la restricción de grupo de una página, borra por completo el campo `groups` en lugar de establecerlo como un array vacío.
 - Para restringir una página a todos los usuarios, déjala sin publicar. No existe ningún valor de `groups` que signifique «nadie»: la pertenencia a grupos es acumulativa y cualquier coincidencia concede acceso.
 - Las copias localizadas heredan automáticamente los `groups` de la página base, a menos que la traducción declare sus propios `groups` en el frontmatter. Traducir una página restringida no hace que la traducción sea pública accidentalmente.
+- Jamdesk deduce qué carpetas de primer nivel son traducciones a partir de `navigation.languages`, más cualquier carpeta de primer nivel que lleve el nombre de un código de idioma (`fr`, `it`, `cs`, etc.) y contenga páginas. Una carpeta que solo comparte el nombre con un código de idioma, por ejemplo una carpeta `it` que contiene los manuales de operaciones del departamento de TI y no traducciones al italiano, también se trata como una traducción, y sus páginas heredan los `groups` de cualquier página raíz que esté en la misma ruta. Esto solo puede restringir más, nunca menos. Cambia el nombre de la carpeta si eso te causa problemas.
+- La barra lateral, las pestañas, las rutas de navegación y los enlaces de página anterior y siguiente se filtran para cada visitante. Una página que los grupos del visitante no cubren queda fuera, y un grupo o una pestaña que se quede vacío desaparece con ella, de modo que el nombre de una sección restringida no se muestra a quienes no pertenecen a ella. Este filtrado ocurre en el momento de la solicitud y es independiente de las exclusiones durante el build descritas arriba, que se aplican a todo el mundo.
 - Mantén cortos los nombres de los grupos. Los grupos viajan dentro de la cookie de sesión: hasta 32 grupos por sesión, de 64 caracteres cada uno. Superar cualquiera de los límites no recorta la lista; Jamdesk rechaza el token completo con un 401 y no concede ninguna sesión.
 
 ## Precarga del API playground
@@ -223,13 +228,31 @@ Si tu documentación tiene un [API playground](/es/api-reference/playground), pu
 | Campo | Obligatorio | Descripción |
 |---|---|---|
 | `host` | Sí | Debe coincidir exactamente con el host de la solicitud (sin distinguir mayúsculas y minúsculas): tu subdominio `*.jamdesk.app` o tu dominio personalizado. Un token firmado para un host se rechaza en cualquier otro. |
-| `expiresAt` | No | Marca de tiempo Unix (segundos) que indica cuánto debe durar la *sesión* resultante. Está limitada a 30 días; si se omite, el valor predeterminado es de 7 días. Es independiente de la declaración `exp`, de corta duración, del propio token. |
+| `expiresAt` | No | Marca de tiempo Unix (segundos) que indica cuándo debe expirar la *sesión* resultante. Está limitada a 30 días; si se omite, el valor predeterminado es de 7 días. Es independiente de la declaración `exp`, de corta duración, del propio token. |
 | `groups` | No | Array de nombres de grupos que debe contener la sesión, con un máximo de 32 entradas de 64 caracteres cada una. Superar cualquiera de los límites rechaza el token completo (401, sin sesión) en lugar de truncar la lista. |
 | `apiPlaygroundInputs` | No | Valores de precarga para el API playground. El tamaño serializado está limitado a 2 KB. Si no cabe, se descarta sin error y la sesión se concede igualmente. |
+
+## Rotar la clave de firma
+
+**Rotate signing key**, en la tarjeta del dashboard, genera un nuevo par de claves y muestra la nueva clave privada una sola vez, igual que hizo la primera generación. No hay periodo de solapamiento. En unos 15 segundos la clave antigua deja de aceptarse y todas las sesiones existentes terminan. Hasta que tu backend firme con la clave nueva, se rechaza cada inicio de sesión y los visitantes rebotan entre tu página de inicio de sesión y la documentación.
+
+Por eso el orden importa:
+
+1. Ten preparado un despliegue que lea la clave de firma desde tu gestor de secretos, en lugar de un valor escrito directamente en el código.
+2. Haz clic en **Rotate signing key** y copia la nueva clave privada.
+3. Actualiza el secreto y despliega. Los inicios de sesión vuelven a funcionar en cuanto tu backend usa la clave nueva.
+
+Rota en un momento de poca actividad si puedes, y avisa a quien se encargue del despliegue del backend antes de hacer clic.
+
+Si lo único que quieres es terminar la sesión de todo el mundo, por ejemplo después de que se pierda un portátil, usa **Revoke sessions**. Conserva la clave, así que no cambia nada en tu backend; cada visitante solo tiene que volver a iniciar sesión.
+
+**Clear signing key** elimina la clave pública de Jamdesk. `auth.jwt` sigue habilitado en `docs.json`, por lo que el sitio permanece protegido, pero no se puede verificar ningún token hasta que generes una clave nueva. Bórrala solo cuando vayas a pasar el sitio a otro modo de acceso o a retirarlo.
 
 ## Cerrar sesión
 
 Los visitantes que han iniciado sesión obtienen un enlace **Log out** en el encabezado de la documentación. Este los dirige a `/_jd/auth/logout`, que elimina la cookie de sesión y los redirige a tu `loginUrl`. También puedes enlazarlo directamente desde tu propia aplicación si quieres ofrecer en otro lugar un enlace para «cerrar sesión en la documentación». Es una solicitud `GET` simple, sin cuerpo ni encabezados obligatorios.
+
+Cerrar sesión en la documentación no cierra la sesión del visitante en tu producto. Si tu flujo de inicio de sesión firma un token para cualquiera que ya tenga una sesión abierta en la aplicación, un visitante que haga clic en **Log out** y después abra un enlace a la documentación vuelve a entrar de inmediato. Normalmente eso es lo que quieres. Si necesitas un cierre de sesión real, haz que el controlador de tu `loginUrl` compruebe que hay un inicio de sesión explícito en lugar de emitir un token automáticamente, o apunta también tu propio cierre de sesión a la URL de cierre de sesión de la documentación.
 
 ## Comportamiento de las funciones con autenticación
 
@@ -246,7 +269,7 @@ Los visitantes que han iniciado sesión obtienen un enlace **Log out** en el enc
 </Accordion>
 
 <Accordion title="El dashboard muestra un banner «Runtime out of sync»">
-  Esto significa que tu última clave de firma aún no ha llegado a la caché del runtime, normalmente porque un error temporal de escritura interrumpió la generación o rotación de la clave. Jamdesk vuelve a intentar la sincronización automáticamente cada vez que abres la página de configuración; si el banner permanece, haz clic en **Retry sync**. Si sigue sin desaparecer después de reintentarlo, rota la clave desde la misma tarjeta.
+  El dashboard y la caché del runtime no coinciden sobre tu clave de firma, normalmente porque un error temporal de escritura interrumpió una generación, una rotación o un borrado. El banner indica en qué sentido: o bien la última clave todavía no ha llegado a la caché (los tokens firmados con ella pueden rechazarse), o bien una clave que borraste sigue almacenada en la caché (los tokens firmados con ella se siguen aceptando). Jamdesk lo vuelve a comprobar cada vez que abres la página de configuración. Si el banner permanece, haz clic en **Retry sync**. Si eso sigue fallando, rota la clave; en el caso de la clave borrada, genera una y vuelve a borrarla. Un banner que diga que Jamdesk no ha podido verificar el estado significa que la comprobación en sí falló; reinténtalo cuando el runtime vuelva a estar accesible.
 </Accordion>
 
 <Accordion title="Los visitantes reciben un 401 incluso con un token que sé que es válido">

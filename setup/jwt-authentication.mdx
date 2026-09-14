@@ -70,7 +70,7 @@ import { SignJWT, importPKCS8 } from "jose";
 // you once when you generated it in Project Settings.
 const privateKey = await importPKCS8(process.env.JAMDESK_JWT_PRIVATE_KEY!, "EdDSA");
 
-async function signDocsToken(user: { groups: string[] }) {
+async function signDocsToken(user: { groups: string[]; apiToken: string }) {
   return new SignJWT({
     host: "acme.jamdesk.app", // or your custom domain, e.g. "docs.example.com"
     expiresAt: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7, // 7-day session
@@ -98,7 +98,10 @@ app.get("/docs-login", requireAuth, async (req, res) => {
 
 ```python Python (pyjwt)
 import time
+from urllib.parse import quote
+
 import jwt  # PyJWT >= 2.4, with the cryptography extra installed
+from flask import redirect, request  # or your framework's equivalents
 
 with open("jamdesk_jwt_private_key.pem", "rb") as f:
     PRIVATE_KEY = f.read()
@@ -226,7 +229,7 @@ If your docs have an [API playground](/api-reference/playground), you can pre-fi
 | Field | Required | Description |
 |---|---|---|
 | `host` | Yes | Must exactly match the request host (case-insensitive): your `*.jamdesk.app` subdomain or your custom domain. A token signed for one host is rejected on any other. |
-| `expiresAt` | No | Unix timestamp (seconds) for how long the resulting *session* should last. Capped at 30 days; defaults to 7 days if omitted. This is independent of the token's own short-lived `exp` claim. |
+| `expiresAt` | No | Unix timestamp (seconds) for when the resulting *session* should expire. Capped at 30 days; defaults to 7 days if omitted. This is independent of the token's own short-lived `exp` claim. |
 | `groups` | No | Array of group names the session should carry, up to 32 entries of 64 characters each. Exceeding either limit rejects the whole token (401, no session) rather than truncating the list. |
 | `apiPlaygroundInputs` | No | Pre-fill values for the API playground. Serialized size is capped at 2KB. If it doesn't fit, it's dropped without an error and the session is still granted. |
 

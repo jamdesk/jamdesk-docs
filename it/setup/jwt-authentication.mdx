@@ -69,7 +69,7 @@ import { SignJWT, importPKCS8 } from "jose";
 // you once when you generated it in Project Settings.
 const privateKey = await importPKCS8(process.env.JAMDESK_JWT_PRIVATE_KEY!, "EdDSA");
 
-async function signDocsToken(user: { groups: string[] }) {
+async function signDocsToken(user: { groups: string[]; apiToken: string }) {
   return new SignJWT({
     host: "acme.jamdesk.app", // or your custom domain, e.g. "docs.example.com"
     expiresAt: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7, // 7-day session
@@ -97,7 +97,10 @@ app.get("/docs-login", requireAuth, async (req, res) => {
 
 ```python Python (pyjwt)
 import time
+from urllib.parse import quote
+
 import jwt  # PyJWT >= 2.4, with the cryptography extra installed
+from flask import redirect, request  # or your framework's equivalents
 
 with open("jamdesk_jwt_private_key.pem", "rb") as f:
     PRIVATE_KEY = f.read()
@@ -225,7 +228,7 @@ Se la tua documentazione include un [API playground](/it/api-reference/playgroun
 | Campo | Obbligatorio | Descrizione |
 |---|---|---|
 | `host` | Sì | Deve corrispondere esattamente all'host della richiesta (senza distinzione tra maiuscole e minuscole): il tuo sottodominio `*.jamdesk.app` o il tuo dominio personalizzato. Un token firmato per un host viene rifiutato su qualsiasi altro host. |
-| `expiresAt` | No | Timestamp Unix (in secondi) che indica la durata della *sessione* risultante. Il limite è 30 giorni; se omesso, il valore predefinito è 7 giorni. È indipendente dal claim `exp` a breve durata del token. |
+| `expiresAt` | No | Timestamp Unix (in secondi) che indica fino a quando la *sessione* risultante deve restare valida. Il limite è 30 giorni; se omesso, il valore predefinito è 7 giorni. È indipendente dal claim `exp` a breve durata del token. |
 | `groups` | No | Array di nomi dei gruppi che la sessione deve contenere, fino a 32 elementi di 64 caratteri ciascuno. Il superamento di uno dei due limiti comporta il rifiuto dell'intero token (401, nessuna sessione), anziché il troncamento dell'elenco. |
 | `apiPlaygroundInputs` | No | Valori da precompilare per l'API playground. La dimensione serializzata è limitata a 2 KB. Se supera il limite, il campo viene ignorato senza errori e la sessione viene comunque concessa. |
 

@@ -70,7 +70,7 @@ import { SignJWT, importPKCS8 } from "jose";
 // you once when you generated it in Project Settings.
 const privateKey = await importPKCS8(process.env.JAMDESK_JWT_PRIVATE_KEY!, "EdDSA");
 
-async function signDocsToken(user: { groups: string[] }) {
+async function signDocsToken(user: { groups: string[]; apiToken: string }) {
   return new SignJWT({
     host: "acme.jamdesk.app", // or your custom domain, e.g. "docs.example.com"
     expiresAt: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7, // 7-day session
@@ -98,7 +98,10 @@ app.get("/docs-login", requireAuth, async (req, res) => {
 
 ```python Python (pyjwt)
 import time
+from urllib.parse import quote
+
 import jwt  # PyJWT >= 2.4, with the cryptography extra installed
+from flask import redirect, request  # or your framework's equivalents
 
 with open("jamdesk_jwt_private_key.pem", "rb") as f:
     PRIVATE_KEY = f.read()
@@ -197,7 +200,7 @@ Details zur Verwendung von `groups`:
 - Ein leeres `groups: []` bedeutet keine Einschränkung, nicht „niemand darf diese Seite sehen“. Um die Gruppenbeschränkung einer Seite zu entfernen, löschen Sie das Feld `groups` vollständig, anstatt ein leeres Array festzulegen.
 - Um eine Seite für niemanden zugänglich zu machen, heben Sie ihre Veröffentlichung auf. Es gibt keinen `groups`-Wert für „niemand“: Gruppenmitgliedschaften sind additiv, und jede Überschneidung gewährt Zugriff.
 - Lokalisierte Kopien übernehmen automatisch die `groups`-Angabe der Basisseite, sofern die Übersetzung nicht eigene `groups` im Frontmatter festlegt. Durch die Übersetzung einer eingeschränkten Seite wird die Übersetzung nicht versehentlich öffentlich.
-- Jamdesk ermittelt anhand von `navigation.languages`, welche Ordner auf oberster Ebene Übersetzungen enthalten. Zusätzlich gelten alle Ordner auf oberster Ebene als Übersetzungen, die nach einem Sprachcode benannt sind (`fr`, `it`, `cs` usw.) und Seiten enthalten. Ein Ordner, der nur denselben Namen wie ein Sprachcode trägt, beispielsweise ein `it`-Ordner mit italienischen Runbooks, wird ebenfalls als Übersetzung behandelt. Seine Seiten übernehmen die `groups`-Angaben jeder Root-Seite am selben Pfad. Dies kann nur stärker einschränken, niemals weniger. Benennen Sie den Ordner um, wenn dies störend ist.
+- Jamdesk ermittelt anhand von `navigation.languages`, welche Ordner auf oberster Ebene Übersetzungen enthalten. Zusätzlich gelten alle Ordner auf oberster Ebene als Übersetzungen, die nach einem Sprachcode benannt sind (`fr`, `it`, `cs` usw.) und Seiten enthalten. Ein Ordner, der nur denselben Namen wie ein Sprachcode trägt, beispielsweise ein `it`-Ordner mit Runbooks der IT-Abteilung, wird ebenfalls als Übersetzung behandelt. Seine Seiten übernehmen die `groups`-Angaben jeder Root-Seite am selben Pfad. Dies kann nur stärker einschränken, niemals weniger. Benennen Sie den Ordner um, wenn dies störend ist.
 - Seitenleiste, Tabs, Breadcrumbs sowie vorherige/nächste Links werden pro Besucher gefiltert. Eine Seite, die von den Gruppen des Besuchers nicht abgedeckt ist, wird ausgelassen. Ebenso wird eine Gruppe oder ein Tab ausgelassen, der dadurch leer wird, sodass der Name eines eingeschränkten Abschnitts Personen außerhalb der Gruppe nicht angezeigt wird. Diese Filterung erfolgt zur Anfragezeit und ist von den oben genannten Ausschlüssen beim Build getrennt, die für alle gelten.
 - Halten Sie Gruppennamen kurz. Gruppen werden im Sitzungscookie übertragen: bis zu 32 Gruppen pro Sitzung, jeweils mit 64 Zeichen. Wird eines der beiden Limits überschritten, wird die Liste nicht gekürzt. Jamdesk lehnt das gesamte Token mit einer 401 ab und gewährt keine Sitzung.
 
@@ -226,7 +229,7 @@ Wenn Ihre Dokumentation ein [API-Playground](/de/api-reference/playground) enth�
 | Feld | Erforderlich | Beschreibung |
 |---|---|---|
 | `host` | Ja | Muss exakt mit dem Request-Host übereinstimmen (ohne Beachtung der Groß-/Kleinschreibung): Ihrer `*.jamdesk.app`-Subdomain oder Ihrer eigenen Domain. Ein für einen Host signiertes Token wird für jeden anderen Host abgelehnt. |
-| `expiresAt` | Nein | Unix-Zeitstempel (Sekunden), der angibt, wie lange die resultierende *Sitzung* gültig sein soll. Begrenzt auf 30 Tage; ohne Angabe gilt ein Standardwert von 7 Tagen. Dies ist unabhängig vom eigenen kurzlebigen `exp`-Claim des Tokens. |
+| `expiresAt` | Nein | Unix-Zeitstempel (Sekunden), der angibt, bis wann die resultierende *Sitzung* gültig sein soll. Begrenzt auf 30 Tage; ohne Angabe gilt ein Standardwert von 7 Tagen. Dies ist unabhängig vom eigenen kurzlebigen `exp`-Claim des Tokens. |
 | `groups` | Nein | Array von Gruppennamen, die die Sitzung enthalten soll, mit bis zu 32 Einträgen zu jeweils 64 Zeichen. Wird eines der beiden Limits überschritten, wird das gesamte Token abgelehnt (401, keine Sitzung), statt die Liste zu kürzen. |
 | `apiPlaygroundInputs` | Nein | Vorausgefüllte Werte für den API-Playground. Die serialisierte Größe ist auf 2 KB begrenzt. Wenn der Inhalt nicht hineinpasst, wird er ohne Fehler verworfen und die Sitzung trotzdem gewährt. |
 

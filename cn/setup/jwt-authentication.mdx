@@ -68,7 +68,7 @@ import { SignJWT, importPKCS8 } from "jose";
 // you once when you generated it in Project Settings.
 const privateKey = await importPKCS8(process.env.JAMDESK_JWT_PRIVATE_KEY!, "EdDSA");
 
-async function signDocsToken(user: { groups: string[] }) {
+async function signDocsToken(user: { groups: string[]; apiToken: string }) {
   return new SignJWT({
     host: "acme.jamdesk.app", // or your custom domain, e.g. "docs.example.com"
     expiresAt: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7, // 7-day session
@@ -96,7 +96,10 @@ app.get("/docs-login", requireAuth, async (req, res) => {
 
 ```python Python (pyjwt)
 import time
+from urllib.parse import quote
+
 import jwt  # PyJWT >= 2.4, with the cryptography extra installed
+from flask import redirect, request  # or your framework's equivalents
 
 with open("jamdesk_jwt_private_key.pem", "rb") as f:
     PRIVATE_KEY = f.read()
@@ -224,7 +227,7 @@ groups: ["admin"]
 | 字段 | 必填 | 描述 |
 |---|---|---|
 | `host` | 是 | 必须与请求主机完全匹配（不区分大小写）：您的 `*.jamdesk.app` 子域名或自定义域名。为一个主机签发的令牌，在其他主机上会被拒绝。 |
-| `expiresAt` | 否 | 生成的*会话*应持续多久的 Unix 时间戳（秒）。最长 30 天；省略时默认为 7 天。它与令牌自身的短期 `exp` 声明相互独立。 |
+| `expiresAt` | 否 | 生成的*会话*应在何时到期的 Unix 时间戳（秒）。最长 30 天；省略时默认为 7 天。它与令牌自身的短期 `exp` 声明相互独立。 |
 | `groups` | 否 | 会话应携带的组名称数组，最多 32 个条目，每个条目最多 64 个字符。超过任一限制时，整个令牌会被拒绝（401，不创建会话），而不是截断列表。 |
 | `apiPlaygroundInputs` | 否 | API playground 的预填充值。序列化大小上限为 2KB。如果超出限制，该字段会被静默丢弃，会话仍会授予。 |
 
