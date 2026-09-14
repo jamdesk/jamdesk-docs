@@ -1,28 +1,29 @@
 ---
 title: Controle de acesso
-description: "Escolha como os leitores acessam sua documentação: pública, protegida por senha, mista ou com SSO, e encontre a opção ideal para seu público."
+description: "Escolha como os leitores acessam sua documentação: pública, protegida por senha, mista, login próprio via JWT ou SSO, conforme seu público."
 ---
 
-O Jamdesk oferece quatro maneiras de controlar quem pode ler sua documentação. A maioria das equipes escolhe uma e permanece com ela; algumas combinam opções.
+O Jamdesk oferece cinco formas de controlar quem pode ler sua documentação. A maioria das equipes escolhe uma e a mantém; algumas combinam diferentes opções.
 
 ## Escolha a abordagem certa
 
 | Abordagem | Use quando | Configuração |
 |---|---|---|
 | **Totalmente pública** | Documentação de produtos voltada ao público externo, projetos de código aberto ou qualquer conteúdo que você queira indexar e compartilhar. | Padrão; nenhuma configuração necessária. |
-| **Senha para todo o site** | Tudo é interno: runbooks de engenharia, documentação exclusiva para parceiros ou um produto ainda não lançado. Uma senha compartilhada protege todo o site. | `auth.password.enabled: true` em `docs.json` + defina a senha no dashboard. Consulte [Proteção por senha](/pt/setup/password-protection). |
+| **Senha para todo o site** | Tudo é interno: runbooks de engenharia, documentação exclusiva para parceiros ou um produto ainda não lançado. Uma única senha protege todo o site. | `auth.password.enabled: true` em `docs.json` + defina a senha no dashboard. Consulte [Proteção por senha](/pt/setup/password-protection). |
 | **Mista (algumas páginas privadas)** | A maior parte da documentação é pública, mas algumas páginas são internas (um runbook, um recurso beta ou uma referência de API interna). | Adicione `private: true` ao frontmatter das páginas internas ou liste-as em `auth.password.private[]`. Consulte [Proteção por senha](/pt/setup/password-protection). |
-| **SSO (Enterprise)** | Os leitores devem entrar usando seu provedor de identidade existente: sem senhas compartilhadas, com trilha de auditoria e desprovisionamento ao remover o usuário. | Plano Enterprise. Consulte [SSO](/pt/setup/sso). |
+| **Seu próprio login (JWT)** | Os leitores já fazem login no seu produto. Seu backend assina um token de curta duração para cada pessoa, o Jamdesk o transforma em uma sessão e as páginas podem ser limitadas aos grupos definidos no token. | `auth.jwt.enabled: true` e um `loginUrl` em `docs.json`, além de uma chave de assinatura do dashboard. Incluído em todos os planos. Consulte [Autenticação JWT](/pt/setup/jwt-authentication). |
+| **SSO (Enterprise)** | Os leitores devem fazer login com seu provedor de identidade existente: sem senhas compartilhadas, com trilha de auditoria e desprovisionamento pela remoção do usuário. | Plano Enterprise. Consulte [SSO](/pt/setup/sso). |
 
 <Tip>
-  Você pode alternar entre as abordagens a qualquer momento editando `docs.json` e fazendo push. Mudar de todo o site para misto (ou vice-versa) requer apenas um build.
+  Você pode alternar entre as abordagens a qualquer momento editando `docs.json` e fazendo push. Mudar do modo para todo o site para o modo misto (ou vice-versa) requer apenas um build.
 </Tip>
 
 ## Padrões comuns
 
 ### Documentação interna e externa no mesmo projeto
 
-A maioria das equipes quer uma documentação interna abrangente protegida por login, junto a um site público menor para clientes. Você não precisa de dois projetos. Use o **modo misto** em um único projeto Jamdesk:
+A maioria das equipes quer uma documentação interna extensa protegida por login junto a um site público menor para clientes. Você não precisa de dois projetos. Use o **modo misto** em um único projeto do Jamdesk:
 
 ```yaml
 ---
@@ -31,9 +32,9 @@ private: true
 ---
 ```
 
-As páginas com `private: true` ficam protegidas; todo o restante permanece público. Tudo fica em um único repositório, com um build e um dashboard. A tela de desbloqueio aparece somente quando um leitor acessa uma página protegida.
+As páginas com `private: true` ficam protegidas; todo o restante permanece público. Tudo fica em um único repositório, com um build e um dashboard. A tela de desbloqueio só aparece quando um leitor acessa uma página protegida.
 
-Para seções internas maiores, liste os caminhos em `docs.json` em vez de marcar cada arquivo. Observação: `auth.password.private[]` ativa automaticamente o modo de páginas específicas. Não adicione `enabled: true` junto com ele (isso corresponde ao modo de todo o site, o oposto do que você precisa aqui).
+Para seções internas maiores, liste os caminhos em `docs.json` em vez de marcar cada arquivo. Observação: `auth.password.private[]` ativa automaticamente o modo de páginas específicas. Não adicione `enabled: true` junto dele (isso corresponde ao modo para todo o site, o oposto do que você quer aqui).
 
 ```json docs.json
 {
@@ -48,11 +49,26 @@ Para seções internas maiores, liste os caminhos em `docs.json` em vez de marca
 
 ### Dois projetos separados
 
-Use dois projetos somente quando os públicos precisarem de branding totalmente diferente, domínios personalizados separados, análises separadas ou níveis de plano diferentes. Exemplos: um site público de documentação em `docs.acme.com` e um wiki interno separado em `internal.acme.com`. O custo de manutenção é maior: dois builds, dois dashboards e dois domínios.
+Use dois projetos somente quando os públicos precisarem de branding completamente diferente, domínios personalizados separados, análises separadas ou níveis de plano diferentes. Exemplos: um site público de documentação em `docs.acme.com` e uma wiki interna separada em `internal.acme.com`. O custo de manutenção é maior: dois builds, dois dashboards e dois domínios.
+
+### Acesso por usuário usando seu próprio login
+
+Se seus clientes já têm contas com você, uma senha compartilhada é um retrocesso: ela pode ser encaminhada, nunca expira por conta própria e não consegue distinguir um cliente de outro. Com a [autenticação JWT](/pt/setup/jwt-authentication), um usuário conectado que abre sua documentação é redirecionado para uma URL do seu lado, seu backend assina um token e o Jamdesk cria uma sessão para essa pessoa. Os leitores não precisam de uma conta do Jamdesk, e não há nenhum segredo compartilhado para encaminhar.
+
+O token também pode conter grupos. Adicione `groups: ["admin"]` ao frontmatter de uma página e somente os visitantes cujo token liste `admin` poderão abri-la ou vê-la na navegação. Todos os demais receberão um 404, para que a página não revele sua existência.
+
+```yaml
+---
+title: Enterprise audit log API
+groups: ["enterprise"]
+---
+```
+
+Combine isso com caminhos `public` para as partes do site que devem permanecer abertas, como um changelog ou uma página de status.
 
 ### SSO para o site de documentação
 
-Nos planos Enterprise, os leitores entram com seu provedor de identidade (Okta, Google Workspace, Azure AD etc.) em vez de digitar uma senha compartilhada. É mais indicado quando você precisa de uma trilha de auditoria sobre quem leu cada conteúdo ou quando o desligamento de um usuário deve revogar imediatamente o acesso dele à documentação. Consulte [SSO](/pt/setup/sso) para obter uma visão geral e saber como iniciar uma conversa com a equipe de vendas.
+Nos planos Enterprise, os leitores fazem login com seu provedor de identidade (Okta, Google Workspace, Azure AD etc.) em vez de digitar uma senha compartilhada. É a melhor opção quando você precisa de uma trilha de auditoria sobre quem leu cada conteúdo ou quando a saída de um usuário deve revogar imediatamente o acesso dele à documentação. Consulte [SSO](/pt/setup/sso) para obter uma visão geral e saber como iniciar uma conversa com a equipe de vendas.
 
 ## Editores e leitores
 
@@ -60,17 +76,20 @@ Nos planos Enterprise, os leitores entram com seu provedor de identidade (Okta, 
 
 | Função | O que fazem | Como o acesso é concedido |
 |---|---|---|
-| **Editores** | Escrevem e atualizam conteúdo MDX. | A documentação é editada fazendo commit de MDX no seu repositório GitHub conectado, portanto **as permissões do seu repositório GitHub são as permissões dos editores**. Não existe uma função separada de editor do Jamdesk sobreposta a isso: qualquer pessoa que possa fazer push para o branch da documentação pode publicar uma alteração. |
-| **Leitores** | Visualizam o site de documentação publicado. | Todos (modo público), qualquer pessoa com a senha (modo com senha) ou qualquer pessoa autenticada pelo seu IdP (SSO). |
-| **Membros da equipe do dashboard** | Gerenciam builds, análises e configurações do projeto no dashboard do Jamdesk. | Convidados por **Settings → Team** no dashboard. Eles não criam conteúdo diretamente. Consulte [Membros da equipe](/pt/help/projects/team-members). |
+| **Editores** | Escrevem e atualizam conteúdo MDX. | A documentação é editada fazendo commit de MDX no seu repositório GitHub conectado, portanto, **as permissões do seu repositório GitHub são as permissões dos editores**. Não há uma função separada de editor do Jamdesk sobreposta: qualquer pessoa que possa fazer push para o branch da documentação pode publicar uma alteração. |
+| **Leitores** | Visualizam o site de documentação publicado. | Todas as pessoas (público), qualquer pessoa com a senha (modo com senha), qualquer pessoa para quem seu fluxo de login assine um token (JWT) ou qualquer pessoa autenticada pelo seu IdP (SSO). |
+| **Membros da equipe do dashboard** | Gerenciam builds, análises e configurações do projeto no dashboard do Jamdesk. | Convidados em **Settings → Team** no dashboard. Eles não criam conteúdo diretamente. Consulte [Membros da equipe](/pt/help/projects/team-members). |
 
-Um colega pode ter qualquer combinação das três funções. Elas são independentes.
+Um colega de equipe pode ter qualquer combinação das três funções. Elas são independentes.
 
-## Próximos passos
+## O que vem a seguir?
 
 <Columns cols={2}>
   <Card title="Proteção por senha" icon="lock" href="/pt/setup/password-protection">
     Proteção por senha para todo o site e por página, dicas, rotação e controles de sessão.
+  </Card>
+  <Card title="Autenticação JWT" icon="id-badge" href="/pt/setup/jwt-authentication">
+    Proteja a documentação com seu próprio login, usando sessões por usuário e páginas restritas por grupo.
   </Card>
   <Card title="SSO (Enterprise)" icon="key" href="/pt/setup/sso">
     Login com seu provedor de identidade para o dashboard e a documentação.

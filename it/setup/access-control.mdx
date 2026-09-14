@@ -1,28 +1,29 @@
 ---
 title: Controllo accessi
-description: "Scegli come i lettori accedono alla documentazione: pubblica, protetta da password, mista o con SSO. Confronta le opzioni per il tuo pubblico."
+description: "Scegli come i lettori accedono alla documentazione: accesso pubblico, password, pagine miste, login con JWT o SSO, in base al tuo pubblico."
 ---
 
-Jamdesk offre quattro modi per controllare chi può leggere la documentazione. La maggior parte dei team ne sceglie uno e lo mantiene; alcuni combinano più approcci.
+Jamdesk offre cinque modi per controllare chi può leggere la tua documentazione. La maggior parte dei team ne sceglie uno e lo mantiene; alcuni combinano più modalità.
 
 ## Scegli l'approccio giusto
 
 | Approccio | Usalo quando | Configurazione |
 |---|---|---|
-| **Completamente pubblica** | Documentazione del prodotto rivolta all'esterno, progetti open source e qualsiasi contenuto che vuoi rendere indicizzabile e condivisibile. | Predefinita; non richiede configurazione. |
-| **Password per l'intero sito** | Tutto è interno: procedure operative di ingegneria, documentazione riservata ai partner o un prodotto non ancora rilasciato. Un'unica passphrase condivisa protegge l'intero sito. | `auth.password.enabled: true` in `docs.json` + imposta la password nel dashboard. Consulta [Protezione con password](/it/setup/password-protection). |
-| **Mista (alcune pagine private)** | La maggior parte della documentazione è pubblica, ma alcune pagine sono interne (una procedura operativa, una funzionalità beta o un riferimento API interno). | Aggiungi `private: true` al frontmatter delle pagine interne oppure elencale in `auth.password.private[]`. Consulta [Protezione con password](/it/setup/password-protection). |
-| **SSO (Enterprise)** | I lettori devono accedere con il tuo provider di identità esistente: niente password condivise, traccia di controllo e revoca dell'accesso rimuovendo l'utente. | Piano Enterprise. Consulta [SSO](/it/setup/sso). |
+| **Completamente pubblico** | Documentazione di prodotti destinati all'esterno, progetti open source o qualsiasi contenuto che vuoi rendere indicizzabile e condivisibile. | Predefinito; non è necessaria alcuna configurazione. |
+| **Password per l'intero sito** | Tutto è interno: runbook di ingegneria, documentazione riservata ai partner o un prodotto non ancora rilasciato. Un'unica passphrase protegge l'intero sito. | `auth.password.enabled: true` in `docs.json` + imposta la password nel dashboard. Consulta [Protezione con password](/it/setup/password-protection). |
+| **Misto (alcune pagine private)** | La maggior parte della documentazione è pubblica, ma alcune pagine sono interne (un runbook, una funzionalità beta o un riferimento API interno). | Aggiungi `private: true` al frontmatter delle pagine interne oppure elencale in `auth.password.private[]`. Consulta [Protezione con password](/it/setup/password-protection). |
+| **Il tuo login (JWT)** | I lettori accedono già al tuo prodotto. Il tuo backend firma un token di breve durata per ciascuno di loro, Jamdesk lo trasforma in una sessione e le pagine possono essere limitate ai gruppi indicati nel token. | `auth.jwt.enabled: true` più un `loginUrl` in `docs.json` e una chiave di firma dal dashboard. Incluso in tutti i piani. Consulta [Autenticazione JWT](/it/setup/jwt-authentication). |
+| **SSO (Enterprise)** | I lettori devono accedere con il tuo provider di identità esistente: niente password condivise, traccia di audit e deprovisioning tramite rimozione dell'utente. | Piano Enterprise. Consulta [SSO](/it/setup/sso). |
 
 <Tip>
-  Puoi passare da un approccio all'altro in qualsiasi momento modificando `docs.json` ed eseguendo il push. Passare dalla protezione dell'intero sito alla modalità mista (o viceversa) richiede una sola build.
+  Puoi passare da un approccio all'altro in qualsiasi momento modificando `docs.json` ed eseguendo il push. Il passaggio dall'intero sito al modo misto (o viceversa) richiede una sola build.
 </Tip>
 
 ## Modelli comuni
 
 ### Documentazione interna ed esterna in un unico progetto
 
-La maggior parte dei team vuole una documentazione interna completa, protetta da accesso, insieme a un sito pubblico più piccolo per i clienti. Non servono due progetti. Usa la **modalità mista** in un singolo progetto Jamdesk:
+La maggior parte dei team vuole una documentazione interna completa, protetta da login, insieme a un sito pubblico più piccolo per i clienti. Non servono due progetti. Usa la **modalità mista** in un singolo progetto Jamdesk:
 
 ```yaml
 ---
@@ -31,9 +32,9 @@ private: true
 ---
 ```
 
-Le pagine con `private: true` sono protette; tutto il resto rimane pubblico. Tutto risiede in un unico repository, con una build e un dashboard. La schermata di sblocco appare solo quando un lettore raggiunge una pagina protetta.
+Le pagine con `private: true` sono protette; tutto il resto rimane pubblico. Tutto risiede in un unico repository con una build e un dashboard. La schermata di sblocco viene mostrata solo quando un lettore raggiunge una pagina protetta.
 
-Per sezioni interne più ampie, elenca i percorsi in `docs.json` invece di contrassegnare ogni file. Nota: `auth.password.private[]` attiva automaticamente la modalità per pagine specifiche. Non aggiungere `enabled: true` insieme a questa impostazione (quella è la modalità per l'intero sito, l'opposto di ciò che ti serve in questo caso).
+Per sezioni interne più ampie, elenca i percorsi in `docs.json` invece di contrassegnare ogni file. Nota: `auth.password.private[]` attiva automaticamente la modalità per pagine specifiche. Non aggiungere `enabled: true` insieme a questa proprietà (quella è la modalità per l'intero sito, l'opposto di ciò che ti serve qui).
 
 ```json docs.json
 {
@@ -48,29 +49,47 @@ Per sezioni interne più ampie, elenca i percorsi in `docs.json` invece di contr
 
 ### Due progetti separati
 
-Usa due progetti solo quando i destinatari hanno bisogno di branding completamente diverso, domini personalizzati separati, analisi separate o diversi livelli di piano. Esempi: un sito di documentazione pubblico all'indirizzo `docs.acme.com` e una wiki interna separata all'indirizzo `internal.acme.com`. Il costo di manutenzione è maggiore: due build, due dashboard e due domini.
+Usa due progetti solo quando i destinatari hanno bisogno di branding completamente diverso, domini personalizzati separati, analisi separate o piani differenti. Esempi: un sito di documentazione pubblico all'indirizzo `docs.acme.com` e una wiki interna separata all'indirizzo `internal.acme.com`. Il costo di manutenzione è maggiore: due build, due dashboard e due domini.
+
+### Accesso per utente tramite il tuo login
+
+Se i tuoi clienti hanno già un account con te, una password condivisa è un passo indietro: viene inoltrata, non scade automaticamente e non può distinguere un cliente dall'altro. Con [l'autenticazione JWT](/it/setup/jwt-authentication), un utente autenticato che apre la tua documentazione viene reindirizzato a un URL sul tuo sistema, il tuo backend firma un token e Jamdesk crea una sessione per quella persona. I lettori non hanno bisogno di un account Jamdesk e non c'è alcun segreto condiviso da inoltrare.
+
+Il token può contenere anche i gruppi. Aggiungi `groups: ["admin"]` al frontmatter di una pagina e solo i visitatori il cui token include `admin` potranno aprirla o visualizzarla nella navigazione. Tutti gli altri riceveranno un 404, quindi la pagina non rivelerà la propria esistenza.
+
+```yaml
+---
+title: Enterprise audit log API
+groups: ["enterprise"]
+---
+```
+
+Abbinalo ai percorsi `public` per le parti del sito che devono rimanere aperte, come un changelog o una pagina di stato.
 
 ### SSO per il sito di documentazione
 
-Nei piani Enterprise, i lettori accedono con il tuo provider di identità (Okta, Google Workspace, Azure AD ecc.) invece di digitare una password condivisa. È ideale quando ti serve una traccia di controllo di chi ha letto cosa o quando la disattivazione di un utente deve revocare immediatamente il suo accesso alla documentazione. Consulta [SSO](/it/setup/sso) per una panoramica generale e per sapere come avviare una conversazione con il team commerciale.
+Nei piani Enterprise, i lettori accedono con il tuo provider di identità (Okta, Google Workspace, Azure AD ecc.) invece di digitare una password condivisa. È la soluzione più adatta quando ti serve una traccia di audit di chi ha letto cosa o quando la rimozione di un utente deve revocare immediatamente il suo accesso alla documentazione. Consulta [SSO](/it/setup/sso) per una panoramica generale e per sapere come avviare una conversazione con il team commerciale.
 
 ## Editor e lettori
 
-A volte le persone confondono tre concetti di accesso diversi:
+A volte si confondono tre diversi concetti di accesso:
 
 | Ruolo | Cosa fanno | Come viene concesso l'accesso |
 |---|---|---|
-| **Editor** | Scrivono e aggiornano contenuti MDX. | La documentazione viene modificata eseguendo il commit di MDX nel repository GitHub collegato, quindi **i permessi del tuo repository GitHub sono i permessi degli editor**. Non esiste un ruolo editor Jamdesk separato sovrapposto: chiunque possa eseguire il push sul branch della documentazione può pubblicare una modifica. |
-| **Lettori** | Visualizzano il sito di documentazione pubblicato. | Tutti (sito pubblico), chiunque disponga della password (modalità con password) o chiunque sia autenticato tramite il tuo IdP (SSO). |
+| **Editor** | Scrivono e aggiornano i contenuti MDX. | La documentazione viene modificata eseguendo il commit di MDX nel repository GitHub collegato, quindi **i permessi del tuo repository GitHub sono i permessi degli editor**. Non esiste un ruolo separato di editor Jamdesk aggiunto a questi: chiunque possa eseguire il push nel branch della documentazione può pubblicare una modifica. |
+| **Lettori** | Visualizzano il sito di documentazione pubblicato. | Chiunque (sito pubblico), chiunque abbia la password (modalità password), chiunque per cui il tuo flusso di login firmi un token (JWT) o chiunque si autentichi tramite il tuo IdP (SSO). |
 | **Membri del team del dashboard** | Gestiscono build, analisi e impostazioni del progetto nel dashboard Jamdesk. | Invitati tramite **Settings → Team** nel dashboard. Non creano direttamente contenuti. Consulta [Membri del team](/it/help/projects/team-members). |
 
-Un collega può appartenere a una combinazione qualsiasi dei tre gruppi. Sono dimensioni indipendenti.
+Un membro del team può appartenere a una combinazione qualsiasi dei tre gruppi. Sono dimensioni indipendenti.
 
-## Cosa fare ora?
+## Qual è il prossimo passo?
 
 <Columns cols={2}>
   <Card title="Protezione con password" icon="lock" href="/it/setup/password-protection">
     Protezione con password per l'intero sito e per singole pagine, suggerimenti, rotazione e controlli delle sessioni.
+  </Card>
+  <Card title="Autenticazione JWT" icon="id-badge" href="/it/setup/jwt-authentication">
+    Proteggi la documentazione con il tuo login, usando sessioni per utente e pagine limitate ai gruppi.
   </Card>
   <Card title="SSO (Enterprise)" icon="key" href="/it/setup/sso">
     Accesso con il tuo provider di identità sia al dashboard sia alla documentazione.
