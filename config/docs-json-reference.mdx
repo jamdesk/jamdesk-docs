@@ -849,6 +849,32 @@ Set `auth.password.enabled: true` to lock the whole site, or list paths under `a
 
 See [Password Protection](/setup/password-protection) for the full walkthrough, including the dashboard flow and how frontmatter `public: true` / `private: true` interact with these arrays.
 
+### auth.jwt
+
+**Type:** `object` (optional)
+
+Gate the whole site behind your own login system. Your backend signs a short-lived token for each signed-in user and Jamdesk exchanges it for a session cookie. The signing key is generated in the dashboard, not in this file. `auth.jwt` and `auth.password` can't both be enabled; a build with both on fails with a `config_error`.
+
+```json
+{
+  "auth": {
+    "jwt": {
+      "enabled": true,
+      "loginUrl": "https://app.example.com/docs-login",
+      "public": ["/changelog/**", "/status"]
+    }
+  }
+}
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `enabled` | `boolean` | Turn JWT authentication on. Every page needs a session except anything marked public. |
+| `loginUrl` | `string` | Required when `enabled` is `true`. An absolute `https://` URL on your side. Visitors without a session are sent here with `?redirect=<path>` so you can bring them back to the page they asked for. |
+| `public` | `string[]` | Path globs that stay reachable without signing in. Same syntax as `auth.password.public`, and merged with frontmatter `public: true` and `"public": true` on navigation groups. |
+
+Per-page access on top of this comes from `groups` in page frontmatter. See [JWT Authentication](/setup/jwt-authentication) for the token format, the redirect flow, and how groups work.
+
 ## Full Example
 
 <Accordion title="Complete docs.json example" defaultOpen>

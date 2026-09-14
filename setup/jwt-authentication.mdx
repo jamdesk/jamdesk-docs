@@ -42,7 +42,7 @@ The two modes are mutually exclusive: `auth.password` and `auth.jwt` cannot both
   <Step title="Generate the signing key">
     Open **Project Settings** in the dashboard and find the **JWT authentication** card. Click **Generate signing key**.
 
-    Jamdesk creates an Ed25519 keypair, keeps only the *public* key, and shows you the *private* key exactly once. Copy it into your secret manager immediately. Jamdesk never stores or emails the private key and can't recover it if you lose it. If that happens, generate a new key (this invalidates the old one, so update your backend's signing key at the same time).
+    Jamdesk creates an Ed25519 keypair, keeps only the *public* key, and shows you the *private* key exactly once. Copy it into your secret manager immediately. Jamdesk never stores or emails the private key and can't recover it if you lose it. If that happens, rotate the key. Rotation is a hard cutover, so read [Rotating the signing key](#rotating-the-signing-key) before you click.
   </Step>
 
   <Step title="Commit and rebuild">
@@ -197,6 +197,8 @@ Details that affect how you use `groups`:
 - An empty `groups: []` means no restriction at all, not "nobody can see this." To remove a page's group restriction, delete the `groups` field entirely rather than setting it to an empty array.
 - To restrict a page to nobody, unpublish it. There's no `groups` value that means "nobody": group membership is additive, and any overlap grants access.
 - Localized copies inherit the base page's `groups` automatically, unless the translation declares its own `groups` in its frontmatter. Translating a restricted page doesn't accidentally make the translation public.
+- Jamdesk works out which top-level folders are translations from `navigation.languages`, plus any top-level folder named after a language code (`fr`, `it`, `cs`, and so on) that has pages inside it. A folder that only shares a name with a language code, say an `it` folder holding IT runbooks, is treated as a translation too, and its pages inherit the `groups` of any root page at the same path. This can only restrict more, never less. Rename the folder if it gets in your way.
+- The sidebar, tabs, breadcrumbs, and previous/next links are filtered per visitor. A page the visitor's groups don't cover is left out, and a group or tab that ends up empty is left out with it, so the name of a restricted section isn't shown to people outside it. This filtering happens at request time and is separate from the build-time exclusions above, which apply to everyone.
 - Keep group names short. Groups travel inside the session cookie: up to 32 groups per session, 64 characters each. Exceeding either limit doesn't trim the list; Jamdesk rejects the entire token with a 401 and grants no session.
 
 ## API playground pre-fill
@@ -228,9 +230,27 @@ If your docs have an [API playground](/api-reference/playground), you can pre-fi
 | `groups` | No | Array of group names the session should carry, up to 32 entries of 64 characters each. Exceeding either limit rejects the whole token (401, no session) rather than truncating the list. |
 | `apiPlaygroundInputs` | No | Pre-fill values for the API playground. Serialized size is capped at 2KB. If it doesn't fit, it's dropped without an error and the session is still granted. |
 
+## Rotating the signing key
+
+**Rotate signing key** on the dashboard card generates a new keypair and shows the new private key once, the same way the first generation did. There is no overlap period. Within about 15 seconds the old key stops being accepted and every existing session ends. Until your backend signs with the new key, every sign-in is rejected and visitors bounce between your login page and the docs.
+
+So the order matters:
+
+1. Have a deploy ready that reads the signing key from your secret manager rather than from a hardcoded value.
+2. Click **Rotate signing key** and copy the new private key.
+3. Update the secret and deploy. Sign-ins work again as soon as your backend is using the new key.
+
+Rotate at a quiet time if you can, and tell whoever owns the backend deploy before you click.
+
+If all you want is to end everyone's session, after a laptop went missing for example, use **Revoke sessions** instead. It keeps the key, so nothing in your backend changes; every visitor just has to sign in again.
+
+**Clear signing key** removes the public key from Jamdesk. `auth.jwt` is still enabled in `docs.json`, so the site stays gated, but no token can be verified until you generate a new key. Clear it only when you're moving the site to another access mode or retiring it.
+
 ## Logout
 
 Signed-in visitors get a **Log out** link in the docs header. It sends them to `/_jd/auth/logout`, which clears the session cookie and redirects to your `loginUrl`. You can also link to it directly from your own app if you want a "sign out of docs" link elsewhere. It's a plain `GET` request with no body or headers required.
+
+Logging out of the docs doesn't log the visitor out of your product. If your login flow signs a token for anyone who already has an app session, a visitor who clicks **Log out** and then opens a docs link is signed straight back in. That's usually what you want. If you need a real sign-out, have your `loginUrl` handler check for an explicit sign-in rather than minting a token automatically, or point your own logout at the docs logout URL as well.
 
 ## Feature behavior under auth
 
@@ -247,7 +267,7 @@ Signed-in visitors get a **Log out** link in the docs header. It sends them to `
 </Accordion>
 
 <Accordion title="The dashboard shows a &quot;Runtime out of sync&quot; banner">
-  This means your latest signing key hasn't reached the runtime cache, usually because a temporary write failure interrupted key generation or rotation. Jamdesk re-attempts the sync automatically whenever you open the settings page; if the banner stays, click **Retry sync** on it. If it still won't clear after retrying, rotate the key from the same card.
+  The dashboard and the runtime cache disagree about your signing key, usually because a temporary write failure interrupted a generate, rotate, or clear. The banner says which way: either the latest key hasn't reached the cache yet (tokens signed with it may be rejected), or a key you cleared is still cached (tokens signed with it are still accepted). Jamdesk checks again every time you open the settings page. If the banner stays, click **Retry sync**. If that keeps failing, rotate the key, or generate and clear again in the cleared case. A banner that says Jamdesk could not verify the state at all means the check itself failed; retry once the runtime is reachable.
 </Accordion>
 
 <Accordion title="Visitors get a 401 even with a token I know is valid">

@@ -1,9 +1,9 @@
 ---
 title: Access Control
-description: "Choose how readers reach your docs: fully public, password-gated, mixed public/private, or SSO. Compare options and pick the one that fits your audience."
+description: "Choose how readers reach your docs: fully public, password-gated, mixed public/private, your own login via JWT, or SSO. Pick the one that fits your audience."
 ---
 
-Jamdesk gives you four ways to control who can read your docs. Most teams pick one and stick with it; some mix and match.
+Jamdesk gives you five ways to control who can read your docs. Most teams pick one and stick with it; some mix and match.
 
 ## Pick the right approach
 
@@ -12,6 +12,7 @@ Jamdesk gives you four ways to control who can read your docs. Most teams pick o
 | **Fully public** | External-facing product docs, open-source projects, anything you want indexed and shareable. | Default; no configuration needed. |
 | **Whole-site password** | Everything is internal: engineering runbooks, partner-only docs, an unreleased product. One shared passphrase gates the whole site. | `auth.password.enabled: true` in `docs.json` + set password in dashboard. See [Password Protection](/setup/password-protection). |
 | **Mixed (some pages private)** | Most docs are public; a handful are internal (a runbook, a beta feature, an internal API reference). | Add `private: true` to frontmatter on internal pages, or list them under `auth.password.private[]`. See [Password Protection](/setup/password-protection). |
+| **Your own login (JWT)** | Readers already sign in to your product. Your backend signs a short-lived token for each of them, Jamdesk turns it into a session, and pages can be limited to groups you name in the token. | `auth.jwt.enabled: true` plus a `loginUrl` in `docs.json`, and a signing key from the dashboard. Included on every plan. See [JWT Authentication](/setup/jwt-authentication). |
 | **SSO (Enterprise)** | Readers should sign in with your existing identity provider: no shared passwords, an audit trail, and deprovisioning by removing the user. | Enterprise plan. See [SSO](/setup/sso). |
 
 <Tip>
@@ -50,6 +51,21 @@ For larger internal sections, list the paths in `docs.json` instead of marking e
 
 Use two projects only when the audiences need fully different branding, separate custom domains, separate analytics, or different plan tiers. Examples: a public docs site at `docs.acme.com` and a separate internal wiki at `internal.acme.com`. Maintenance cost is higher: two builds, two dashboards, two domains.
 
+### Per-user access through your own login
+
+If your customers already have accounts with you, a shared password is a step backwards: it gets forwarded, it never expires on its own, and it can't tell one customer from another. With [JWT authentication](/setup/jwt-authentication), a signed-in user who opens your docs is bounced to a URL on your side, your backend signs a token, and Jamdesk creates a session for that person. Readers need no Jamdesk account, and there is no shared secret to forward around.
+
+The token can also carry groups. Add `groups: ["admin"]` to a page's frontmatter and only visitors whose token lists `admin` can open it, or see it in the navigation. Everyone else gets a 404, so the page doesn't give away that it exists.
+
+```yaml
+---
+title: Enterprise audit log API
+groups: ["enterprise"]
+---
+```
+
+Pair it with `public` paths for the parts of the site that should stay open, such as a changelog or a status page.
+
 ### SSO for the docs site
 
 On Enterprise plans, readers sign in with your identity provider (Okta, Google Workspace, Azure AD, etc.) instead of typing a shared password. Best fit when you need an audit trail of who read what, or when offboarding a user must immediately revoke their docs access. See [SSO](/setup/sso) for the high-level overview and how to start a conversation with sales.
@@ -61,7 +77,7 @@ People sometimes confuse three different access concepts:
 | Role | What they do | How access is granted |
 |---|---|---|
 | **Editors** | Write and update MDX content. | Docs are edited by committing MDX to your connected GitHub repo, so **your GitHub repo permissions are the editor permissions**. There's no separate Jamdesk editor role layered on top: anyone who can push to your docs branch can publish a change. |
-| **Readers** | View the published docs site. | Everyone (public), anyone with the password (password mode), or anyone authenticated via your IdP (SSO). |
+| **Readers** | View the published docs site. | Everyone (public), anyone with the password (password mode), anyone your login flow signs a token for (JWT), or anyone authenticated via your IdP (SSO). |
 | **Dashboard team members** | Manage builds, analytics, and project settings in the Jamdesk dashboard. | Invited via **Settings → Team** in the dashboard. They don't author content directly. See [Team Members](/help/projects/team-members). |
 
 A teammate can be any combination of the three. They're independent axes.
@@ -71,6 +87,9 @@ A teammate can be any combination of the three. They're independent axes.
 <Columns cols={2}>
   <Card title="Password Protection" icon="lock" href="/setup/password-protection">
     Whole-site and per-page password gating, hints, rotation, and session controls.
+  </Card>
+  <Card title="JWT Authentication" icon="id-badge" href="/setup/jwt-authentication">
+    Gate the docs behind your own login, with per-user sessions and group-restricted pages.
   </Card>
   <Card title="SSO (Enterprise)" icon="key" href="/setup/sso">
     Sign-in with your identity provider for both dashboard and docs.
