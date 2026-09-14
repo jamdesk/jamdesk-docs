@@ -181,6 +181,20 @@ public: true
 }
 ```
 
+Marking a page public opens the page itself. The images and videos on it are served from your project's asset paths, which stay behind the gate, so a signed-out visitor sees a public page without its pictures. Add the asset paths to `auth.jwt.public[]` when a public page needs them:
+
+```json docs.json
+{
+  "auth": {
+    "jwt": {
+      "public": ["/changelog/*", "/status", "/_jd/images/**"]
+    }
+  }
+}
+```
+
+Open only the paths your public pages actually use. A broad glob such as `/**` opens every asset on the site, including the screenshots inside pages you meant to keep signed-in.
+
 ## Group-based access
 
 Some pages should only be visible to certain authenticated users, such as an admin runbook or an enterprise-only reference. Add `groups` to a page's frontmatter:
@@ -201,6 +215,7 @@ Details that affect how you use `groups`:
 - To restrict a page to nobody, unpublish it. There's no `groups` value that means "nobody": group membership is additive, and any overlap grants access.
 - Localized copies inherit the base page's `groups` automatically, unless the translation declares its own `groups` in its frontmatter. Translating a restricted page doesn't accidentally make the translation public.
 - Jamdesk works out which top-level folders are translations from `navigation.languages`, plus any top-level folder named after a language code (`fr`, `it`, `cs`, and so on) that has pages inside it. A folder that only shares a name with a language code, say an `it` folder holding IT runbooks, is treated as a translation too, and its pages inherit the `groups` of any root page at the same path. This can only restrict more, never less. Rename the folder if it gets in your way.
+- `groups` restricts pages, not the images, videos, and other files a page embeds. An asset that only a restricted page links to is still served to any signed-in visitor who asks for its URL, whatever groups their session carries. Asset URLs follow your repository's file paths, so a name like `images/admin/sso-config.png` is easy to guess. Keep anything you don't want every signed-in reader to see out of the docs repository.
 - The sidebar, tabs, breadcrumbs, and previous/next links are filtered per visitor. A page the visitor's groups don't cover is left out, and a group or tab that ends up empty is left out with it, so the name of a restricted section isn't shown to people outside it. This filtering happens at request time and is separate from the build-time exclusions above, which apply to everyone.
 - Keep group names short. Groups travel inside the session cookie: up to 32 groups per session, 64 characters each. Exceeding either limit doesn't trim the list; Jamdesk rejects the entire token with a 401 and grants no session.
 

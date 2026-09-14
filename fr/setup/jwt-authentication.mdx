@@ -182,6 +182,20 @@ public: true
 }
 ```
 
+Rendre une page publique ouvre la page elle-même. Les images et les vidéos qu'elle contient sont servies depuis les chemins d'actifs de votre projet, qui restent derrière la barrière : un visiteur non connecté voit donc une page publique sans ses illustrations. Ajoutez ces chemins à `auth.jwt.public[]` lorsqu'une page publique en a besoin :
+
+```json docs.json
+{
+  "auth": {
+    "jwt": {
+      "public": ["/changelog/*", "/status", "/_jd/images/**"]
+    }
+  }
+}
+```
+
+N'ouvrez que les chemins réellement utilisés par vos pages publiques. Un glob large comme `/**` ouvre tous les actifs du site, y compris les captures d'écran des pages que vous vouliez réserver aux visiteurs connectés.
+
 ## Accès par groupe
 
 Certaines pages ne doivent être visibles que par certains utilisateurs authentifiés, comme un runbook d'administration ou une référence réservée aux clients Enterprise. Ajoutez `groups` au frontmatter de la page :
@@ -202,6 +216,7 @@ Quelques détails qui changent la façon d'utiliser `groups` :
 - Pour restreindre une page à personne, dépubliez-la. Aucune valeur de `groups` ne signifie « personne » : l'appartenance à un groupe est additive, et le moindre recoupement donne l'accès.
 - Les copies localisées héritent automatiquement des `groups` de la page de base, sauf si la traduction déclare ses propres `groups` dans son frontmatter. Traduire une page restreinte ne rend donc pas sa traduction publique par accident.
 - Jamdesk détermine quels dossiers de premier niveau sont des traductions à partir de `navigation.languages`, auxquels s'ajoute tout dossier de premier niveau portant le nom d'un code de langue (`fr`, `it`, `cs`, etc.) et contenant des pages. Un dossier qui partage seulement son nom avec un code de langue, par exemple un dossier `it` qui regroupe vos runbooks informatiques, est lui aussi traité comme une traduction, et ses pages héritent des `groups` de la page racine située au même chemin. Cela ne peut que restreindre davantage, jamais l'inverse. Renommez le dossier s'il vous gêne.
+- `groups` restreint les pages, pas les images, les vidéos ni les autres fichiers qu'une page intègre. Un actif auquel seule une page restreinte renvoie reste servi à tout visiteur connecté qui en demande l'URL, quels que soient les groupes portés par sa session. Les URL d'actifs suivent l'arborescence de votre dépôt : un nom comme `images/admin/sso-config.png` se devine facilement. Gardez hors du dépôt de documentation tout ce que vous ne voulez pas montrer à l'ensemble de vos lecteurs connectés.
 - La barre latérale, les onglets, le fil d'Ariane et les liens précédent/suivant sont filtrés visiteur par visiteur. Une page que les groupes du visiteur ne couvrent pas est omise, et un groupe ou un onglet qui se retrouve vide disparaît à son tour, de sorte que le nom d'une section restreinte n'est pas montré aux personnes qui en sont exclues. Ce filtrage a lieu au moment de la requête et reste distinct des exclusions au build décrites plus haut, qui s'appliquent à tout le monde.
 - Gardez des noms de groupes courts. Les groupes voyagent dans le cookie de session : 32 groupes maximum par session, de 64 caractères chacun. Dépasser l'une ou l'autre limite ne tronque pas la liste ; Jamdesk rejette le jeton entier avec une 401 et n'accorde aucune session.
 
