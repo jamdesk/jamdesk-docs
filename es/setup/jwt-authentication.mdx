@@ -180,6 +180,20 @@ public: true
 }
 ```
 
+Marcar una página como pública abre la página en sí. Las imágenes y los vídeos que contiene se sirven desde las rutas de recursos de tu proyecto, que siguen detrás de la barrera, así que un visitante sin sesión ve una página pública sin sus ilustraciones. Añade esas rutas a `auth.jwt.public[]` cuando una página pública las necesite:
+
+```json docs.json
+{
+  "auth": {
+    "jwt": {
+      "public": ["/changelog/*", "/status", "/_jd/images/**"]
+    }
+  }
+}
+```
+
+Abre solo las rutas que tus páginas públicas usan de verdad. Un glob amplio como `/**` abre todos los recursos del sitio, incluidas las capturas de pantalla de las páginas que querías reservar a visitantes con sesión iniciada.
+
 ## Acceso basado en grupos
 
 Algunas páginas solo deberían ser visibles para determinados usuarios autenticados, como un manual de operaciones para administradores o una referencia exclusiva para empresas. Añade `groups` al frontmatter de la página:
@@ -200,6 +214,7 @@ Detalles que afectan al uso de `groups`:
 - Para restringir una página a todos los usuarios, déjala sin publicar. No existe ningún valor de `groups` que signifique «nadie»: la pertenencia a grupos es acumulativa y cualquier coincidencia concede acceso.
 - Las copias localizadas heredan automáticamente los `groups` de la página base, a menos que la traducción declare sus propios `groups` en el frontmatter. Traducir una página restringida no hace que la traducción sea pública accidentalmente.
 - Jamdesk deduce qué carpetas de primer nivel son traducciones a partir de `navigation.languages`, más cualquier carpeta de primer nivel que lleve el nombre de un código de idioma (`fr`, `it`, `cs`, etc.) y contenga páginas. Una carpeta que solo comparte el nombre con un código de idioma, por ejemplo una carpeta `it` que contiene los manuales de operaciones del departamento de TI y no traducciones al italiano, también se trata como una traducción, y sus páginas heredan los `groups` de cualquier página raíz que esté en la misma ruta. Esto solo puede restringir más, nunca menos. Cambia el nombre de la carpeta si eso te causa problemas.
+- `groups` restringe páginas, no las imágenes, los vídeos ni los demás archivos que una página incrusta. Un recurso al que solo enlaza una página restringida se sigue sirviendo a cualquier visitante con sesión iniciada que pida su URL, sean cuales sean los grupos que lleve su sesión. Las URL de recursos siguen la estructura de archivos de tu repositorio, así que un nombre como `images/admin/sso-config.png` es fácil de adivinar. Mantén fuera del repositorio de documentación todo lo que no quieras mostrar a todos tus lectores con sesión iniciada.
 - La barra lateral, las pestañas, las rutas de navegación y los enlaces de página anterior y siguiente se filtran para cada visitante. Una página que los grupos del visitante no cubren queda fuera, y un grupo o una pestaña que se quede vacío desaparece con ella, de modo que el nombre de una sección restringida no se muestra a quienes no pertenecen a ella. Este filtrado ocurre en el momento de la solicitud y es independiente de las exclusiones durante el build descritas arriba, que se aplican a todo el mundo.
 - Mantén cortos los nombres de los grupos. Los grupos viajan dentro de la cookie de sesión: hasta 32 grupos por sesión, de 64 caracteres cada uno. Superar cualquiera de los límites no recorta la lista; Jamdesk rechaza el token completo con un 401 y no concede ninguna sesión.
 

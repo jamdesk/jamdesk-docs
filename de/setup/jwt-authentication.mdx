@@ -181,6 +181,20 @@ public: true
 }
 ```
 
+Eine Seite öffentlich zu machen, öffnet die Seite selbst. Die Bilder und Videos darauf werden über die Asset-Pfade Ihres Projekts ausgeliefert, und die bleiben hinter der Absicherung, sodass ein nicht angemeldeter Besucher eine öffentliche Seite ohne ihre Abbildungen sieht. Nehmen Sie die Asset-Pfade in `auth.jwt.public[]` auf, wenn eine öffentliche Seite sie braucht:
+
+```json docs.json
+{
+  "auth": {
+    "jwt": {
+      "public": ["/changelog/*", "/status", "/_jd/images/**"]
+    }
+  }
+}
+```
+
+Öffnen Sie nur die Pfade, die Ihre öffentlichen Seiten tatsächlich verwenden. Ein weit gefasster Glob wie `/**` öffnet sämtliche Assets der Website, einschließlich der Screenshots in Seiten, die angemeldeten Besuchern vorbehalten bleiben sollten.
+
 ## Zugriff auf Gruppenbasis
 
 Einige Seiten sollten nur für bestimmte authentifizierte Benutzer sichtbar sein, etwa ein Runbook für Administratoren oder eine Referenz nur für Unternehmenskunden. Fügen Sie dem Frontmatter einer Seite `groups` hinzu:
@@ -201,6 +215,7 @@ Details zur Verwendung von `groups`:
 - Um eine Seite für niemanden zugänglich zu machen, heben Sie ihre Veröffentlichung auf. Es gibt keinen `groups`-Wert für „niemand“: Gruppenmitgliedschaften sind additiv, und jede Überschneidung gewährt Zugriff.
 - Lokalisierte Kopien übernehmen automatisch die `groups`-Angabe der Basisseite, sofern die Übersetzung nicht eigene `groups` im Frontmatter festlegt. Durch die Übersetzung einer eingeschränkten Seite wird die Übersetzung nicht versehentlich öffentlich.
 - Jamdesk ermittelt anhand von `navigation.languages`, welche Ordner auf oberster Ebene Übersetzungen enthalten. Zusätzlich gelten alle Ordner auf oberster Ebene als Übersetzungen, die nach einem Sprachcode benannt sind (`fr`, `it`, `cs` usw.) und Seiten enthalten. Ein Ordner, der nur denselben Namen wie ein Sprachcode trägt, beispielsweise ein `it`-Ordner mit Runbooks der IT-Abteilung, wird ebenfalls als Übersetzung behandelt. Seine Seiten übernehmen die `groups`-Angaben jeder Root-Seite am selben Pfad. Dies kann nur stärker einschränken, niemals weniger. Benennen Sie den Ordner um, wenn dies störend ist.
+- `groups` schränkt Seiten ein, nicht die Bilder, Videos und sonstigen Dateien, die eine Seite einbindet. Ein Asset, auf das nur eine eingeschränkte Seite verweist, wird weiterhin an jeden angemeldeten Besucher ausgeliefert, der seine URL aufruft, unabhängig von den Gruppen seiner Sitzung. Asset-URLs folgen den Dateipfaden Ihres Repositorys, sodass ein Name wie `images/admin/sso-config.png` leicht zu erraten ist. Bewahren Sie alles, was nicht jede angemeldete Leserschaft sehen soll, außerhalb des Dokumentations-Repositorys auf.
 - Seitenleiste, Tabs, Breadcrumbs sowie vorherige/nächste Links werden pro Besucher gefiltert. Eine Seite, die von den Gruppen des Besuchers nicht abgedeckt ist, wird ausgelassen. Ebenso wird eine Gruppe oder ein Tab ausgelassen, der dadurch leer wird, sodass der Name eines eingeschränkten Abschnitts Personen außerhalb der Gruppe nicht angezeigt wird. Diese Filterung erfolgt zur Anfragezeit und ist von den oben genannten Ausschlüssen beim Build getrennt, die für alle gelten.
 - Halten Sie Gruppennamen kurz. Gruppen werden im Sitzungscookie übertragen: bis zu 32 Gruppen pro Sitzung, jeweils mit 64 Zeichen. Wird eines der beiden Limits überschritten, wird die Liste nicht gekürzt. Jamdesk lehnt das gesamte Token mit einer 401 ab und gewährt keine Sitzung.
 

@@ -180,6 +180,20 @@ public: true
 }
 ```
 
+Contrassegnare una pagina come pubblica apre la pagina stessa. Le immagini e i video che contiene vengono serviti dai percorsi delle risorse del tuo progetto, che restano dietro la protezione, quindi un visitatore non autenticato vede una pagina pubblica senza le sue illustrazioni. Aggiungi quei percorsi a `auth.jwt.public[]` quando una pagina pubblica ne ha bisogno:
+
+```json docs.json
+{
+  "auth": {
+    "jwt": {
+      "public": ["/changelog/*", "/status", "/_jd/images/**"]
+    }
+  }
+}
+```
+
+Apri solo i percorsi che le tue pagine pubbliche usano davvero. Un glob ampio come `/**` apre tutte le risorse del sito, comprese le schermate contenute nelle pagine che volevi riservare ai visitatori autenticati.
+
 ## Accesso basato sui gruppi
 
 Alcune pagine dovrebbero essere visibili solo a determinati utenti autenticati, ad esempio una procedura operativa per amministratori o un riferimento riservato ai clienti enterprise. Aggiungi `groups` al frontmatter della pagina:
@@ -200,6 +214,7 @@ Dettagli che influenzano l'utilizzo di `groups`:
 - Per impedire l'accesso a chiunque, annulla la pubblicazione della pagina. Non esiste un valore `groups` che significhi "nessuno": l'appartenenza ai gruppi è additiva e qualsiasi sovrapposizione concede l'accesso.
 - Le copie localizzate ereditano automaticamente i `groups` della pagina di base, a meno che la traduzione non dichiari i propri `groups` nel frontmatter. Tradurre una pagina limitata non rende accidentalmente pubblica la traduzione.
 - Jamdesk determina quali cartelle di primo livello sono traduzioni tramite `navigation.languages`, oltre a qualsiasi cartella di primo livello denominata secondo un codice lingua (`fr`, `it`, `cs` e così via) che contenga pagine. Una cartella che condivide solo il nome con un codice lingua, ad esempio una cartella `it` contenente procedure operative IT, viene trattata anch'essa come una traduzione e le sue pagine ereditano i `groups` della pagina radice allo stesso percorso. Questo può solo aggiungere limitazioni, mai rimuoverle. Rinomina la cartella se questo comportamento crea problemi.
+- `groups` limita le pagine, non le immagini, i video e gli altri file che una pagina incorpora. Una risorsa collegata solo da una pagina riservata continua a essere servita a qualsiasi visitatore autenticato che ne richieda l'URL, quali che siano i gruppi della sua sessione. Gli URL delle risorse seguono i percorsi dei file del tuo repository, quindi un nome come `images/admin/sso-config.png` è facile da indovinare. Tieni fuori dal repository della documentazione tutto ciò che non vuoi mostrare a ogni lettore autenticato.
 - La barra laterale, le schede, i breadcrumb e i link precedente/successivo vengono filtrati per visitatore. Una pagina non accessibile ai gruppi del visitatore viene omessa, così come un gruppo o una scheda che rimangono vuoti; in questo modo il nome di una sezione riservata non viene mostrato agli utenti esterni. Questo filtro viene applicato al momento della richiesta ed è separato dalle esclusioni durante la build descritte sopra, che valgono per tutti.
 - Mantieni brevi i nomi dei gruppi. I gruppi vengono memorizzati nel cookie di sessione: al massimo 32 gruppi per sessione, di 64 caratteri ciascuno. Il superamento di uno dei due limiti non accorcia l'elenco: Jamdesk rifiuta l'intero token con un 401 e non concede alcuna sessione.
 
