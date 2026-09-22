@@ -177,6 +177,35 @@ Sprachpräfixe erscheinen in URLs:
 | Spanisch | `docs.example.com/es/introduction` |
 | Französisch | `docs.example.com/fr/introduction` |
 
+## Automatisches Sprach-Routing
+
+Standardmäßig landen alle in Ihrer Standardsprache und wechseln manuell. Aktivieren Sie `localization.autoRedirect`, um Erstbesucher direkt in ihre eigene Sprache zu schicken:
+
+```json docs.json
+{
+  "localization": {
+    "autoRedirect": true
+  }
+}
+```
+
+Ein Besucher, dessen Browser Französisch anfragt, erhält `/fr` statt `/`. Seine Sprache wird ein Jahr lang gespeichert, er wird also nur einmal zugeordnet, und wenn er im Sprachumschalter eine Sprache wählt, gilt von da an diese.
+
+**Nur die Stammseite Ihrer Website wird jemals umgeleitet.** Alles andere bleibt genau so, wie der Besucher es angefragt hat:
+
+- **Eine Sprach-URL öffnet sich immer in dieser Sprache.** `/fr/guides/authentication` – oder auch nur `/fr` – liefert allen Französisch, unabhängig davon, was ihr Browser anfragt. Jemand hat diese URL gewählt, also öffnet ein Link, den Sie in ein Ticket einfügen, oder ein Suchergebnis für die klickende Person dieselbe Seite.
+- **Deep Links werden nie umgeleitet.** `/guides/authentication` liefert diese Seite für alle.
+- **Crawler werden nie umgeleitet.** Google und andere Bots sehen auf der Stammseite weiterhin Ihre Standardsprache, und Ihre `hreflang`-Tags entscheiden weiterhin, was indexiert wird.
+- **Es erfindet nie eine Sprache.** Fragt der Browser des Besuchers eine Sprache an, die Sie nicht veröffentlichen, passiert nichts – er bleibt auf Ihrer Standard-Stammseite.
+
+<Note>
+Erfordert zwei oder mehr Einträge in `navigation.languages`. Auf einer einsprachigen Website bewirkt die Einstellung nichts.
+</Note>
+
+<Warning>
+Wenn Sie Ihrer Dokumentation eine eigene Cloudflare Cache Rule vorschalten, lassen Sie Weiterleitungen ungecacht und aktivieren Sie auf diesen Pfaden nicht **Ignore cache-control header and use this TTL**. Wird die Antwort der Stammseite gecacht, greift die Weiterleitung bei manchen Lesern und bei anderen nicht – je nachdem, wer den Edge-Cache aufgewärmt hat. Die von Jamdesk mitgelieferte Worker-Vorlage berücksichtigt das bereits.
+</Warning>
+
 ## Unvollständige Übersetzungen
 
 Sie müssen nicht jede Seite übersetzen. Wenn eine Seite in einer Sprache nicht existiert, sehen Nutzer eine Fallback-Nachricht mit einem Link zur englischen Version.

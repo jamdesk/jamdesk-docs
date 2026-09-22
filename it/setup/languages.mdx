@@ -177,6 +177,35 @@ I prefissi della lingua compaiono negli URL:
 | Spagnolo | `docs.example.com/es/introduction` |
 | Francese | `docs.example.com/fr/introduction` |
 
+## Routing automatico della lingua
+
+Per impostazione predefinita tutti arrivano nella lingua predefinita e cambiano lingua manualmente. Attiva `localization.autoRedirect` per portare i visitatori alla prima visita direttamente nella loro lingua:
+
+```json docs.json
+{
+  "localization": {
+    "autoRedirect": true
+  }
+}
+```
+
+Un visitatore il cui browser richiede il francese ottiene `/fr` invece di `/`. La sua lingua viene ricordata per un anno, quindi l'abbinamento avviene una sola volta, e se sceglie una lingua dal selettore da quel momento prevale quella.
+
+**Viene reindirizzata soltanto la radice del sito.** Tutto il resto viene servito esattamente come il visitatore l'ha richiesto:
+
+- **Un URL di lingua si apre sempre in quella lingua.** `/fr/guides/authentication` — o anche solo `/fr` — serve il francese a tutti, qualunque lingua richieda il browser. Quell'URL è stato scelto da qualcuno, quindi un link che incolli in un ticket, o che compare tra i risultati di ricerca, apre la stessa pagina per chi lo clicca.
+- **I link profondi non vengono mai reindirizzati.** `/guides/authentication` serve quella pagina a tutti.
+- **I crawler non vengono mai reindirizzati.** Google e gli altri bot continuano a vedere la lingua predefinita nella radice e i tag `hreflang` continuano a decidere cosa viene indicizzato.
+- **Non inventa mai una lingua.** Se il browser del visitatore richiede una lingua che non pubblichi, non succede nulla: resta sulla radice predefinita.
+
+<Note>
+Richiede due o più voci in `navigation.languages`. Su un sito in una sola lingua l'impostazione non ha alcun effetto.
+</Note>
+
+<Warning>
+Se metti una tua Cloudflare Cache Rule davanti alla documentazione, lascia i reindirizzamenti fuori dalla cache e non attivare **Ignore cache-control header and use this TTL** su questi percorsi. Mettere in cache la risposta della radice fa scattare il reindirizzamento per alcuni lettori e non per altri, a seconda di chi ha riscaldato l'edge. Il template di worker fornito da Jamdesk gestisce già questo caso.
+</Warning>
+
 ## Traduzioni parziali
 
 Non è necessario tradurre ogni pagina. Se una pagina non esiste in una lingua, gli utenti vedono un messaggio di fallback con un link alla versione inglese.

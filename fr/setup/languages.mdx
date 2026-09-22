@@ -177,6 +177,35 @@ Les préfixes de langue apparaissent dans les URL :
 | Espagnol | `docs.example.com/es/introduction` |
 | Français | `docs.example.com/fr/introduction` |
 
+## Routage automatique de la langue
+
+Par défaut, tout le monde arrive dans votre langue par défaut et change de langue manuellement. Activez `localization.autoRedirect` pour envoyer les nouveaux visiteurs directement dans leur propre langue :
+
+```json docs.json
+{
+  "localization": {
+    "autoRedirect": true
+  }
+}
+```
+
+Un visiteur dont le navigateur demande le français obtient `/fr` au lieu de `/`. Sa langue est mémorisée pendant un an, il n'est donc associé qu'une seule fois, et s'il choisit une langue dans le sélecteur, c'est celle-ci qui l'emporte à partir de ce moment.
+
+**Seule la racine de votre site est redirigée.** Tout le reste est servi exactement comme le visiteur l'a demandé :
+
+- **Une URL de langue s'ouvre toujours dans cette langue.** `/fr/guides/authentication` — ou simplement `/fr` — sert du français à tout le monde, quelle que soit la langue demandée par le navigateur. Quelqu'un a choisi cette URL : un lien que vous collez dans un ticket, ou qui apparaît dans un résultat de recherche, ouvre donc la même page pour la personne qui clique.
+- **Les liens profonds ne sont jamais redirigés.** `/guides/authentication` sert cette page pour tout le monde.
+- **Les crawlers ne sont jamais redirigés.** Google et les autres robots continuent de voir votre langue par défaut à la racine, et vos balises `hreflang` continuent de décider de ce qui est indexé.
+- **Il n'invente jamais une langue.** Si le navigateur du visiteur demande une langue que vous ne publiez pas, rien ne se passe : il reste sur votre racine par défaut.
+
+<Note>
+Nécessite deux entrées ou plus dans `navigation.languages`. Sur un site monolingue, ce réglage n'a aucun effet.
+</Note>
+
+<Warning>
+Si vous placez votre propre Cloudflare Cache Rule devant votre documentation, ne mettez pas les redirections en cache et n'activez pas **Ignore cache-control header and use this TTL** sur ces chemins. Mettre la réponse de la racine en cache fait que la redirection se déclenche pour certains lecteurs et pas pour d'autres, selon celui qui a préchauffé l'edge. Le modèle de worker fourni par Jamdesk gère déjà ce cas.
+</Warning>
+
 ## Traductions partielles
 
 Vous n'avez pas besoin de traduire chaque page. Si une page n'existe pas dans une langue, les utilisateurs voient un message de repli avec un lien vers la version anglaise.

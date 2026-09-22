@@ -177,6 +177,35 @@ Los prefijos de idioma aparecen en las URLs:
 | Español | `docs.example.com/es/introduction` |
 | Francés | `docs.example.com/fr/introduction` |
 
+## Enrutamiento automático de idioma
+
+De forma predeterminada, todo el mundo llega a tu idioma predeterminado y cambia de idioma a mano. Activa `localization.autoRedirect` para enviar a los visitantes primerizos directamente a su propio idioma:
+
+```json docs.json
+{
+  "localization": {
+    "autoRedirect": true
+  }
+}
+```
+
+Un visitante cuyo navegador pide francés recibe `/fr` en lugar de `/`. Su idioma se recuerda durante un año, así que solo se le asigna una vez, y si elige un idioma en el selector, ese manda a partir de entonces.
+
+**Solo se redirige la raíz de tu sitio.** Todo lo demás se sirve exactamente como lo pidió el visitante:
+
+- **Una URL de idioma siempre se abre en ese idioma.** `/fr/guides/authentication` —o simplemente `/fr`— sirve francés a todo el mundo, sea cual sea el idioma que pida su navegador. Alguien eligió esa URL, así que un enlace que pegues en un ticket, o que aparezca en un resultado de búsqueda, abre la misma página para quien haga clic.
+- **Los enlaces profundos nunca se redirigen.** `/guides/authentication` sirve esa página para todo el mundo.
+- **Los rastreadores nunca se redirigen.** Google y otros bots siguen viendo tu idioma predeterminado en la raíz, y tus etiquetas `hreflang` siguen decidiendo qué se indexa.
+- **Nunca se inventa un idioma.** Si el navegador del visitante pide un idioma que no publicas, no pasa nada: se queda en tu raíz predeterminada.
+
+<Note>
+Requiere dos o más entradas en `navigation.languages`. En un sitio de un solo idioma, el ajuste no hace nada.
+</Note>
+
+<Warning>
+Si pones tu propia Cloudflare Cache Rule delante de tu documentación, deja las redirecciones sin cachear y no actives **Ignore cache-control header and use this TTL** en esas rutas. Cachear la respuesta de la raíz hace que la redirección se dispare para unos lectores y para otros no, según quién haya calentado el edge. La plantilla de worker que incluye Jamdesk ya se encarga de esto.
+</Warning>
+
 ## Traducciones parciales
 
 No es necesario traducir todas las páginas. Si una página no existe en un idioma, los usuarios ven un mensaje de respaldo con un enlace a la versión en inglés.
