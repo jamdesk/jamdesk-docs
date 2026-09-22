@@ -177,6 +177,35 @@ Language prefixes appear in URLs:
 | Spanish | `docs.example.com/es/introduction` |
 | French | `docs.example.com/fr/introduction` |
 
+## Automatic language routing
+
+By default everyone lands on your default language and switches manually. Turn on `localization.autoRedirect` to send first-time visitors straight to their own language:
+
+```json docs.json
+{
+  "localization": {
+    "autoRedirect": true
+  }
+}
+```
+
+A visitor whose browser asks for French gets `/fr` instead of `/`. Their language is remembered for a year, so they're only matched once, and if they pick a language from the switcher that wins from then on.
+
+**Only your site root is ever redirected.** Everything else is left exactly as the visitor asked for it:
+
+- **A language URL always opens in that language.** `/fr/guides/authentication` — or just `/fr` — serves French to everyone, whatever their browser asks for. Someone chose that URL, so a link you paste into a ticket or a search result opens the same page for the person who clicks it.
+- **Deep links are never redirected.** `/guides/authentication` serves that page for everyone.
+- **Crawlers are never redirected.** Google and other bots keep seeing your default language at the root, and your `hreflang` tags keep deciding what gets indexed.
+- **It never invents a language.** If the visitor's browser asks for a language you don't publish, nothing happens — they stay on your default root.
+
+<Note>
+Requires two or more entries in `navigation.languages`. On a single-language site the setting does nothing.
+</Note>
+
+<Warning>
+If you front your docs with your own Cloudflare Cache Rule, leave redirects uncached and don't enable **Ignore cache-control header and use this TTL** on these paths. Caching the root response makes the redirect fire for some readers and not others, depending on which one warmed the edge. The worker template Jamdesk ships already handles this.
+</Warning>
+
 ## Partial Translations
 
 You don't need to translate every page. If a page doesn't exist in a language, users see a fallback message with a link to the English version.
