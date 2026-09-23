@@ -1,0 +1,186 @@
+---
+title: Conectar Bitbucket
+description: "Conecte um repositório Bitbucket Cloud ao Jamdesk, crie um repositório de docs ou vincule um existente e publique a cada push."
+---
+
+O Jamdesk faz o build a partir do Bitbucket Cloud da mesma forma que a partir do GitHub: você autoriza o Jamdesk uma vez e cada push para a branch escolhida publica uma nova versão do seu site. Esta página é destinada a equipes cuja documentação está no Bitbucket ou que querem manter a documentação junto do código que já está lá.
+
+<Note>
+Mantém sua documentação no GitHub? Consulte [Conectar GitHub](/pt/setup/connecting-github). Um projeto pode se conectar a um único provedor git por vez.
+</Note>
+
+## Antes de começar
+
+- **Uma conta do Bitbucket Cloud.** Bitbucket Data Center e Bitbucket Server não são compatíveis.
+- **Permissão de administrador no repositório.** O Jamdesk instala um webhook de push no repositório, e o Bitbucket permite que apenas administradores de repositórios criem webhooks.
+- **Um projeto sem repositório conectado.** Para mover um projeto do GitHub para o Bitbucket, primeiro desconecte o GitHub em **Settings** → **Git Repository**.
+- **Pop-ups permitidos para o dashboard.** O login do Bitbucket é aberto em uma janela pop-up.
+
+## O que o Jamdesk solicita
+
+O Jamdesk se conecta por meio de um consumidor OAuth do Bitbucket. Quando você entra, o Bitbucket lista as permissões solicitadas:
+
+| Permissão | Por que o Jamdesk precisa dela |
+|------------|----------------------|
+| Account: Read | Registra qual conta do Bitbucket conectou o projeto, para que os pushes dessa conta sejam reconhecidos |
+| Repositories: Read | Clona seu repositório para fazer o build e lista seus repositórios quando você altera o repositório |
+| Repositories: Write | Cria o repositório inicial de documentação e envia o conteúdo inicial para ele |
+| Webhooks: Read and write | Instala o webhook de push que aciona os builds e o remove quando a conexão é alterada |
+
+O Jamdesk armazena o token de atualização resultante criptografado com o Google Cloud KMS e renova o acesso automaticamente. Você não precisa de uma senha de aplicativo nem de um token de acesso pessoal.
+
+## Escolher o Bitbucket para um projeto
+
+Abra o projeto no dashboard. Enquanto nenhum repositório estiver conectado, a página do projeto mostra um card **Connect your docs repository** com duas opções. Clique em **Bitbucket**.
+
+A partir daí, você pode deixar que o Jamdesk crie um repositório inicial ou conectar um que já possui.
+
+### Criar um repositório inicial de docs
+
+<Steps>
+  <Step title="Informe seu workspace">
+    Digite o slug do workspace, a parte da URL do Bitbucket depois de `bitbucket.org/`. Para `https://bitbucket.org/acme/`, digite `acme`.
+  </Step>
+
+  <Step title="Entre com o Bitbucket">
+    Clique em **Sign in with Bitbucket**. Um pop-up será aberto em bitbucket.org. Revise as permissões e conceda acesso.
+  </Step>
+
+  <Step title="Aguarde o repositório">
+    O Jamdesk cria um repositório nesse workspace, nomeado de acordo com o seu projeto e com o sufixo `-docs`. Um projeto chamado **Acme Docs** recebe `acme-docs`. Se esse nome já estiver em uso, o Jamdesk usará `-documentation`.
+
+    O repositório começa na branch `main` com a documentação inicial já disponível. O Jamdesk instala o webhook e executa o primeiro build.
+  </Step>
+</Steps>
+
+Quando o card mostrar **Starter docs created and connected!**, seu site estará a caminho. Clone o novo repositório e comece a editar.
+
+### Conectar um repositório existente
+
+<Steps>
+  <Step title="Informe o repositório">
+    Digite o repositório como `workspace/repository-slug`, por exemplo `acme/developer-docs`. As duas partes vêm da URL do repositório em bitbucket.org.
+  </Step>
+
+  <Step title="Escolha a branch">
+    Informe a branch para deploy. Deixe em branco para usar `main`.
+  </Step>
+
+  <Step title="Conectar o Bitbucket">
+    Clique em **Connect Bitbucket** e conceda acesso no pop-up. Em seguida, o Jamdesk:
+
+    1. Confirma que sua conta tem permissão de administrador no repositório
+    2. Procura `docs.json` na raiz do repositório ou em uma subpasta, até três níveis de profundidade
+    3. Instala o webhook de push
+    4. Registra seu endereço `yourproject.jamdesk.app` e inicia o primeiro build
+  </Step>
+</Steps>
+
+O repositório precisa ter um `docs.json` válido na branch informada. Se o Jamdesk não encontrar nenhum, adicione um e conecte novamente. Se encontrar mais de um, mantenha apenas um `docs.json` por repositório. Um repositório com um `mint.json` é um projeto Mintlify: execute [`jamdesk migrate`](/pt/cli/overview), faça push e conecte novamente.
+
+Depois de conectado, o card do projeto mostra o repositório, a branch e um badge **Connected**.
+
+## Builds automáticos ao fazer push
+
+Cada push para a branch conectada aciona um build:
+
+```bash
+git add .
+git commit -m "Update API documentation"
+git push origin main
+```
+
+O Bitbucket entrega um evento de push ao webhook do Jamdesk, e o Jamdesk faz o build desse commit uma vez. Uma entrega duplicada do mesmo commit não inicia um segundo build, e excluir uma branch nunca aciona um build.
+
+O Bitbucket não tenta novamente uma entrega de webhook que falha. Para compensar isso, o Jamdesk também verifica a ponta da sua branch a cada cinco minutos e faz o build de qualquer commit que ainda não tenha sido processado. Um push cujo webhook foi perdido ainda é publicado em poucos minutos.
+
+Os builds manuais pelo dashboard funcionam da mesma forma que nos projetos do GitHub. Consulte [Acionar builds](/pt/builds/triggering).
+
+### Quais pushes acionam um build
+
+O Jamdesk faz o build de pushes feitos pela conta do Bitbucket que conectou o projeto ou que o autorizou novamente por último. Um push de qualquer outra conta aparece na lista de builds como um build com falha e erro de autorização, e nada é publicado.
+
+<Note>
+Os projetos do Bitbucket ainda não oferecem suporte à vinculação de uma conta pessoal em **User Settings** nem à autorização de contas adicionais em **Settings** → **Automation accounts**. Se várias pessoas fizerem push para a branch de deploy, conecte o projeto com a conta que faz merge nessa branch ou faça com que essa conta execute o push.
+</Note>
+
+## Alterar o repositório ou a branch
+
+Clique em **Change repository** no card do projeto. O Jamdesk lista os repositórios aos quais sua conta do Bitbucket pode acessar. Escolha um repositório e uma branch e confirme.
+
+O Jamdesk instala o webhook no novo repositório, remove-o do antigo e inicia um build.
+
+<Warning>
+Alterar os repositórios afeta sua documentação publicada assim que o build termina. O novo repositório precisa conter um `docs.json` válido.
+</Warning>
+
+## Reautorizar uma conexão expirada
+
+O Bitbucket revoga o acesso do Jamdesk quando o usuário conectado o remove no Bitbucket ou quando o token de atualização fica sem uso por vários meses. O card do projeto passa a mostrar um badge **Needs reauth** e a mensagem **Bitbucket connection needs attention**.
+
+Clique em **Re-authorize** e entre novamente. Os builds são retomados, e a próxima verificação de cinco minutos identifica o commit mais recente da sua branch.
+
+## Como o Bitbucket difere do GitHub
+
+Os projetos do Bitbucket usam uma única autorização OAuth, enquanto os projetos do GitHub usam um GitHub App e um vínculo opcional com uma conta pessoal. A maior parte da plataforma funciona da mesma maneira. As diferenças são:
+
+| Recurso | GitHub | Bitbucket Cloud |
+|---------|--------|-----------------|
+| Build ao fazer push | Webhook | Webhook, além de uma verificação de cinco minutos para entregas perdidas |
+| Repositório inicial de docs | Sim | Sim |
+| Domínios personalizados, hospedagem em subcaminho, builds manuais, deploys pela CLI | Sim | Sim |
+| Status do build nos commits | Exibido no commit no GitHub | Apenas no dashboard |
+| Vínculo de conta pessoal para atribuição do build | User Settings | Indisponível. Os builds são atribuídos à conta conectada |
+| Lista de permissões de contas de automação | Settings → Automation accounts | Ainda não |
+| [Editor web](/pt/development/web-editor) | Sim | Ainda não |
+| [Corrigir com IA](/pt/builds/fix-with-ai) | Sim | Ainda não |
+| [Tradução com IA](/pt/setup/ai-translation) | Sim | Ainda não |
+
+Excluir um projeto remove o webhook do seu repositório e revoga o acesso do Jamdesk.
+
+## Solução de problemas
+
+### "Sua conta do Bitbucket não tem permissão de administrador neste repositório"
+
+O Jamdesk precisa de acesso de administrador para instalar o webhook. Peça a um administrador do workspace que conceda a você permissão de administrador no repositório ou faça com que um administrador conecte o projeto.
+
+### "Não foi possível encontrar docs.json neste repositório"
+
+O Jamdesk procurou na raiz e em até três pastas de profundidade na branch informada. Adicione um `docs.json`, faça push para essa branch e conecte novamente. Consulte a [referência de docs.json](/pt/config/docs-json-reference).
+
+### "Foram encontrados vários arquivos docs.json"
+
+Mantenha um `docs.json` por repositório. Remova ou renomeie os outros e conecte novamente.
+
+### "Este repositório parece ser um projeto Mintlify"
+
+O repositório contém um `mint.json`. Execute `jamdesk migrate` para convertê-lo, faça push do resultado e conecte novamente.
+
+### Pop-up bloqueado
+
+Permita pop-ups para o dashboard no navegador e clique novamente em **Sign in with Bitbucket** ou **Connect Bitbucket**.
+
+### Builds não são acionados
+
+- No Bitbucket, abra **Repository settings** → **Webhooks** e confirme que o webhook do Jamdesk está presente e ativo
+- Verifique se você está fazendo push para a branch configurada
+- Aguarde cinco minutos. A verificação periódica faz o build de qualquer commit que o webhook não identificou
+- Se o card do projeto mostrar **Needs reauth**, reautorize a conexão
+- Se o push tiver vindo de outra conta do Bitbucket, consulte [Quais pushes acionam um build](#quais-pushes-acionam-um-build)
+
+## O que vem a seguir?
+
+<Columns cols={2}>
+  <Card title="Criar um projeto" icon="plus" href="/pt/setup/creating-projects">
+    Configure um novo projeto Jamdesk
+  </Card>
+  <Card title="Domínios personalizados" icon="globe" href="/pt/deploy/custom-domains">
+    Disponibilize sua documentação no seu próprio domínio
+  </Card>
+  <Card title="Acionar builds" icon="play" href="/pt/builds/triggering">
+    Todas as formas de iniciar um build
+  </Card>
+  <Card title="Estrutura de diretórios" icon="folder-tree" href="/pt/setup/directory-structure">
+    Organize sua documentação para crescer
+  </Card>
+</Columns>
