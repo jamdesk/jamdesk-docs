@@ -75,13 +75,30 @@ The `llms-full.txt` file contains the complete Markdown content of every page, c
 a blockquote summary, and your navigation tabs and groups as `##` sections of
 Markdown links.
 
-Multilingual sites get one index per language. The root `llms.txt` lists your
-default language and links each translated index at the end, for example
-`/fr/llms.txt` for French. Each language file links back to its siblings.
+## Multilingual Sites
 
-Each language also gets its own full-content file, such as `/fr/llms-full.txt`.
-Your default language has one too (for example `/en/llms-full.txt`). The root
-`llms-full.txt` still contains every language.
+Sites with more than one language get a separate set of files for each
+language, so an AI tool can fetch only the language it needs. For a site in
+English (the default) and French:
+
+| URL | Content |
+|-----|---------|
+| `/llms.txt` | English index, with links to every other language's index at the end |
+| `/fr/llms.txt` | French index, linking back to the other languages |
+| `/llms-full.txt` | Full content of every language, one after another |
+| `/en/llms-full.txt` | Full content of the English pages only |
+| `/fr/llms-full.txt` | Full content of the French pages only |
+
+The root `llms-full.txt` keeps every language, so tools that already read it
+see no change. Point an agent at a language's own file when it only needs that
+language:
+
+```bash
+curl https://jamdesk.com/docs/fr/llms-full.txt
+```
+
+A language gets its own files once it has at least one page. Sites with a
+single language keep only the root files.
 
 ## Agent directive on every page
 
@@ -111,7 +128,7 @@ without crawling.
 }
 ```
 
-On your next build, Jamdesk skips both files and the live `/llms.txt` and `/llms-full.txt` URLs return `404`.
+On your next build, Jamdesk skips both files, including every per-language copy, and the live `/llms.txt` and `/llms-full.txt` URLs return `404`.
 
 <Note>
   **AI ingestion and search indexing are separate controls.** `seo.ai.llmsTxt` governs only the `llms.txt`/`llms-full.txt` files that AI tools read. It does not change how search engines index your site; that's controlled by [`robots` metadata and per-page `noindex`](/content/seo#controlling-indexing). A page can be indexed by Google while excluded from AI ingestion, or vice versa.
