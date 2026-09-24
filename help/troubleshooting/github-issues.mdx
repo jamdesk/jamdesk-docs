@@ -1,6 +1,6 @@
 ---
 title: GitHub Issues
-description: Fix missing organizations during setup, missing repos, failed webhooks, permission errors, and branch mismatches with the Jamdesk GitHub integration.
+description: Fix GitHub App install loops on company-managed accounts, missing organizations and repos, failed webhooks, permission errors, and branch mismatches.
 ---
 
 Most GitHub integration problems trace to permissions, webhook failures, or branch mismatches.
@@ -45,6 +45,43 @@ During the starter docs flow, Jamdesk shows your GitHub organizations so you can
   <Warning>
     Disconnecting and reconnecting generates a new docs URL (e.g., `your-project.jamdesk.app` may change). If you've already shared your URL or set up a custom domain, contact [support](/help/support/contact) before disconnecting so we can preserve your configuration.
   </Warning>
+
+  This doesn't work if your company manages your GitHub account. See [company-managed GitHub accounts](#company-managed-github-accounts) instead.
+</Accordion>
+
+## Company-Managed GitHub Accounts
+
+If your company manages your GitHub account (GitHub calls these Enterprise Managed Users, or EMU), GitHub won't let you install apps on your own account, only on an organization. If there's no organization for you to use, clicking **Install** on GitHub just sends you back to the Jamdesk app page. During signup, Jamdesk shows "Your organization manages this GitHub account".
+
+Managed usernames end in an underscore and a company code, like `jsmith_acme`. GitHub explains the limits on its page about [managed user accounts](https://docs.github.com/en/enterprise-cloud@latest/admin/managing-iam/understanding-iam-for-enterprises/abilities-and-restrictions-of-managed-user-accounts).
+
+You can fix this in one of two ways.
+
+<Accordion title="Move the repo into an organization">
+  1. Ask an enterprise owner to [create an organization](https://docs.github.com/en/enterprise-cloud@latest/admin/managing-accounts-and-repositories/managing-organizations-in-your-enterprise/adding-organizations-to-your-enterprise) from the **Organizations** tab of your enterprise. Ask them to let you create repos in it.
+  2. [Transfer your docs repo](https://docs.github.com/en/enterprise-cloud@latest/repositories/creating-and-managing-repositories/transferring-a-repository) into it. In the repo, go to **Settings**, click **Transfer** at the bottom, and pick the new organization.
+  3. In Jamdesk, click **Connect an existing repository** (or **Install GitHub App** in project settings). On GitHub, pick the organization, choose **Only select repositories**, select your repo, and install.
+
+  If GitHub shows **Request** instead of **Install**, an organization owner gets an email to approve it. Click the Jamdesk button again after they do.
+</Accordion>
+
+<Accordion title="Use a personal GitHub account">
+  Use this if your company can't add an organization. Check with your GitHub admin first, since the docs will live outside your company's GitHub.
+
+  1. In a private browser window, sign in to GitHub with a personal account (or create one).
+  2. Create an empty private repo on that account.
+  3. Push a copy of your docs to it. GitHub can't transfer repos out of a managed enterprise, so a copy is needed.
+
+     ```bash
+     git remote set-url origin https://jsmith@github.com/jsmith/product-docs.git
+     git push -u origin main
+     ```
+
+     Keep `jsmith@` in the URL so Git asks for your personal account's login.
+
+  4. In Jamdesk, click **Connect an existing repository** (or **Install GitHub App** in project settings), install Jamdesk on your personal account, and pick the repo.
+
+  Managed accounts can't push to repos outside your enterprise, so everyone who edits the docs needs a personal GitHub account. Add them to the repo as collaborators.
 </Accordion>
 
 ## Repository Not Appearing
