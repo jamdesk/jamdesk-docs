@@ -1,13 +1,13 @@
 ---
 title: Frontmatter
-description: Configurez les titres, descriptions, icônes, remplacements de barre latérale et métadonnées SEO avec le bloc YAML frontmatter en tête de chaque fichier MDX.
+description: Configurez les titres, descriptions, icônes, options de barre latérale, métadonnées SEO via le bloc frontmatter YAML en tête de chaque fichier MDX.
 ---
 
-Chaque fichier MDX commence par un bloc YAML entre des marqueurs `---`. Ces métadonnées contrôlent le titre de la page, l'apparence dans la barre latérale, et la façon dont la page s'affiche lors des partages sur les réseaux sociaux ou dans les résultats de recherche.
+Chaque fichier MDX commence par un bloc YAML délimité par des marqueurs `---`. Ces métadonnées contrôlent le titre de votre page, l'apparence de la barre latérale, ainsi que l'aspect de la page lorsqu'elle est partagée sur les réseaux sociaux ou dans les résultats de recherche.
 
 ## Frontmatter de base
 
-Chaque page nécessite au minimum un titre :
+Chaque page nécessite au moins un titre :
 
 ```yaml
 ---
@@ -18,7 +18,7 @@ description: Learn the basics in 5 minutes
 
 ## Champs disponibles
 
-### Obligatoire
+### Requis
 
 | Champ | Type | Description |
 |-------|------|-------------|
@@ -28,24 +28,26 @@ description: Learn the basics in 5 minutes
 
 | Champ | Type | Description |
 |-------|------|-------------|
-| `description` | string | Résumé court pour le SEO et les résultats de recherche (50-160 caractères) |
+| `description` | string | Résumé court pour le SEO et les résultats de recherche (50 à 160 caractères) |
 
-### Optionnel
+### Facultatif
 
-| Champ | Type | Défaut | Description |
-|-------|------|--------|-------------|
+| Champ | Type | Par défaut | Description |
+|-------|------|---------|-------------|
 | `icon` | string | - | Icône Font Awesome affichée à côté du titre de la page dans la barre latérale |
 | `sidebarTitle` | string | `title` | Titre plus court pour la barre latérale |
-| `mode` | string | - | Définir à `"wide"` pour une mise en page pleine largeur |
-| `hideFooter` | boolean | `false` | Masquer le pied de page social sur cette page |
-| `rss` | boolean | `false` | Activer la génération de flux RSS à partir des composants [Update](/fr/components/update) sur cette page |
-| `private` | boolean | `false` | Exiger le [mot de passe du site](/fr/setup/password-protection) pour consulter cette page. Activer ceci sur une page quelconque active le mode pages spécifiques lors du prochain build. |
-| `public` | boolean | `false` | Exempter cette page de la protection par mot de passe (utilisé lorsque tout le site est protégé via `auth.password.enabled`). Prend le dessus sur `private: true` si les deux sont définis. |
-| `lastUpdatedDate` | string | - | Remplace la date « Last updated on » de cette page au lieu d'utiliser celle de son dernier commit Git. Mettez la valeur entre guillemets : `"2026-09-01"`. La ligne du pied de page nécessite `metadata.timestamp` dans `docs.json` ; votre sitemap et vos données structurées utilisent la date dans tous les cas. Voir [Date de dernière mise à jour](#date-de-dernière-mise-à-jour) |
+| `mode` | string | - | Réglez sur `"wide"` pour une mise en page pleine largeur |
+| `hideFooter` | boolean | `false` | Masque le pied de page social sur cette page |
+| `rss` | boolean | `false` | Active la génération d'un flux RSS à partir des composants [Update](/fr/components/update) présents sur cette page |
+| `search` | boolean | `true` | Réglez sur `false` pour exclure la page de la recherche du site, des réponses du chat IA et du MCP. Elle reste dans votre barre latérale, votre sitemap et votre llms.txt. Voir [Garder une page hors de la recherche uniquement](/fr/content/hidden-pages#exclure-une-page-uniquement-de-la-recherche) |
+| `private` | boolean | `false` | Exige le [mot de passe du site](/fr/setup/password-protection) pour consulter cette page. Activer ce champ sur une page déclenche le mode pages spécifiques au prochain build. |
+| `public` | boolean | `false` | Exempte cette page de la protection par mot de passe ou de l'[authentification JWT](/fr/setup/jwt-authentication) lorsque le site entier est verrouillé. L'emporte sur `private: true` si les deux sont définis. |
+| `groups` | string[] | - | Avec l'authentification JWT activée, seuls les visiteurs dont le jeton liste au moins un de ces groupes peuvent ouvrir la page ; les autres reçoivent une erreur 404 et ne la voient pas dans la navigation. Jusqu'à 32 groupes par page. Ignoré en mode mot de passe. Voir [Accès basé sur les groupes](/fr/setup/jwt-authentication#accès-basé-sur-les-groupes). |
+| `lastUpdatedDate` | string | - | Remplace la date « Dernière mise à jour le » de cette page au lieu d'utiliser la date de son dernier commit Git. Mettez la valeur entre guillemets : `"2026-09-01"`. La ligne du pied de page nécessite `metadata.timestamp` dans `docs.json` ; votre sitemap et vos données structurées utilisent la date dans tous les cas. Voir [Date de dernière mise à jour](#date-de-dernière-mise-à-jour) |
 
 ### Date de dernière mise à jour
 
-Avec `metadata.timestamp` activé dans `docs.json`, chaque page affiche la date du dernier commit ayant touché son fichier. `lastUpdatedDate` remplace cette date sur une page donnée :
+Lorsque `metadata.timestamp` est activé dans `docs.json`, chaque page affiche la date du dernier commit qui a modifié son fichier. `lastUpdatedDate` remplace cette date sur une page donnée :
 
 ```yaml
 ---
@@ -54,27 +56,27 @@ lastUpdatedDate: "2026-09-01"
 ---
 ```
 
-Utilisez-le quand vous avez relu une page et que vous voulez le signaler, ou quand un commit de mise en forme a déplacé la date sans rien changer qu'un lecteur remarquerait.
+Utilisez ce champ lorsque vous avez révisé une page et souhaitez l'indiquer, ou lorsqu'un commit de mise en forme a modifié la date sans rien changer que le lecteur remarquerait.
 
-Mettez la valeur entre guillemets. Un `2026-09-01` sans guillemets est lu comme un horodatage et non comme une date, et peut s'afficher avec un jour d'écart. Une valeur qui n'est pas une date est ignorée et la date du commit s'affiche à la place : une faute de frappe ne vide donc jamais la ligne.
+Mettez la valeur entre guillemets. Un `2026-09-01` non entouré de guillemets est interprété comme un timestamp plutôt qu'une date et peut afficher un jour décalé. Une valeur qui n'est pas une date est ignorée et la date du commit s'affiche à la place, si bien qu'une faute de frappe ne vide jamais la ligne.
 
 <Note>
-La ligne du pied de page n'apparaît qu'avec `metadata.timestamp` activé, mais `lastUpdatedDate` n'est pas seulement un réglage de pied de page : le `<lastmod>` de votre sitemap et le `dateModified` des données structurées de la page l'utilisent, que le pied de page soit activé ou non. Définissez-le quand la date est bien celle que vous voulez, pas seulement quand vous souhaitez l'afficher.
+La ligne du pied de page n'apparaît que si `metadata.timestamp` est activé, mais `lastUpdatedDate` n'est pas qu'un réglage du pied de page : le `<lastmod>` de votre sitemap et le `dateModified` des données structurées de la page l'utilisent tous les deux, que le pied de page soit activé ou non. Définissez-le lorsque la date est ce que vous voulez indiquer, pas seulement lorsque vous voulez qu'elle s'affiche.
 </Note>
 
-Ce remplacement définit aussi `dateModified` dans les données structurées de la page, de sorte que les moteurs de recherche et les assistants IA voient la même date que vos lecteurs.
+Cette substitution définit également `dateModified` dans les données structurées de la page, afin que les moteurs de recherche et les assistants IA voient la même date que vos lecteurs.
 
-### SEO & Social
+### SEO et réseaux sociaux
 
-Contrôlez l'apparence de la page dans les résultats de recherche et les aperçus sociaux. Définissez ces valeurs comme clés de premier niveau ou dans un bloc `seo:` imbriqué. Les deux fonctionnent, et les valeurs par page remplacent les valeurs par défaut `seo.metatags` de votre `docs.json`.
+Contrôlez l'apparence de la page dans les résultats de recherche et les aperçus sociaux. Définissez ces champs comme des clés de premier niveau, ou dans un bloc imbriqué `seo:`. Les deux fonctionnent, et les valeurs propres à chaque page l'emportent sur les valeurs par défaut `seo.metatags` de votre `docs.json`.
 
-| Champ | Type | Défaut | Description |
-|-------|------|--------|-------------|
-| `keywords` | string[] | - | Mots-clés de recherche, émis sous forme de balise `<meta name="keywords">` |
+| Champ | Type | Par défaut | Description |
+|-------|------|---------|-------------|
+| `keywords` | string[] | - | Mots-clés de recherche, générés sous forme de balise `<meta name="keywords">` |
 | `canonical` | string | auto | URL canonique de cette page, remplaçant celle générée automatiquement |
-| `noindex` | boolean | `false` | Exclure cette page des moteurs de recherche et du sitemap |
-| `og:*` / `twitter:*` | string | - | Balises Open Graph et Twitter/X pour les aperçus sociaux (ex. `og:title`, `og:image`, `twitter:card`) |
-| `seo` | object | - | Bloc imbriqué contenant l'un des éléments ci-dessus ainsi que des balises méta personnalisées |
+| `noindex` | boolean | `false` | Exclut cette page des moteurs de recherche et du sitemap |
+| `og:*` / `twitter:*` | string | - | Balises Open Graph et Twitter/X pour l'aperçu social (par ex. `og:title`, `og:image`, `twitter:card`) |
+| `seo` | object | - | Bloc imbriqué regroupant les champs ci-dessus ainsi que des balises meta personnalisées |
 
 ```yaml
 ---
@@ -89,7 +91,7 @@ canonical: https://docs.acme.com/api-reference
 Consultez [Optimisation SEO](/fr/content/seo) pour la liste complète des balises prises en charge et des exemples.
 
 <Tip>
-Après un build, collez l'URL de la page dans l'outil gratuit [OpenGraph Preview](https://jamdesk.com/utilities/opengraph-preview) pour voir comment ces balises s'affichent sur X, Facebook, LinkedIn, Slack, Discord, et plus encore.
+Après un build, collez l'URL de la page dans l'outil gratuit [OpenGraph Preview](https://jamdesk.com/utilities/opengraph-preview) pour voir le rendu de ces balises sur X, Facebook, LinkedIn, Slack, Discord et plus encore.
 </Tip>
 
 ## Exemples
@@ -104,7 +106,7 @@ icon: lock
 ---
 ```
 
-### Titre long avec remplacement de barre latérale
+### Titre long avec substitution de barre latérale
 
 ```yaml
 ---
@@ -114,7 +116,7 @@ description: Set up enterprise SSO for your organization
 ---
 ```
 
-Le titre complet s'affiche sur la page, tandis que le `sidebarTitle` plus court maintient une navigation claire.
+Le titre complet apparaît sur la page, tandis que le `sidebarTitle`, plus court, garde la navigation lisible.
 
 ### Mise en page large
 
@@ -126,7 +128,7 @@ mode: wide
 ---
 ```
 
-Le mode large supprime la table des matières et étend le contenu sur toute la largeur. Utile pour les pages de référence API ou le contenu avec des tableaux larges.
+Le mode large supprime la table des matières et étend le contenu sur toute la largeur. Utile pour les pages de référence API ou le contenu comportant des tableaux larges.
 
 ### Masquer le pied de page
 
@@ -138,19 +140,19 @@ hideFooter: true
 ---
 ```
 
-Utilisez `hideFooter` pour les pages d'accueil, les pages de changelog, ou toute page où vous souhaitez une section inférieure plus épurée sans liens sociaux.
+Utilisez `hideFooter` pour les pages d'atterrissage, les pages de changelog, ou toute page où vous souhaitez un bas de page plus épuré, sans liens sociaux.
 
 ## Bonnes pratiques SEO
 
 <AccordionGroup>
-  <Accordion title="Rédigez des titres accrocheurs" icon="heading" defaultOpen>
+  <Accordion title="Rédiger des titres percutants" icon="heading" defaultOpen>
     Votre titre apparaît dans :
     - Les onglets du navigateur
     - Les résultats des moteurs de recherche
     - La barre latérale de navigation
     - Les partages sur les réseaux sociaux
 
-    Gardez les titres sous 60 caractères. Placez les mots-clés importants en début.
+    Gardez les titres sous 60 caractères. Placez les mots-clés importants en premier.
 
     ```yaml
     # Good - clear and keyword-rich
@@ -161,11 +163,11 @@ Utilisez `hideFooter` pour les pages d'accueil, les pages de changelog, ou toute
     ```
   </Accordion>
 
-  <Accordion title="Rédigez des descriptions utiles" icon="align-left">
-    Les descriptions apparaissent dans les résultats de recherche et les aperçus sociaux. Visez 50-160 caractères qui :
+  <Accordion title="Rédiger des descriptions utiles" icon="align-left">
+    Les descriptions apparaissent dans les résultats de recherche et les aperçus sociaux. Visez 50 à 160 caractères qui :
     - Résument le contenu de la page
     - Incluent des mots-clés pertinents
-    - Incitent les utilisateurs à cliquer
+    - Donnent envie de cliquer
 
     ```yaml
     # Good - actionable and specific
@@ -176,8 +178,8 @@ Utilisez `hideFooter` pour les pages d'accueil, les pages de changelog, ou toute
     ```
   </Accordion>
 
-  <Accordion title="Utilisez des icônes cohérentes" icon="icons">
-    Les icônes aident les utilisateurs à parcourir la navigation rapidement. Utilisez la même icône pour les pages connexes :
+  <Accordion title="Utiliser des icônes cohérentes" icon="icons">
+    Les icônes aident les utilisateurs à parcourir la navigation rapidement. Utilisez la même icône pour les pages liées :
 
     | Sujet | Icône suggérée |
     |-------|----------------|
@@ -195,7 +197,7 @@ Utilisez `hideFooter` pour les pages d'accueil, les pages de changelog, ou toute
 
 Jamdesk valide le frontmatter lors du build. Erreurs courantes :
 
-<Accordion title="Champs obligatoires manquants">
+<Accordion title="Champs requis manquants">
 ```text
 Error: Page "api/auth.mdx" is missing required field: title
 ```
@@ -208,12 +210,12 @@ Error: Page "api/auth.mdx" is missing required field: title
 Error: Invalid frontmatter in "guide.mdx": unexpected token
 ```
 
-**Correction :** Vérifiez :
-- Les guillemets manquants autour des chaînes contenant des caractères spéciaux
-- Une indentation incorrecte
-- Des deux-points manquants après les clés
+**Correction :** Vérifiez les points suivants :
+- Guillemets manquants autour des chaînes contenant des caractères spéciaux
+- Indentation incorrecte
+- Deux-points manquants après les clés
 
-Collez le bloc entre les marqueurs `---` dans le [YAML Validator](https://jamdesk.com/utilities/yaml-validator) gratuit pour identifier précisément la ligne et la colonne de l'erreur.
+Collez le bloc entre les marqueurs `---` dans l'outil gratuit [YAML Validator](https://jamdesk.com/utilities/yaml-validator) pour repérer la ligne et la colonne de l'erreur.
 </Accordion>
 
 ## Et ensuite ?

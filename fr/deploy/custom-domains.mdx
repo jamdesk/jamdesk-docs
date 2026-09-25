@@ -1,21 +1,21 @@
 ---
 title: Domaines personnalisés
-description: Diffusez votre documentation depuis votre propre domaine au lieu du sous-domaine *.jamdesk.app par défaut. Configuration DNS, SSL et vérification.
+description: Diffusez vos docs depuis votre propre domaine plutôt que *.jamdesk.app. Configuration DNS, SSL et vérification pour sous-domaines et domaines racines.
 ---
 
-Diffusez votre documentation depuis votre propre domaine au lieu du sous-domaine `*.jamdesk.app` par défaut.
+Diffusez votre documentation depuis votre propre domaine plutôt que le sous-domaine `*.jamdesk.app` par défaut.
 
 ## Aperçu de la configuration
 
 <Steps>
-  <Step title="Ajouter le domaine dans le dashboard">
-    Allez dans **Settings** → **Domain** de votre projet et saisissez votre domaine (par exemple, `docs.example.com` ou `example.com`).
+  <Step title="Ajouter un domaine dans le dashboard">
+    Accédez à **Settings** → **Domain** de votre projet, puis saisissez votre domaine (par exemple `docs.example.com` ou `example.com`).
   </Step>
   <Step title="Configurer le DNS">
-    Ajoutez les enregistrements DNS affichés dans le dashboard chez votre fournisseur DNS. Les enregistrements dépendent du type de domaine (voir ci-dessous).
+    Ajoutez les enregistrements DNS affichés dans le dashboard à votre fournisseur DNS. Les enregistrements dépendent du type de domaine (voir ci-dessous).
   </Step>
   <Step title="Vérifier et patienter">
-    Jamdesk vérifie la propriété et provisionne un certificat SSL automatiquement.
+    Jamdesk vérifie la propriété et provisionne automatiquement un certificat SSL.
   </Step>
 </Steps>
 
@@ -25,7 +25,7 @@ Lors de l'ajout d'un domaine, choisissez votre mode d'hébergement :
 
 ### Domaine standard
 
-Votre documentation est diffusée directement depuis Jamdesk sur votre domaine personnalisé :
+Votre documentation est diffusée directement depuis Jamdesk à votre domaine personnalisé :
 
 ```text
 docs.example.com → acme.jamdesk.app
@@ -33,7 +33,7 @@ docs.example.com → acme.jamdesk.app
 
 Le DNS pointe vers Jamdesk, et les certificats SSL sont gérés automatiquement.
 
-### Héberger sur /docs (basé sur un proxy)
+### Héberger sur /docs (basé sur un proxy, sous-chemin personnalisable)
 
 Votre documentation est diffusée sur un sous-chemin de votre site web existant :
 
@@ -41,15 +41,15 @@ Votre documentation est diffusée sur un sous-chemin de votre site web existant 
 example.com/docs → acme.jamdesk.app/docs
 ```
 
-Vous configurez un proxy (Cloudflare, Vercel, nginx, etc.) pour transférer les requêtes `/docs/*` vers Jamdesk. Consultez [Subpath Hosting](/fr/deploy/subpath-hosting) pour les guides de configuration.
+`/docs` est la valeur par défaut ; vous pouvez choisir n'importe quel autre sous-chemin à un seul segment (`/help`, `/guide`, etc.) depuis le même bouton bascule. Vous configurez un proxy (Cloudflare, Vercel, nginx, etc.) pour transférer les requêtes de votre sous-chemin choisi vers Jamdesk. Consultez [Hébergement par sous-chemin](/fr/deploy/subpath-hosting) pour des guides de configuration et les règles de choix d'un sous-chemin.
 
 <Note>
-Activer « Host at a subpath » déploie automatiquement une nouvelle version car la structure des URL change.
+L'activation ou la désactivation de « Host at a subpath », ou la modification du sous-chemin, déclenche un build automatique car la structure d'URL change.
 </Note>
 
 ## Configuration DNS
 
-Les enregistrements dont vous avez besoin dépendent du fait que vous utilisiez un sous-domaine ou un domaine apex (racine).
+Les enregistrements nécessaires dépendent du fait que vous utilisez un sous-domaine ou un domaine apex (racine).
 
 ### Sous-domaines (par exemple, docs.example.com)
 
@@ -58,7 +58,7 @@ Les enregistrements dont vous avez besoin dépendent du fait que vous utilisiez 
 | CNAME | `docs` | `cname.jamdesk.com` |
 | TXT | `_jamdesk.docs` | *(affiché dans le dashboard)* |
 
-Le champ « Name » correspond uniquement à la partie sous-domaine. Pour `docs.example.com`, saisissez `docs`.
+Le champ « Nom » correspond uniquement à la partie sous-domaine. Pour `docs.example.com`, saisissez `docs`.
 
 ### Domaines apex (par exemple, example.com)
 
@@ -67,7 +67,7 @@ Le champ « Name » correspond uniquement à la partie sous-domaine. Pour `docs.
 | A | `@` | `76.76.21.21` |
 | TXT | `_jamdesk` | *(affiché dans le dashboard)* |
 
-Les domaines apex utilisent un enregistrement A au lieu d'un CNAME car les standards DNS (RFC 1034) interdisent les enregistrements CNAME à la racine de la zone.
+Les domaines apex utilisent un enregistrement A au lieu d'un CNAME, car les standards DNS (RFC 1034) interdisent les enregistrements CNAME à la racine de la zone.
 
 <Note>
 Les modifications DNS peuvent prendre jusqu'à 48 heures pour se propager, bien que la plupart se terminent en quelques minutes. Vérifiez le statut sur [whatsmydns.net](https://www.whatsmydns.net/).
@@ -75,30 +75,30 @@ Les modifications DNS peuvent prendre jusqu'à 48 heures pour se propager, bien 
 
 ## Vérification
 
-Après l'ajout des enregistrements DNS, Jamdesk automatiquement :
+Après l'ajout des enregistrements DNS, Jamdesk effectue automatiquement les actions suivantes :
 
 1. Détecte vos enregistrements DNS (CNAME ou enregistrement A, plus TXT)
 2. Vérifie la propriété du domaine via l'enregistrement TXT
 3. Provisionne un certificat SSL via Let's Encrypt
-4. Route le trafic vers votre documentation
+4. Achemine le trafic vers votre documentation
 
-Vérifiez le statut de vérification dans **Settings** → **Domain**. Le statut s'affiche comme suit :
-- **Pending** - En attente de propagation DNS
-- **Active** - Domaine vérifié et diffusant le trafic
-- **Needs Attention** - Incohérence de configuration ou conflit (vérifiez la notification par e-mail)
-- **Error** - Problème de configuration (voir les détails dans le dashboard)
+Vérifiez le statut de vérification dans **Settings** → **Domain**. Le statut s'affiche comme :
+- **En attente** - En attente de la propagation DNS
+- **Actif** - Domaine vérifié et diffusant le trafic
+- **Nécessite une attention** - Incompatibilité ou conflit de configuration (vérifiez la notification par e-mail)
+- **Erreur** - Problème de configuration (voir les détails dans le dashboard)
 
 Cliquez sur **Refresh** dans le dashboard pour vérifier manuellement le statut de vérification.
 
 ## Certificats SSL
 
-Les certificats SSL sont provisionnés automatiquement et renouvelés avant leur expiration. HTTPS est requis, donc les requêtes HTTP redirigent vers HTTPS.
+Les certificats SSL sont provisionnés automatiquement et renouvelés avant leur expiration. HTTPS est requis, les requêtes HTTP sont donc redirigées vers HTTPS.
 
 Vous n'avez pas besoin de configurer les certificats manuellement.
 
-## Domaines racine
+## Domaines racines
 
-Les domaines racine (apex) comme `example.com` sont entièrement pris en charge. Le dashboard affiche automatiquement les bons enregistrements : un enregistrement A pointant vers `76.76.21.21` au lieu d'un CNAME, car les standards DNS interdisent les enregistrements CNAME à la racine de la zone.
+Les domaines racines (apex) comme `example.com` sont entièrement pris en charge. Le dashboard affiche automatiquement les enregistrements corrects : un enregistrement A pointant vers `76.76.21.21` au lieu d'un CNAME, car les standards DNS interdisent les enregistrements CNAME à la racine de la zone.
 
 Si vous préférez un sous-domaine comme `docs.example.com`, cela fonctionne aussi.
 
@@ -113,34 +113,34 @@ Chaque projet prend en charge un seul domaine personnalisé. Pour plusieurs doma
 
 Pour déconnecter un domaine personnalisé :
 
-1. Allez dans **Settings** → **Domain**
+1. Accédez à **Settings** → **Domain**
 2. Cliquez sur **Remove Domain**
 3. Votre documentation reste accessible sur le sous-domaine `*.jamdesk.app`
 
 <Warning>
-La suppression d'un domaine ayant « Host at a subpath » activé déploiera automatiquement une nouvelle version pour mettre à jour les chemins d'URL.
+La suppression d'un domaine pour lequel « Host at a subpath » était activé déclenche un build pour mettre à jour les chemins d'URL. Tout sous-chemin personnalisé est effacé avec le domaine ; si vous reconnectez un domaine plus tard, la documentation redémarre sur le `/docs` par défaut.
 </Warning>
 
 ## Utilisateurs de Cloudflare
 
 Si vous utilisez Cloudflare comme fournisseur DNS :
 
-1. Définissez le statut du proxy sur **DNS only** (icône nuage gris) pendant la vérification du domaine
-2. Laissez Vercel gérer le SSL : désactivez « Always Use HTTPS » de Cloudflare pour le sous-domaine de documentation
+1. Définissez le statut du proxy sur **DNS only** (icône de nuage gris) pendant la vérification du domaine
+2. Laissez Vercel gérer le SSL : désactivez « Always Use HTTPS » de Cloudflare pour le sous-domaine des docs
 3. Une fois la vérification terminée, vous pouvez réactiver le proxy (nuage orange)
 
 <Note>
-**Vous utilisez un Cloudflare Worker ?** L'enregistrement DNS doit être proxifié (nuage orange) pour que le Worker fonctionne. Utilisez le nuage gris uniquement pendant la vérification, puis repassez au nuage orange. Consultez [Cloudflare Workers setup](/fr/deploy/cloudflare) pour plus de détails.
+**Vous utilisez un Cloudflare Worker ?** L'enregistrement DNS doit être proxifié (nuage orange) pour que le Worker fonctionne. Utilisez le nuage gris uniquement pendant la vérification, puis revenez en arrière. Consultez [Configuration de Cloudflare Workers](/fr/deploy/cloudflare) pour plus de détails.
 </Note>
 
 ## Dépannage
 
 | Problème | Solution |
 |-------|----------|
-| Domaine bloqué sur « Pending » | Vérifiez les enregistrements DNS avec `dig` (CNAME pour les sous-domaines, A pour l'apex) |
+| Domaine bloqué sur « En attente » | Vérifiez les enregistrements DNS avec `dig` (CNAME pour les sous-domaines, A pour l'apex) |
 | Erreurs de certificat SSL | Assurez-vous qu'aucun enregistrement CAA ne bloque Let's Encrypt |
-| Boucles de redirection | Si vous utilisez Cloudflare, passez au nuage gris pendant la vérification (voir [Utilisateurs de Cloudflare](#utilisateurs-de-cloudflare) ci-dessus) |
-| CNAME ne se résout pas | Vérifiez l'enregistrement chez votre fournisseur DNS, attendez la propagation |
+| Boucles de redirection | Si vous utilisez Cloudflare, définissez le nuage gris pendant la vérification (voir [Utilisateurs de Cloudflare](#utilisateurs-de-cloudflare) ci-dessus) |
+| Le CNAME ne se résout pas | Vérifiez l'enregistrement chez le fournisseur DNS, attendez la propagation |
 | Domaine déjà utilisé | Le domaine est enregistré dans Vercel depuis une configuration précédente ; la vérification se termine généralement automatiquement |
 
 ### Vérifier le DNS avec dig
@@ -156,14 +156,14 @@ dig A example.com
 dig TXT _jamdesk.example.com
 ```
 
-Pour des diagnostics détaillés, consultez [DNS Troubleshooting](/fr/help/troubleshooting/dns-issues).
+Pour des diagnostics détaillés, consultez [Problèmes DNS](/fr/help/troubleshooting/dns-issues).
 
 ## Le sous-domaine jamdesk.app entre-t-il en concurrence avec mon domaine dans les résultats de recherche ?
 
-Non. Une fois votre domaine personnalisé actif, les pages diffusées directement depuis votre
+Non. Une fois que votre domaine personnalisé est actif, les pages diffusées directement depuis votre
 sous-domaine `[slug].jamdesk.app` incluent un lien canonique pointant vers votre
-domaine, de sorte que les moteurs de recherche considèrent votre domaine comme la source
-de référence unique et y consolident tous les signaux de classement.
+domaine, de sorte que les moteurs de recherche considèrent votre domaine comme la source unique de vérité
+et y consolident tous les signaux de classement.
 
 ## Et ensuite ?
 
@@ -171,10 +171,10 @@ de référence unique et y consolident tous les signaux de classement.
   <Card title="Sous-domaines" icon="sitemap" href="/fr/deploy/subdomains">
     Configurer les paramètres spécifiques aux sous-domaines
   </Card>
-  <Card title="Hébergement en sous-chemin" icon="route" href="/fr/deploy/subpath-hosting">
+  <Card title="Hébergement par sous-chemin" icon="route" href="/fr/deploy/subpath-hosting">
     Héberger la documentation sur example.com/docs
   </Card>
-  <Card title="Dépannage DNS" icon="server" href="/fr/help/troubleshooting/dns-issues">
+  <Card title="Problèmes DNS" icon="server" href="/fr/help/troubleshooting/dns-issues">
     Diagnostiquer les problèmes de configuration DNS
   </Card>
 </Columns>

@@ -1,9 +1,9 @@
 ---
 title: Pages masquées
-description: Retirez des pages de la barre latérale et des résultats de recherche sans les supprimer. Utilisez le frontmatter, docs.json ou les contrôles seo.
+description: Excluez des pages de la barre latérale et de la recherche sans les supprimer, via frontmatter, docs.json ou les contrôles seo.
 ---
 
-Certaines pages n'ont pas leur place dans la barre latérale publique : brouillons, manuels internes, guides obsolètes que vous devez encore lier. Les pages masquées restent accessibles par URL directe mais disparaissent de la navigation, de la recherche, de votre sitemap et du contexte IA fourni aux LLM.
+Certaines pages n'ont pas leur place dans la barre latérale publique : brouillons, manuels internes, guides obsolètes vers lesquels vous devez encore créer des liens. Les pages masquées restent accessibles par URL directe, mais disparaissent de la navigation, de la recherche, de votre sitemap et du contexte IA fourni aux LLM.
 
 ## Masquer une seule page
 
@@ -16,7 +16,7 @@ hidden: true
 ---
 ```
 
-La page s'affiche normalement lorsqu'on visite son URL, mais Jamdesk :
+La page s'affiche normalement lorsqu'une personne visite son URL, mais Jamdesk :
 
 - La retire de la barre latérale
 - Ajoute `<meta name="robots" content="noindex, follow">` pour que les moteurs de recherche l'ignorent
@@ -44,11 +44,11 @@ Définissez `"hidden": true` sur un groupe ou un onglet dans `docs.json` :
 }
 ```
 
-Chaque page sous le nœud masqué hérite de la règle. Le même indicateur fonctionne sur `tabs`, `groups`, `anchors`, `dropdowns`, `products`, `languages` et `versions`.
+Chaque page sous le nœud masqué hérite de cette règle. Le même indicateur fonctionne sur `tabs`, `groups`, `anchors`, `dropdowns`, `products`, `languages` et `versions`.
 
-## Garder les pages masquées dans la recherche
+## Conserver les pages masquées dans la recherche
 
-Si vous voulez qu'un onglet ou un groupe masqué reste hors de la barre latérale mais toujours indexé pour la recherche sur site, les réponses IA et le sitemap, ajoutez `"searchable": true` :
+Si vous voulez qu'un onglet ou un groupe masqué reste hors de la barre latérale tout en étant indexé pour la recherche sur site, les réponses IA et le sitemap, ajoutez `"searchable": true` :
 
 ```json
 {
@@ -59,16 +59,60 @@ Si vous voulez qu'un onglet ou un groupe masqué reste hors de la barre latéral
 }
 ```
 
-Le frontmatter `hidden: true` sur une page enfant l'emporte toujours. `searchable` ne rouvre que les descendants qui n'ont pas eux-mêmes fait ce choix.
+Le `hidden: true` du frontmatter d'une page enfant l'emporte toujours. `searchable` ne rouvre que les descendants qui n'ont pas eux-mêmes choisi de se retirer.
+
+## Exclure une page uniquement de la recherche
+
+Il arrive qu'une page doive rester dans la barre latérale et rester indexable, mais ne plus apparaître lorsqu'une personne effectue une recherche ou pose une question. Ajoutez `search: false` à son frontmatter :
+
+```yaml
+---
+title: Legacy v1 endpoints
+search: false
+---
+```
+
+La page conserve sa place dans la navigation, votre sitemap, `llms.txt` et votre flux RSS, et les moteurs de recherche continuent de l'indexer. Ce qu'elle quitte, ce sont les surfaces de *recherche* : la recherche sur site, les réponses du chat IA et le serveur MCP.
+
+<Note>
+`search: false` fait l'inverse de `hidden: true`. `hidden` retire une page de la navigation et des surfaces d'indexation ; `search: false` laisse tout cela intact et empêche seulement la page d'être retrouvée. Ne le confondez pas avec le `searchable` au niveau de la navigation, qui réintègre les pages masquées *dans* la recherche.
+</Note>
+
+## Quelle part d'une page est indexée
+
+La recherche n'indexe pas une page comme un seul bloc. Elle l'indexe **section par section** — chaque titre devient sa propre entrée de recherche, de sorte qu'un lecteur qui recherche « Limites de débit » atterrit sur ce titre plutôt qu'en haut d'une longue page.
+
+Deux limites s'appliquent à cela, et toutes deux sont automatiques :
+
+| Limite | Valeur | Ce qui se passe au-delà |
+|---|---|---|
+| Entrées par page | 50 | Les sections sont indexées dans l'ordre de la page. Une fois la 50e utilisée, toutes les sections restantes sont exclues de la recherche. |
+| Texte par section | Les 300 premiers caractères | Le texte situé plus loin dans une section n'est pas pris en compte pour la correspondance. |
+
+La page elle-même occupe l'un des 50 emplacements, donc 49 sections sont indexées.
+
+Cette limite existe parce que la recherche évalue chaque entrée par rapport au reste de votre index. Une page qui génère des centaines d'entrées évince les autres des résultats — un changelog généré automatiquement peut à lui seul représenter la moitié d'un index et repousser des pages réellement pertinentes hors du premier écran.
+
+<Warning>
+Une page qui dépasse la limite continue de s'afficher intégralement. Seules ses sections ultérieures cessent d'être trouvables, et rien sur la page n'en informe vos lecteurs.
+
+Si une page compte plus d'environ 50 titres, divisez-la en plusieurs pages — ce qui améliore de toute façon la navigation — ou, si elle est générée automatiquement et que personne ne la recherche manuellement, ajoutez `search: false` pour exclure entièrement la page de l'index.
+</Warning>
+
+Pour placer un terme là où la recherche peut correctement l'évaluer, utilisez le titre de la page (le plus fortement pondéré), puis un titre de section, puis la description. Le texte du corps est le moins pondéré, et seuls ses 300 premiers caractères par section comptent.
+
+<Note>
+`seo.metatags.keywords` n'alimente *pas* la recherche sur site. Il génère une balise HTML `<meta name="keywords">`, dont Google a déclaré qu'il l'ignorait pour le classement. Il n'existe aucun moyen d'attacher des termes de recherche supplémentaires à une page — placez les mots que vous voulez faire correspondre dans le titre, un titre de section ou la description.
+</Note>
 
 ## Contrôles à l'échelle du projet
 
 Les deux indicateurs se trouvent sous `seo` dans `docs.json` :
 
-| Indicateur | Par défaut | Effet |
+| Flag | Valeur par défaut | Effet |
 |---|---|---|
 | `seo.indexing` | `"navigable"` | Seules les pages listées dans votre navigation apparaissent dans les artefacts. Définissez sur `"all"` pour inclure tous les fichiers MDX de votre dépôt. |
-| `seo.indexHiddenPages` | `false` | Définissez sur `true` pour inclure les pages `hidden: true` dans le sitemap, llms.txt et la recherche, et retirer la balise noindex automatique. |
+| `seo.indexHiddenPages` | `false` | Définissez sur `true` pour inclure les pages `hidden: true` dans le sitemap, llms.txt et la recherche, et supprimer la balise auto-noindex. |
 
 Exemple :
 
@@ -85,17 +129,19 @@ Exemple :
 | Scénario | Frontmatter | docs.json | Visible dans la barre latérale | URL directe | Dans le sitemap |
 |---|---|---|---|---|---|
 | Page normale | — | listée | Oui | Oui | Oui |
-| Masquée via frontmatter | `hidden: true` | listée | Non | Oui | Non |
+| Masquée via le frontmatter | `hidden: true` | listée | Non | Oui | Non |
 | Page absente de la nav (orpheline) | — | omise | Non | Oui | Non |
 | Groupe masqué | — | `hidden: true` sur le groupe | Non | Oui | Non |
-| Groupe masqué + recherchable | — | `hidden: true, searchable: true` | Non | Oui | Oui |
-| Le projet active l'indexation totale | — | quelconque | Comme ci-dessus | Oui | Oui |
+| Groupe masqué et recherchable | — | `hidden: true, searchable: true` | Non | Oui | Oui |
+| Exclue de la recherche uniquement | `search: false` | listée | Oui | Oui | Oui |
+| Le projet choisit d'indexer tout | — | n'importe laquelle | Comme ci-dessus | Oui | Oui |
 
 ## Quand utiliser chaque option
 
 - **Brouillons et aperçus :** frontmatter `hidden: true` sur des pages individuelles
 - **Sections internes** pour une petite équipe : un groupe ou un onglet masqué
-- **Documents de conformité** qui doivent être publics mais non mis en avant : groupe masqué avec `searchable: true`
-- **Indexation complète du dépôt** pour l'ancrage IA uniquement : `seo.indexing: "all"`
+- **Documentation de conformité** qui doit être publique mais non mise en avant : groupe masqué avec `searchable: true`
+- **Indexation complète du dépôt** uniquement pour l'ancrage IA : `seo.indexing: "all"`
+- **Pages remplacées** que vous voulez encore pouvoir lier et indexer, mais sans les faire remonter dans la recherche ou l'IA : frontmatter `search: false`
 
-Les pages masquées ne constituent pas un contrôle d'accès. Quiconque possède l'URL peut les lire. Pour un véritable contrôle d'accès, consultez [Protection par mot de passe](/fr/setup/password-protection).
+Les pages masquées ne constituent pas un contrôle d'accès. Toute personne disposant de l'URL peut les lire. Pour un véritable contrôle d'accès, consultez [Protection par mot de passe](/fr/setup/password-protection).

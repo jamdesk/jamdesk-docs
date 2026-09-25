@@ -1,104 +1,108 @@
 ---
-title: Authentification unique (SSO)
-description: "Connectez-vous au dashboard Jamdesk via votre fournisseur d'identité. Configurez SAML ou OIDC vous-même sur tout plan payant ; le SSO lecteur est Enterprise."
+title: Authentification SSO
+description: "Connectez-vous au dashboard Jamdesk via votre fournisseur d'identité : configurez SAML/OIDC sur tout plan payant, SSO lecteur réservé à l'Enterprise."
 ---
 
-L'authentification unique se décline en deux versions chez Jamdesk. Le **SSO dashboard** permet à votre équipe de se connecter pour gérer les projets via votre fournisseur d'identité, et vous le configurez vous-même depuis les Paramètres sur tout plan payant. Le **SSO du site de documentation** permet aux lecteurs de votre documentation publiée de s'authentifier auprès de votre IdP au lieu d'utiliser un mot de passe partagé, et il est configuré avec notre équipe sur les plans Enterprise.
+Le SSO existe en deux versions chez Jamdesk. **Le SSO du dashboard** permet à votre équipe de se connecter pour gérer les projets via votre fournisseur d'identité ; vous le configurez vous-même depuis Settings, sur tout plan payant. **Le SSO du site de documentation** permet aux lecteurs de votre documentation publiée de s'authentifier auprès de votre IdP à la place d'un mot de passe partagé, et il est mis en place avec notre équipe sur les plans Enterprise.
+
+<Tip>
+  Vous voulez un accès à la documentation par utilisateur sans plan Enterprise ? Si votre produit dispose de son propre système de connexion, l'[authentification JWT](/fr/setup/jwt-authentication) permet à votre backend de connecter les lecteurs, sur tous les plans.
+</Tip>
 
 ## Ce que couvre le SSO
 
 <Columns cols={2}>
-  <Card title="SSO dashboard" icon="gauge">
-    Votre équipe se connecte à `dashboard.jamdesk.com` via votre fournisseur d'identité. Idéal pour une gestion centralisée des comptes, une MFA obligatoire via votre IdP, et une désactivation instantanée lorsqu'un utilisateur quitte l'équipe. Configurez-le vous-même dans **Paramètres → Authentification unique**. Les étapes sont ci-dessous.
+  <Card title="SSO du dashboard" icon="gauge">
+    Votre équipe se connecte à `dashboard.jamdesk.com` avec votre fournisseur d'identité. Idéal si vous voulez une gestion centralisée des comptes, la MFA obligatoire via votre IdP, et une révocation d'accès instantanée quand un utilisateur part. Configurez-le vous-même dans **Settings → Single Sign-On**. Les étapes sont ci-dessous.
   </Card>
   <Card title="SSO du site de documentation" icon="book-open">
-    Les lecteurs s'authentifient auprès de votre IdP avant de pouvoir consulter la documentation protégée. Remplace le modèle de mot de passe partagé par une connexion par utilisateur, une piste d'audit et une désactivation lors du retrait. Configuré avec notre équipe sur les plans Enterprise.
+    Les lecteurs s'authentifient auprès de votre IdP avant de pouvoir consulter une documentation protégée. Remplace le modèle de mot de passe partagé par une connexion par utilisateur, un journal d'audit et une révocation automatique lors du retrait. Mis en place avec notre équipe sur les plans Enterprise.
   </Card>
 </Columns>
 
-## À qui s'adresse le SSO
+## À qui cela s'adresse
 
 Les deux versions conviennent aux organisations qui utilisent déjà un fournisseur d'identité : Okta, Google Workspace, Microsoft Entra ID, Auth0, ou tout fournisseur SAML 2.0 / OIDC.
 
-Le SSO dashboard convient aux équipes qui souhaitent un contrôle central sur qui gère les projets. Vous bénéficiez d'une MFA obligatoire via votre propre IdP, et lorsque le SSO est imposé, retirer quelqu'un de votre annuaire coupe aussi son accès au dashboard.
+Le SSO du dashboard convient aux équipes qui veulent un contrôle centralisé sur qui gère les projets. Vous bénéficiez d'une MFA obligatoire via votre propre IdP, et lorsque le SSO est imposé, retirer quelqu'un de votre annuaire coupe aussi sa connexion au dashboard.
 
-Le SSO du site de documentation répond à un besoin différent : une piste d'audit de qui a lu quels documents, et un accès par utilisateur pour les équipes qui ont dépassé le partage d'une seule phrase de passe sur un large bassin de lecteurs.
+Le SSO du site de documentation répond à un besoin différent : un journal d'audit de qui a lu quels documents, et un accès par utilisateur pour les équipes qui ont dépassé le partage d'une seule phrase de passe auprès d'un large lectorat.
 
-## Activer le SSO dashboard
+## Activer le SSO du dashboard
 
-Le SSO dashboard est en libre-service sur tout plan payant. Vous vérifiez que vous êtes propriétaire de votre domaine d'e-mail, connectez votre fournisseur d'identité, et pouvez exiger que tous les utilisateurs de ce domaine se connectent via celui-ci.
+Le SSO du dashboard est en libre-service sur tout plan payant. Vous vérifiez que vous possédez votre domaine d'e-mail, connectez votre fournisseur d'identité, et pouvez éventuellement exiger que tout le monde sur ce domaine se connecte via celui-ci.
 
 ### Avant de commencer
 
 - Un plan Jamdesk payant.
-- Un accès propriétaire au projet. La connexion SSO se situe au niveau du propriétaire du compte et couvre tous les projets que vous possédez, donc seul le propriétaire voit les paramètres d'authentification unique.
+- Un accès propriétaire au projet. La connexion SSO existe au niveau du propriétaire du compte et couvre tous les projets que vous possédez ; seul le propriétaire voit les paramètres Single Sign-On.
 - Un accès au DNS de votre domaine pour ajouter un enregistrement TXT.
 - Un accès administrateur à votre fournisseur d'identité (Okta, Microsoft Entra, Google Workspace, Auth0, ou tout fournisseur SAML 2.0 / OIDC).
 
 ### Configurer la connexion
 
 <Steps>
-  <Step title="Ouvrir les paramètres d'authentification unique">
-    Dans le dashboard, allez dans **Paramètres → Authentification unique** et saisissez le domaine d'e-mail de votre entreprise, par exemple `acme.com`. Jamdesk crée une connexion et affiche un enregistrement DNS TXT pour prouver que vous êtes propriétaire du domaine.
+  <Step title="Ouvrir les paramètres Single Sign-On">
+    Dans le dashboard, allez dans **Settings → Single Sign-On** et saisissez le domaine e-mail de votre entreprise, par exemple `acme.com`. Jamdesk crée une connexion et affiche un enregistrement DNS TXT pour prouver que vous possédez le domaine.
   </Step>
   <Step title="Vérifier votre domaine">
-    Le dashboard affiche un nom et une valeur d'enregistrement. Ajoutez l'enregistrement TXT correspondant au DNS de votre domaine, puis cliquez sur **Vérifier**. Les modifications DNS peuvent prendre jusqu'à une heure pour se propager, donc une première tentative peut échouer avant que l'enregistrement ne soit visible. Attendez et réessayez. Laissez l'enregistrement en place après la vérification : Jamdesk le revérifie périodiquement et désactive la connexion s'il disparaît.
+    Le dashboard affiche un nom et une valeur d'enregistrement. Ajoutez l'enregistrement TXT correspondant au DNS de votre domaine, puis cliquez sur **Verify**. Les changements DNS peuvent prendre jusqu'à une heure pour se propager, donc une première tentative peut échouer avant que l'enregistrement ne soit visible. Attendez, puis réessayez. Laissez l'enregistrement en place après la vérification : Jamdesk le revérifie périodiquement et désactive la connexion s'il disparaît.
   </Step>
   <Step title="Configurer votre fournisseur d'identité">
-    Copiez l'**Entity ID** et l'**URL ACS** affichés dans le dashboard dans une nouvelle application SAML ou OIDC chez votre IdP, puis collez les informations de votre IdP dans Jamdesk :
+    Copiez l'**Entity ID** et l'**ACS URL** affichés dans le dashboard dans une nouvelle application SAML ou OIDC de votre IdP, puis collez les informations de votre IdP dans Jamdesk :
 
     - **SAML 2.0** : Entity ID de l'IdP, URL SSO, et le certificat de signature X.509 au format PEM.
     - **OIDC** : URL de l'émetteur, ID client, et secret client.
 
-    Choisissez votre fournisseur dans la liste pour obtenir un guide de configuration spécifique, puis cliquez sur **Enregistrer et activer**. La connexion passe à **Active**.
+    Choisissez votre fournisseur dans la liste pour un guide de configuration spécifique, puis cliquez sur **Save & activate**. La connexion passe à **Active**.
   </Step>
   <Step title="Exiger le SSO (facultatif)">
-    Une fois la connexion **Active**, activez **Exiger le SSO pour tous les utilisateurs de votre domaine** pour faire passer tous les utilisateurs ayant un e-mail sur ce domaine par votre IdP. La connexion par mot de passe et par Google cesse de fonctionner pour eux. Votre compte propriétaire reste exempté, et vous pouvez ajouter jusqu'à 20 **e-mails de secours** pour les autres administrateurs qui auraient besoin d'un repli par mot de passe si votre IdP devenait inaccessible.
+    Une fois la connexion **Active**, activez **Require SSO for all users on your domain** pour faire passer tout le monde ayant un e-mail sur ce domaine par votre IdP. La connexion par mot de passe et par Google cesse alors de fonctionner pour eux. Votre compte propriétaire reste exempté, et vous pouvez ajouter jusqu'à 20 **adresses de secours** pour les autres administrateurs qui ont besoin d'un repli par mot de passe si votre IdP devient injoignable.
   </Step>
 </Steps>
 
 <Warning>
-  Ajoutez au moins un e-mail de secours avant d'activer l'application obligatoire. Si votre fournisseur d'identité devient indisponible et qu'aucun compte de secours n'existe, personne sur le domaine ne pourra se connecter au dashboard.
+  Ajoutez au moins une adresse de secours avant d'activer l'imposition du SSO. Si votre fournisseur d'identité devient indisponible et qu'aucun compte de secours n'existe, personne sur le domaine ne peut se connecter au dashboard.
 </Warning>
 
 ### Comment les utilisateurs se connectent
 
-Une fois le SSO dashboard actif, la connexion se fait **par e-mail en premier**. Sur l'écran de connexion, un utilisateur saisit son e-mail professionnel. Si son domaine dispose d'une connexion SSO, Jamdesk le redirige automatiquement vers votre fournisseur d'identité, sans bouton distinct « Se connecter avec SSO » à chercher.
+Une fois le SSO du dashboard actif, la connexion est **basée sur l'e-mail**. Sur l'écran de connexion, l'utilisateur saisit son e-mail professionnel. Si ce domaine a une connexion SSO, Jamdesk le redirige automatiquement vers votre fournisseur d'identité, sans bouton « Sign in with SSO » séparé à chercher.
 
-Un point qui déroute souvent : se connecter via votre IdP authentifie un utilisateur, mais ne lui accorde pas d'accès à lui seul. La personne doit tout de même être invitée à un projet. Un coéquipier qui s'authentifie mais n'a jamais été invité voit s'afficher « Votre compte n'est pas provisionné » et a besoin d'une [invitation](/fr/help/projects/team-members) avant de pouvoir accéder au projet. Chaque fois qu'une connexion est bloquée, l'utilisateur arrive sur une page d'erreur SSO qui explique l'étape suivante.
+Un point qui déstabilise souvent : se connecter via votre IdP authentifie un utilisateur, mais ne donne pas l'accès en soi. La personne doit tout de même être invitée à un projet. Un collègue qui s'authentifie sans avoir été invité voit s'afficher « Your account isn't provisioned » et a besoin d'une [invitation](/fr/help/projects/team-members) avant de pouvoir entrer. Chaque fois qu'une connexion est bloquée, l'utilisateur atterrit sur une page d'erreur SSO qui explique la marche à suivre.
 
 ### Dépannage
 
 <AccordionGroup>
   <Accordion title="Le domaine ne se vérifie pas">
-    Les modifications DNS peuvent prendre jusqu'à une heure pour atteindre Jamdesk, donc une tentative de vérification juste après l'ajout de l'enregistrement échoue souvent. Attendez, puis cliquez à nouveau sur **Vérifier**. Si cela échoue toujours, vérifiez que le nom et la valeur de l'enregistrement correspondent exactement à ceux du dashboard. Certains fournisseurs DNS ajoutent automatiquement votre domaine au nom de l'enregistrement, ce qui transforme `_jamdesk` en `_jamdesk.acme.com.acme.com`. Supprimez le suffixe en double si cela se produit.
+    Les changements DNS peuvent prendre jusqu'à une heure pour atteindre Jamdesk, donc une tentative de vérification juste après l'ajout de l'enregistrement échoue souvent. Attendez, puis cliquez de nouveau sur **Verify**. Si cela échoue toujours, vérifiez que le nom et la valeur de l'enregistrement correspondent exactement à ceux du dashboard. Certains fournisseurs DNS ajoutent automatiquement votre domaine au nom de l'enregistrement, ce qui transforme `_jamdesk` en `_jamdesk.acme.com.acme.com`. Supprimez le suffixe en double si cela se produit.
   </Accordion>
-  <Accordion title="La connexion s'affiche comme Désactivée">
-    Jamdesk revérifie l'enregistrement TXT de votre domaine après la configuration. Si l'enregistrement est supprimé ou modifié, la connexion passe à **Désactivée** et les connexions cessent d'être redirigées vers votre IdP. Rajoutez l'enregistrement au DNS et cliquez sur **Revérifier le statut**, ou supprimez la connexion et recommencez.
+  <Accordion title="La connexion s'affiche comme Disabled">
+    Jamdesk revérifie l'enregistrement TXT de votre domaine après la configuration. Si l'enregistrement est supprimé ou modifié, la connexion passe à **Disabled** et les connexions cessent d'être routées vers votre IdP. Rajoutez l'enregistrement au DNS et cliquez sur **Re-check status**, ou supprimez la connexion et recommencez.
   </Accordion>
-  <Accordion title="Un coéquipier voit « Votre compte n'est pas provisionné »">
-    Il s'est authentifié auprès de votre fournisseur d'identité, mais n'a jamais été invité à un projet. Le SSO prouve son identité ; il ne crée pas d'accès à lui seul. Invitez-le depuis **Paramètres → Membres**, puis demandez-lui de se reconnecter. Voir [Membres de l'équipe](/fr/help/projects/team-members).
+  <Accordion title="Un collègue voit 'Your account isn't provisioned'">
+    Ils se sont authentifiés auprès de votre fournisseur d'identité, mais ils n'ont jamais été invités à un projet. Le SSO prouve qui ils sont ; il ne crée pas l'accès par lui-même. Invitez-les depuis **Settings → Members**, puis demandez-leur de se reconnecter. Voir [Membres de l'équipe](/fr/help/projects/team-members).
   </Accordion>
-  <Accordion title="Quelqu'un est bloqué avec « Votre organisation exige le SSO »">
-    L'application obligatoire est activée, et cette personne a tenté de se connecter avec un mot de passe ou Google au lieu de votre IdP. Elle doit utiliser le flux par e-mail en premier pour que Jamdesk la redirige vers votre fournisseur. Si elle a réellement besoin d'un repli par mot de passe (par exemple, votre IdP est hors service), ajoutez son adresse à la liste de secours.
+  <Accordion title="Quelqu'un est bloqué avec 'Your organization requires SSO'">
+    L'application forcée est activée, et la personne a tenté de se connecter avec un mot de passe ou Google au lieu de votre IdP. Elle doit utiliser le flux basé sur l'e-mail pour que Jamdesk la redirige vers votre fournisseur. Si elle a vraiment besoin d'un repli par mot de passe (par exemple, si votre IdP est en panne), ajoutez son adresse à la liste de secours.
   </Accordion>
 </AccordionGroup>
 
 ## Activer le SSO du site de documentation
 
-Le SSO lecteur du site de documentation est configuré avec notre équipe. Chaque IdP est configuré de façon légèrement différente, et nous voulons nous assurer que les métadonnées, les mappages de revendications et les filtres de groupe de votre équipe sont corrects avant de restreindre l'accès à votre documentation publiée.
+Le SSO lecteur du site de documentation est mis en place avec notre équipe. Chaque IdP se configure un peu différemment, et nous voulons nous assurer que les métadonnées de votre équipe, les correspondances de claims et les filtres de groupe sont corrects avant de protéger votre documentation publiée.
 
-[**Contacter les ventes Enterprise →**](https://jamdesk.com/pricing)
+[**Contacter l'équipe commerciale Enterprise →**](https://jamdesk.com/pricing)
 
-La page tarifaire répertorie les niveaux de plan actuels et le moyen de contact pour Enterprise. À partir de là, notre équipe vous accompagne dans la configuration de l'IdP, teste l'intégration sur un sous-domaine de préproduction, et la déploie en production quand vous êtes prêt.
+La page de tarifs répertorie les niveaux de plan actuels et le moyen de contact pour l'Enterprise. À partir de là, notre équipe vous accompagne dans la configuration de l'IdP, teste l'intégration sur un sous-domaine de staging, puis la déploie en production quand vous êtes prêt.
 
 ## Alternatives
 
-Pas encore prêt pour Enterprise ? Vous pouvez tout de même restreindre l'accès à votre documentation :
+Pas encore prêt pour l'Enterprise ? Vous pouvez tout de même protéger votre documentation :
 
 <Columns cols={2}>
   <Card title="Protection par mot de passe" icon="lock" href="/fr/setup/password-protection">
-    Restriction par phrase de passe partagée pour l'ensemble du site ou des pages spécifiques. Disponible sans plan Enterprise.
+    Protection par phrase de passe partagée pour tout le site ou des pages spécifiques. Disponible sans plan Enterprise.
   </Card>
   <Card title="Vue d'ensemble du contrôle d'accès" icon="shield" href="/fr/setup/access-control">
     Comparez les quatre options d'accès côte à côte.

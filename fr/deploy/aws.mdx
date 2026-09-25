@@ -1,16 +1,20 @@
 ---
 title: AWS Route 53 et CloudFront
-description: "Acheminez le trafic /docs vers votre site Jamdesk via AWS CloudFront et Route 53. Configuration de la distribution, de l'origine et du cache incluse."
+description: "Acheminez le trafic /docs via AWS CloudFront et Route 53 vers votre site Jamdesk : distribution, origine et règles de cache."
 ---
 
-Configurez une distribution CloudFront pour transférer `/docs/*` vers votre site Jamdesk, avec Route 53 pour le DNS. Cela prend environ 15 minutes.
+Configurez une distribution CloudFront pour transférer `/docs/*` vers votre site Jamdesk, avec Route 53 pour le DNS. Compte environ 15 minutes.
 
 ## Prérequis
 
 - Un compte AWS avec accès à CloudFront et Route 53
-- Votre domaine géré dans Route 53 (ou la possibilité de modifier le DNS ailleurs)
+- Votre domaine géré dans Route 53 (ou la possibilité de mettre à jour le DNS ailleurs)
 - Votre sous-domaine Jamdesk (disponible dans les paramètres du dashboard)
 - Votre domaine personnalisé enregistré et vérifié par DNS dans le dashboard Jamdesk
+
+<Note>
+Si vous utilisez un sous-chemin personnalisé au lieu du `/docs` par défaut, remplacez `/docs/*` dans le modèle de chemin du comportement de cache (étape 3) par votre sous-chemin. Mettez à jour la distribution à nouveau après tout renommage dans le dashboard.
+</Note>
 
 ## Étape 1 : Créer une distribution CloudFront
 
@@ -18,11 +22,11 @@ Configurez une distribution CloudFront pour transférer `/docs/*` vers votre sit
 2. Cliquez sur **Create Distribution**
 3. Configurez l'origine :
 
-| Setting | Value |
+| Paramètre | Valeur |
 |---------|-------|
-| Origin domain | `YOUR_SLUG.jamdesk.app` |
-| Protocol | HTTPS only |
-| Name | `jamdesk-docs-origin` |
+| Domaine d'origine | `YOUR_SLUG.jamdesk.app` |
+| Protocole | HTTPS uniquement |
+| Nom | `jamdesk-docs-origin` |
 
 <Note>
 Remplacez `YOUR_SLUG` par votre sous-domaine Jamdesk réel.
@@ -32,7 +36,7 @@ Remplacez `YOUR_SLUG` par votre sous-domaine Jamdesk réel.
 
 Dans les paramètres d'origine, ajoutez des en-têtes personnalisés pour identifier votre domaine :
 
-| Header name | Value |
+| Nom de l'en-tête | Valeur |
 |-------------|-------|
 | `X-Forwarded-Host` | `yoursite.com` |
 | `X-Jamdesk-Forwarded-Host` | `yoursite.com` |
@@ -40,10 +44,10 @@ Dans les paramètres d'origine, ajoutez des en-têtes personnalisés pour identi
 Ces en-têtes indiquent à Jamdesk quel domaine effectue la requête.
 
 <Warning>
-Cette étape est obligatoire, et l'omettre échoue silencieusement. La politique `AllViewerExceptHostHeader` (étape suivante) ne transfère que les en-têtes envoyés par le navigateur de votre visiteur — elle n'en ajoute pas de nouveaux — donc `X-Jamdesk-Forwarded-Host` n'atteint Jamdesk que comme **en-tête personnalisé d'origine**. Sans cela, les requêtes réussissent toujours, mais les pages sont servies en `noindex` avec des liens canoniques pointant vers `YOUR_SLUG.jamdesk.app` au lieu de votre domaine.
+Cette étape est obligatoire, et l'ignorer échoue silencieusement. La politique `AllViewerExceptHostHeader` (étape suivante) ne transmet que les en-têtes envoyés par le navigateur de votre visiteur — elle n'en ajoute pas de nouveaux — donc `X-Jamdesk-Forwarded-Host` n'atteint Jamdesk qu'en tant qu'**en-tête personnalisé d'origine**. Sans cela, les requêtes réussissent toujours, mais les pages servent `noindex` avec des liens canoniques pointant vers `YOUR_SLUG.jamdesk.app` au lieu de votre domaine.
 </Warning>
 
-Si vous servez plusieurs noms de domaine alternatifs depuis une seule distribution, les en-têtes d'origine statiques ne peuvent pas varier selon la requête — utilisez plutôt une [CloudFront Function](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/cloudfront-functions.html) sur **viewer request**, en définissant `request.headers['x-jamdesk-forwarded-host'] = { value: request.headers.host.value }`.
+Si vous diffusez plusieurs noms de domaine alternatifs depuis une seule distribution, les en-têtes d'origine statiques ne peuvent pas varier par requête — utilisez une [CloudFront Function](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/cloudfront-functions.html) sur **viewer request** à la place, en définissant `request.headers['x-jamdesk-forwarded-host'] = { value: request.headers.host.value }`.
 
 ## Étape 3 : Créer des comportements de cache
 
@@ -53,7 +57,7 @@ Ajoutez des comportements pour acheminer `/docs/*` et les requêtes d'assets ver
 2. Cliquez sur **Create Behavior**
 3. Créez trois comportements avec ces paramètres :
 
-| Path pattern | Origin | Cache policy | Origin request policy |
+| Modèle de chemin | Origine | Politique de cache | Politique de requête d'origine |
 |-------------|--------|-------------|----------------------|
 | `/docs/*` | `jamdesk-docs-origin` | CachingOptimized | AllViewerExceptHostHeader |
 | `/_next/*` | `jamdesk-docs-origin` | CachingOptimized | AllViewerExceptHostHeader |
@@ -61,7 +65,7 @@ Ajoutez des comportements pour acheminer `/docs/*` et les requêtes d'assets ver
 
 Définissez **Viewer protocol policy** sur **Redirect HTTP to HTTPS** pour les trois.
 
-Les trois comportements sont obligatoires : `/_next/*` et `/_jd/*` servent le JavaScript, le CSS, les polices et les images chargés par vos pages de documentation. La politique `AllViewerExceptHostHeader` transfère les en-têtes de requête du visiteur (tout sauf `Host`, que CloudFront réserve à l'origine) et doit être définie sur les trois.
+Les trois comportements sont obligatoires : `/_next/*` et `/_jd/*` servent le JavaScript, le CSS, les polices et les images que chargent vos pages de documentation. La politique `AllViewerExceptHostHeader` transmet les en-têtes de requête du visiteur (tout sauf `Host`, que CloudFront réserve à l'origine) et doit être définie sur les trois.
 
 ## Étape 4 : Ajouter un nom de domaine alternatif
 
@@ -78,17 +82,17 @@ Créez un enregistrement alias pointant vers votre distribution CloudFront :
 3. Cliquez sur **Create Record**
 4. Configurez :
 
-| Setting | Value |
+| Paramètre | Valeur |
 |---------|-------|
-| Record name | `yoursite.com` (ou laissez vide pour l'apex) |
-| Record type | A |
-| Alias | Yes |
-| Route traffic to | CloudFront distribution |
+| Nom de l'enregistrement | `yoursite.com` (ou laisser vide pour l'apex) |
+| Type d'enregistrement | A |
+| Alias | Oui |
+| Acheminer le trafic vers | Distribution CloudFront |
 | Distribution | Sélectionnez votre distribution |
 
 ## Étape 6 : Vérifier
 
-Après la propagation du DNS (généralement 5 à 15 minutes), visitez `https://yoursite.com/docs` pour confirmer que votre documentation se charge correctement.
+Après la propagation DNS (généralement 5 à 15 minutes), visitez `https://yoursite.com/docs` pour confirmer que votre documentation se charge correctement.
 
 ## Résumé complet de la configuration CloudFront
 
@@ -116,7 +120,7 @@ Assurez-vous que le domaine d'origine est exactement `YOUR_SLUG.jamdesk.app`, sa
 </Accordion>
 
 <Accordion title="Avertissements de contenu mixte">
-Vérifiez que la Viewer protocol policy est définie sur « Redirect HTTP to HTTPS » et que votre certificat SSL est valide.
+Vérifiez que le paramètre Viewer protocol policy est défini sur "Redirect HTTP to HTTPS" et que votre certificat SSL est valide.
 </Accordion>
 
 <Accordion title="Contenu obsolète après une mise à jour">
@@ -124,18 +128,18 @@ Créez une invalidation CloudFront pour `/docs/*` afin de vider le contenu mis e
 </Accordion>
 
 <Accordion title="Erreur 403 : domaine non autorisé">
-Si vous voyez « Domain is not authorized to serve this content » :
+Si vous voyez "Domain is not authorized to serve this content" :
 
 1. Vérifiez que votre domaine est enregistré dans le dashboard Jamdesk
 2. Effectuez la vérification DNS (enregistrement TXT) pour votre domaine
 3. Assurez-vous que les en-têtes personnalisés `X-Forwarded-Host` et `X-Jamdesk-Forwarded-Host` sont définis dans la configuration de votre origine
 4. Vérifiez que votre domaine correspond au bon projet
 
-Le domaine doit être vérifié avant que CloudFront puisse servir la documentation.
+Le domaine doit être vérifié avant que CloudFront puisse diffuser la documentation.
 </Accordion>
 
-<Accordion title="La vérification preflight de « Domaine personnalisé uniquement » échoue en permanence">
-Preflight récupère `/_jd/preflight` sur votre domaine en production et vérifie ce qui atteint réellement Jamdesk. S'il indique que votre proxy « doesn't identify itself », CloudFront atteint bien Jamdesk mais sans `X-Jamdesk-Forwarded-Host` — revérifiez l'en-tête personnalisé d'origine à l'étape 2. Consultez [Domaine personnalisé uniquement](/fr/deploy/custom-domain-only) pour comprendre ce que signifie chaque message preflight.
+<Accordion title="La vérification préliminaire « Domaine personnalisé uniquement » échoue toujours">
+La vérification préliminaire récupère `/_jd/preflight` sur votre domaine actif et vérifie ce qui est réellement parvenu à Jamdesk. Si elle indique que votre proxy « doesn't identify itself », CloudFront atteint bien Jamdesk mais sans `X-Jamdesk-Forwarded-Host` — revérifiez l'en-tête personnalisé d'origine à l'étape 2. Consultez [Domaine personnalisé uniquement](/fr/deploy/custom-domain-only) pour savoir ce que signifie chaque message de la vérification préliminaire.
 </Accordion>
 
 ## Et ensuite ?
@@ -145,9 +149,9 @@ Preflight récupère `/_jd/preflight` sur votre domaine en production et vérifi
     Empêchez votre sous-domaine de répondre directement
   </Card>
   <Card title="Domaines personnalisés" icon="globe" href="/fr/deploy/custom-domains">
-    Vérifiez le DNS et résolvez les problèmes
+    Vérifiez le DNS et dépannez
   </Card>
   <Card title="Hébergement en sous-chemin" icon="folder-tree" href="/fr/deploy/subpath-hosting">
-    Servez la documentation sur /docs
+    Servez la documentation à /docs
   </Card>
 </Columns>
