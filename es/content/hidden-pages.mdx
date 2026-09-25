@@ -1,13 +1,13 @@
 ---
 title: Páginas ocultas
-description: Excluye páginas de la barra lateral y la búsqueda sin eliminarlas. Usa frontmatter, docs.json o los controles de seo para gestionar la visibilidad.
+description: Excluye páginas de la barra lateral y de la búsqueda sin eliminarlas. Usa frontmatter, docs.json o los controles seo.
 ---
 
-Algunas páginas no deben aparecer en la barra lateral pública: borradores, manuales internos, guías obsoletas que aún necesitas enlazar. Las páginas ocultas siguen siendo accesibles mediante URL directa, pero desaparecen de la navegación, la búsqueda, tu sitemap y el contexto de IA que se envía a los LLM.
+Algunas páginas no deberían estar en la barra lateral pública: borradores, manuales internos, guías obsoletas a las que aún necesitas enlazar. Las páginas ocultas siguen siendo accesibles mediante URL directa, pero desaparecen de la navegación, la búsqueda, tu sitemap y el contexto de IA que se proporciona a los LLM.
 
 ## Ocultar una sola página
 
-Añade `hidden: true` al frontmatter de la página:
+Agrega `hidden: true` al frontmatter de la página:
 
 ```mdx
 ---
@@ -16,15 +16,15 @@ hidden: true
 ---
 ```
 
-La página se renderiza con normalidad cuando alguien visita su URL, pero Jamdesk:
+La página se renderiza normalmente cuando alguien visita su URL, pero Jamdesk:
 
 - La elimina de la barra lateral
-- Añade `<meta name="robots" content="noindex, follow">` para que los motores de búsqueda la omitan
-- La excluye de `sitemap.xml`, `llms.txt`, `llms-full.txt` y la búsqueda en el sitio
+- Agrega `<meta name="robots" content="noindex, follow">` para que los motores de búsqueda la omitan
+- La excluye de `sitemap.xml`, `llms.txt`, `llms-full.txt` y de la búsqueda en el sitio
 
-## Ocultar un grupo o tab completo
+## Ocultar un grupo o pestaña completos
 
-Establece `"hidden": true` en un grupo o tab en `docs.json`:
+Configura `"hidden": true` en un grupo o pestaña en `docs.json`:
 
 ```json
 {
@@ -44,11 +44,11 @@ Establece `"hidden": true` en un grupo o tab en `docs.json`:
 }
 ```
 
-Toda página bajo el nodo oculto hereda la regla. La misma marca funciona en `tabs`, `groups`, `anchors`, `dropdowns`, `products`, `languages` y `versions`.
+Cada página bajo el nodo oculto hereda esta regla. El mismo indicador funciona en `tabs`, `groups`, `anchors`, `dropdowns`, `products`, `languages` y `versions`.
 
-## Mantener páginas ocultas en la búsqueda
+## Mantener las páginas ocultas en la búsqueda
 
-Si quieres que un tab o grupo oculto no aparezca en la barra lateral pero siga indexado para la búsqueda del sitio, las respuestas de IA y el sitemap, añade `"searchable": true`:
+Si quieres que una pestaña o grupo oculto quede fuera de la barra lateral pero siga indexado para la búsqueda en el sitio, las respuestas de IA y el sitemap, agrega `"searchable": true`:
 
 ```json
 {
@@ -59,16 +59,60 @@ Si quieres que un tab o grupo oculto no aparezca en la barra lateral pero siga i
 }
 ```
 
-El `hidden: true` del frontmatter en una página hija sigue teniendo prioridad. `searchable` solo reactiva a los descendientes que no lo hayan desactivado por su cuenta.
+El `hidden: true` del frontmatter de una página hija sigue prevaleciendo. `searchable` solo reabre los descendientes que no se hayan excluido ellos mismos.
+
+## Mantener una página fuera solo de la búsqueda
+
+A veces una página debe permanecer en la barra lateral y seguir siendo indexable, pero dejar de aparecer cuando alguien busca o hace una pregunta. Agrega `search: false` a su frontmatter:
+
+```yaml
+---
+title: Legacy v1 endpoints
+search: false
+---
+```
+
+La página conserva su lugar en la navegación, tu sitemap, `llms.txt` y tu feed RSS, y los motores de búsqueda siguen indexándola. Lo que deja son las superficies de *búsqueda*: la búsqueda en el sitio, las respuestas del chat de IA y el servidor MCP.
+
+<Note>
+`search: false` hace lo contrario de `hidden: true`. `hidden` saca una página de la navegación y de las superficies de indexación; `search: false` deja todo eso intacto y solo impide que la página sea recuperada. No lo confundas con el `searchable` a nivel de navegación, que reincorpora las páginas ocultas *a* la búsqueda.
+</Note>
+
+## Qué parte de una página se indexa
+
+La búsqueda no indexa una página como un solo bloque. La indexa **sección por sección**: cada encabezado se convierte en su propia entrada de búsqueda, de modo que un lector que busca «Límites de tasa» llega a ese encabezado en lugar de al principio de una página larga.
+
+Se aplican dos límites a esto, y ambos son automáticos:
+
+| Límite | Valor | Qué ocurre al superarlo |
+|---|---|---|
+| Entradas por página | 50 | Las secciones se indexan en el orden de la página. Una vez usada la 50.ª, todas las secciones restantes quedan fuera de la búsqueda. |
+| Texto por sección | Los primeros 300 caracteres | El texto más allá de ese punto en una sección no se compara. |
+
+La propia página ocupa una de las 50 posiciones, por lo que se indexan 49 secciones.
+
+El límite existe porque la búsqueda pondera cada entrada frente al resto de tu índice. Una página que genera cientos de entradas desplaza a las demás de los resultados: un changelog generado automáticamente puede representar por sí solo la mitad de un índice y sacar de la primera pantalla a páginas realmente relevantes.
+
+<Warning>
+Una página que supera el límite se sigue renderizando por completo. Solo sus secciones posteriores dejan de ser localizables, y nada en la página se lo indica a tus lectores.
+
+Si una página tiene más de unos 50 encabezados, divídela en varias páginas —lo cual mejora la navegación de todos modos— o, si se genera automáticamente y nadie la busca a mano, agrega `search: false` para excluir toda la página del índice.
+</Warning>
+
+Para colocar un término donde la búsqueda pueda ponderarlo correctamente, usa el título de la página (el más ponderado), luego un encabezado, luego la descripción. El texto del cuerpo tiene la ponderación más baja, y solo cuentan sus primeros 300 caracteres por sección.
+
+<Note>
+`seo.metatags.keywords` *no* alimenta la búsqueda en el sitio. Genera una etiqueta HTML `<meta name="keywords">`, que Google ha declarado que ignora para el posicionamiento. No hay forma de asociar términos de búsqueda adicionales a una página: coloca las palabras que quieres que coincidan en el título, un encabezado o la descripción.
+</Note>
 
 ## Controles a nivel de proyecto
 
-Ambas marcas viven bajo `seo` en `docs.json`:
+Ambos indicadores se encuentran bajo `seo` en `docs.json`:
 
-| Marca | Predeterminado | Efecto |
+| Indicador | Valor predeterminado | Efecto |
 |---|---|---|
-| `seo.indexing` | `"navigable"` | Solo las páginas listadas en tu navegación aparecen en los artefactos. Configúralo como `"all"` para incluir todos los archivos MDX de tu repositorio. |
-| `seo.indexHiddenPages` | `false` | Configúralo como `true` para incluir las páginas con `hidden: true` en el sitemap, llms.txt y la búsqueda, y eliminar la etiqueta noindex automática. |
+| `seo.indexing` | `"navigable"` | Solo las páginas listadas en tu navegación aparecen en los artefactos. Configúralo en `"all"` para incluir todos los archivos MDX de tu repositorio. |
+| `seo.indexHiddenPages` | `false` | Configúralo en `true` para incluir las páginas `hidden: true` en el sitemap, llms.txt y la búsqueda, y eliminar la etiqueta auto-noindex. |
 
 Ejemplo:
 
@@ -85,17 +129,19 @@ Ejemplo:
 | Escenario | Frontmatter | docs.json | Visible en la barra lateral | URL directa | En el sitemap |
 |---|---|---|---|---|---|
 | Página normal | — | listada | Sí | Sí | Sí |
-| Oculta vía frontmatter | `hidden: true` | listada | No | Sí | No |
+| Oculta mediante frontmatter | `hidden: true` | listada | No | Sí | No |
 | Página fuera de la navegación (huérfana) | — | omitida | No | Sí | No |
 | Grupo oculto | — | `hidden: true` en el grupo | No | Sí | No |
 | Grupo oculto y buscable | — | `hidden: true, searchable: true` | No | Sí | Sí |
+| Fuera de la búsqueda solamente | `search: false` | listada | Sí | Sí | Sí |
 | El proyecto opta por indexar todo | — | cualquiera | Igual que arriba | Sí | Sí |
 
 ## Cuándo usar cada opción
 
-- **Borradores y previsualizaciones:** frontmatter `hidden: true` en páginas individuales
-- **Secciones internas** para un equipo pequeño: un grupo o tab oculto
+- **Borradores y vistas previas:** frontmatter `hidden: true` en páginas individuales
+- **Secciones internas** para un equipo pequeño: un grupo o pestaña oculto
 - **Documentación de cumplimiento** que debe ser pública pero no promocionada: grupo oculto con `searchable: true`
-- **Indexación de todo el repositorio** solo para el contexto de IA: `seo.indexing: "all"`
+- **Indexación de todo el repositorio** solo para el grounding de IA: `seo.indexing: "all"`
+- **Páginas reemplazadas** que aún quieres que sean enlazables e indexables, pero sin que aparezcan en la búsqueda o la IA: frontmatter `search: false`
 
-Las páginas ocultas no son control de acceso. Cualquiera que tenga la URL puede leerlas. Para un control de acceso real, consulta [Protección con contraseña](/es/setup/password-protection).
+Las páginas ocultas no son un control de acceso. Cualquiera que tenga la URL puede leerlas. Para un control de acceso real, consulta [Protección con contraseña](/es/setup/password-protection).

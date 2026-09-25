@@ -1,18 +1,22 @@
 ---
 title: Proxy inverso
-description: "Sirve tu documentación en /docs con nginx, Apache, Caddy, Traefik o HAProxy. Incluye snippets de configuración probados para cada proxy inverso."
+description: "Sirve tu documentación en /docs usando nginx, Apache, Caddy, Traefik o HAProxy. Incluye fragmentos de configuración probados para cada proxy inverso."
 ---
 
-Si ya usas nginx, Apache, Caddy, Traefik o HAProxy, añade un bloque de ubicación/ruta que redirija el tráfico de `/docs` a tu subdominio de Jamdesk.
+Si ya usas nginx, Apache, Caddy, Traefik o HAProxy, añade un bloque de location/route que redirija el tráfico de `/docs` a tu subdominio de Jamdesk.
 
 ## Requisitos previos
 
 - Acceso a la configuración de tu servidor web
 - Tu subdominio de Jamdesk (disponible en la configuración del dashboard)
 
+<Note>
+Si usas una subruta personalizada en lugar de `/docs` por defecto, reemplaza `/docs` en cada bloque de location/route a continuación (nginx, Apache, Caddy, Traefik, HAProxy) por tu subruta. Actualiza la configuración de nuevo después de cualquier cambio de nombre en el dashboard.
+</Note>
+
 ## nginx
 
-Añade un bloque de ubicación (location) para redirigir las solicitudes a `/docs` hacia Jamdesk:
+Añade un bloque location para redirigir las solicitudes de `/docs` a Jamdesk:
 
 ```nginx nginx.conf
 server {
@@ -53,11 +57,11 @@ server {
 ```
 
 <Note>
-Reemplaza `YOUR_SLUG` con tu subdominio real de Jamdesk.
+Reemplaza `YOUR_SLUG` por tu subdominio real de Jamdesk.
 </Note>
 
 <Warning>
-**El manejo de rutas importa.** La URL de `proxy_pass` no tiene ruta final, por lo que nginx conserva la ruta original de la solicitud. Una solicitud a `/docs/page` se redirige a `jamdesk.app/docs/page`. Si añades una barra final (`proxy_pass https://...jamdesk.app/`), se elimina el prefijo `/docs`. Mantenla exactamente como se muestra arriba.
+**El manejo de la ruta es importante.** La URL de `proxy_pass` no tiene ruta final, por lo que nginx conserva la ruta original de la solicitud. Una solicitud a `/docs/page` se redirige a `jamdesk.app/docs/page`. Si añades una barra final (`proxy_pass https://...jamdesk.app/`), se elimina el prefijo `/docs`. Mantenlo exactamente como se muestra arriba.
 </Warning>
 
 Después de actualizar tu configuración, recarga nginx:
@@ -68,7 +72,7 @@ sudo nginx -t && sudo systemctl reload nginx
 
 ## Apache
 
-Usa `mod_proxy` para redirigir las solicitudes a `/docs` hacia Jamdesk:
+Usa `mod_proxy` para redirigir las solicitudes de `/docs` a Jamdesk:
 
 ```apache httpd.conf or .htaccess
 <VirtualHost *:443>
@@ -145,7 +149,7 @@ yoursite.com {
 }
 ```
 
-Recarga Caddy después de hacer cambios:
+Recarga Caddy después de los cambios:
 
 ```bash
 sudo systemctl reload caddy
@@ -153,7 +157,7 @@ sudo systemctl reload caddy
 
 ## Traefik
 
-Para usuarios de [Traefik](https://traefik.io/), configura un router y un servicio:
+Para los usuarios de [Traefik](https://traefik.io/), configura un router y un servicio:
 
 ```yaml traefik.yml
 http:
@@ -207,9 +211,9 @@ backend jamdesk_docs
 
 ## Redirige también tus archivos raíz
 
-`robots.txt`, `sitemap.xml`, `llms.txt` y `llms-full.txt` se sirven desde la raíz del dominio, no desde `/docs` — un proxy que solo redirige `/docs`, `/_next` y `/_jd` deja que estos archivos los sirva tu propio sitio (o no se sirvan en absoluto), lo que rompe el descubrimiento por parte de agentes de IA y te cuesta SEO, independientemente de todo lo demás en esta página.
+`robots.txt`, `sitemap.xml`, `llms.txt` y `llms-full.txt` se sirven desde la raíz del dominio, no desde `/docs` — un proxy que solo redirige `/docs`, `/_next` y `/_jd` deja estos archivos servidos por tu propio sitio (o no servidos en absoluto), lo que rompe el descubrimiento por agentes de IA y te cuesta SEO, independientemente de todo lo demás en esta página.
 
-Añade el mismo patrón de ubicación/ruta que usaste para `/docs` arriba, para cada una de estas cuatro rutas. Para nginx:
+Añade el mismo patrón de bloque location/route que usaste para `/docs` arriba, para cada una de estas cuatro rutas. Para nginx:
 
 ```nginx nginx.conf
     location = /robots.txt {
@@ -241,70 +245,70 @@ Añade el mismo patrón de ubicación/ruta que usaste para `/docs` arriba, para 
     }
 ```
 
-Los mismos cuatro bloques —mismos encabezados, mismo upstream— se aplican a Apache, Caddy, Traefik y HAProxy: copia el bloque de `/docs` que estés usando arriba y repítelo una vez por cada ruta.
+Estos mismos cuatro bloques — mismos encabezados, mismo upstream — se aplican a Apache, Caddy, Traefik y HAProxy: copia el bloque `/docs` que estés usando arriba y repítelo una vez por ruta.
 
 <Warning>
 Redirige estos archivos solo si Jamdesk es propietario de la raíz de tu dominio. Si tu sitio principal ya sirve su propio `robots.txt` o `sitemap.xml`, combina ambos en lugar de sobrescribir uno con el otro.
 </Warning>
 
-## Encabezados necesarios
+## Encabezados requeridos
 
-Independientemente del proxy que uses, asegúrate de configurar estos encabezados:
+Independientemente del proxy que uses, asegúrate de que estos encabezados estén configurados:
 
 | Header | Valor | Propósito |
 |--------|-------|---------|
 | `Host` | `YOUR_SLUG.jamdesk.app` | Identifica la solicitud ante Jamdesk |
-| `X-Forwarded-Host` | Tu dominio | Indica a Jamdesk qué dominio usar en las URLs |
+| `X-Forwarded-Host` | Tu dominio | Indica a Jamdesk qué dominio usar en las URL |
 | `X-Forwarded-Proto` | `https` | Garantiza la generación segura de URL |
-| `X-Jamdesk-Forwarded-Host` | Tu dominio | Necesario para la verificación de dominio |
-| Marcador de consulta `?jd_proxy=1` | Añadido a la URL upstream | Alternativa al encabezado, para herramientas que solo pueden reescribir una URL y no pueden establecer encabezados de solicitud — consulta [Solo dominio personalizado](/es/deploy/custom-domain-only) |
+| `X-Jamdesk-Forwarded-Host` | Tu dominio | Requerido para la verificación del dominio |
+| Marcador de consulta `?jd_proxy=1` | Añadido a la URL de upstream | Alternativa al encabezado, para herramientas que solo pueden reescribir una URL y no pueden establecer encabezados de solicitud — consulta [Solo dominio personalizado](/es/deploy/custom-domain-only) |
 
 <Warning>
-El encabezado `X-Jamdesk-Forwarded-Host` (o el marcador `?jd_proxy=1`) es **obligatorio**, y omitir ambos falla de forma silenciosa.
+El encabezado `X-Jamdesk-Forwarded-Host` (o el marcador `?jd_proxy=1`) es **obligatorio**, y prescindir de ambos falla silenciosamente.
 
-Las solicitudes siguen teniendo éxito —nada da error, que es justo lo que hace fácil pasarlo por alto. Lo que falla es más sutil:
+Las solicitudes se completan igualmente — no aparece ningún error, lo que hace que sea fácil pasarlo por alto. Lo que falla es más sutil:
 
-- **Si no has registrado un dominio personalizado en el dashboard**, tus páginas de documentación se sirven con `<meta name="robots" content="noindex">`, y las URLs canónicas, de Open Graph y del sitemap apuntan todas a `YOUR_SLUG.jamdesk.app` en lugar de a tu dominio. Los motores de búsqueda nunca indexarán tu documentación.
-- **Si has registrado un dominio personalizado**, Jamdesk recurre al dominio registrado, por lo que tus URLs se mantienen correctas —pero aun así no puede distinguir el tráfico del proxy del tráfico directo a tu subdominio `*.jamdesk.app`, y la verificación previa de [Solo dominio personalizado](/es/deploy/custom-domain-only) fallará.
+- **Si no has registrado un dominio personalizado en el dashboard**, tus páginas de documentación se sirven con `<meta name="robots" content="noindex">`, y las URL canónicas, de Open Graph y de sitemap apuntan todas a `YOUR_SLUG.jamdesk.app` en lugar de a tu dominio. Los motores de búsqueda nunca indexarán tu documentación.
+- **Si has registrado un dominio personalizado**, Jamdesk recurre al dominio registrado, por lo que tus URL siguen siendo correctas — pero aun así no puede distinguir el tráfico del proxy del tráfico directo a tu subdominio `*.jamdesk.app`, y la verificación previa de [Solo dominio personalizado](/es/deploy/custom-domain-only) fallará.
 
-Un **403** es el problema opuesto: el encabezado *sí* está presente, pero indica un dominio que no está registrado ni activo para este proyecto.
+Un **403** es el problema contrario: el encabezado *sí* está presente, pero indica un dominio que no está registrado y activo para este proyecto.
 </Warning>
 
 <Tip>
-La configuración del proxy es una **configuración única**. Si más adelante cambias tu dominio personalizado o la configuración en el dashboard de Jamdesk, no es necesario actualizar el proxy: todas las decisiones de enrutamiento se toman en el servidor según la configuración de tu dashboard.
+La configuración del proxy es una **configuración única**. Si más adelante cambias tu dominio personalizado o la configuración en el dashboard de Jamdesk, el proxy no necesita actualizarse - todas las decisiones de enrutamiento se toman del lado del servidor según la configuración de tu dashboard.
 </Tip>
 
 ## Solución de problemas
 
 <Accordion title="502 Bad Gateway">
-Verifica que el proxy pueda acceder a `YOUR_SLUG.jamdesk.app` mediante HTTPS. Revisa las reglas del firewall y la resolución de DNS.
+Verifica que el proxy pueda alcanzar `YOUR_SLUG.jamdesk.app` mediante HTTPS. Revisa las reglas de firewall y la resolución DNS.
 </Accordion>
 
 <Accordion title="Errores de certificado SSL">
-Habilita SSL/TLS para la conexión upstream. En nginx, añade `proxy_ssl_server_name on;`. En Apache, habilita `SSLProxyEngine On`.
+Habilita SSL/TLS para la conexión de upstream. En nginx, añade `proxy_ssl_server_name on;`. En Apache, habilita `SSLProxyEngine On`.
 </Accordion>
 
 <Accordion title="Los recursos se cargan desde el dominio incorrecto">
-Asegúrate de que el encabezado `X-Forwarded-Host` esté configurado correctamente. Esto indica a Jamdesk qué dominio usar para las URLs de los recursos y los enlaces internos.
+Asegúrate de que el encabezado `X-Forwarded-Host` esté configurado correctamente. Esto indica a Jamdesk qué dominio usar para las URL de los recursos y los enlaces internos.
 </Accordion>
 
 <Accordion title="Bucles de redirección">
-Verifica que tu proxy no esté siguiendo redirecciones. El proxy debe reenviar la respuesta tal cual, sin gestionar redirecciones adicionales.
+Verifica que tu proxy no esté siguiendo redirecciones. El proxy debe reenviar la respuesta tal cual, sin manejo adicional de redirecciones.
 </Accordion>
 
-<Accordion title="Error 403: dominio no autorizado">
+<Accordion title="403 Domain not authorized error">
 Si ves "Domain is not authorized to serve this content":
 
 1. Verifica que tu dominio esté registrado en el dashboard de Jamdesk
-2. Completa la verificación de DNS (registro TXT) para tu dominio
-3. Asegúrate de que el encabezado `X-Jamdesk-Forwarded-Host` esté configurado en tu proxy
-4. Verifica que tu dominio esté asignado al proyecto correcto
+2. Completa la verificación DNS (registro TXT) de tu dominio
+3. Asegúrate de que el encabezado `X-Jamdesk-Forwarded-Host` esté configurado en tu configuración de proxy
+4. Verifica que tu dominio se corresponda con el proyecto correcto
 
 El dominio debe estar verificado antes de que el proxy pueda servir la documentación.
 </Accordion>
 
 <Accordion title="La verificación previa de Solo dominio personalizado sigue fallando">
-La verificación previa obtiene `/_jd/preflight` en tu dominio activo y comprueba qué llegó realmente a Jamdesk. Si indica que tu proxy "no se identifica", significa que una solicitud llegó a Jamdesk pero sin el encabezado ni el marcador — revisa la línea `X-Jamdesk-Forwarded-Host` en cada bloque de ubicación/ruta anterior. Consulta [Solo dominio personalizado](/es/deploy/custom-domain-only) para saber qué significa cada mensaje de la verificación previa.
+Preflight obtiene `/_jd/preflight` en tu dominio en producción y verifica qué llegó realmente a Jamdesk. Si informa que tu proxy "no se identifica", una solicitud llegó a Jamdesk pero sin el encabezado ni el marcador — vuelve a revisar la línea `X-Jamdesk-Forwarded-Host` en cada bloque location/route anterior. Consulta [Solo dominio personalizado](/es/deploy/custom-domain-only) para saber qué significa cada mensaje de preflight.
 </Accordion>
 
 ## ¿Qué sigue?

@@ -1,18 +1,18 @@
 ---
 title: Problemas de GitHub
-description: Soluciona organizaciones ausentes, repos faltantes, webhooks fallidos, errores de permisos y discrepancias de branch en la integración GitHub de Jamdesk.
+description: Soluciona los bucles de instalación de la app GitHub en cuentas de empresa, organizaciones y repos faltantes, webhooks fallidos, permisos y ramas.
 ---
 
-La mayoría de los problemas de integración con GitHub se deben a permisos, fallos de webhook o discrepancias de branch.
+La mayoría de los problemas de integración con GitHub se deben a permisos, fallos de webhook o discrepancias de ramas.
 
 ## La organización no aparece durante la configuración
 
-Durante el flujo de configuración inicial de la documentación, Jamdesk muestra tus organizaciones de GitHub para que elijas dónde crear el repositorio. La lista proviene de la API OAuth de GitHub, y GitHub oculta organizaciones de ella en dos casos:
+Durante el flujo de configuración inicial, Jamdesk muestra tus organizaciones de GitHub para que puedas elegir dónde crear el repositorio. La lista proviene de la API de OAuth de GitHub, y GitHub oculta organizaciones en dos casos:
 
-- Restricciones de la app OAuth: tu organización restringe el acceso de apps de terceros (valor predeterminado de GitHub para organizaciones nuevas) y aún no ha aprobado Jamdesk.
-- SAML SSO: tu organización requiere autenticación SAML antes de que la API la devuelva.
+- Restricciones de aplicaciones OAuth: tu organización restringe el acceso de aplicaciones de terceros (opción predeterminada de GitHub para las organizaciones nuevas) y aún no ha aprobado Jamdesk.
+- SSO SAML: tu organización requiere autenticación SAML antes de que la API la devuelva.
 
-<Accordion title="Otorga acceso tú mismo (propietarios de la organización)">
+<Accordion title="Concede el acceso tú mismo (propietarios de la organización)">
   Si eres propietario de la organización, puedes aprobar Jamdesk de inmediato:
 
   1. Haz clic en **grant Jamdesk access on GitHub** debajo del selector de organización (o ve a GitHub → **Settings** → **Applications** → **Authorized OAuth Apps** → **Jamdesk**)
@@ -22,67 +22,104 @@ Durante el flujo de configuración inicial de la documentación, Jamdesk muestra
   Si eres miembro (no propietario), verás en su lugar un botón **Request**; al hacer clic se envía una solicitud de aprobación a los administradores de tu organización.
 </Accordion>
 
-<Accordion title="Pide a tu administrador de organización que apruebe Jamdesk (miembros)">
-  Si eres miembro sin permisos de propietario, primero envía una solicitud de aprobación a tus administradores:
+<Accordion title="Pide al administrador de tu organización que apruebe Jamdesk (miembros)">
+  Si eres miembro sin derechos de propietario, envía primero una solicitud de aprobación a tus administradores:
 
   1. Ve a GitHub → **Settings** → **Applications** → **Authorized OAuth Apps** → **Jamdesk**
   2. En **Organization access**, haz clic en **Request** junto a tu organización. Esto notifica a los administradores de tu organización
-  3. Un administrador la aprueba en **Settings** → **Third-party access** → **OAuth application policy** de la organización (las solicitudes pendientes muestran un botón **Approve**)
-  4. Regresa al flujo de configuración de Jamdesk y haz clic en **refresh the list**; tu organización debería aparecer ahora
+  3. Un administrador lo aprueba en **Settings** → **Third-party access** → **OAuth application policy** de la organización (las solicitudes pendientes muestran un botón **Approve**)
+  4. Vuelve al flujo de configuración de Jamdesk y haz clic en **refresh the list**; tu organización debería aparecer ahora
 
-  Consulta la guía de GitHub sobre [cómo aprobar apps OAuth para tu organización](https://docs.github.com/en/organizations/managing-oauth-access-to-your-organizations-data/approving-oauth-apps-for-your-organization) para ver los pasos detallados.
+  Consulta la guía de GitHub sobre [cómo aprobar aplicaciones OAuth para tu organización](https://docs.github.com/en/organizations/managing-oauth-access-to-your-organizations-data/approving-oauth-apps-for-your-organization) para conocer los pasos detallados.
 </Accordion>
 
-<Accordion title="Crea en tu cuenta personal y transfiere después">
-  ¿No quieres esperar la aprobación del administrador? Elige tu cuenta personal durante la configuración y transfiere el repo a tu organización después:
+<Accordion title="Créalo en tu cuenta personal y transfiérelo después">
+  ¿No quieres esperar la aprobación de un administrador? Elige tu cuenta personal durante la configuración y transfiere el repositorio a tu organización después:
 
-  1. Completa la configuración de Jamdesk usando tu cuenta personal
+  1. Completa la configuración de Jamdesk con tu cuenta personal
   2. Ve al repositorio creado en GitHub
-  3. Navega a **Settings** → **General** → **Danger Zone**
+  3. Ve a **Settings** → **General** → **Danger Zone**
   4. Haz clic en **Transfer** y selecciona tu organización como destino
   5. En Jamdesk, desconecta y vuelve a conectar el repositorio desde la página **Settings** de tu proyecto
 
   <Warning>
-    Desconectar y volver a conectar genera una nueva URL de documentación (por ejemplo, `your-project.jamdesk.app` puede cambiar). Si ya compartiste tu URL o configuraste un dominio personalizado, contacta a [soporte](/es/help/support/contact) antes de desconectar para que podamos preservar tu configuración.
+    Desconectar y volver a conectar genera una nueva URL de documentación (por ejemplo, `your-project.jamdesk.app` puede cambiar). Si ya has compartido tu URL o configurado un dominio personalizado, contacta con [soporte](/es/help/support/contact) antes de desconectar para que podamos preservar tu configuración.
   </Warning>
+
+  Esto no funciona si tu empresa gestiona tu cuenta de GitHub. Consulta en su lugar [cuentas de GitHub gestionadas por la empresa](#cuentas-de-github-gestionadas-por-la-empresa).
+</Accordion>
+
+## Cuentas de GitHub gestionadas por la empresa
+
+Si tu empresa gestiona tu cuenta de GitHub (GitHub las llama Enterprise Managed Users, o EMU), GitHub no te permite instalar aplicaciones en tu propia cuenta, solo en una organización. Si no tienes ninguna organización disponible, hacer clic en **Install** en GitHub simplemente te devuelve a la página de la aplicación Jamdesk. Durante el registro, Jamdesk muestra «Your organization manages this GitHub account».
+
+Los nombres de usuario gestionados terminan en un guion bajo y un código de empresa, como `jsmith_acme`. GitHub explica estas limitaciones en su página sobre [cuentas de usuario gestionadas](https://docs.github.com/en/enterprise-cloud@latest/admin/managing-iam/understanding-iam-for-enterprises/abilities-and-restrictions-of-managed-user-accounts).
+
+Puedes solucionar esto de dos maneras.
+
+<Accordion title="Mueve el repositorio a una organización">
+  1. Pide a un propietario de la empresa que [cree una organización](https://docs.github.com/en/enterprise-cloud@latest/admin/managing-accounts-and-repositories/managing-organizations-in-your-enterprise/adding-organizations-to-your-enterprise) desde la pestaña **Organizations** de tu empresa. Pídele que te permita crear repositorios en ella.
+  2. [Transfiere tu repositorio de documentación](https://docs.github.com/en/enterprise-cloud@latest/repositories/creating-and-managing-repositories/transferring-a-repository) a ella. En el repositorio, ve a **Settings**, haz clic en **Transfer** en la parte inferior y elige la nueva organización.
+  3. En Jamdesk, haz clic en **Connect an existing repository** (o **Install GitHub App** en la configuración del proyecto). En GitHub, elige la organización, selecciona **Only select repositories**, elige tu repositorio e instala.
+
+  Si GitHub muestra **Request** en lugar de **Install**, un propietario de la organización recibe un correo para aprobarlo. Haz clic de nuevo en el botón de Jamdesk una vez que lo haga.
+</Accordion>
+
+<Accordion title="Usa una cuenta personal de GitHub">
+  Usa esta opción si tu empresa no puede añadir una organización. Consulta primero con tu administrador de GitHub, ya que la documentación quedará fuera del GitHub de tu empresa.
+
+  1. En una ventana de navegación privada, inicia sesión en GitHub con una cuenta personal (o crea una).
+  2. Crea un repositorio privado vacío en esa cuenta.
+  3. Sube una copia de tu documentación a él. GitHub no puede transferir repositorios fuera de una empresa gestionada, así que se necesita una copia.
+
+     ```bash
+     git remote set-url origin https://jsmith@github.com/jsmith/product-docs.git
+     git push -u origin main
+     ```
+
+     Mantén `jsmith@` en la URL para que Git te pida las credenciales de tu cuenta personal.
+
+  4. En Jamdesk, haz clic en **Connect an existing repository** (o **Install GitHub App** en la configuración del proyecto), instala Jamdesk en tu cuenta personal y elige el repositorio.
+
+  Las cuentas gestionadas no pueden hacer push a repositorios fuera de tu empresa, así que todos los que editen la documentación necesitan una cuenta personal de GitHub. Añádelos al repositorio como colaboradores.
 </Accordion>
 
 ## El repositorio no aparece
 
 Si tu repositorio no aparece en la lista:
 
-<Accordion title="Verifica los permisos del repositorio">
+<Accordion title="Comprueba los permisos del repositorio">
   1. Ve a GitHub → Settings → Applications → Jamdesk
-  2. Verifica que el repositorio tenga el acceso otorgado
-  3. Haz clic en **Configure** para agregar más repositorios
+  2. Verifica que el repositorio tenga el acceso concedido
+  3. Haz clic en **Configure** para añadir más repositorios
 </Accordion>
 
 <Accordion title="Repositorios de organización">
-  Para repos de organización:
+  Para repositorios de organización:
   1. Un administrador de la organización debe aprobar Jamdesk
   2. Ve a la configuración de la organización → Third-party access
   3. Aprueba la solicitud de acceso de Jamdesk
 </Accordion>
 
 <Accordion title="Repositorios privados">
-  Los repos privados requieren autorización de GitHub. Vuelve a autorizar Jamdesk si es necesario.
+  Los repositorios privados requieren autorización de GitHub. Vuelve a autorizar Jamdesk si es necesario.
 </Accordion>
 
 ## Los builds no se activan
 
-Si los pushes no activan builds:
+Si los push no activan builds:
 
 <Steps>
-  <Step title="Verifica el webhook">
-    1. Ve a tu repo en GitHub
-    2. Navega a Settings → Webhooks
+  <Step title="Comprueba el webhook">
+    1. Ve a tu repositorio en GitHub
+    2. Ve a Settings → Webhooks
     3. Busca el webhook de Jamdesk
-    4. Revisa "Recent Deliveries" en busca de errores
+    4. Revisa «Recent Deliveries» en busca de errores
   </Step>
-  <Step title="Verifica el branch">
-    Los builds solo se activan en tu branch configurado. Revisa **Settings** en Jamdesk.
+  <Step title="Verifica la rama">
+    Los builds solo se activan en la rama configurada. Revisa **Settings** en Jamdesk.
   </Step>
-  <Step title="Vuelve a sincronizar la conexión">
+  <Step title="Resincroniza la conexión">
     1. Ve a **Settings** del proyecto en Jamdesk
     2. Haz clic en **Re-sync GitHub**
   </Step>
@@ -90,45 +127,45 @@ Si los pushes no activan builds:
 
 ## Errores de Webhook
 
-### 404 Not Found
+### 404 No encontrado
 
-No se pudo alcanzar el endpoint del webhook.
+No se pudo contactar con el endpoint del webhook.
 
-**Solución:** Vuelve a sincronizar la conexión de GitHub en la configuración del proyecto.
+**Solución:** Resincroniza la conexión de GitHub en la configuración del proyecto.
 
-### 401 Unauthorized
+### 401 No autorizado
 
-Falló la autenticación.
+Error de autenticación.
 
 **Solución:**
 1. Ve a la configuración de tu cuenta de GitHub
-2. Navega a Applications → Authorized OAuth Apps
+2. Ve a Applications → Authorized OAuth Apps
 3. Revoca Jamdesk
-4. Vuelve a autorizar en la configuración de Jamdesk
+4. Vuelve a autorizarlo en la configuración de Jamdesk
 
-### 500 Server Error
+### 500 Error del servidor
 
 Problema temporal de Jamdesk.
 
-**Solución:** Espera unos minutos y vuelve a hacer push, o activa un rebuild manual.
+**Solución:** Espera unos minutos y vuelve a hacer push, o activa una reconstrucción manual.
 
 ## Errores de permisos
 
-**"Repository not found"** durante el build:
+**«Repository not found»** durante el build:
 
-- Es posible que el repositorio haya sido eliminado o renombrado
+- El repositorio puede haber sido eliminado o renombrado
 - Jamdesk puede haber perdido el acceso
 - Vuelve a autorizar tu conexión de GitHub
 
-## Problemas de branch
+## Problemas de rama
 
-### Se está compilando el branch incorrecto
+### Se construye la rama incorrecta
 
-Verifica tu branch configurado en **Settings** → **Repository**.
+Revisa la rama configurada en **Settings** → **Repository**.
 
-### Branch renombrado o eliminado
+### Rama renombrada o eliminada
 
-Actualiza la configuración de tu branch para que coincida con el nuevo nombre del branch.
+Actualiza la configuración de la rama para que coincida con el nuevo nombre.
 
 ## ¿Sigues teniendo problemas?
 
@@ -143,6 +180,6 @@ Actualiza la configuración de tu branch para que coincida con el nuevo nombre d
     Lista completa de códigos de error
   </Card>
   <Card title="Contactar con soporte" icon="headset" href="/es/help/support/contact">
-    Escala problemas sin resolver
+    Escala los problemas sin resolver
   </Card>
 </Columns>

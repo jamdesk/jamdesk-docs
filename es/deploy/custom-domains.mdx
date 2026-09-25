@@ -1,6 +1,6 @@
 ---
 title: Dominios personalizados
-description: Sirve tu documentación desde tu propio dominio en lugar del subdominio *.jamdesk.app predeterminado. Configuración de DNS, SSL y verificación.
+description: Sirve tu documentación desde tu propio dominio, no el subdominio *.jamdesk.app. Configuración DNS, SSL y verificación para subdominios y dominios raíz.
 ---
 
 Sirve tu documentación desde tu propio dominio en lugar del subdominio `*.jamdesk.app` predeterminado.
@@ -8,20 +8,20 @@ Sirve tu documentación desde tu propio dominio en lugar del subdominio `*.jamde
 ## Resumen de la configuración
 
 <Steps>
-  <Step title="Agrega el dominio en el dashboard">
-    Ve a **Settings** → **Domain** de tu proyecto e introduce tu dominio (por ejemplo, `docs.example.com` o `example.com`).
+  <Step title="Agregar un dominio en el dashboard">
+    Ve a **Settings** → **Domain** de tu proyecto e ingresa tu dominio (por ejemplo, `docs.example.com` o `example.com`).
   </Step>
-  <Step title="Configura el DNS">
-    Agrega los registros DNS mostrados en el dashboard a tu proveedor de DNS. Los registros dependen del tipo de dominio (ver más abajo).
+  <Step title="Configurar el DNS">
+    Agrega los registros DNS que se muestran en el dashboard a tu proveedor de DNS. Los registros dependen del tipo de dominio (ver más abajo).
   </Step>
-  <Step title="Verifica y espera">
-    Jamdesk verifica la propiedad y aprovisiona un certificado SSL automáticamente.
+  <Step title="Verificar y esperar">
+    Jamdesk verifica la propiedad y provisiona automáticamente un certificado SSL.
   </Step>
 </Steps>
 
-## Opciones de hospedaje
+## Opciones de alojamiento
 
-Al agregar un dominio, elige tu modo de hospedaje:
+Al agregar un dominio, elige tu modo de alojamiento:
 
 ### Dominio estándar
 
@@ -33,7 +33,7 @@ docs.example.com → acme.jamdesk.app
 
 El DNS apunta a Jamdesk, y los certificados SSL se gestionan automáticamente.
 
-### Hospedar en /docs (basado en proxy)
+### Alojar en /docs (basado en proxy, subruta personalizable)
 
 Tu documentación se sirve en una subruta de tu sitio web existente:
 
@@ -41,10 +41,10 @@ Tu documentación se sirve en una subruta de tu sitio web existente:
 example.com/docs → acme.jamdesk.app/docs
 ```
 
-Configuras un proxy (Cloudflare, Vercel, nginx, etc.) para reenviar las solicitudes de `/docs/*` a Jamdesk. Consulta [Hospedaje en subruta](/es/deploy/subpath-hosting) para guías de configuración.
+`/docs` es el valor predeterminado; puedes elegir cualquier otra subruta de un solo segmento (`/help`, `/guide`, etc.) desde el mismo interruptor. Configuras un proxy (Cloudflare, Vercel, nginx, etc.) para reenviar las solicitudes de tu subruta elegida a Jamdesk. Consulta [Alojamiento por subruta](/es/deploy/subpath-hosting) para ver guías de configuración y las reglas para elegir una subruta.
 
 <Note>
-Activar "Host at a subpath" hace que Jamdesk vuelva a desplegar tu documentación automáticamente, ya que la estructura de URL cambia.
+Activar o desactivar "Host at a subpath", o cambiar la subruta, activa un build automático porque la estructura de la URL cambia.
 </Note>
 
 ## Configuración de DNS
@@ -54,20 +54,20 @@ Los registros que necesitas dependen de si usas un subdominio o un dominio apex 
 ### Subdominios (por ejemplo, docs.example.com)
 
 | Tipo | Nombre | Valor |
-|------|--------|-------|
+|------|------|-------|
 | CNAME | `docs` | `cname.jamdesk.com` |
 | TXT | `_jamdesk.docs` | *(se muestra en el dashboard)* |
 
-El campo "Name" es solo la parte del subdominio. Para `docs.example.com`, introduce `docs`.
+El campo "Nombre" es solo la parte del subdominio. Para `docs.example.com`, ingresa `docs`.
 
 ### Dominios apex (por ejemplo, example.com)
 
 | Tipo | Nombre | Valor |
-|------|--------|-------|
+|------|------|-------|
 | A | `@` | `76.76.21.21` |
 | TXT | `_jamdesk` | *(se muestra en el dashboard)* |
 
-Los dominios apex usan un registro A en lugar de CNAME porque los estándares DNS (RFC 1034) prohíben los registros CNAME en el apex de la zona.
+Los dominios apex usan un registro A en lugar de un CNAME, porque los estándares DNS (RFC 1034) prohíben los registros CNAME en el apex de la zona.
 
 <Note>
 Los cambios de DNS pueden tardar hasta 48 horas en propagarse, aunque la mayoría se completan en minutos. Consulta el estado en [whatsmydns.net](https://www.whatsmydns.net/).
@@ -77,22 +77,22 @@ Los cambios de DNS pueden tardar hasta 48 horas en propagarse, aunque la mayorí
 
 Después de agregar los registros DNS, Jamdesk automáticamente:
 
-1. Detecta tus registros DNS (CNAME o registro A, más TXT)
+1. Detecta tus registros DNS (registro CNAME o A, más TXT)
 2. Verifica la propiedad del dominio mediante el registro TXT
-3. Aprovisiona un certificado SSL mediante Let's Encrypt
+3. Provisiona un certificado SSL mediante Let's Encrypt
 4. Enruta el tráfico hacia tu documentación
 
-Consulta el estado de verificación en **Settings** → **Domain**. El estado se muestra como:
-- **Pending** - Esperando la propagación del DNS
-- **Active** - Dominio verificado y sirviendo tráfico
-- **Needs Attention** - Discrepancia o conflicto de configuración (revisa la notificación por correo)
+Verifica el estado de verificación en **Settings** → **Domain**. El estado se muestra como:
+- **Pendiente** - Esperando la propagación del DNS
+- **Activo** - Dominio verificado y sirviendo tráfico
+- **Requiere atención** - Configuración incorrecta o conflicto (revisa la notificación por correo electrónico)
 - **Error** - Problema de configuración (ver detalles en el dashboard)
 
-Haz clic en **Refresh** en el dashboard para comprobar manualmente el estado de verificación.
+Haz clic en **Refresh** en el dashboard para verificar manualmente el estado de la verificación.
 
 ## Certificados SSL
 
-Los certificados SSL se aprovisionan automáticamente y se renuevan antes de vencer. HTTPS es obligatorio, por lo que las solicitudes HTTP se redirigen a HTTPS.
+Los certificados SSL se provisionan automáticamente y se renuevan antes de su vencimiento. HTTPS es obligatorio, por lo que las solicitudes HTTP se redirigen a HTTPS.
 
 No necesitas configurar los certificados manualmente.
 
@@ -107,7 +107,7 @@ Si prefieres un subdominio como `docs.example.com`, eso también funciona.
 Cada proyecto admite un dominio personalizado. Para varios dominios que apunten a la misma documentación:
 
 1. Configura tu dominio principal en Jamdesk
-2. Configura los dominios adicionales para que redirijan al principal a nivel de DNS/CDN
+2. Configura los dominios adicionales para que redirijan al dominio principal a nivel de DNS/CDN
 
 ## Eliminar un dominio
 
@@ -115,33 +115,33 @@ Para desconectar un dominio personalizado:
 
 1. Ve a **Settings** → **Domain**
 2. Haz clic en **Remove Domain**
-3. Tu documentación sigue accesible en el subdominio `*.jamdesk.app`
+3. Tu documentación sigue siendo accesible en el subdominio `*.jamdesk.app`
 
 <Warning>
-Eliminar un dominio que tenía "Host at a subpath" activado hará que Jamdesk vuelva a desplegar tu documentación para actualizar las rutas de URL.
+Eliminar un dominio que tenía "Host at a subpath" habilitado activará un build para actualizar las rutas de URL. Cualquier subruta personalizada se borra junto con el dominio, así que si vuelves a conectar un dominio más adelante, la documentación vuelve a empezar en `/docs` de forma predeterminada.
 </Warning>
 
 ## Usuarios de Cloudflare
 
 Si usas Cloudflare como tu proveedor de DNS:
 
-1. Establece el estado del proxy en **DNS only** (ícono de nube gris) durante la verificación del dominio
-2. Deja que Vercel gestione el SSL: desactiva "Always Use HTTPS" de Cloudflare para el subdominio de la documentación
-3. Después de completar la verificación, puedes volver a activar el proxy (nube naranja)
+1. Configura el estado del proxy en **DNS only** (icono de nube gris) durante la verificación del dominio
+2. Deja que Vercel gestione el SSL: desactiva "Always Use HTTPS" de Cloudflare para el subdominio de los docs
+3. Una vez que finalice la verificación, puedes volver a habilitar el proxy (nube naranja)
 
 <Note>
-**¿Usas un Cloudflare Worker?** El registro DNS debe estar en modo proxy (nube naranja) para que el Worker funcione. Usa la nube gris solo durante la verificación y luego vuelve a cambiar. Consulta [Configuración de Cloudflare Workers](/es/deploy/cloudflare) para más detalles.
+**¿Usas un Cloudflare Worker?** El registro DNS debe estar en modo proxy (nube naranja) para que el Worker se ejecute. Usa la nube gris solo durante la verificación y luego vuelve a cambiarla. Consulta [Configuración de Cloudflare Workers](/es/deploy/cloudflare) para más detalles.
 </Note>
 
 ## Solución de problemas
 
 | Problema | Solución |
 |-------|----------|
-| El dominio queda atascado en "Pending" | Verifica los registros DNS con `dig` (CNAME para subdominios, A para apex) |
+| Dominio atascado en "Pendiente" | Verifica los registros DNS con `dig` (CNAME para subdominios, A para apex) |
 | Errores de certificado SSL | Asegúrate de que ningún registro CAA bloquee Let's Encrypt |
 | Bucles de redirección | Si usas Cloudflare, configura la nube gris durante la verificación (ver [Usuarios de Cloudflare](#usuarios-de-cloudflare) arriba) |
 | El CNAME no se resuelve | Verifica el registro en el proveedor de DNS, espera la propagación |
-| El dominio ya está en uso | El dominio está registrado en Vercel de una configuración anterior; la verificación suele completarse automáticamente |
+| Dominio ya en uso | El dominio está registrado en Vercel de una configuración anterior; la verificación suele completarse automáticamente |
 
 ### Verificar el DNS con dig
 
@@ -160,21 +160,21 @@ Para diagnósticos detallados, consulta [Problemas de DNS](/es/help/troubleshoot
 
 ## ¿El subdominio jamdesk.app compite con mi dominio en las búsquedas?
 
-No. Una vez que tu dominio personalizado está activo, las páginas servidas directamente desde tu
+No. Una vez que tu dominio personalizado está activo, las páginas que se sirven directamente desde tu
 subdominio `[slug].jamdesk.app` incluyen un enlace canónico que apunta a tu
-dominio, por lo que los motores de búsqueda tratan tu dominio como la única fuente
-de verdad y consolidan allí todas las señales de posicionamiento.
+dominio, por lo que los motores de búsqueda tratan tu dominio como la única fuente de verdad
+y consolidan allí todas las señales de posicionamiento.
 
 ## ¿Qué sigue?
 
 <Columns cols={2}>
   <Card title="Subdominios" icon="sitemap" href="/es/deploy/subdomains">
-    Configura ajustes específicos del subdominio
+    Configurar los ajustes específicos del subdominio
   </Card>
-  <Card title="Alojamiento en subruta" icon="route" href="/es/deploy/subpath-hosting">
-    Hospeda la documentación en example.com/docs
+  <Card title="Alojamiento por subruta" icon="route" href="/es/deploy/subpath-hosting">
+    Alojar la documentación en example.com/docs
   </Card>
-  <Card title="Solución de problemas de DNS" icon="server" href="/es/help/troubleshooting/dns-issues">
-    Diagnostica problemas de configuración de DNS
+  <Card title="Problemas de DNS" icon="server" href="/es/help/troubleshooting/dns-issues">
+    Diagnosticar problemas de configuración DNS
   </Card>
 </Columns>

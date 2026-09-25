@@ -1,13 +1,13 @@
 ---
 title: Fuente Markdown
-description: Obtén el código fuente Markdown de cualquier página añadiendo .md a la URL. Texto estructurado para herramientas de IA, scripts y flujos de contenido.
+description: Accede a la fuente Markdown de cualquier página de documentación añadiendo .md a la URL. Texto estructurado para IA, scripts y pipelines de contenido.
 ---
 
-Las herramientas de IA procesan Markdown de forma más eficiente que el HTML renderizado. Jamdesk pone a disposición el código fuente Markdown sin procesar de cada página añadiendo `.md` a cualquier URL. No se requiere autenticación.
+Las herramientas de IA procesan Markdown de forma más eficiente que el HTML renderizado. Jamdesk pone a disposición el código fuente Markdown en bruto de cada página añadiendo `.md` a cualquier URL. No se requiere autenticación.
 
 ## Extensión de URL `.md`
 
-Añade `.md` a la URL de cualquier página de documentación para obtener el código fuente sin procesar en lugar del HTML renderizado:
+Añade `.md` a la URL de cualquier página de documentación para obtener la fuente en bruto en lugar del HTML renderizado:
 
 ```bash
 # Rendered page
@@ -40,7 +40,7 @@ La respuesta es el archivo fuente exacto de tu repositorio, incluidos el frontma
 
 ### Dominios personalizados
 
-El contenido sin procesar también funciona en dominios personalizados. Usa la misma URL que ven tus lectores, con `.md` añadido:
+El contenido en bruto también funciona en dominios personalizados. Usa la misma URL que ven tus lectores, con `.md` añadido:
 
 ```bash
 # Docs served at root
@@ -50,13 +50,32 @@ curl https://docs.example.com/getting-started.md
 curl https://docs.example.com/docs/getting-started.md
 ```
 
+### Raíz del sitio y raíces de idioma
+
+La raíz del sitio y una raíz de idioma exportan la página que muestran sus versiones HTML: la primera página de tu navegación, o de la navegación de ese idioma. No hay redirección: el Markdown se devuelve en la primera solicitud.
+
+```bash
+# All three return the first navigation page's Markdown
+curl https://acme.jamdesk.app/index.md
+curl -H "Accept: text/markdown" https://acme.jamdesk.app/
+curl https://acme.jamdesk.app/fr.md
+```
+
+Un proyecto con una página `index.mdx` real sigue sirviendo esa página en `/index.md` y en la raíz. Si falta el archivo de la primera página de navegación, la raíz devuelve `404` como cualquier otra página faltante.
+
 ## Formato del contenido
 
-El contenido sin procesar es Markdown extendido con etiquetas de componentes como `<Note>`, `<Steps>` y `<Tabs>`. Los analizadores de Markdown estándar tratarán las etiquetas de componentes como HTML sin procesar. Consulta [conceptos básicos de Markdown](/es/content/mdx-basics) para la referencia completa de la sintaxis.
+El contenido en bruto es Markdown ampliado con etiquetas de componentes como `<Note>`, `<Steps>` y `<Tabs>`. Los analizadores de Markdown estándar tratarán las etiquetas de componentes como HTML sin procesar. Consulta [Conceptos básicos de Markdown](/es/content/mdx-basics) para la referencia completa de la sintaxis.
 
-## Especificaciones de OpenAPI en páginas de referencia de la API
+## Qué exporta una página de endpoint
 
-Cuando obtienes el Markdown de una página de referencia de la API (es decir, una página cuyo frontmatter declara una especificación `api:` u `openapi:`), Jamdesk añade al final un breve pie de página que indica a los agentes de IA dónde encontrar todas las especificaciones de OpenAPI de tu proyecto, agrupadas en una sola descarga:
+Una página `openapi:` casi no tiene contenido propio — el endpoint se genera a partir de tu spec — así que su exportación en Markdown se aplana a partir del spec en su lugar. Un agente que la obtiene recibe el método y la ruta, los parámetros con sus descripciones, los esquemas de solicitud y respuesta, y una sección `## Authentication` que nombra los esquemas de seguridad que requiere la operación: el tipo de esquema, el nombre del encabezado `apiKey`, el formato del bearer y cualquier scope de OAuth 2.
+
+Las alternativas se etiquetan como «Cualquiera de estas», los esquemas que deben enviarse todos juntos aparecen agrupados, y una operación que se excluye explícitamente con `security: []` lo indica en lugar de quedar en silencio. Eso es todo lo necesario para construir una solicitud funcional sin abrir el spec.
+
+## Specs de OpenAPI en páginas de referencia de la API
+
+Cuando obtienes el Markdown de una página de referencia de la API (cuyo frontmatter declara un spec `api:` u `openapi:`), Jamdesk añade un breve pie de página que dirige a los agentes de IA hacia todas las especificaciones OpenAPI de tu proyecto, agrupadas en una sola descarga:
 
 ```markdown
 ---
@@ -64,7 +83,7 @@ Cuando obtienes el Markdown de una página de referencia de la API (es decir, un
 📦 **OpenAPI specs:** Every OpenAPI specification referenced by this documentation is available as a single download — https://acme.jamdesk.app/api-specs.zip
 ```
 
-Es el mismo `api-specs.zip` que ofrece la acción [Descargar especificación de la API](/es/ai/ai-actions#download-api-spec), generado de nuevo en cada solicitud. La idea es ampliar el alcance: un agente que lee la página de un endpoint descubre que puede obtener el contrato completo legible por máquinas en una sola solicitud, en lugar de rastrear cada endpoint. El pie de página solo aparece en las páginas de referencia de la API de proyectos que tienen al menos una especificación; las guías normales no se ven afectadas.
+Es el mismo `api-specs.zip` que ofrece la acción [Descargar la spec de la API](/es/ai/ai-actions#download-api-spec), generado de nuevo en cada solicitud. El objetivo es el alcance: un agente que lee una página de endpoint aprende que puede obtener el contrato completo legible por máquina en una sola solicitud, en lugar de raspar cada endpoint. El pie de página solo aparece en las páginas de referencia de la API de proyectos que tienen al menos un spec; las guías normales no se ven afectadas.
 
 ## Detalles de la respuesta
 
@@ -74,25 +93,25 @@ Es el mismo `api-specs.zip` que ofrece la acción [Descargar especificación de 
 |--------|-------|---------|
 | `Content-Type` | `text/markdown; charset=utf-8` | Identifica el contenido como Markdown |
 | `Cache-Control` | `public, max-age=3600, s-maxage=86400` | Almacenado en caché del navegador 1 hora, en caché de CDN 1 día (URLs `.md`) |
-| `Vary` | `Accept` | La misma URL entrega HTML o Markdown según el encabezado `Accept` de la solicitud |
+| `Vary` | `Accept` | La misma URL sirve HTML o Markdown según el encabezado `Accept` de la solicitud |
 | `X-Robots-Tag` | `noindex, nofollow` | Evita la indexación por motores de búsqueda |
 | `Content-Disposition` | `inline` | Se muestra en el navegador en lugar de descargarse |
-| `X-Frame-Options` | `DENY` | Evita la inserción en iframes |
+| `X-Frame-Options` | `DENY` | Evita la incrustación en iframes |
 | `Content-Security-Policy` | `default-src 'none'` | Bloquea la ejecución de scripts |
 
-Solicitar la URL canónica de una página (sin `.md`) con el encabezado `Accept: text/markdown` devuelve el mismo Markdown, pero con `Cache-Control: private, no-store`. Comparte la clave de caché con la página HTML, por lo que esa respuesta nunca se almacena en caché.
+Solicitar la URL canónica de una página (sin `.md`) con el encabezado `Accept: text/markdown` devuelve el mismo Markdown, pero con `Cache-Control: private, no-store`. Comparte una clave de caché con la página HTML, por lo que esa respuesta nunca se almacena en caché.
 
 ### Respuestas de error
 
 | Status | Meaning |
 |--------|---------|
-| `308` | Redirección por barra diagonal final (por ejemplo, `/intro.md/` redirige a `/intro.md`) |
-| `404` | La página no existe (devuelve un error breve de texto sin formato, no Markdown) |
+| `308` | Redirección de barra final (por ejemplo, `/intro.md/` redirige a `/intro.md`) |
+| `404` | La página no existe (devuelve un breve error de texto plano, no Markdown). La raíz del sitio y las raíces de idioma se resuelven a la primera página de navegación y solo devuelven 404 cuando el archivo de esa página también falta |
 | `500` | Error del servidor (devuelve una página de error HTML) |
 
 ## Uso con herramientas de IA
 
-Las URLs de código fuente Markdown combinan bien con el [Servidor MCP](/es/ai/mcp-server). Usa `searchDocs` para encontrar páginas por palabra clave y, después, obtén el código fuente sin procesar de la página encontrada:
+Las URLs de fuente Markdown combinan bien con el [servidor MCP](/es/ai/mcp-server). Usa `searchDocs` para encontrar páginas por palabra clave, y luego obtén la fuente en bruto de la página encontrada:
 
 ```bash
 # 1. Search for a topic via MCP
@@ -104,7 +123,7 @@ curl -X POST https://acme.jamdesk.app/_mcp \
 curl https://acme.jamdesk.app/guides/authentication.md
 ```
 
-Esto da a las herramientas de IA acceso tanto a la búsqueda como a la fuente completa de tu documentación. Ambas URLs también funcionan en un dominio personalizado activo: `https://docs.acme.com/_mcp` y `https://docs.acme.com/guides/authentication.md`.
+Esto le da a las herramientas de IA tanto la búsqueda como el acceso completo a la fuente de tu documentación. Ambas URLs también funcionan en un dominio personalizado activo — `https://docs.acme.com/_mcp` y `https://docs.acme.com/guides/authentication.md`.
 
 ## ¿Qué sigue?
 

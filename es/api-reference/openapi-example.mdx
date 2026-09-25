@@ -1,57 +1,78 @@
 ---
 title: Ejemplo de OpenAPI
-description: Visualiza un endpoint generado en vivo desde OpenAPI y aprende cómo Jamdesk renderiza solicitudes, respuestas y autenticación desde tu spec.
+description: Descubre una página de endpoint generada en vivo con OpenAPI y aprende cómo Jamdesk muestra solicitudes, respuestas y autenticación desde tu spec.
 openapi: /openapi/example-api.yaml POST /tickets
 ---
 
-Esta página muestra un endpoint en vivo generado a partir de una [especificación OpenAPI](https://spec.openapis.org/oas/latest.html). El esquema de solicitud, los modelos de respuesta y los ejemplos de código del panel derecho se generan automáticamente desde el spec, sin necesidad de redacción manual.
+Esta página muestra un endpoint en vivo generado a partir de una [especificación OpenAPI](https://spec.openapis.org/oas/latest.html). El esquema de solicitud, los modelos de respuesta y los ejemplos de código del panel derecho se generan automáticamente a partir de la spec, sin necesidad de redacción manual.
 
 <Info>
-Este ejemplo usa la API de soporte de Acme. Actualiza `api.openapi` en tu `docs.json` para apuntar a tu propio archivo spec y generar endpoints reales.
+Este ejemplo utiliza la API Acme Support. Actualiza `api.openapi` en tu `docs.json` para apuntar a tu propio archivo de spec y generar endpoints reales.
 </Info>
 
 <Info>
-**¿Documentación en varios idiomas?** Proporciona un archivo `<spec>.<lang>.<ext>` junto a tu spec fuente (p. ej., `example-api.fr.yaml`) y Jamdesk renderiza la versión traducida cuando los usuarios visitan la página bajo `/fr/...`. Consulta [Traducir specs de OpenAPI](/es/setup/languages#traducción-de-especificaciones-openapi).
+**¿Documentación multilingüe?** Proporciona un archivo `<spec>.<lang>.<ext>` junto a tu spec de origen (por ejemplo, `example-api.fr.yaml`) y Jamdesk muestra la versión traducida cuando los usuarios ven la página en `/fr/...`. Consulta [Traducción de especificaciones OpenAPI](/es/setup/languages#traducir-especificaciones-de-openapi).
 </Info>
 
 <Tip>
-Esta página tiene el [API Playground](/es/api-reference/playground) habilitado. Haz clic en **Try it** en el endpoint anterior para probar la API en vivo.
+Esta página tiene habilitado el [API Playground](/es/api-reference/playground). Haz clic en **Try it** en el endpoint anterior para probar la API en vivo.
 </Tip>
 
 ## Qué se genera
 
-Con una sola línea `openapi` en el frontmatter, Jamdesk genera automáticamente:
+A partir de una sola línea de frontmatter `openapi`, Jamdesk genera automáticamente:
 
-- Un badge de endpoint que muestra el método y la ruta con codificación de color
-- Documentación de parámetros de ruta, consulta, cabecera y cuerpo
-- Esquemas de solicitud y respuesta, incluidos objetos anidados y arrays
+- Una insignia de endpoint que muestra el método y la ruta con codificación por colores
+- Documentación de parámetros para los parámetros de ruta, consulta, encabezado y cuerpo
+- Esquemas de solicitud y respuesta, incluidos los objetos anidados y los arrays
 - Ejemplos de código en cURL, Python, JavaScript, Go, Ruby, C#, Java, Rust y PHP (configurable mediante `api.examples.languages`)
-- Detalles de autenticación extraídos de los esquemas de seguridad del spec
+- Detalles de autenticación extraídos de los esquemas de seguridad de la spec
 
-Todas las referencias `$ref` en tu spec se resuelven automáticamente, por lo que puedes organizar los esquemas con `components/schemas` de la forma habitual.
+Todas las referencias `$ref` de tu spec se resuelven automáticamente, por lo que puedes organizar los esquemas con `components/schemas` como de costumbre.
+
+Las descripciones de tu spec se renderizan como Markdown, no como texto sin formato: las descripciones de operación, parámetro, cuerpo de solicitud, respuesta y esquema admiten el mismo **negrita**, `code`, listas, enlaces y tablas GFM que usarías en una página `.mdx`.
 
 ## Configurar OpenAPI
 
-Coloca tu spec OpenAPI 3.x (YAML o JSON) en el directorio `openapi/`, regístralo en `docs.json` bajo `api.openapi` y agrega `openapi: /openapi/your-spec.yaml METHOD /path` al frontmatter de cualquier página. Consulta la [guía de configuración de OpenAPI](/es/setup/directory-structure#openapi) para más detalles.
+Coloca tu spec de OpenAPI 3.x (YAML o JSON) en el directorio `openapi/`, regístrala en `docs.json` bajo `api.openapi` y luego añade `openapi: /openapi/your-spec.yaml METHOD /path` al frontmatter de cualquier página. Consulta la [guía de configuración de OpenAPI](/es/setup/directory-structure#openapi) para más detalles.
+
+## Generar una página para cada operación
+
+En lugar de crear una página por endpoint, apunta una pestaña de navegación a la spec y deja que Jamdesk construya toda la referencia:
+
+```json docs.json
+{
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "API Reference",
+        "openapi": { "source": "/openapi/api.yaml", "generate": true }
+      }
+    ]
+  }
+}
+```
+
+Cada operación obtiene una página y la barra lateral se agrupa por tag. Los archivos `.mdx` confirmados tienen prioridad en caso de colisión de slug, por lo que puedes adoptar este enfoque una página a la vez, y cambiar el nombre de una ruta en tu spec redirige la URL antigua en lugar de romperla. Consulta [navigation openapi](/es/config/docs-json-reference#navigation-openapi-páginas-generadas) para conocer todas las reglas y los límites actuales.
 
 <Tip>
-  ¿Escribes tu spec en YAML? Ejecútalo a través del [Validador de YAML](https://jamdesk.com/utilities/yaml-validator) gratuito para detectar errores de indentación y sintaxis antes de que el build lo procese.
+  ¿Escribes tu spec en YAML? Pásala por el [Validador YAML](https://jamdesk.com/utilities/yaml-validator) gratuito para detectar errores de indentación y sintaxis antes de que el build la analice.
 </Tip>
 
 ## Páginas relacionadas
 
 <Columns cols={2}>
   <Card title="API Playground" icon="flask-vial" href="/es/api-reference/playground">
-    Habilita pruebas interactivas de API en tus páginas de endpoints
+    Habilita las pruebas interactivas de la API en tus páginas de endpoint
   </Card>
   <Card title="Ejemplos de solicitud/respuesta" icon="code" href="/es/api-reference/request-response-examples">
-    Ejemplo de endpoint redactado manualmente con componentes MDX
+    Ejemplo de endpoint redactado a mano usando componentes MDX
   </Card>
 </Columns>
 
 <Columns cols={2}>
   <Card title="Configuración de OpenAPI" icon="file-code" href="/es/setup/directory-structure#openapi">
-    Dónde almacenar y referenciar archivos OpenAPI
+    Dónde almacenar y hacer referencia a los archivos OpenAPI
   </Card>
   <Card title="Referencia de docs.json" icon="file-lines" href="/es/config/docs-json-reference">
     Referencia de configuración completa, incluido api.openapi
