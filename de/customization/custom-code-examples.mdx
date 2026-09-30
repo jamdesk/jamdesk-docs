@@ -1,0 +1,281 @@
+---
+title: CSS- und JavaScript-Beispiele
+description: Gestalten Sie den Header mit eigenem Logo und Farben und ergänzen Sie per CSS und JavaScript eine schwebende Ask-AI-Schaltfläche, die Jamdesk-Updates übersteht.
+---
+
+Diese Seite zeigt ein Beispiel auf einer Demo-Website namens Harbor. Der Header erhält Harbor-Logo und -Farben sowie zwei zusätzliche Links. Eine schwebende **Ask AI**-Schaltfläche befindet sich unten rechts. Sie können die Dateien unverändert kopieren und anschließend Ihr eigenes Logo und Ihre eigenen Farben einsetzen.
+
+Die Screenshots zeigen die Benutzeroberfläche auf Englisch.
+
+<Frame>
+  <img src="/images/custom-code/branded-header-ask-ai.webp" alt="Dokumentationswebsite mit marineblauem Header, orangefarbener Linie darunter, pillenförmigen Search- und Ask-AI-Schaltflächen sowie einer orangefarbenen Ask-AI-Schaltfläche unten rechts" />
+</Frame>
+
+## Was an diesem Header anders ist
+
+Im Standardzustand fügt sich der Jam-Header in die Seite ein. Im hellen Modus ist er durchsichtig und zeigt den sanften Farbverlauf dahinter. Im dunklen Modus hat er denselben fast schwarzen Farbton wie der Rest der Seite. Die Ecken seiner Schaltflächen sind leicht abgerundet. Die Harbor-Version ändert vier Dinge:
+
+- In hellem und dunklem Modus ist der Header ein marineblauer Balken, der sich von der Seite abhebt.
+- Entlang der unteren Kante verläuft eine dünne orangefarbene Linie.
+- Das Suchfeld sowie **Ask AI** und **Book a demo** sind vollständig abgerundete Pillen.
+- Harbor ersetzt das Standardlogo durch sein weißes Logo.
+
+Die Änderungen bestehen aus CSS und einer Logodatei. Der Header von Jamdesk selbst bleibt unverändert. Suche, Ask AI, der Theme-Umschalter und das mobile Menü funktionieren also wie zuvor.
+
+Das Beispiel verwendet diese Dateien in Ihrem Projekt:
+
+```bash
+harbor-docs/
+├── docs.json              ← logo, header links and brand colors
+├── style.css              ← header and button styles
+├── script.js              ← creates the Ask AI button
+└── images/
+    └── harbor-logo.svg    ← white logo for the navy header
+```
+
+## Mit docs.json beginnen
+
+Für den ersten Teil benötigen Sie keinen Code. Logo, Farben, Header-Links und die Schaltfläche **Book a demo** werden alle in `docs.json` festgelegt:
+
+```json docs.json
+{
+  "logo": {
+    "light": "/images/harbor-logo.svg",
+    "dark": "/images/harbor-logo.svg"
+  },
+  "colors": {
+    "primary": "#C2410C",
+    "light": "#D9480F",
+    "dark": "#9A3412"
+  },
+  "navbar": {
+    "links": [
+      { "label": "Blog", "href": "https://example.com/blog" },
+      { "label": "Status", "href": "https://example.com/status" }
+    ],
+    "primary": {
+      "type": "button",
+      "label": "Book a demo",
+      "href": "https://example.com/demo"
+    }
+  }
+}
+```
+
+Das Logo ist weiß. Da der Header sowohl im hellen als auch im dunklen Modus marineblau ist, funktioniert dieselbe Datei in beiden Modi.
+
+Jamdesk verwendet Ihre `primary`-Farbe für die Schaltfläche **Book a demo**, das aktive Element in der Seitenleiste und Links. So ist das Orange auf der ganzen Website zu sehen. Im dunklen Modus wird stattdessen die Farbe `light` verwendet. Wählen Sie einen ausreichend dunklen Farbton, damit weißer Text auf der Schaltfläche gut lesbar bleibt. Unter [Navigationslinks](/de/customization/branding#navigationslinks) finden Sie alle Optionen für die Navigationsleiste.
+
+<Note>
+Links in der Navigationsleiste werden bei Tablet- und Desktop-Bildschirmbreiten in Themes angezeigt, bei denen das Logo im Header steht (Jam, Nebula, Halo und Dusk). Bei Pulsar steht das Logo in der Seitenleiste und auf dem Desktop gibt es keinen Header-Balken. Daher werden die folgenden Header-Stile dort nicht angezeigt.
+</Note>
+
+## Den Header gestalten
+
+Text, Rahmen, Suchfeld und abgerundete Ecken des Headers werden über CSS-Variablen festgelegt. Wenn Sie diese Variablen innerhalb des Headers setzen, ändert sich nur der Header:
+
+```css style.css
+/* header[data-has-tabs] matches the site header only.
+   A plain `header` selector would also match the title
+   block at the top of every page. */
+header[data-has-tabs] {
+  --header-top: #0f1d3a;
+  --header-bottom: #1b2f5b;
+  --header-stripe: #f97316;
+  --color-text-primary: #ffffff;
+  --color-text-secondary: #cbd5e1;
+  --color-text-tertiary: #cbd5e1;
+  --color-text-muted: #94a3b8;
+  --color-bg-primary: #0f1d3a;
+  --color-bg-secondary: rgba(255, 255, 255, 0.08);
+  --color-bg-hover: rgba(255, 255, 255, 0.16);
+  --color-border: rgba(255, 255, 255, 0.16);
+  /* Rounds the search box, Ask AI and buttons into pills */
+  --radius-md: 999px;
+  --radius-lg: 999px;
+}
+
+html.dark header[data-has-tabs] {
+  --header-top: #0a1328;
+  --header-bottom: #13234a;
+  --color-bg-primary: #0a1328;
+}
+
+/* Some themes keep the header background transparent on
+   purpose, so paint the color on a layer behind it. */
+header[data-has-tabs]::before {
+  content: "";
+  position: absolute;
+  inset: 0 -24px; /* reach past the 16-24px page gutter */
+  z-index: -1;
+  background: linear-gradient(
+    90deg, var(--header-top), var(--header-bottom)
+  );
+  border-bottom: 3px solid var(--header-stripe);
+}
+
+/* The sparkle icon uses the accent color, which is hard to
+   see on navy, so give it the stripe color instead */
+header[data-has-tabs] .fa-sparkles {
+  color: #fdba74;
+}
+```
+
+Die marineblaue Farbe wird auf eine `::before`-Ebene gelegt, weil das Jam-Theme den `background` des Headers mit `!important` auf `none` setzt. Eine normale `background`-Regel für den Header würde nicht greifen. Die Ebene liegt hinter dem Inhalt des Headers und funktioniert in jedem Theme.
+
+Wenn Sie `--radius-md` und `--radius-lg` auf `999px` setzen, werden die Schaltflächen im Header pillenförmig. Die Änderung gilt innerhalb von `header[data-has-tabs]`, sodass Karten und Codeblöcke auf der Seite ihre üblichen Ecken behalten.
+
+Das **Ask AI**-Symbol im Header verwendet Ihre Akzentfarbe, die auf Marineblau schwer zu erkennen ist. Die letzte Regel färbt es hellorange.
+
+Jamdesk fügt im dunklen Modus die Klasse `dark` zu `<html>` hinzu. Der Block `html.dark` macht das Marineblau dort daher etwas dunkler:
+
+<Frame>
+  <img src="/images/custom-code/branded-header-dark.webp" alt="Dieselbe Dokumentationswebsite im dunklen Modus mit etwas dunklerem marineblauem Header und orangefarbener Ask-AI-Schaltfläche in der Ecke" />
+</Frame>
+
+## Eine schwebende Ask-AI-Schaltfläche hinzufügen
+
+Ihr Skript fügt der Seite ein normales `<button>`-Element hinzu. Beim Klicken wird <kbd>Ctrl</kbd>+<kbd>I</kbd> gesendet, die Tastenkombination zum Öffnen und Schließen des Chatfensters. Die Schaltfläche bewirkt also dasselbe wie **Ask AI** im Header.
+
+```javascript script.js
+(function () {
+  if (document.getElementById('ask-ai-fab')) return;
+
+  var button = document.createElement('button');
+  button.id = 'ask-ai-fab';
+  button.type = 'button';
+
+  // Jamdesk loads Font Awesome, so its icons are available here
+  var icon = document.createElement('i');
+  icon.className = 'fa-solid fa-sparkles';
+  icon.setAttribute('aria-hidden', 'true');
+  button.append(icon, ' Ask AI');
+
+  button.addEventListener('click', function () {
+    // Same as pressing Ctrl+I / Cmd+I: toggles the chat panel
+    var shortcut = { key: 'i', ctrlKey: true, bubbles: true };
+    document.dispatchEvent(new KeyboardEvent('keydown', shortcut));
+  });
+
+  document.body.appendChild(button);
+})();
+```
+
+Fügen Sie anschließend die Stile für die Schaltfläche zu `style.css` hinzu:
+
+```css style.css
+#ask-ai-fab {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 40; /* below the header, search and mobile menu */
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 18px;
+  border: 0;
+  border-radius: 999px;
+  background: #c2410c;
+  color: #fff;
+  font: inherit;
+  font-weight: 600;
+  box-shadow: 0 6px 20px rgba(15, 29, 58, 0.25);
+  cursor: pointer;
+}
+
+#ask-ai-fab:hover {
+  background: #9a3412;
+}
+
+#ask-ai-fab:focus-visible {
+  outline: 2px solid #f97316;
+  outline-offset: 2px;
+}
+
+/* Hide the button while the chat panel is open. On mobile
+   the closed panel stays in the page with data-open="false",
+   so exclude that case. */
+body:has([data-chat-panel]:not([data-open="false"])) #ask-ai-fab {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  #ask-ai-fab {
+    right: 16px;
+    bottom: 16px;
+  }
+}
+```
+
+Auf einem Smartphone ist die Schaltfläche 16px von den Rändern entfernt. Wenn sich der Chat öffnet, nimmt er den größten Teil des Bildschirms ein. Die Schaltfläche wird ausgeblendet, bis der Chat wieder geschlossen wird:
+
+<Frame>
+  <img src="/images/custom-code/ask-ai-button-mobile.webp" alt="Ansicht der Dokumentationswebsite auf einem Smartphone mit marineblauem Header und orangefarbener Ask-AI-Schaltfläche unten rechts" style={{ maxWidth: '375px' }} />
+</Frame>
+
+Der KI-Chat muss aktiviert sein, damit die Schaltfläche funktioniert. Wenn `chat.enabled` in `docs.json` auf `false` gesetzt ist, bewirkt ein Klick nichts. Lassen Sie die Schaltfläche in diesem Fall weg.
+
+Wenn Sie außerdem ein Support-Widget wie Crisp oder Intercom verwenden, befindet es sich wahrscheinlich ebenfalls unten rechts. Damit sich die beiden nicht überlagern, verwenden Sie für `#ask-ai-fab` `left: 24px` statt `right`, oder erhöhen Sie den Wert von `bottom`, damit die Schaltfläche über dem Widget sitzt.
+
+## Code nach jedem Seitenwechsel ausführen
+
+Ihr Skript wird einmal ausgeführt, wenn ein Besucher die Website zum ersten Mal öffnet. Wenn anschließend ein Link in der Dokumentation angeklickt wird, wird der Seiteninhalt ohne Neuladen ausgetauscht. Das Skript wird dann nicht erneut ausgeführt. Die Ask-AI-Schaltfläche ist davon nicht betroffen, da sie an `<body>` angehängt ist, das bestehen bleibt.
+
+Wenn Ihr Code den Seiteninhalt ausliest oder ändert, muss er erkennen, wann sich die Seite ändert. Dieses Snippet beobachtet die Hauptspalte und prüft, ob sich die URL geändert hat. Fügen Sie es in dieselbe `script.js`-Datei unter dem Code für die Schaltfläche ein:
+
+```javascript script.js
+(function () {
+  var lastPath = location.pathname;
+  var main = document.getElementById('main-content') || document.body;
+
+  function onPageChange() {
+    // Your per-page code goes here
+    console.log('Now on', location.pathname);
+  }
+
+  new MutationObserver(function () {
+    if (location.pathname === lastPath) return;
+    lastPath = location.pathname;
+    onPageChange();
+  }).observe(main, { childList: true, subtree: true });
+})();
+```
+
+`onPageChange` wird bei jeder neuen Seite einmal ausgeführt – unabhängig davon, ob der Besucher auf einen Link in der Seitenleiste klickt, die Suche verwendet oder die Zurück-Schaltfläche betätigt.
+
+## Zu verwendende Selektoren
+
+Die Klassennamen von Jamdesk stammen aus Tailwind und können sich mit jeder Version ändern. Auch Schaltflächenbeschriftungen können sich ändern, da sie auf mehrsprachigen Websites übersetzt werden. Verwenden Sie stattdessen diese Selektoren:
+
+| Selektor | Entspricht |
+|----------|---------|
+| `html.dark` | Die Seite bei aktiviertem dunklem Modus |
+| `body[data-theme="jam"]` | Das aktive Theme anhand seines Namens (`jam`, `nebula`, `pulsar`, `halo`, `dusk`) |
+| `header[data-has-tabs]` | Dem Website-Header |
+| `#main-content` | Der Hauptspalte mit der Seite und ihrem Inhaltsverzeichnis |
+| `#content-scroll-container` | Der Inhaltsspalte der Seite |
+| `article .prose` | Dem Text der aktuellen Seite |
+| `[data-chat-panel]` | Dem KI-Chatfenster |
+| `[data-theme-toggle]` | Dem Umschalter für hellen, dunklen oder Systemmodus |
+| `body[data-jd-ready="true"]` | Wird gesetzt, sobald die erste Seite fertig geladen ist |
+
+<Warning>
+Verschieben Sie keine Jamdesk-eigenen Elemente in andere Container und blenden Sie sie nicht mit Skripten aus. Jamdesk zeichnet Teile der Seite neu, wenn Besucher darin navigieren. Ein verschobenes Element kann daher an seine ursprüngliche Position zurückspringen oder die Navigation beeinträchtigen. Fügen Sie eigene Elemente stattdessen neben den Jamdesk-Elementen ein, wie es bei der Ask-AI-Schaltfläche der Fall ist.
+</Warning>
+
+## Änderungen testen
+
+`jamdesk dev` zeigt Ihr CSS an, führt aber kein benutzerdefiniertes JavaScript aus. Der KI-Chat funktioniert nur auf Ihrer veröffentlichten Website. Um das Skript lokal auszuprobieren, fügen Sie es in der Browserkonsole der Vorschaudseite ein. Die Schaltfläche wird angezeigt, öffnet den Chat aber erst nach der Veröffentlichung.
+
+Prüfen Sie das Ergebnis auf einem Smartphone-Bildschirm mit einer Breite von 375px und im dunklen Modus, nicht nur auf dem Desktop. Bei diesen Einstellungen kommt es häufig zu Problemen mit Header-Farben und fixierten Schaltflächen.
+
+## Wie geht es weiter?
+
+<Columns cols={2}>
+  <Card title="Eigenes CSS" icon="paintbrush" href="/de/customization/custom-css">
+    Speicherort und Ladeverhalten von CSS-Dateien
+  </Card>
+  <Card title="Eigenes JavaScript" icon="code" href="/de/customization/custom-javascript">
+    Laden von Skripten, Dateireihenfolge und Einschränkungen
+  </Card>
+</Columns>

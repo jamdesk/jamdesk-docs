@@ -1,0 +1,282 @@
+---
+title: Esempi di CSS e JavaScript
+description: Personalizza logo e colori dell’intestazione e aggiungi un pulsante mobile Ask AI con CSS e JavaScript compatibili con gli aggiornamenti di Jamdesk.
+---
+
+Questa pagina realizza un esempio su un sito dimostrativo chiamato Harbor. L’intestazione usa il logo e i colori di Harbor e include due link aggiuntivi; un pulsante **Ask AI** mobile si trova nell’angolo in basso a destra. Puoi copiare i file così come sono e poi inserire il tuo logo e i tuoi colori.
+
+Gli screenshot mostrano l'interfaccia in inglese.
+
+<Frame>
+  <img src="/images/custom-code/branded-header-ask-ai.webp" alt="Sito di documentazione con intestazione blu navy, una linea arancione sotto, pulsanti Search e Ask AI a forma di pillola e un pulsante Ask AI arancione nell’angolo in basso a destra" />
+</Frame>
+
+## Cosa cambia in questa intestazione
+
+Di default, l’intestazione di Jam si integra con la pagina. In modalità chiara è trasparente e lascia intravedere il gradiente tenue sullo sfondo; in modalità scura ha lo stesso colore quasi nero del resto della pagina. I pulsanti hanno angoli leggermente arrotondati. La versione Harbor apporta quattro modifiche:
+
+- È una barra blu navy sia in modalità chiara sia in modalità scura, così risalta rispetto alla pagina.
+- Una sottile linea arancione corre lungo il bordo inferiore.
+- La casella di ricerca, **Ask AI** e **Book a demo** sono pillole completamente arrotondate.
+- Il logo bianco di Harbor sostituisce quello predefinito.
+
+Le modifiche richiedono CSS e un file del logo. L’intestazione di Jamdesk rimane invariata, quindi ricerca, Ask AI, selettore del tema e menu mobile continuano a funzionare come prima.
+
+L’esempio usa questi file nel progetto:
+
+```bash
+harbor-docs/
+├── docs.json              ← logo, header links and brand colors
+├── style.css              ← header and button styles
+├── script.js              ← creates the Ask AI button
+└── images/
+    └── harbor-logo.svg    ← white logo for the navy header
+```
+
+## Inizia con docs.json
+
+Per la prima parte non serve scrivere codice. Il logo, i colori, i link dell’intestazione e il pulsante **Book a demo** vanno tutti in `docs.json`:
+
+```json docs.json
+{
+  "logo": {
+    "light": "/images/harbor-logo.svg",
+    "dark": "/images/harbor-logo.svg"
+  },
+  "colors": {
+    "primary": "#C2410C",
+    "light": "#D9480F",
+    "dark": "#9A3412"
+  },
+  "navbar": {
+    "links": [
+      { "label": "Blog", "href": "https://example.com/blog" },
+      { "label": "Status", "href": "https://example.com/status" }
+    ],
+    "primary": {
+      "type": "button",
+      "label": "Book a demo",
+      "href": "https://example.com/demo"
+    }
+  }
+}
+```
+
+Il logo è bianco. Poiché l’intestazione è blu navy sia in modalità chiara sia in modalità scura, lo stesso file va bene per entrambe.
+
+Jamdesk usa il colore `primary` per il pulsante **Book a demo**, l’elemento attivo della barra laterale e i link, così l’arancione è visibile in tutto il sito. In modalità scura viene usato il colore `light`. Scegli una tonalità abbastanza scura da mantenere leggibile il testo bianco sul pulsante. Per tutte le opzioni della barra di navigazione, consulta [Link di navigazione](/it/customization/branding#link-di-navigazione).
+
+<Note>
+I link della barra di navigazione sono visibili alle larghezze da tablet e desktop nei temi che collocano il logo nell’intestazione (Jam, Nebula, Halo e Dusk). Pulsar colloca il logo nella barra laterale e non mostra una barra d’intestazione su desktop, quindi gli stili dell’intestazione qui sotto non saranno visibili.
+</Note>
+
+## Personalizza l’intestazione
+
+Il testo, i bordi, la casella di ricerca e gli angoli arrotondati dell’intestazione dipendono da variabili CSS. Se imposti queste variabili all’interno dell’intestazione, modifichi solo quest’ultima:
+
+```css style.css
+/* header[data-has-tabs] matches the site header only.
+   A plain `header` selector would also match the title
+   block at the top of every page. */
+header[data-has-tabs] {
+  --header-top: #0f1d3a;
+  --header-bottom: #1b2f5b;
+  --header-stripe: #f97316;
+  --color-text-primary: #ffffff;
+  --color-text-secondary: #cbd5e1;
+  --color-text-tertiary: #cbd5e1;
+  --color-text-muted: #94a3b8;
+  --color-bg-primary: #0f1d3a;
+  --color-bg-secondary: rgba(255, 255, 255, 0.08);
+  --color-bg-hover: rgba(255, 255, 255, 0.16);
+  --color-border: rgba(255, 255, 255, 0.16);
+  /* Rounds the search box, Ask AI and buttons into pills */
+  --radius-md: 999px;
+  --radius-lg: 999px;
+}
+
+html.dark header[data-has-tabs] {
+  --header-top: #0a1328;
+  --header-bottom: #13234a;
+  --color-bg-primary: #0a1328;
+}
+
+/* Some themes keep the header background transparent on
+   purpose, so paint the color on a layer behind it. */
+header[data-has-tabs]::before {
+  content: "";
+  position: absolute;
+  inset: 0 -24px; /* reach past the 16-24px page gutter */
+  z-index: -1;
+  background: linear-gradient(
+    90deg, var(--header-top), var(--header-bottom)
+  );
+  border-bottom: 3px solid var(--header-stripe);
+}
+
+/* The sparkle icon uses the accent color, which is hard to
+   see on navy, so give it the stripe color instead */
+header[data-has-tabs] .fa-sparkles {
+  color: #fdba74;
+}
+```
+
+Il colore blu navy viene applicato a un livello `::before` perché il tema Jam imposta lo `background` dell’intestazione su `none` con `!important`. Una normale regola `background` sull’intestazione non avrebbe effetto. Il livello si trova dietro al contenuto dell’intestazione e funziona con tutti i temi.
+
+Impostando `--radius-md` e `--radius-lg` su `999px`, i pulsanti dell’intestazione diventano pillole. La modifica è limitata a `header[data-has-tabs]`, quindi le schede e i blocchi di codice della pagina mantengono gli angoli abituali.
+
+L’icona **Ask AI** nell’intestazione usa il colore principale, che è difficile da vedere sul blu navy. L’ultima regola la rende arancione chiaro.
+
+In modalità scura Jamdesk aggiunge la classe `dark` a `<html>`, quindi il blocco `html.dark` rende il blu navy leggermente più scuro:
+
+<Frame>
+  <img src="/images/custom-code/branded-header-dark.webp" alt="Lo stesso sito di documentazione in modalità scura, con un’intestazione blu navy leggermente più scura e il pulsante Ask AI arancione nell’angolo" />
+</Frame>
+
+## Aggiungi un pulsante Ask AI mobile
+
+Lo script aggiunge alla pagina un normale `<button>`. Quando viene cliccato, invia <kbd>Ctrl</kbd>+<kbd>I</kbd>, la scorciatoia da tastiera che apre e chiude il pannello della chat, ottenendo lo stesso risultato del pulsante **Ask AI** nell’intestazione.
+
+```javascript script.js
+(function () {
+  if (document.getElementById('ask-ai-fab')) return;
+
+  var button = document.createElement('button');
+  button.id = 'ask-ai-fab';
+  button.type = 'button';
+
+  // Jamdesk loads Font Awesome, so its icons are available here
+  var icon = document.createElement('i');
+  icon.className = 'fa-solid fa-sparkles';
+  icon.setAttribute('aria-hidden', 'true');
+  button.append(icon, ' Ask AI');
+
+  button.addEventListener('click', function () {
+    // Same as pressing Ctrl+I / Cmd+I: toggles the chat panel
+    var shortcut = { key: 'i', ctrlKey: true, bubbles: true };
+    document.dispatchEvent(new KeyboardEvent('keydown', shortcut));
+  });
+
+  document.body.appendChild(button);
+})();
+```
+
+Aggiungi quindi gli stili del pulsante a `style.css`:
+
+```css style.css
+#ask-ai-fab {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 40; /* below the header, search and mobile menu */
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 18px;
+  border: 0;
+  border-radius: 999px;
+  background: #c2410c;
+  color: #fff;
+  font: inherit;
+  font-weight: 600;
+  box-shadow: 0 6px 20px rgba(15, 29, 58, 0.25);
+  cursor: pointer;
+}
+
+#ask-ai-fab:hover {
+  background: #9a3412;
+}
+
+#ask-ai-fab:focus-visible {
+  outline: 2px solid #f97316;
+  outline-offset: 2px;
+}
+
+/* Hide the button while the chat panel is open. On mobile
+   the closed panel stays in the page with data-open="false",
+   so exclude that case. */
+body:has([data-chat-panel]:not([data-open="false"])) #ask-ai-fab {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  #ask-ai-fab {
+    right: 16px;
+    bottom: 16px;
+  }
+}
+```
+
+Su uno smartphone il pulsante si trova a 16px dai bordi. Quando si apre la chat, occupa gran parte dello schermo e il pulsante resta nascosto finché la chat non viene chiusa:
+
+<Frame>
+  <img src="/images/custom-code/ask-ai-button-mobile.webp" alt="Vista del sito di documentazione su uno schermo di telefono, con l’intestazione blu navy e il pulsante Ask AI arancione nell’angolo in basso a destra" style={{ maxWidth: '375px' }} />
+</Frame>
+
+Per usare il pulsante, la chat AI deve essere attiva. Se `chat.enabled` è `false` in `docs.json`, fare clic non produce alcun effetto, quindi non aggiungere il pulsante in quel caso.
+
+Se usi anche un widget di supporto come Crisp o Intercom, probabilmente si trova anch’esso nell’angolo in basso a destra. Per separarli, imposta `left: 24px` invece di `right` su `#ask-ai-fab`, oppure aumenta `bottom` per posizionare il pulsante sopra il widget.
+
+## Esegui il codice dopo ogni cambio di pagina
+
+Lo script viene eseguito una volta, quando un visitatore apre il sito per la prima volta. In seguito, quando si fa clic su un link nella documentazione, il contenuto della pagina cambia senza ricaricarla e lo script non viene eseguito di nuovo. Il pulsante Ask AI non ne risente perché è collegato a `<body>`, che rimane al suo posto.
+
+Se il codice legge o modifica il contenuto della pagina, deve sapere quando cambia la pagina. Questo frammento osserva la colonna principale e controlla se l’URL è cambiato. Inseriscilo nello stesso `script.js`, sotto il codice del pulsante:
+
+```javascript script.js
+(function () {
+  var lastPath = location.pathname;
+  var main = document.getElementById('main-content') || document.body;
+
+  function onPageChange() {
+    // Your per-page code goes here
+    console.log('Now on', location.pathname);
+  }
+
+  new MutationObserver(function () {
+    if (location.pathname === lastPath) return;
+    lastPath = location.pathname;
+    onPageChange();
+  }).observe(main, { childList: true, subtree: true });
+})();
+```
+
+`onPageChange` viene eseguita una volta per ogni nuova pagina, sia che il visitatore faccia clic su un link della barra laterale, usi la ricerca o prema il pulsante Indietro.
+
+## Selettori consigliati
+
+I nomi delle classi di Jamdesk derivano da Tailwind e possono cambiare in ogni versione. Cambiano anche le etichette dei pulsanti, perché nei siti multilingue vengono tradotte. Usa invece questi selettori:
+
+| Selector | Matches |
+|----------|---------|
+| `html.dark` | The page while dark mode is on |
+| `body[data-theme="jam"]` | The active theme, by name (`jam`, `nebula`, `pulsar`, `halo`, `dusk`) |
+| `header[data-has-tabs]` | The site header |
+| `#main-content` | The main column, including the page and its table of contents |
+| `#content-scroll-container` | The page content column |
+| `article .prose` | The body text of the current page |
+| `[data-chat-panel]` | The AI chat panel |
+| `[data-theme-toggle]` | The light/dark/system switch |
+| `body[data-jd-ready="true"]` | Set once the first page has finished loading |
+
+<Warning>
+Non spostare gli elementi di Jamdesk in altri contenitori e non nasconderli con gli script. Jamdesk ridisegna alcune parti della pagina mentre i visitatori navigano, quindi un elemento spostato potrebbe tornare alla posizione originale o compromettere la navigazione. Aggiungi i tuoi elementi accanto a quelli di Jamdesk, come fa il pulsante Ask AI.
+</Warning>
+
+## Verifica le modifiche
+
+`jamdesk dev` mostra il CSS, ma non esegue il JavaScript personalizzato; inoltre, la chat AI funziona solo sul sito pubblicato. Per provare lo script in locale, incollalo nella console del browser sulla pagina di anteprima. Il pulsante comparirà, ma non aprirà la chat finché non avrai pubblicato il sito.
+
+Controlla il risultato su uno schermo largo quanto quello di un telefono (375px) e in modalità scura, non solo su desktop. È in queste condizioni che i colori dell’intestazione e i pulsanti fissi tendono a creare problemi.
+
+## E adesso?
+
+<Columns cols={2}>
+  <Card title="CSS personalizzato" icon="paintbrush" href="/it/customization/custom-css">
+    Dove inserire i file CSS e come vengono caricati
+  </Card>
+  <Card title="JavaScript personalizzato" icon="code" href="/it/customization/custom-javascript">
+    Caricamento degli script, ordine dei file e limiti
+  </Card>
+</Columns>
+

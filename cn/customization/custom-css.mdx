@@ -1,103 +1,82 @@
 ---
 title: 自定义 CSS
-description: 添加自定义 CSS 以覆盖主题样式、调整排版或应用品牌样式。Jamdesk 提供常用自定义项的 CSS 变量。
+description: 添加自定义 CSS 以覆盖主题样式、调整排版或应用品牌样式，并使用 Jamdesk 提供的常用 CSS 变量。
 ---
 
-Jamdesk 主题提供合理的默认样式，但你可以添加自定义 CSS，以匹配品牌风格或调整特定样式。
+Jamdesk 主题提供了合理的默认样式，但你可以添加自定义 CSS，以匹配品牌风格或调整特定样式。
 
 ## 添加自定义 CSS
 
-在项目根目录中创建 `style.css` 文件（与 `docs.json` 位于同一文件夹）。Jamdesk 会自动将其应用到每个页面，无需在 `docs.json` 中添加配置。
+在项目根目录中创建一个 `style.css` 文件（与 `docs.json` 位于同一文件夹）。Jamdesk 会自动将其应用到每个页面；无需在 `docs.json` 中添加条目。
 
-项目根目录中的任何 `.css` 文件都可以使用，不必限定为 `style.css`。从其他工具迁移时，这一特性非常方便。如果有多个文件，Jamdesk 会按文件名的字母顺序合并它们。
+项目根目录中的任何 `.css` 文件都可以使用，不一定非要叫 `style.css`，这在从其他工具迁移时很方便。如果有多个 CSS 文件，Jamdesk 会按文件名的字母顺序将它们合并。
 
-运行 `jamdesk dev` 在本地预览结果。它渲染自定义 CSS 的方式与已发布的网站相同。
+运行 `jamdesk dev`，在本地预览效果。自定义 CSS 的渲染方式与已发布网站相同。
 
 ```css style.css
 /* Your custom styles */
-.content h1 {
+article h1 {
   font-size: 2.5rem;
 }
 ```
 
+如需查看更详细的操作指南，了解如何更改页眉颜色并添加悬浮按钮，请参阅 [CSS 与 JS 示例](/cn/customization/custom-code-examples)。
+
 ## CSS 变量
 
-Jamdesk 提供用于常见自定义项的 CSS 变量。请在自定义 CSS 中覆盖这些变量：
+颜色和圆角半径由 CSS 变量控制。在 `:root` 上覆盖这些变量后，所有使用它们的组件都会随之更新：
 
 ```css style.css
 :root {
-  /* Typography */
-  --font-family-sans: 'Inter', system-ui, sans-serif;
-  --font-family-mono: 'JetBrains Mono', monospace;
-  
-  /* Spacing */
-  --content-max-width: 900px;
-  --sidebar-width: 280px;
-  
-  /* Border radius */
-  --radius-sm: 4px;
+  /* Page and text colors */
+  --color-bg-primary: #ffffff;      /* page background */
+  --color-bg-secondary: #f8fafc;    /* inputs, subtle panels */
+  --color-text-primary: #0a0a0a;    /* headings */
+  --color-text-secondary: #404144;  /* body text */
+  --color-text-muted: #737373;      /* captions and hints */
+  --color-border: #e2e8f0;
+
+  /* Corner radius for cards, buttons and panels */
+  --radius-sm: 6px;
   --radius-md: 8px;
   --radius-lg: 12px;
 }
 ```
 
-### 颜色变量
+以上值是 Jam 主题的默认值。其他主题会使用各自的默认值。你可以在浏览器开发者工具中查看 `<html>` 元素上的变量值。
 
-主要颜色在 `docs.json` 中设置。如需精细控制，请覆盖以下变量：
+品牌颜色应设置在 `docs.json` 中，而不是这里。Jamdesk 会将 `colors.primary` 用作链接、按钮和侧边栏当前选中项的强调色。请参阅[自定义颜色](/cn/customization/theming#自定义颜色)。
 
-```css style.css
-:root {
-  /* Light mode */
-  --color-background: #ffffff;
-  --color-text: #1a1a1a;
-  --color-text-muted: #666666;
-  --color-border: #e5e5e5;
-  --color-code-bg: #f5f5f5;
-}
-
-[data-theme="dark"] {
-  /* Dark mode */
-  --color-background: #0a0a0a;
-  --color-text: #fafafa;
-  --color-text-muted: #a3a3a3;
-  --color-border: #262626;
-  --color-code-bg: #171717;
-}
-```
+字体也应在 `docs.json` 中设置。`fonts` 字段可加载 Google Font 或你自己的字体文件，并将字体应用到所有位置。在 CSS 中设置 `font-family` 只有配合 `!important` 才能生效，因为主题会使用优先级更高的选择器设置字体。请参阅[排版](/cn/customization/theming#字体)。
 
 ## 常见自定义项
 
-### 调整内容宽度
+### 更改代码字体
+
+代码块默认使用主题的等宽字体，除非你使用 `!important` 覆盖：
 
 ```css
-:root {
-  --content-max-width: 1000px;  /* Default: 900px */
-}
-```
+@import url('https://fonts.googleapis.com/css2?family=Fira+Code&display=swap');
 
-### 更改代码块字体
-
-```css
-:root {
-  --font-family-mono: 'Fira Code', monospace;
-}
-
-/* Ensure ligatures work if your font supports them */
-pre code {
+article pre,
+article pre code,
+article code {
+  font-family: 'Fira Code', monospace !important;
   font-variant-ligatures: common-ligatures;
 }
 ```
 
 ### 自定义链接样式
 
+页面正文中的链接始终带有类名，因此应根据链接所在位置选择它们，而不要使用 `a:not([class])`：
+
 ```css
-.content a:not([class]) {
-  color: var(--color-primary);
+article .prose a {
   text-decoration: underline;
-  text-underline-offset: 2px;
+  text-underline-offset: 3px;
 }
 
-.content a:not([class]):hover {
+article .prose a:hover {
   text-decoration-thickness: 2px;
 }
 ```
@@ -105,12 +84,12 @@ pre code {
 ### 调整标题间距
 
 ```css
-.content h2 {
+article .prose h2 {
   margin-top: 3rem;
   margin-bottom: 1rem;
 }
 
-.content h3 {
+article .prose h3 {
   margin-top: 2rem;
   margin-bottom: 0.75rem;
 }
@@ -118,66 +97,81 @@ pre code {
 
 ### 设置提示框样式
 
+提示框的颜色由以 `-bg`、`-border` 和 `-text` 结尾的变量控制：
+
+| 提示框 | 变量前缀 |
+|---------|-----------------|
+| `<Note>` | `--color-note-` |
+| `<Info>` | `--color-info-` |
+| `<Warning>` | `--color-warning-` |
+| `<Tip>`、`<Check>` | `--color-success-` |
+| `<Danger>` | `--color-error-` |
+
 ```css
-/* Make Note callouts more prominent */
-[data-callout="note"] {
-  border-left-width: 4px;
-  background: var(--color-primary-subtle);
+/* Warmer Note callouts */
+:root {
+  --color-note-bg: #fef3c7;
+  --color-note-border: #f59e0b;
+}
+```
+
+### 设置当前选中标签页的样式
+
+```css
+article [role="tab"][aria-selected="true"] {
+  border-bottom-width: 3px;
 }
 ```
 
 ## 深色模式
 
-使用 `[data-theme="dark"]` 选择器设置深色模式样式：
+在深色模式下，Jamdesk 会为 `<html>` 添加 `dark` 类。将深色模式的样式覆盖规则放在 `html.dark` 下：
 
 ```css
 /* Light mode */
+:root {
+  --color-bg-primary: #fffdf7;
+}
+
 .custom-banner {
   background: #f0f4ff;
   color: #1e3a5f;
 }
 
 /* Dark mode */
-[data-theme="dark"] .custom-banner {
+html.dark {
+  --color-bg-primary: #14110f;
+}
+
+html.dark .custom-banner {
   background: #1e293b;
   color: #e2e8f0;
 }
 ```
 
-## 定位组件
+<Warning>
+`[data-theme="dark"]` 永远不会匹配。`<body>` 上的 `data-theme` 保存的是主题名称（如 `jam`、`nebula`），而不是 light 或 dark。
+</Warning>
 
-为特定组件覆盖样式：
+## 可用选择器
 
-```css
-/* Card component */
-[data-component="card"] {
-  border-radius: 16px;
-}
+Jamdesk 的类名来自 Tailwind，可能会在任何版本中更改。以下钩子保持稳定：
 
-/* Code blocks */
-[data-component="code-block"] {
-  border-radius: 8px;
-}
-
-/* Tabs */
-[data-component="tabs"] [data-state="active"] {
-  border-bottom-width: 3px;
-}
-```
+| 选择器 | 匹配对象 |
+|----------|---------|
+| `html.dark` | 深色模式下的页面 |
+| `body[data-theme="jam"]` | 按名称标识的当前主题 |
+| `header[data-has-tabs]` | 网站页眉 |
+| `article` | 当前页面，包括页面标题 |
+| `article .prose` | 页面正文内容 |
+| `#content-scroll-container` | 页面内容栏 |
+| `[role="tab"][aria-selected="true"]` | `<Tabs>` 组中当前选中的标签页 |
 
 ## 外部字体
 
-使用 `@import` 或 `@font-face` 加载自定义字体：
+尽可能通过 `docs.json` 加载字体。`[`fonts`](/cn/customization/theming#typography)` 字段可处理 Google Fonts 和自托管字体文件（包括仓库中的 `.woff2` 文件），并将字体应用到标题和正文。
 
-```css
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-
-:root {
-  --font-family-sans: 'Inter', system-ui, sans-serif;
-}
-```
-
-或者自行托管字体：
+对于 `fonts` 未涵盖的情况（例如上面的代码字体，或为某个元素单独设置不同字体），可以使用 CSS 作为备用方案。使用 `@import` 或 `@font-face` 加载字体，然后通过 `!important` 设置字体：
 
 ```css
 @font-face {
@@ -186,46 +180,42 @@ pre code {
   font-weight: 400;
   font-display: swap;
 }
+
+article .prose blockquote {
+  font-family: 'CustomFont', serif !important;
+}
 ```
 
 ## 响应式样式
 
-使用媒体查询进行响应式调整：
+使用媒体查询调整不同屏幕尺寸下的样式：
 
 ```css
-/* Mobile adjustments */
+/* Phones */
 @media (max-width: 768px) {
-  .content h1 {
+  article h1 {
     font-size: 1.75rem;
-  }
-  
-  :root {
-    --content-max-width: 100%;
   }
 }
 ```
 
 ## 调试
 
-使用浏览器开发者工具检查元素并查找正确的选择器。Jamdesk 使用数据属性定位组件：
-
-- `data-component="..."` - 组件类型
-- `data-theme="light|dark"` - 当前主题
-- `data-state="..."` - 组件状态（active、disabled 等）
+右键点击元素并选择 **Inspect**，查找要设置样式的目标。优先使用[可用选择器](#可用选择器)中的钩子、`role="tab"` 等角色属性以及 CSS 变量，而不是冗长的 Tailwind 类名。如果规则未生效，请检查 **Styles** 面板，确认是否有优先级更高的主题规则，或是否有规则使用了 `!important`。
 
 ## 限制
 
 - CSS 会全局应用；请使用具体的选择器以避免冲突
-- 某些内部布局样式使用了 `!important`，覆盖它们时可能也需要使用相同声明
-- 在本地预览（`jamdesk dev`）中，编辑 CSS 文件后刷新浏览器即可应用更改；在已发布的网站上，更改会在下一次构建时生效
+- 某些主题样式（包括字体和 Jam 页眉背景）使用 `!important` 或非常具体的选择器，因此你可能需要使用 `!important` 才能覆盖
+- 在本地预览（`jamdesk dev`）中，编辑 CSS 文件后，刷新浏览器即可应用更改；在已发布的网站上，更改会在下一次构建时生效
 
 ## 接下来做什么？
 
 <Columns cols={2}>
-  <Card title="主题" icon="palette" href="/cn/customization/theming">
+  <Card title="主题设置" icon="palette" href="/cn/customization/theming">
     选择并配置主题
   </Card>
-  <Card title="品牌" icon="image" href="/cn/customization/branding">
-    徽标、颜色和品牌标识
+  <Card title="CSS 与 JS 示例" icon="wand-magic-sparkles" href="/cn/customization/custom-code-examples">
+    添加品牌页眉和悬浮式 Ask AI 按钮
   </Card>
 </Columns>

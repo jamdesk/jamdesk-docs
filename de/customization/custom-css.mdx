@@ -1,183 +1,177 @@
 ---
-title: Benutzerdefiniertes CSS
-description: Fügen Sie benutzerdefiniertes CSS hinzu, um Theme-Stile zu überschreiben, Typografie anzupassen oder markenspezifische Stile hinzuzufügen.
+title: Eigenes CSS
+description: Ergänzen Sie eigenes CSS, um Theme-Stile, Typografie und Markenfarben anzupassen. Jamdesk stellt CSS-Variablen für häufige Änderungen bereit.
 ---
 
-Jamdesk-Themes bieten sinnvolle Standardwerte. Sie können jedoch benutzerdefiniertes CSS hinzufügen, um Ihre Marke abzubilden oder bestimmte Stile anzupassen.
+Jamdesk-Themes bieten sinnvolle Standardeinstellungen. Sie können jedoch eigenes CSS hinzufügen, um Ihr Branding umzusetzen oder bestimmte Stile anzupassen.
 
-## Benutzerdefiniertes CSS hinzufügen
+## Eigenes CSS hinzufügen
 
-Erstellen Sie eine Datei `style.css` im Stammverzeichnis Ihres Projekts (im selben Ordner wie Ihre `docs.json`). Jamdesk wendet sie automatisch auf jede Seite an; ein Eintrag in `docs.json` ist nicht erforderlich.
+Erstellen Sie im Stammverzeichnis Ihres Projekts eine Datei namens `style.css` (im selben Ordner wie Ihre `docs.json`). Jamdesk wendet sie automatisch auf jede Seite an; ein Eintrag in `docs.json` ist nicht erforderlich.
 
-Jede `.css`-Datei im Stammverzeichnis funktioniert, nicht nur `style.css`. Das ist praktisch, wenn Sie von einem anderen Tool migrieren. Wenn mehrere Dateien vorhanden sind, führt Jamdesk sie in alphabetischer Reihenfolge der Dateinamen zusammen.
+Im Stammverzeichnis des Projekts funktioniert jede `.css`-Datei, nicht nur `style.css`. Das ist praktisch, wenn Sie von einem anderen Tool migrieren. Gibt es mehrere Dateien, kombiniert Jamdesk sie alphabetisch nach Dateiname.
 
-Führen Sie `jamdesk dev` aus, um das Ergebnis lokal in der Vorschau anzuzeigen. Ihr benutzerdefiniertes CSS wird dabei genauso dargestellt wie auf der veröffentlichten Website.
+Führen Sie `jamdesk dev` aus, um das Ergebnis lokal in der Vorschau anzuzeigen. Ihr eigenes CSS wird dabei genauso gerendert wie auf der veröffentlichten Website.
 
 ```css style.css
 /* Your custom styles */
-.content h1 {
+article h1 {
   font-size: 2.5rem;
 }
 ```
 
+Eine ausführlichere Anleitung zum Neufärben des Headers und Hinzufügen einer schwebenden Schaltfläche finden Sie unter [CSS- und JS-Beispiele](/de/customization/custom-code-examples).
+
 ## CSS-Variablen
 
-Jamdesk stellt CSS-Variablen für gängige Anpassungen bereit. Überschreiben Sie sie in Ihrem benutzerdefinierten CSS:
+Farben und Eckenradien werden über CSS-Variablen festgelegt. Überschreiben Sie sie in `:root`, und jede Komponente, die sie verwendet, übernimmt die Werte:
 
 ```css style.css
 :root {
-  /* Typography */
-  --font-family-sans: 'Inter', system-ui, sans-serif;
-  --font-family-mono: 'JetBrains Mono', monospace;
-  
-  /* Spacing */
-  --content-max-width: 900px;
-  --sidebar-width: 280px;
-  
-  /* Border radius */
-  --radius-sm: 4px;
+  /* Page and text colors */
+  --color-bg-primary: #ffffff;      /* page background */
+  --color-bg-secondary: #f8fafc;    /* inputs, subtle panels */
+  --color-text-primary: #0a0a0a;    /* headings */
+  --color-text-secondary: #404144;  /* body text */
+  --color-text-muted: #737373;      /* captions and hints */
+  --color-border: #e2e8f0;
+
+  /* Corner radius for cards, buttons and panels */
+  --radius-sm: 6px;
   --radius-md: 8px;
   --radius-lg: 12px;
 }
 ```
 
-### Farbvariablen
+Die obigen Werte sind die Standardeinstellungen des Jam-Themes. Andere Themes verwenden ihre eigenen Werte. Sie können diese in den Entwicklertools Ihres Browsers am Element `<html>` einsehen.
 
-Primärfarben werden in `docs.json` festgelegt. Für eine detaillierte Anpassung überschreiben Sie diese Variablen:
+Ihre Markenfarben gehören in `docs.json`, nicht hierher. Jamdesk verwendet `colors.primary` als Akzentfarbe für Links, Schaltflächen und den aktiven Eintrag in der Seitenleiste. Siehe [Benutzerdefinierte Farben](/de/customization/theming#benutzerdefinierte-farben).
 
-```css style.css
-:root {
-  /* Light mode */
-  --color-background: #ffffff;
-  --color-text: #1a1a1a;
-  --color-text-muted: #666666;
-  --color-border: #e5e5e5;
-  --color-code-bg: #f5f5f5;
-}
-
-[data-theme="dark"] {
-  /* Dark mode */
-  --color-background: #0a0a0a;
-  --color-text: #fafafa;
-  --color-text-muted: #a3a3a3;
-  --color-border: #262626;
-  --color-code-bg: #171717;
-}
-```
+Auch Schriftarten gehören in `docs.json`. Das Feld `fonts` lädt eine Google Font oder Ihre eigene Schriftdatei und wendet sie überall an. Eine Angabe von `font-family` in CSS funktioniert nur mit `!important`, da Themes Schriftarten mit spezifischeren Selektoren festlegen. Siehe [Typografie](/de/customization/theming#typografie).
 
 ## Häufige Anpassungen
 
-### Inhaltsbreite anpassen
+### Schriftart für Code ändern
+
+Codeblöcke verwenden die Monospace-Schriftart des Themes, sofern Sie sie nicht mit `!important` überschreiben:
 
 ```css
-:root {
-  --content-max-width: 1000px;  /* Default: 900px */
-}
-```
+@import url('https://fonts.googleapis.com/css2?family=Fira+Code&display=swap');
 
-### Schriftart für Codeblöcke ändern
-
-```css
-:root {
-  --font-family-mono: 'Fira Code', monospace;
-}
-
-/* Ensure ligatures work if your font supports them */
-pre code {
+article pre,
+article pre code,
+article code {
+  font-family: 'Fira Code', monospace !important;
   font-variant-ligatures: common-ligatures;
 }
 ```
 
-### Link-Stile anpassen
+### Linkstile anpassen
+
+Links im Seiteninhalt haben immer Klassen. Wählen Sie sie daher anhand ihrer Position aus und nicht mit `a:not([class])`:
 
 ```css
-.content a:not([class]) {
-  color: var(--color-primary);
+article .prose a {
   text-decoration: underline;
-  text-underline-offset: 2px;
+  text-underline-offset: 3px;
 }
 
-.content a:not([class]):hover {
+article .prose a:hover {
   text-decoration-thickness: 2px;
 }
 ```
 
-### Abstände von Überschriften anpassen
+### Abstände bei Überschriften anpassen
 
 ```css
-.content h2 {
+article .prose h2 {
   margin-top: 3rem;
   margin-bottom: 1rem;
 }
 
-.content h3 {
+article .prose h3 {
   margin-top: 2rem;
   margin-bottom: 0.75rem;
 }
 ```
 
-### Callouts gestalten
+### Hinweisfelder gestalten
+
+Hinweisfelder beziehen ihre Farben aus Variablen mit den Endungen `-bg`, `-border` und `-text`:
+
+| Hinweisfeld | Variablenpräfix |
+|---------|-----------------|
+| `<Note>` | `--color-note-` |
+| `<Info>` | `--color-info-` |
+| `<Warning>` | `--color-warning-` |
+| `<Tip>`, `<Check>` | `--color-success-` |
+| `<Danger>` | `--color-error-` |
 
 ```css
-/* Make Note callouts more prominent */
-[data-callout="note"] {
-  border-left-width: 4px;
-  background: var(--color-primary-subtle);
+/* Warmer Note callouts */
+:root {
+  --color-note-bg: #fef3c7;
+  --color-note-border: #f59e0b;
+}
+```
+
+### Aktiven Tab gestalten
+
+```css
+article [role="tab"][aria-selected="true"] {
+  border-bottom-width: 3px;
 }
 ```
 
 ## Dunkler Modus
 
-Verwenden Sie den Selektor `[data-theme="dark"]` für Stile des dunklen Modus:
+Im dunklen Modus fügt Jamdesk die Klasse `dark` zu `<html>` hinzu. Platzieren Sie CSS-Überschreibungen für den dunklen Modus unter `html.dark`:
 
 ```css
 /* Light mode */
+:root {
+  --color-bg-primary: #fffdf7;
+}
+
 .custom-banner {
   background: #f0f4ff;
   color: #1e3a5f;
 }
 
 /* Dark mode */
-[data-theme="dark"] .custom-banner {
+html.dark {
+  --color-bg-primary: #14110f;
+}
+
+html.dark .custom-banner {
   background: #1e293b;
   color: #e2e8f0;
 }
 ```
 
-## Komponenten ansprechen
+<Warning>
+`[data-theme="dark"]` trifft nie zu. `data-theme` auf `<body>` enthält den Namen Ihres Themes (`jam`, `nebula` usw.), nicht „light“ oder „dark“.
+</Warning>
 
-Überschreiben Sie Stile für bestimmte Komponenten:
+## Zu verwendende Selektoren
 
-```css
-/* Card component */
-[data-component="card"] {
-  border-radius: 16px;
-}
+Die Klassennamen von Jamdesk stammen aus Tailwind und können sich mit jeder Version ändern. Diese Hooks bleiben stabil:
 
-/* Code blocks */
-[data-component="code-block"] {
-  border-radius: 8px;
-}
-
-/* Tabs */
-[data-component="tabs"] [data-state="active"] {
-  border-bottom-width: 3px;
-}
-```
+| Selektor | Trifft zu auf |
+|----------|---------|
+| `html.dark` | Die Seite, wenn der dunkle Modus aktiviert ist |
+| `body[data-theme="jam"]` | Das aktive Theme anhand seines Namens |
+| `header[data-has-tabs]` | Den Website-Header |
+| `article` | Die aktuelle Seite einschließlich ihres Titels |
+| `article .prose` | Den Inhalt der Seite |
+| `#content-scroll-container` | Die Inhaltsspalte der Seite |
+| `[role="tab"][aria-selected="true"]` | Den ausgewählten Tab in einer `<Tabs>`-Gruppe |
 
 ## Externe Schriftarten
 
-Laden Sie benutzerdefinierte Schriftarten mit `@import` oder `@font-face`:
+Laden Sie Schriftarten nach Möglichkeit über `docs.json`. Das Feld [`fonts`](/de/customization/theming#typografie) unterstützt Google Fonts und selbst gehostete Dateien, darunter `.woff2`-Dateien in Ihrem Repository, und wendet sie auf Überschriften und Fließtext an.
 
-```css
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-
-:root {
-  --font-family-sans: 'Inter', system-ui, sans-serif;
-}
-```
-
-Oder hosten Sie Schriftarten selbst:
+CSS ist die Ausweichlösung für alles, was `fonts` nicht abdeckt, etwa die obige Schriftart für Code oder eine andere Schriftart für ein einzelnes Element. Laden Sie die Schriftart mit `@import` oder `@font-face` und legen Sie sie anschließend mit `!important` fest:
 
 ```css
 @font-face {
@@ -186,38 +180,34 @@ Oder hosten Sie Schriftarten selbst:
   font-weight: 400;
   font-display: swap;
 }
+
+article .prose blockquote {
+  font-family: 'CustomFont', serif !important;
+}
 ```
 
 ## Responsive Stile
 
-Verwenden Sie Media Queries für responsive Anpassungen:
+Verwenden Sie Media Queries, um Stile an die Bildschirmgröße anzupassen:
 
 ```css
-/* Mobile adjustments */
+/* Phones */
 @media (max-width: 768px) {
-  .content h1 {
+  article h1 {
     font-size: 1.75rem;
-  }
-  
-  :root {
-    --content-max-width: 100%;
   }
 }
 ```
 
 ## Fehlerbehebung
 
-Verwenden Sie die Entwicklertools des Browsers, um Elemente zu untersuchen und die richtigen Selektoren zu finden. Jamdesk verwendet Datenattribute, um Komponenten anzusprechen:
-
-- `data-component="..."` – Komponententyp
-- `data-theme="light|dark"` – Aktuelles Theme
-- `data-state="..."` – Komponentenstatus (aktiv, deaktiviert usw.)
+Klicken Sie mit der rechten Maustaste auf ein Element und wählen Sie **Inspect**, um herauszufinden, worauf Sie abzielen müssen. Verwenden Sie bevorzugt die Hooks unter [Zu verwendende Selektoren](#zu-verwendende-selektoren), Rollen wie `role="tab"` und CSS-Variablen statt langer Tailwind-Klassennamen. Wenn eine Regel nicht angewendet wird, prüfen Sie im Bereich **Styles**, ob eine Theme-Regel aufgrund ihrer Spezifität Vorrang hat oder `!important` verwendet.
 
 ## Einschränkungen
 
 - CSS wird global angewendet. Verwenden Sie spezifische Selektoren, um Konflikte zu vermeiden.
-- Einige interne Layout-Stile verwenden `!important` und erfordern möglicherweise ebenfalls `!important`, um überschrieben zu werden.
-- In der lokalen Vorschau (`jamdesk dev`) werden Änderungen an Ihren CSS-Dateien nach dem Aktualisieren des Browsers angewendet. Auf Ihrer veröffentlichten Website werden Änderungen beim nächsten Build wirksam.
+- Einige Theme-Stile, darunter Schriftarten und der Hintergrund des Jam-Headers, verwenden `!important` oder sehr spezifische Selektoren. Möglicherweise benötigen Sie daher `!important`, um sie zu überschreiben.
+- In der lokalen Vorschau (`jamdesk dev`) werden Änderungen an Ihren CSS-Dateien nach einer Aktualisierung des Browsers übernommen. Auf der veröffentlichten Website treten Änderungen mit dem nächsten Build in Kraft.
 
 ## Wie geht es weiter?
 
@@ -225,7 +215,7 @@ Verwenden Sie die Entwicklertools des Browsers, um Elemente zu untersuchen und d
   <Card title="Theming" icon="palette" href="/de/customization/theming">
     Themes auswählen und konfigurieren
   </Card>
-  <Card title="Branding" icon="image" href="/de/customization/branding">
-    Logos, Farben und Markenidentität
+  <Card title="CSS- und JS-Beispiele" icon="wand-magic-sparkles" href="/de/customization/custom-code-examples">
+    Ein gebrandeter Header und eine schwebende Schaltfläche „Ask AI“
   </Card>
 </Columns>

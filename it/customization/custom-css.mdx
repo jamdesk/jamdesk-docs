@@ -1,183 +1,177 @@
 ---
 title: CSS personalizzato
-description: Aggiungi CSS personalizzato per sovrascrivere gli stili del tema, modificare la tipografia e applicare lo stile del brand. Jamdesk espone variabili CSS comuni.
+description: Aggiungi CSS personalizzato per sostituire gli stili del tema, modificare la tipografia o applicare il branding con le variabili CSS di Jamdesk.
 ---
 
-I temi Jamdesk forniscono impostazioni predefinite ragionevoli, ma puoi aggiungere CSS personalizzato per adattarlo al tuo brand o modificare stili specifici.
+I temi Jamdesk offrono impostazioni predefinite adatte alla maggior parte dei casi, ma puoi aggiungere CSS personalizzato per adattarli al tuo brand o modificare stili specifici.
 
-## Aggiunta di CSS personalizzato
+## Aggiungere CSS personalizzato
 
-Crea un file `style.css` nella directory principale del progetto, nella stessa cartella di `docs.json`. Jamdesk lo applica automaticamente a ogni pagina; non è necessaria alcuna voce in `docs.json`.
+Crea un file `style.css` nella directory principale del progetto, la stessa cartella di `docs.json`. Jamdesk lo applica automaticamente a tutte le pagine: non serve aggiungere voci a `docs.json`.
 
-Nella directory principale del progetto funziona qualsiasi file `.css`, non solo `style.css`, una soluzione utile quando esegui la migrazione da un altro strumento. Quando sono presenti più file, Jamdesk li combina in ordine alfabetico per nome.
+Puoi usare qualsiasi file `.css` nella directory principale del progetto, non solo `style.css`: è utile, ad esempio, quando esegui la migrazione da un altro strumento. Se i file sono più di uno, Jamdesk li combina in ordine alfabetico per nome.
 
-Esegui `jamdesk dev` per visualizzare un'anteprima del risultato in locale. Il CSS personalizzato viene renderizzato nello stesso modo del sito pubblicato.
+Esegui `jamdesk dev` per visualizzare un'anteprima locale. Il rendering del CSS personalizzato è uguale a quello del sito pubblicato.
 
 ```css style.css
 /* Your custom styles */
-.content h1 {
+article h1 {
   font-size: 2.5rem;
 }
 ```
 
+Per una guida più dettagliata su come cambiare i colori dell'intestazione e aggiungere un pulsante mobile, consulta [Esempi CSS e JS](/it/customization/custom-code-examples).
+
 ## Variabili CSS
 
-Jamdesk espone variabili CSS per le personalizzazioni più comuni. Sovrascrivile nel tuo CSS personalizzato:
+I colori e i raggi degli angoli sono definiti da variabili CSS. Modificale in `:root` per aggiornare ogni componente che le utilizza:
 
 ```css style.css
 :root {
-  /* Typography */
-  --font-family-sans: 'Inter', system-ui, sans-serif;
-  --font-family-mono: 'JetBrains Mono', monospace;
-  
-  /* Spacing */
-  --content-max-width: 900px;
-  --sidebar-width: 280px;
-  
-  /* Border radius */
-  --radius-sm: 4px;
+  /* Page and text colors */
+  --color-bg-primary: #ffffff;      /* page background */
+  --color-bg-secondary: #f8fafc;    /* inputs, subtle panels */
+  --color-text-primary: #0a0a0a;    /* headings */
+  --color-text-secondary: #404144;  /* body text */
+  --color-text-muted: #737373;      /* captions and hints */
+  --color-border: #e2e8f0;
+
+  /* Corner radius for cards, buttons and panels */
+  --radius-sm: 6px;
   --radius-md: 8px;
   --radius-lg: 12px;
 }
 ```
 
-### Variabili dei colori
+I valori qui sopra sono quelli predefiniti del tema Jam. Gli altri temi partono dai propri valori, che puoi consultare negli strumenti di sviluppo del browser, sull'elemento `<html>`.
 
-I colori principali sono impostati in `docs.json`. Per un controllo più dettagliato, sovrascrivi queste variabili:
+I colori del tuo brand vanno definiti in `docs.json`, non qui. Jamdesk usa `colors.primary` come colore di accento per link, pulsanti e voce attiva della barra laterale. Consulta [Colori personalizzati](/it/customization/theming#colori-personalizzati).
 
-```css style.css
-:root {
-  /* Light mode */
-  --color-background: #ffffff;
-  --color-text: #1a1a1a;
-  --color-text-muted: #666666;
-  --color-border: #e5e5e5;
-  --color-code-bg: #f5f5f5;
-}
-
-[data-theme="dark"] {
-  /* Dark mode */
-  --color-background: #0a0a0a;
-  --color-text: #fafafa;
-  --color-text-muted: #a3a3a3;
-  --color-border: #262626;
-  --color-code-bg: #171717;
-}
-```
+Anche i font vanno definiti in `docs.json`. Il campo `fonts` carica un Google Font o un file di font personalizzato e lo applica ovunque. Per impostare `font-family` in CSS serve `!important`, perché i temi definiscono i font con selettori più specifici. Consulta [Tipografia](/it/customization/theming#tipografia).
 
 ## Personalizzazioni comuni
 
-### Modifica della larghezza del contenuto
+### Cambiare il font del codice
+
+I blocchi di codice mantengono il font a spaziatura fissa del tema, a meno che tu non lo sostituisca con `!important`:
 
 ```css
-:root {
-  --content-max-width: 1000px;  /* Default: 900px */
-}
-```
+@import url('https://fonts.googleapis.com/css2?family=Fira+Code&display=swap');
 
-### Modifica del carattere dei blocchi di codice
-
-```css
-:root {
-  --font-family-mono: 'Fira Code', monospace;
-}
-
-/* Ensure ligatures work if your font supports them */
-pre code {
+article pre,
+article pre code,
+article code {
+  font-family: 'Fira Code', monospace !important;
   font-variant-ligatures: common-ligatures;
 }
 ```
 
-### Personalizzazione degli stili dei link
+### Personalizzare lo stile dei link
+
+I link nel corpo della pagina hanno sempre delle classi. Per selezionarli, basati quindi sulla loro posizione e non usare `a:not([class])`:
 
 ```css
-.content a:not([class]) {
-  color: var(--color-primary);
+article .prose a {
   text-decoration: underline;
-  text-underline-offset: 2px;
+  text-underline-offset: 3px;
 }
 
-.content a:not([class]):hover {
+article .prose a:hover {
   text-decoration-thickness: 2px;
 }
 ```
 
-### Modifica della spaziatura dei titoli
+### Modificare la spaziatura dei titoli
 
 ```css
-.content h2 {
+article .prose h2 {
   margin-top: 3rem;
   margin-bottom: 1rem;
 }
 
-.content h3 {
+article .prose h3 {
   margin-top: 2rem;
   margin-bottom: 0.75rem;
 }
 ```
 
-### Stile dei callout
+### Definire lo stile dei riquadri
+
+I riquadri usano variabili i cui nomi terminano con `-bg`, `-border` e `-text`:
+
+| Riquadro | Prefisso della variabile |
+|---------|-----------------|
+| `<Note>` | `--color-note-` |
+| `<Info>` | `--color-info-` |
+| `<Warning>` | `--color-warning-` |
+| `<Tip>`, `<Check>` | `--color-success-` |
+| `<Danger>` | `--color-error-` |
 
 ```css
-/* Make Note callouts more prominent */
-[data-callout="note"] {
-  border-left-width: 4px;
-  background: var(--color-primary-subtle);
+/* Warmer Note callouts */
+:root {
+  --color-note-bg: #fef3c7;
+  --color-note-border: #f59e0b;
+}
+```
+
+### Definire lo stile della scheda attiva
+
+```css
+article [role="tab"][aria-selected="true"] {
+  border-bottom-width: 3px;
 }
 ```
 
 ## Modalità scura
 
-Usa il selettore `[data-theme="dark"]` per gli stili della modalità scura:
+In modalità scura, Jamdesk aggiunge la classe `dark` a `<html>`. Inserisci le regole per la modalità scura sotto `html.dark`:
 
 ```css
 /* Light mode */
+:root {
+  --color-bg-primary: #fffdf7;
+}
+
 .custom-banner {
   background: #f0f4ff;
   color: #1e3a5f;
 }
 
 /* Dark mode */
-[data-theme="dark"] .custom-banner {
+html.dark {
+  --color-bg-primary: #14110f;
+}
+
+html.dark .custom-banner {
   background: #1e293b;
   color: #e2e8f0;
 }
 ```
 
-## Selezione dei componenti
+<Warning>
+`[data-theme="dark"]` non corrisponde mai. `data-theme` su `<body>` contiene il nome del tema (`jam`, `nebula` e così via), non indica se è attiva la modalità chiara o scura.
+</Warning>
 
-Sovrascrivi gli stili per componenti specifici:
+## Selettori da usare
 
-```css
-/* Card component */
-[data-component="card"] {
-  border-radius: 16px;
-}
+I nomi delle classi di Jamdesk provengono da Tailwind e possono cambiare in qualsiasi release. Questi selettori sono stabili:
 
-/* Code blocks */
-[data-component="code-block"] {
-  border-radius: 8px;
-}
-
-/* Tabs */
-[data-component="tabs"] [data-state="active"] {
-  border-bottom-width: 3px;
-}
-```
+| Selettore | Corrisponde a |
+|----------|---------|
+| `html.dark` | La pagina quando è attiva la modalità scura |
+| `body[data-theme="jam"]` | Il tema attivo, identificato dal nome |
+| `header[data-has-tabs]` | L'intestazione del sito |
+| `article` | La pagina corrente, compreso il titolo |
+| `article .prose` | Il contenuto della pagina |
+| `#content-scroll-container` | La colonna del contenuto della pagina |
+| `[role="tab"][aria-selected="true"]` | La scheda selezionata in un gruppo `<Tabs>` |
 
 ## Font esterni
 
-Carica font personalizzati con `@import` o `@font-face`:
+Quando possibile, carica i font tramite `docs.json`. Il campo [`fonts`](/it/customization/theming#tipografia) gestisce Google Fonts e file ospitati autonomamente, inclusi i file `.woff2` nel repository, e applica i font ai titoli e al testo.
 
-```css
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-
-:root {
-  --font-family-sans: 'Inter', system-ui, sans-serif;
-}
-```
-
-Oppure ospita autonomamente i font:
+Il CSS è la soluzione alternativa per ciò che `fonts` non gestisce, ad esempio il font del codice mostrato sopra o un font diverso per un singolo elemento. Carica il font con `@import` o `@font-face`, quindi impostalo con `!important`:
 
 ```css
 @font-face {
@@ -186,46 +180,42 @@ Oppure ospita autonomamente i font:
   font-weight: 400;
   font-display: swap;
 }
+
+article .prose blockquote {
+  font-family: 'CustomFont', serif !important;
+}
 ```
 
 ## Stili responsive
 
-Usa le media query per le modifiche responsive:
+Usa le media query per adattare gli stili alle dimensioni dello schermo:
 
 ```css
-/* Mobile adjustments */
+/* Phones */
 @media (max-width: 768px) {
-  .content h1 {
+  article h1 {
     font-size: 1.75rem;
-  }
-  
-  :root {
-    --content-max-width: 100%;
   }
 }
 ```
 
 ## Debug
 
-Usa gli strumenti per sviluppatori del browser per ispezionare gli elementi e trovare i selettori corretti. Jamdesk usa gli attributi dei dati per selezionare i componenti:
-
-- `data-component="..."` - Tipo di componente
-- `data-theme="light|dark"` - Tema attuale
-- `data-state="..."` - Stato del componente (attivo, disabilitato, ecc.)
+Fai clic con il tasto destro su un elemento e scegli **Inspect** per individuare il selettore da usare. Preferisci i selettori indicati in [Selettori da usare](#selettori-da-usare), ruoli come `role="tab"` e variabili CSS ai nomi lunghi delle classi Tailwind. Se una regola non si applica, controlla nel pannello **Styles** se una regola del tema prevale per specificità o usa `!important`.
 
 ## Limitazioni
 
-- Il CSS viene applicato globalmente; usa selettori specifici per evitare conflitti
-- Alcuni stili interni del layout usano `!important` e potrebbero richiedere lo stesso valore per essere sovrascritti
-- Nell'anteprima locale (`jamdesk dev`), le modifiche ai file CSS vengono applicate dopo l'aggiornamento del browser; sul sito pubblicato, le modifiche diventano effettive con la build successiva
+- Il CSS viene applicato globalmente: usa selettori specifici per evitare conflitti
+- Alcuni stili del tema, inclusi i font e lo sfondo dell'intestazione Jam, usano `!important` o selettori molto specifici; potrebbe quindi servire `!important` per sovrascriverli
+- Nell'anteprima locale (`jamdesk dev`), le modifiche ai file CSS vengono applicate al successivo aggiornamento del browser; sul sito pubblicato entrano in vigore con la build successiva
 
-## Cosa fare dopo?
+## Prossimi passi
 
 <Columns cols={2}>
   <Card title="Temi" icon="palette" href="/it/customization/theming">
     Scegli e configura i temi
   </Card>
-  <Card title="Branding" icon="image" href="/it/customization/branding">
-    Loghi, colori e identità del brand
+  <Card title="Esempi CSS e JS" icon="wand-magic-sparkles" href="/it/customization/custom-code-examples">
+    Un'intestazione personalizzata e un pulsante mobile Ask AI
   </Card>
 </Columns>
