@@ -168,9 +168,10 @@ seo:
 | Other | `keywords`, `author`, `robots`, `googlebot`, `google-site-verification`, `theme-color`, plus any custom tag (place custom tags under `seo:`) |
 
 <Note>
-**Custom OG image dimensions.** When you set a custom `og:image`, also set `og:image:width`
-and `og:image:height` so crawlers render it crisply. The auto-generated card is always
-1200×630.
+**Custom OG image dimensions.** `og:image:width` and `og:image:height` only apply when
+[`customImage`](#customize-the-social-card) is `"replace"`. Set them in the same place as
+the `og:image` they describe, either the page frontmatter or `seo.metatags`. The generated
+card is always 1200×630.
 </Note>
 
 <Note>
@@ -206,6 +207,57 @@ Set a fallback social image for every page in `docs.json`. Any page that sets it
 <Tip>
 **Preview before you publish.** After a build, paste the page URL into the [OpenGraph Preview](https://jamdesk.com/utilities/opengraph-preview) tool to check how the card renders on each platform and validate the Open Graph tags. It also checks image dimensions and explains how to fix any issues it finds.
 </Tip>
+
+### Customize the social card
+
+Your generated card keeps its current look unless you add `seo.socialCard` to `docs.json`.
+Set only the keys you want to change:
+
+```json docs.json
+{
+  "seo": {
+    "socialCard": {
+      "theme": "dark",
+      "brandColor": true,
+      "accentBar": false,
+      "siteName": false,
+      "customImage": "replace"
+    }
+  }
+}
+```
+
+| Key | Default | Effect |
+|-----|---------|--------|
+| `theme` | `"light"` | `"dark"` uses light text on a dark background and your `logo.dark` image. |
+| `brandColor` | `false` | `true` colors the bottom bar and the section badge with `colors.primary`. A dark card uses `colors.light` if you set it. If you have no `colors`, the card uses your theme's accent color. `false` keeps the default red. |
+| `accentBar` | `true` | `false` removes the colored bar along the bottom of the card. |
+| `siteName` | `true` | `false` hides the site name under the logo. Use it when your logo already shows the name. |
+| `customImage` | `"background"` | `"background"` draws the page title on top of your `og:image`. `"replace"` uses your `og:image` as the whole card. |
+
+If your brand color is too light to read on the card, the badge text uses the normal text
+color instead. The bar keeps your brand color unless that color nearly matches the card
+background. Then the bar is gray.
+
+By default, Jamdesk draws the page title on top of your `og:image`. If your image already
+has its own text or design, set `"customImage": "replace"` to show it as it is.
+
+When your `og:image` is the card background, pick the `theme` that matches it: `dark` for a
+dark image, `light` for a light one.
+
+In `replace` mode, Jamdesk draws no title on the image. If `seo.metatags` sets `og:image`,
+every page uses that image, and a page that sets its own `og:image` uses that one instead.
+Only pages with neither get a generated card. Use a 1200×630 PNG or JPG. Some platforms
+don't show WebP or SVG images.
+
+Social sites cache link previews, so a link that was already shared can keep the old card
+for a while after you change these settings. Check the new card with the
+[OpenGraph Preview](https://jamdesk.com/utilities/opengraph-preview) tool.
+
+<Note>
+Older versions of the Jamdesk CLI reject `seo.socialCard` in `jamdesk validate` and
+`jamdesk dev`. Upgrade with `npm i -g jamdesk@latest`.
+</Note>
 
 ## Sitemap & Robots.txt
 
