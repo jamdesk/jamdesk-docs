@@ -1,0 +1,281 @@
+---
+title: Ejemplos de CSS y JavaScript
+description: Da al encabezado tu logo y colores y añade un botón flotante Ask AI, con CSS y JavaScript que siguen funcionando tras las actualizaciones de Jamdesk.
+---
+
+Esta página construye un ejemplo en un sitio de demostración llamado Harbor. El encabezado recibe el logo y los colores de Harbor y dos enlaces adicionales, y un botón flotante **Ask AI** aparece en la esquina inferior derecha. Puedes copiar los archivos tal cual y luego poner tu propio logo y tus colores.
+
+Las capturas de pantalla muestran la interfaz en inglés.
+
+<Frame>
+  <img src="/images/custom-code/branded-header-ask-ai.webp" alt="Sitio de documentación con un encabezado azul marino, una línea naranja debajo, botones de Search y Ask AI en forma de píldora, y un botón naranja de Ask AI en la esquina inferior derecha" />
+</Frame>
+
+## Qué cambia en este encabezado
+
+De fábrica, el encabezado de Jam se funde con la página. En modo claro es transparente y deja ver el degradado suave que tiene detrás, y en modo oscuro tiene el mismo casi negro que todo lo demás. Sus botones tienen las esquinas ligeramente redondeadas. La versión de Harbor cambia cuatro cosas:
+
+- Es una barra azul marino tanto en modo claro como en modo oscuro, así que destaca sobre la página.
+- Una línea naranja fina recorre el borde inferior.
+- El cuadro de búsqueda, **Ask AI** y **Book a demo** son píldoras totalmente redondeadas.
+- El logo blanco de Harbor sustituye al predeterminado.
+
+Los cambios son CSS y un archivo de logo. El encabezado de Jamdesk no se modifica, así que la búsqueda, Ask AI, el selector de tema y el menú móvil funcionan igual que antes.
+
+El ejemplo usa estos archivos en tu proyecto:
+
+```bash
+harbor-docs/
+├── docs.json              ← logo, header links and brand colors
+├── style.css              ← header and button styles
+├── script.js              ← creates the Ask AI button
+└── images/
+    └── harbor-logo.svg    ← white logo for the navy header
+```
+
+## Empieza con docs.json
+
+La primera parte no necesita código. El logo, los colores, los enlaces del encabezado y el botón **Book a demo** van todos en `docs.json`:
+
+```json docs.json
+{
+  "logo": {
+    "light": "/images/harbor-logo.svg",
+    "dark": "/images/harbor-logo.svg"
+  },
+  "colors": {
+    "primary": "#C2410C",
+    "light": "#D9480F",
+    "dark": "#9A3412"
+  },
+  "navbar": {
+    "links": [
+      { "label": "Blog", "href": "https://example.com/blog" },
+      { "label": "Status", "href": "https://example.com/status" }
+    ],
+    "primary": {
+      "type": "button",
+      "label": "Book a demo",
+      "href": "https://example.com/demo"
+    }
+  }
+}
+```
+
+El logo es blanco. Como el encabezado es azul marino tanto en modo claro como en modo oscuro, un solo archivo sirve para ambos.
+
+Jamdesk usa tu color `primary` para el botón **Book a demo**, el elemento activo de la barra lateral y los enlaces, así que el naranja aparece en todo el sitio. El modo oscuro usa el color `light` en su lugar. Mantenlo lo bastante oscuro para que el texto blanco del botón siga leyéndose con facilidad. Consulta [Enlaces de navegación](/es/customization/branding#enlaces-de-navegación) para ver todas las opciones de la barra de navegación.
+
+<Note>
+Los enlaces de la barra de navegación se muestran en el encabezado en tablets y escritorio, en los temas que ponen el logo en el encabezado (Jam, Nebula, Halo y Dusk). En teléfonos pasan al menú, así que los estilos de encabezado que siguen no se aplican allí. Pulsar pone el logo en la barra lateral y no tiene barra de encabezado en escritorio, así que los estilos de encabezado que siguen no se verán allí.
+</Note>
+
+## Da estilo al encabezado
+
+El texto, los bordes, el cuadro de búsqueda y el redondeo de esquinas del encabezado salen todos de variables CSS. Si defines esas variables dentro del encabezado, solo cambia el encabezado:
+
+```css style.css
+/* header[data-has-tabs] matches the site header only.
+   A plain `header` selector would also match the title
+   block at the top of every page. */
+header[data-has-tabs] {
+  --header-top: #0f1d3a;
+  --header-bottom: #1b2f5b;
+  --header-stripe: #f97316;
+  --color-text-primary: #ffffff;
+  --color-text-secondary: #cbd5e1;
+  --color-text-tertiary: #cbd5e1;
+  --color-text-muted: #94a3b8;
+  --color-bg-primary: #0f1d3a;
+  --color-bg-secondary: rgba(255, 255, 255, 0.08);
+  --color-bg-hover: rgba(255, 255, 255, 0.16);
+  --color-border: rgba(255, 255, 255, 0.16);
+  /* Rounds the search box, Ask AI and buttons into pills */
+  --radius-md: 999px;
+  --radius-lg: 999px;
+}
+
+html.dark header[data-has-tabs] {
+  --header-top: #0a1328;
+  --header-bottom: #13234a;
+  --color-bg-primary: #0a1328;
+}
+
+/* Some themes keep the header background transparent on
+   purpose, so paint the color on a layer behind it. */
+header[data-has-tabs]::before {
+  content: "";
+  position: absolute;
+  inset: 0 -24px; /* reach past the 16-24px page gutter */
+  z-index: -1;
+  background: linear-gradient(
+    90deg, var(--header-top), var(--header-bottom)
+  );
+  border-bottom: 3px solid var(--header-stripe);
+}
+
+/* The sparkle icon uses the accent color, which is hard to
+   see on navy, so give it the stripe color instead */
+header[data-has-tabs] .fa-sparkles {
+  color: #fdba74;
+}
+```
+
+El azul marino va en una capa `::before` porque el tema Jam establece el `background` del encabezado en `none` con `!important`. Una regla `background` normal sobre el encabezado perdería. La capa queda detrás del contenido del encabezado y funciona en todos los temas.
+
+Establecer `--radius-md` y `--radius-lg` en `999px` convierte los botones del encabezado en píldoras. El cambio está dentro de `header[data-has-tabs]`, así que las tarjetas y los bloques de código de la página conservan sus esquinas habituales.
+
+El icono de **Ask AI** del encabezado usa tu color de acento, que apenas se distingue sobre el azul marino. La última regla lo vuelve naranja claro.
+
+Jamdesk añade la clase `dark` a `<html>` en modo oscuro, así que el bloque `html.dark` oscurece un poco el azul marino en ese modo:
+
+<Frame>
+  <img src="/images/custom-code/branded-header-dark.webp" alt="El mismo sitio de documentación en modo oscuro, con un encabezado azul marino algo más oscuro y el botón naranja de Ask AI en la esquina" />
+</Frame>
+
+## Añade un botón flotante Ask AI
+
+Tu script añade un `<button>` normal a la página. Al hacer clic, envía <kbd>Ctrl</kbd>+<kbd>I</kbd>, el atajo de teclado que abre y cierra el panel de chat, así que hace lo mismo que el botón **Ask AI** del encabezado.
+
+```javascript script.js
+(function () {
+  if (document.getElementById('ask-ai-fab')) return;
+
+  var button = document.createElement('button');
+  button.id = 'ask-ai-fab';
+  button.type = 'button';
+
+  // Jamdesk loads Font Awesome, so its icons are available here
+  var icon = document.createElement('i');
+  icon.className = 'fa-solid fa-sparkles';
+  icon.setAttribute('aria-hidden', 'true');
+  button.append(icon, ' Ask AI');
+
+  button.addEventListener('click', function () {
+    // Same as pressing Ctrl+I / Cmd+I: toggles the chat panel
+    var shortcut = { key: 'i', ctrlKey: true, bubbles: true };
+    document.dispatchEvent(new KeyboardEvent('keydown', shortcut));
+  });
+
+  document.body.appendChild(button);
+})();
+```
+
+Después, añade los estilos del botón a `style.css`:
+
+```css style.css
+#ask-ai-fab {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 40; /* below the header, search and mobile menu */
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 18px;
+  border: 0;
+  border-radius: 999px;
+  background: #c2410c;
+  color: #fff;
+  font: inherit;
+  font-weight: 600;
+  box-shadow: 0 6px 20px rgba(15, 29, 58, 0.25);
+  cursor: pointer;
+}
+
+#ask-ai-fab:hover {
+  background: #9a3412;
+}
+
+#ask-ai-fab:focus-visible {
+  outline: 2px solid #f97316;
+  outline-offset: 2px;
+}
+
+/* Hide the button while the chat panel is open. On mobile
+   the closed panel stays in the page with data-open="false",
+   so exclude that case. */
+body:has([data-chat-panel]:not([data-open="false"])) #ask-ai-fab {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  #ask-ai-fab {
+    right: 16px;
+    bottom: 16px;
+  }
+}
+```
+
+En un teléfono, el botón queda a 16px de los bordes. Cuando se abre el chat, cubre la mayor parte de la pantalla y el botón se oculta hasta que se cierra:
+
+<Frame>
+  <img src="/images/custom-code/ask-ai-button-mobile.webp" alt="Vista del sitio de documentación con ancho de teléfono, con el encabezado azul marino y el botón naranja de Ask AI en la esquina inferior derecha" style={{ maxWidth: '375px' }} />
+</Frame>
+
+El botón necesita que el chat de IA esté activado. Si `chat.enabled` es `false` en `docs.json`, hacer clic no hace nada, así que no lo incluyas.
+
+Si también usas un widget de soporte como Crisp o Intercom, es probable que también esté en la esquina inferior derecha. Para separarlos, usa `left: 24px` en lugar de `right` en `#ask-ai-fab`, o aumenta `bottom` para que el botón quede por encima del widget.
+
+## Ejecuta código tras cada cambio de página
+
+Tu script se ejecuta una vez, cuando un visitante abre el sitio por primera vez. Después, al hacer clic en un enlace de la documentación, el contenido de la página se reemplaza sin recargar, así que el script no vuelve a ejecutarse. El botón Ask AI no se ve afectado porque está unido a `<body>`, que permanece en su sitio.
+
+Si tu código lee o modifica el contenido de la página, necesita saber cuándo cambia la página. Este fragmento observa la columna principal y comprueba si la URL ha cambiado. Ponlo en el mismo `script.js`, debajo del código del botón:
+
+```javascript script.js
+(function () {
+  var lastPath = location.pathname;
+  var main = document.getElementById('main-content') || document.body;
+
+  function onPageChange() {
+    // Your per-page code goes here
+    console.log('Now on', location.pathname);
+  }
+
+  new MutationObserver(function () {
+    if (location.pathname === lastPath) return;
+    lastPath = location.pathname;
+    onPageChange();
+  }).observe(main, { childList: true, subtree: true });
+})();
+```
+
+`onPageChange` se ejecuta una vez por cada página nueva, ya sea que el visitante haya hecho clic en un enlace de la barra lateral, usado la búsqueda o pulsado el botón de retroceso.
+
+## Selectores que debes usar
+
+Los nombres de clase de Jamdesk provienen de Tailwind y pueden cambiar en cualquier versión. Las etiquetas de los botones también cambian, porque se traducen en los sitios multilingües. Usa estos selectores en su lugar:
+
+| Selector | Coincide con |
+|----------|---------|
+| `html.dark` | La página mientras el modo oscuro está activado |
+| `body[data-theme="jam"]` | El tema activo, por nombre (`jam`, `nebula`, `pulsar`, `halo`, `dusk`) |
+| `header[data-has-tabs]` | El encabezado del sitio |
+| `#main-content` | La columna principal, con la página y su tabla de contenidos |
+| `#content-scroll-container` | La columna de contenido de la página |
+| `article .prose` | El texto principal de la página actual |
+| `[data-chat-panel]` | El panel de chat de IA |
+| `[data-theme-toggle]` | El selector claro/oscuro/sistema |
+| `body[data-jd-ready="true"]` | Se establece cuando la primera página termina de cargarse |
+
+<Warning>
+No muevas los elementos propios de Jamdesk a otros contenedores ni los ocultes con scripts. Jamdesk vuelve a dibujar partes de la página mientras los visitantes navegan, así que un elemento movido puede volver a su sitio o romper la navegación. Añade tus propios elementos junto a los de Jamdesk, como hace el botón Ask AI.
+</Warning>
+
+## Prueba tus cambios
+
+`jamdesk dev` muestra tu CSS pero no ejecuta JavaScript personalizado, y el chat de IA solo funciona en tu sitio publicado. Para probar el script en local, pégalo en la consola del navegador en la página de preview. El botón aparecerá, pero no abrirá el chat hasta que publiques.
+
+Revisa el resultado en una pantalla del tamaño de un teléfono (375px de ancho) y en modo oscuro, no solo en escritorio. Ahí es donde suelen fallar los colores del encabezado y los botones fijos.
+
+## Qué sigue
+
+<Columns cols={2}>
+  <Card title="CSS personalizado" icon="paintbrush" href="/es/customization/custom-css">
+    Dónde van los archivos CSS y cómo se cargan
+  </Card>
+  <Card title="JavaScript personalizado" icon="code" href="/es/customization/custom-javascript">
+    Carga de scripts, orden de archivos y límites
+  </Card>
+</Columns>

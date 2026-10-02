@@ -1,9 +1,9 @@
 ---
 title: CSS personalizado
-description: Añade CSS personalizado para modificar los estilos del tema, ajustar la tipografía o el estilo de marca. Jamdesk expone variables CSS.
+description: Añade CSS personalizado para sobrescribir estilos del tema, ajustar la tipografía o aplicar tu marca. Jamdesk expone variables CSS para ello.
 ---
 
-Los temas de Jamdesk ofrecen valores predeterminados razonables, pero puedes añadir CSS personalizado para adaptarlo a tu marca o ajustar estilos específicos.
+Los temas de Jamdesk ofrecen valores predeterminados razonables, pero puedes añadir CSS personalizado para adaptarlos a tu marca o ajustar estilos específicos.
 
 ## Añadir CSS personalizado
 
@@ -15,89 +15,68 @@ Ejecuta `jamdesk dev` para previsualizar el resultado localmente. Renderiza tu C
 
 ```css style.css
 /* Your custom styles */
-.content h1 {
+article h1 {
   font-size: 2.5rem;
 }
 ```
 
+Para un recorrido más largo que cambia el color del encabezado y añade un botón flotante, consulta [Ejemplos de CSS y JS](/es/customization/custom-code-examples).
+
 ## Variables CSS
 
-Jamdesk expone variables CSS para personalizaciones comunes. Sobrescríbelas en tu CSS personalizado:
+Los colores y los radios de las esquinas provienen de variables CSS. Sobrescríbelas en `:root` y todos los componentes que las usan las seguirán:
 
 ```css style.css
 :root {
-  /* Typography */
-  --font-family-sans: 'Inter', system-ui, sans-serif;
-  --font-family-mono: 'JetBrains Mono', monospace;
-  
-  /* Spacing */
-  --content-max-width: 900px;
-  --sidebar-width: 280px;
-  
-  /* Border radius */
-  --radius-sm: 4px;
+  /* Page and text colors */
+  --color-bg-primary: #ffffff;      /* page background */
+  --color-bg-secondary: #f8fafc;    /* inputs, subtle panels */
+  --color-text-primary: #0a0a0a;    /* headings */
+  --color-text-secondary: #404144;  /* body text */
+  --color-text-muted: #737373;      /* captions and hints */
+  --color-border: #e2e8f0;
+
+  /* Corner radius for cards, buttons and panels */
+  --radius-sm: 6px;
   --radius-md: 8px;
   --radius-lg: 12px;
 }
 ```
 
-### Variables de color
+Los valores anteriores son los predeterminados del tema Jam. Los demás temas parten de sus propios valores, y puedes consultarlos en las herramientas de desarrollo de tu navegador, en el elemento `<html>`.
 
-Los colores principales se configuran en `docs.json`. Para un control más preciso, sobrescribe estas variables:
+Los colores de tu marca van en `docs.json`, no aquí. Jamdesk convierte `colors.primary` en el color de acento que se usa en los enlaces, los botones y el elemento activo de la barra lateral. Consulta [Colores personalizados](/es/customization/theming#colores-personalizados).
 
-```css style.css
-:root {
-  /* Light mode */
-  --color-background: #ffffff;
-  --color-text: #1a1a1a;
-  --color-text-muted: #666666;
-  --color-border: #e5e5e5;
-  --color-code-bg: #f5f5f5;
-}
-
-[data-theme="dark"] {
-  /* Dark mode */
-  --color-background: #0a0a0a;
-  --color-text: #fafafa;
-  --color-text-muted: #a3a3a3;
-  --color-border: #262626;
-  --color-code-bg: #171717;
-}
-```
+Las fuentes también van en `docs.json`. El campo `fonts` carga una Google Font o tu propio archivo de fuente y la aplica en todas partes. Definir `font-family` en CSS solo funciona con `!important`, porque los temas establecen las fuentes con selectores más específicos. Consulta [Tipografía](/es/customization/theming#tipografía).
 
 ## Personalizaciones comunes
 
-### Ajustar el ancho del contenido
+### Cambiar la fuente del código
+
+Los bloques de código conservan la fuente monoespaciada del tema a menos que la sobrescribas con `!important`:
 
 ```css
-:root {
-  --content-max-width: 1000px;  /* Default: 900px */
-}
-```
+@import url('https://fonts.googleapis.com/css2?family=Fira+Code&display=swap');
 
-### Cambiar la fuente de los bloques de código
-
-```css
-:root {
-  --font-family-mono: 'Fira Code', monospace;
-}
-
-/* Ensure ligatures work if your font supports them */
-pre code {
+article pre,
+article pre code,
+article code {
+  font-family: 'Fira Code', monospace !important;
   font-variant-ligatures: common-ligatures;
 }
 ```
 
 ### Personalizar los estilos de enlace
 
+Los enlaces dentro del cuerpo de la página siempre tienen clases, así que selecciónalos por el lugar donde se encuentran, no con `a:not([class])`:
+
 ```css
-.content a:not([class]) {
-  color: var(--color-primary);
+article .prose a {
   text-decoration: underline;
-  text-underline-offset: 2px;
+  text-underline-offset: 3px;
 }
 
-.content a:not([class]):hover {
+article .prose a:hover {
   text-decoration-thickness: 2px;
 }
 ```
@@ -105,12 +84,12 @@ pre code {
 ### Ajustar el espaciado de los encabezados
 
 ```css
-.content h2 {
+article .prose h2 {
   margin-top: 3rem;
   margin-bottom: 1rem;
 }
 
-.content h3 {
+article .prose h3 {
   margin-top: 2rem;
   margin-bottom: 0.75rem;
 }
@@ -118,66 +97,81 @@ pre code {
 
 ### Estilizar los callouts
 
+Los callouts toman sus colores de variables que terminan en `-bg`, `-border` y `-text`:
+
+| Callout | Prefijo de la variable |
+|---------|------------------------|
+| `<Note>` | `--color-note-` |
+| `<Info>` | `--color-info-` |
+| `<Warning>` | `--color-warning-` |
+| `<Tip>`, `<Check>` | `--color-success-` |
+| `<Danger>` | `--color-error-` |
+
 ```css
-/* Make Note callouts more prominent */
-[data-callout="note"] {
-  border-left-width: 4px;
-  background: var(--color-primary-subtle);
+/* Warmer Note callouts */
+:root {
+  --color-note-bg: #fef3c7;
+  --color-note-border: #f59e0b;
+}
+```
+
+### Estilizar la pestaña activa
+
+```css
+article [role="tab"][aria-selected="true"] {
+  border-bottom-width: 3px;
 }
 ```
 
 ## Modo oscuro
 
-Usa el selector `[data-theme="dark"]` para los estilos del modo oscuro:
+Jamdesk añade la clase `dark` a `<html>` en el modo oscuro. Coloca las sobrescrituras del modo oscuro bajo `html.dark`:
 
 ```css
 /* Light mode */
+:root {
+  --color-bg-primary: #fffdf7;
+}
+
 .custom-banner {
   background: #f0f4ff;
   color: #1e3a5f;
 }
 
 /* Dark mode */
-[data-theme="dark"] .custom-banner {
+html.dark {
+  --color-bg-primary: #14110f;
+}
+
+html.dark .custom-banner {
   background: #1e293b;
   color: #e2e8f0;
 }
 ```
 
-## Segmentar componentes
+<Warning>
+`[data-theme="dark"]` nunca coincide. `data-theme` en `<body>` contiene el nombre de tu tema (`jam`, `nebula`, etc.), no claro ni oscuro.
+</Warning>
 
-Sobrescribe los estilos de componentes específicos:
+## Selectores recomendados
 
-```css
-/* Card component */
-[data-component="card"] {
-  border-radius: 16px;
-}
+Los nombres de clase de Jamdesk provienen de Tailwind y pueden cambiar en cualquier versión. Estos selectores son estables:
 
-/* Code blocks */
-[data-component="code-block"] {
-  border-radius: 8px;
-}
-
-/* Tabs */
-[data-component="tabs"] [data-state="active"] {
-  border-bottom-width: 3px;
-}
-```
+| Selector | Coincide con |
+|----------|--------------|
+| `html.dark` | La página mientras el modo oscuro está activado |
+| `body[data-theme="jam"]` | El tema activo, por nombre |
+| `header[data-has-tabs]` | El encabezado del sitio |
+| `article` | La página actual, incluido su título |
+| `article .prose` | El contenido del cuerpo de la página |
+| `#content-scroll-container` | La columna de contenido de la página |
+| `[role="tab"][aria-selected="true"]` | La pestaña seleccionada en un grupo `<Tabs>` |
 
 ## Fuentes externas
 
-Carga fuentes personalizadas con `@import` o `@font-face`:
+Carga las fuentes mediante `docs.json` siempre que puedas. El campo [`fonts`](/es/customization/theming#tipografía) admite Google Fonts y archivos alojados por ti, incluidos archivos `.woff2` de tu repositorio, y los aplica a los encabezados y al texto del cuerpo.
 
-```css
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-
-:root {
-  --font-family-sans: 'Inter', system-ui, sans-serif;
-}
-```
-
-O aloja las fuentes tú mismo:
+El CSS es la alternativa para todo lo que `fonts` no cubre, como la fuente del código de arriba o una fuente distinta en un solo elemento. Carga la fuente con `@import` o `@font-face` y luego establécela con `!important`:
 
 ```css
 @font-face {
@@ -186,37 +180,33 @@ O aloja las fuentes tú mismo:
   font-weight: 400;
   font-display: swap;
 }
+
+article .prose blockquote {
+  font-family: 'CustomFont', serif !important;
+}
 ```
 
 ## Estilos responsivos
 
-Usa media queries para ajustes responsivos:
+Usa media queries para ajustes según el tamaño de pantalla:
 
 ```css
-/* Mobile adjustments */
+/* Phones */
 @media (max-width: 768px) {
-  .content h1 {
+  article h1 {
     font-size: 1.75rem;
-  }
-  
-  :root {
-    --content-max-width: 100%;
   }
 }
 ```
 
 ## Depuración
 
-Usa las herramientas de desarrollo del navegador para inspeccionar elementos y encontrar los selectores correctos. Jamdesk usa atributos de datos para segmentar componentes:
-
-- `data-component="..."` - Tipo de componente
-- `data-theme="light|dark"` - Tema actual
-- `data-state="..."` - Estado del componente (active, disabled, etc.)
+Haz clic derecho sobre un elemento y elige **Inspect** para encontrar qué segmentar. Prefiere los selectores de [Selectores recomendados](#selectores-recomendados), roles como `role="tab"` y las variables CSS en lugar de nombres largos de clases de Tailwind. Si una regla no se aplica, revisa el panel **Styles** en busca de una regla del tema que gane por especificidad o use `!important`.
 
 ## Limitaciones
 
 - El CSS se aplica globalmente; usa selectores específicos para evitar conflictos
-- Algunos estilos internos de diseño usan `!important` y podrían requerir lo mismo para sobrescribirlos
+- Algunos estilos del tema, incluidas las fuentes y el fondo del encabezado de Jam, usan `!important` o selectores muy específicos, por lo que quizá necesites `!important` para sobrescribirlos
 - En la previsualización local (`jamdesk dev`), los cambios en tu(s) archivo(s) CSS se aplican al recargar el navegador; en tu sitio publicado, los cambios entran en vigor en el próximo build
 
 ## ¿Qué sigue?
@@ -225,7 +215,7 @@ Usa las herramientas de desarrollo del navegador para inspeccionar elementos y e
   <Card title="Temas" icon="palette" href="/es/customization/theming">
     Elige y configura temas
   </Card>
-  <Card title="Branding" icon="image" href="/es/customization/branding">
-    Logotipos, colores e identidad de marca
+  <Card title="Ejemplos de CSS y JS" icon="wand-magic-sparkles" href="/es/customization/custom-code-examples">
+    Un encabezado con tu marca y un botón flotante de Ask AI
   </Card>
 </Columns>

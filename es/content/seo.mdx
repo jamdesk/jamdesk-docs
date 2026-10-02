@@ -168,9 +168,10 @@ seo:
 | Otras | `keywords`, `author`, `robots`, `googlebot`, `google-site-verification`, `theme-color`, además de cualquier etiqueta personalizada (coloca las etiquetas personalizadas bajo `seo:`) |
 
 <Note>
-**Dimensiones de imagen OG personalizadas.** Cuando configures una `og:image` personalizada, establece también `og:image:width`
-y `og:image:height` para que los rastreadores la muestren con nitidez. La tarjeta autogenerada siempre
-mide 1200×630.
+**Dimensiones de imagen OG personalizadas.** `og:image:width` y `og:image:height` solo se aplican cuando
+[`customImage`](#personaliza-la-tarjeta-social) es `"replace"`. Establécelas en el mismo lugar que
+la `og:image` que describen, ya sea el frontmatter de la página o `seo.metatags`. La tarjeta
+generada siempre mide 1200×630.
 </Note>
 
 <Note>
@@ -206,6 +207,62 @@ Establece una imagen social de reserva para todas las páginas en `docs.json`. C
 <Tip>
 **Prueba antes de publicar.** Después de un build, pega la URL de la página en la herramienta [OpenGraph Preview](https://jamdesk.com/utilities/opengraph-preview) para comprobar cómo se renderiza la tarjeta en cada plataforma y validar las etiquetas Open Graph. También revisa las dimensiones de la imagen y explica cómo solucionar cualquier problema que encuentre.
 </Tip>
+
+### Personaliza la tarjeta social
+
+Tu tarjeta generada conserva su aspecto actual a menos que añadas `seo.socialCard` a `docs.json`.
+Establece solo las claves que quieras cambiar:
+
+```json docs.json
+{
+  "seo": {
+    "socialCard": {
+      "theme": "dark",
+      "brandColor": true,
+      "accentBar": false,
+      "siteName": false,
+      "customImage": "replace"
+    }
+  }
+}
+```
+
+| Clave | Predeterminado | Efecto |
+|-------|----------------|--------|
+| `theme` | `"light"` | `"dark"` usa texto claro sobre un fondo oscuro y tu imagen `logo.dark`. |
+| `brandColor` | `false` | `true` colorea la barra inferior y la insignia de sección con `colors.primary`. Una tarjeta oscura usa `colors.light` si lo estableces. Si no tienes `colors`, la tarjeta usa el color de acento de tu tema. `false` conserva el rojo predeterminado. |
+| `accentBar` | `true` | `false` elimina la barra de color a lo largo de la parte inferior de la tarjeta. |
+| `siteName` | `true` | `false` oculta el nombre del sitio bajo el logo. Úsalo cuando tu logo ya muestre el nombre. |
+| `customImage` | `"background"` | `"background"` dibuja el título de la página sobre tu `og:image`. `"replace"` usa tu `og:image` como la tarjeta completa. |
+
+La tarjeta solo puede dibujar logos SVG, PNG y JPG. Jamdesk convierte a WebP los archivos de logo PNG y JPG de tu
+repositorio cuando compila tu sitio, por lo que la tarjeta suele mostrar tu favicon en su lugar y
+conserva el nombre del sitio, incluso con `siteName: false`. Usa un logo SVG para mostrar tu logo completo en la
+tarjeta, y `logo.dark` en una tarjeta oscura.
+
+Si tu color de marca no destaca lo suficiente contra la tarjeta, el texto de la insignia usa en su lugar
+el color de texto normal. La barra conserva tu color de marca, salvo que ese color se parezca casi por completo al fondo
+de la tarjeta. En ese caso, la barra es gris.
+
+De forma predeterminada, Jamdesk dibuja el título de la página sobre tu `og:image`. Si tu imagen ya
+tiene su propio texto o diseño, establece `"customImage": "replace"` para mostrarla tal cual.
+
+Cuando tu `og:image` es el fondo de la tarjeta, elige el `theme` que coincida con ella: `dark` para una
+imagen oscura, `light` para una clara.
+
+En el modo `replace`, Jamdesk no dibuja ningún título sobre la imagen. Si `seo.metatags` establece `og:image`,
+todas las páginas usan esa imagen, y una página que establece su propia `og:image` usa esa en su lugar.
+Solo las páginas sin ninguna de las dos obtienen una tarjeta generada. Usa un PNG o JPG de 1200×630. Algunas plataformas
+no muestran imágenes WebP ni SVG.
+
+Las redes sociales almacenan en caché las previews de enlaces, por lo que un enlace que ya se compartió puede conservar la tarjeta anterior
+durante un tiempo después de que cambies estos ajustes. Comprueba la nueva tarjeta con la herramienta
+[OpenGraph Preview](https://jamdesk.com/utilities/opengraph-preview).
+
+<Note>
+Las versiones antiguas de la CLI de Jamdesk rechazan `seo.socialCard` en `jamdesk validate` y
+`jamdesk dev`. Actualiza con `npm i -g jamdesk@latest`.
+</Note>
 
 ## Sitemap y Robots.txt
 
