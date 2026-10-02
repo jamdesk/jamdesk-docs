@@ -1,9 +1,9 @@
 ---
 title: CSS personnalisé
-description: Ajoutez du CSS personnalisé pour remplacer les styles du thème, ajuster la typographie ou personnaliser votre marque. Jamdesk expose des variables CSS.
+description: Ajoutez du CSS personnalisé pour remplacer les styles du thème, ajuster la typographie ou refléter votre marque. Jamdesk expose des variables CSS.
 ---
 
-Les thèmes Jamdesk fournissent des réglages par défaut adaptés, mais vous pouvez ajouter du CSS personnalisé pour correspondre à votre marque ou ajuster des styles spécifiques.
+Les thèmes Jamdesk fournissent des valeurs par défaut adaptées, mais vous pouvez ajouter du CSS personnalisé pour correspondre à votre marque ou ajuster des styles précis.
 
 ## Ajouter du CSS personnalisé
 
@@ -15,89 +15,68 @@ Exécutez `jamdesk dev` pour prévisualiser le résultat en local. Le rendu de v
 
 ```css style.css
 /* Your custom styles */
-.content h1 {
+article h1 {
   font-size: 2.5rem;
 }
 ```
 
+Pour un tutoriel plus détaillé qui recolore l'en-tête et ajoute un bouton flottant, consultez [Exemples CSS et JS](/fr/customization/custom-code-examples).
+
 ## Variables CSS
 
-Jamdesk expose des variables CSS pour les personnalisations courantes. Remplacez-les dans votre CSS personnalisé :
+Les couleurs et les rayons de bordure proviennent de variables CSS. Remplacez-les sur `:root` et tous les composants qui les utilisent suivent :
 
 ```css style.css
 :root {
-  /* Typography */
-  --font-family-sans: 'Inter', system-ui, sans-serif;
-  --font-family-mono: 'JetBrains Mono', monospace;
-  
-  /* Spacing */
-  --content-max-width: 900px;
-  --sidebar-width: 280px;
-  
-  /* Border radius */
-  --radius-sm: 4px;
+  /* Page and text colors */
+  --color-bg-primary: #ffffff;      /* page background */
+  --color-bg-secondary: #f8fafc;    /* inputs, subtle panels */
+  --color-text-primary: #0a0a0a;    /* headings */
+  --color-text-secondary: #404144;  /* body text */
+  --color-text-muted: #737373;      /* captions and hints */
+  --color-border: #e2e8f0;
+
+  /* Corner radius for cards, buttons and panels */
+  --radius-sm: 6px;
   --radius-md: 8px;
   --radius-lg: 12px;
 }
 ```
 
-### Variables de couleur
+Les valeurs ci-dessus sont les valeurs par défaut du thème Jam. Les autres thèmes partent de leurs propres valeurs, et vous pouvez toutes les lire dans les outils de développement de votre navigateur, sur l'élément `<html>`.
 
-Les couleurs principales sont définies dans `docs.json`. Pour un contrôle plus précis, remplacez ces variables :
+Les couleurs de votre marque se définissent dans `docs.json`, pas ici. Jamdesk transforme `colors.primary` en couleur d'accent utilisée pour les liens, les boutons et l'élément actif de la barre latérale. Consultez [Couleurs personnalisées](/fr/customization/theming#couleurs-personnalisées).
 
-```css style.css
-:root {
-  /* Light mode */
-  --color-background: #ffffff;
-  --color-text: #1a1a1a;
-  --color-text-muted: #666666;
-  --color-border: #e5e5e5;
-  --color-code-bg: #f5f5f5;
-}
-
-[data-theme="dark"] {
-  /* Dark mode */
-  --color-background: #0a0a0a;
-  --color-text: #fafafa;
-  --color-text-muted: #a3a3a3;
-  --color-border: #262626;
-  --color-code-bg: #171717;
-}
-```
+Les polices se définissent aussi dans `docs.json`. Le champ `fonts` charge une police Google Fonts ou votre propre fichier de police et l'applique partout. Définir `font-family` en CSS ne fonctionne qu'avec `!important`, car les thèmes définissent les polices avec des sélecteurs plus spécifiques. Consultez [Typographie](/fr/customization/theming#typographie).
 
 ## Personnalisations courantes
 
-### Ajuster la largeur du contenu
+### Changer la police du code
+
+Les blocs de code conservent la police monospace du thème, sauf si vous la remplacez avec `!important` :
 
 ```css
-:root {
-  --content-max-width: 1000px;  /* Default: 900px */
-}
-```
+@import url('https://fonts.googleapis.com/css2?family=Fira+Code&display=swap');
 
-### Changer la police des blocs de code
-
-```css
-:root {
-  --font-family-mono: 'Fira Code', monospace;
-}
-
-/* Ensure ligatures work if your font supports them */
-pre code {
+article pre,
+article pre code,
+article code {
+  font-family: 'Fira Code', monospace !important;
   font-variant-ligatures: common-ligatures;
 }
 ```
 
 ### Personnaliser le style des liens
 
+Les liens dans le corps de la page ont toujours des classes. Sélectionnez-les donc selon leur emplacement, et non avec `a:not([class])` :
+
 ```css
-.content a:not([class]) {
-  color: var(--color-primary);
+article .prose a {
   text-decoration: underline;
-  text-underline-offset: 2px;
+  text-underline-offset: 3px;
 }
 
-.content a:not([class]):hover {
+article .prose a:hover {
   text-decoration-thickness: 2px;
 }
 ```
@@ -105,79 +84,94 @@ pre code {
 ### Ajuster l'espacement des titres
 
 ```css
-.content h2 {
+article .prose h2 {
   margin-top: 3rem;
   margin-bottom: 1rem;
 }
 
-.content h3 {
+article .prose h3 {
   margin-top: 2rem;
   margin-bottom: 0.75rem;
 }
 ```
 
-### Personnaliser les encarts (callouts)
+### Styliser les encarts
+
+Les encarts tirent leurs couleurs de variables se terminant par `-bg`, `-border` et `-text` :
+
+| Encart | Préfixe de variable |
+|--------|---------------------|
+| `<Note>` | `--color-note-` |
+| `<Info>` | `--color-info-` |
+| `<Warning>` | `--color-warning-` |
+| `<Tip>`, `<Check>` | `--color-success-` |
+| `<Danger>` | `--color-error-` |
 
 ```css
-/* Make Note callouts more prominent */
-[data-callout="note"] {
-  border-left-width: 4px;
-  background: var(--color-primary-subtle);
+/* Warmer Note callouts */
+:root {
+  --color-note-bg: #fef3c7;
+  --color-note-border: #f59e0b;
+}
+```
+
+### Styliser l'onglet actif
+
+```css
+article [role="tab"][aria-selected="true"] {
+  border-bottom-width: 3px;
 }
 ```
 
 ## Mode sombre
 
-Utilisez le sélecteur `[data-theme="dark"]` pour les styles du mode sombre :
+Jamdesk ajoute la classe `dark` à `<html>` en mode sombre. Placez les remplacements du mode sombre sous `html.dark` :
 
 ```css
 /* Light mode */
+:root {
+  --color-bg-primary: #fffdf7;
+}
+
 .custom-banner {
   background: #f0f4ff;
   color: #1e3a5f;
 }
 
 /* Dark mode */
-[data-theme="dark"] .custom-banner {
+html.dark {
+  --color-bg-primary: #14110f;
+}
+
+html.dark .custom-banner {
   background: #1e293b;
   color: #e2e8f0;
 }
 ```
 
-## Cibler les composants
+<Warning>
+`[data-theme="dark"]` ne correspond jamais à rien. `data-theme` sur `<body>` contient le nom de votre thème (`jam`, `nebula`, etc.), et non clair ou sombre.
+</Warning>
 
-Remplacez les styles de composants spécifiques :
+## Sélecteurs à utiliser
 
-```css
-/* Card component */
-[data-component="card"] {
-  border-radius: 16px;
-}
+Les noms de classe de Jamdesk proviennent de Tailwind et peuvent changer à chaque version. Ces points d'accroche sont stables :
 
-/* Code blocks */
-[data-component="code-block"] {
-  border-radius: 8px;
-}
-
-/* Tabs */
-[data-component="tabs"] [data-state="active"] {
-  border-bottom-width: 3px;
-}
-```
+| Sélecteur | Cible |
+|-----------|-------|
+| `html.dark` | La page lorsque le mode sombre est activé |
+| `body[data-theme="jam"]` | Le thème actif, par son nom |
+| `header[data-has-tabs]` | L'en-tête du site |
+| `article` | La page courante, titre compris |
+| `article .prose` | Le contenu du corps de la page |
+| `#content-scroll-container` | La colonne de contenu de la page |
+| `[role="tab"][aria-selected="true"]` | L'onglet sélectionné dans un groupe `<Tabs>` |
 
 ## Polices externes
 
-Chargez des polices personnalisées avec `@import` ou `@font-face` :
+Chargez les polices via `docs.json` chaque fois que possible. Le champ [`fonts`](/fr/customization/theming#typographie) gère les polices Google Fonts et les fichiers auto-hébergés, y compris les fichiers `.woff2` de votre dépôt, et les applique aux titres et au texte courant.
 
-```css
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-
-:root {
-  --font-family-sans: 'Inter', system-ui, sans-serif;
-}
-```
-
-Ou hébergez vos propres polices :
+Le CSS sert de solution de repli pour tout ce que `fonts` ne couvre pas, comme la police du code ci-dessus ou une police différente sur un seul élément. Chargez la police avec `@import` ou `@font-face`, puis définissez-la avec `!important` :
 
 ```css
 @font-face {
@@ -186,37 +180,33 @@ Ou hébergez vos propres polices :
   font-weight: 400;
   font-display: swap;
 }
+
+article .prose blockquote {
+  font-family: 'CustomFont', serif !important;
+}
 ```
 
 ## Styles responsifs
 
-Utilisez des media queries pour les ajustements responsifs :
+Utilisez des media queries pour les ajustements selon la taille de l'écran :
 
 ```css
-/* Mobile adjustments */
+/* Phones */
 @media (max-width: 768px) {
-  .content h1 {
+  article h1 {
     font-size: 1.75rem;
-  }
-  
-  :root {
-    --content-max-width: 100%;
   }
 }
 ```
 
 ## Débogage
 
-Utilisez les outils de développement du navigateur pour inspecter les éléments et trouver les bons sélecteurs. Jamdesk utilise des attributs data pour cibler les composants :
-
-- `data-component="..."` - Type de composant
-- `data-theme="light|dark"` - Thème actuel
-- `data-state="..."` - État du composant (active, disabled, etc.)
+Faites un clic droit sur un élément et choisissez **Inspect** pour trouver ce qu'il faut cibler. Préférez les points d'accroche de [Sélecteurs à utiliser](#sélecteurs-à-utiliser), les rôles comme `role="tab"` et les variables CSS aux longs noms de classe Tailwind. Si une règle ne s'applique pas, vérifiez dans le panneau **Styles** s'il existe une règle du thème qui l'emporte par sa spécificité ou qui utilise `!important`.
 
 ## Limitations
 
 - Le CSS s'applique globalement ; utilisez des sélecteurs spécifiques pour éviter les conflits
-- Certains styles de mise en page internes utilisent `!important` et peuvent nécessiter la même chose pour être remplacés
+- Certains styles du thème, dont les polices et l'arrière-plan de l'en-tête du thème Jam, utilisent `!important` ou des sélecteurs très spécifiques, ce qui peut vous obliger à utiliser `!important` pour les remplacer
 - En prévisualisation locale (`jamdesk dev`), les modifications de vos fichiers CSS s'appliquent au rechargement du navigateur ; sur votre site publié, les changements prennent effet au prochain build
 
 ## Et ensuite ?
@@ -225,7 +215,7 @@ Utilisez les outils de développement du navigateur pour inspecter les élément
   <Card title="Thèmes" icon="palette" href="/fr/customization/theming">
     Choisissez et configurez les thèmes
   </Card>
-  <Card title="Image de marque" icon="image" href="/fr/customization/branding">
-    Logos, couleurs et identité de marque
+  <Card title="Exemples CSS et JS" icon="wand-magic-sparkles" href="/fr/customization/custom-code-examples">
+    Un en-tête de marque et un bouton Ask AI flottant
   </Card>
 </Columns>

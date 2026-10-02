@@ -1,8 +1,6 @@
 ---
 title: Optimisation SEO
-description: >-
-  Configurez titres, descriptions et métadonnées dans le frontmatter pour
-  optimiser votre documentation Jamdesk sur les moteurs de recherche et réseaux
+description: Contrôlez titres, descriptions et balises meta pour la recherche et les aperçus sociaux. Jamdesk génère les sitemaps et les images Open Graph.
 ---
 
 Optimisez votre documentation pour les moteurs de recherche et les aperçus sociaux en définissant des titres, descriptions et métadonnées dans le frontmatter.
@@ -170,9 +168,10 @@ seo:
 | Autre | `keywords`, `author`, `robots`, `googlebot`, `google-site-verification`, `theme-color`, plus toute balise personnalisée (placez les balises personnalisées sous `seo:`) |
 
 <Note>
-**Dimensions personnalisées d'image OG.** Lorsque vous définissez un `og:image` personnalisé, définissez aussi `og:image:width`
-et `og:image:height` pour que les robots d'indexation le rendent nettement. La carte générée automatiquement fait toujours
-1200×630.
+**Dimensions personnalisées d'image OG.** `og:image:width` et `og:image:height` ne s'appliquent que lorsque
+[`customImage`](#personnaliser-la-carte-sociale) vaut `"replace"`. Définissez-les au même endroit que
+le `og:image` qu'elles décrivent, soit dans le frontmatter de la page, soit dans `seo.metatags`. La carte
+générée fait toujours 1200×630.
 </Note>
 
 <Note>
@@ -209,6 +208,62 @@ Définissez une image sociale de repli pour chaque page dans `docs.json`. Toute 
 **Prévisualisez avant de publier.** Après un build, collez l'URL de la page dans l'outil [OpenGraph Preview](https://jamdesk.com/utilities/opengraph-preview) pour vérifier le rendu de la carte sur chaque plateforme et valider les balises Open Graph. Il vérifie aussi les dimensions de l'image et explique comment corriger les problèmes détectés.
 </Tip>
 
+### Personnaliser la carte sociale
+
+Votre carte générée garde son apparence actuelle, sauf si vous ajoutez `seo.socialCard` à `docs.json`.
+Ne définissez que les clés que vous souhaitez modifier :
+
+```json docs.json
+{
+  "seo": {
+    "socialCard": {
+      "theme": "dark",
+      "brandColor": true,
+      "accentBar": false,
+      "siteName": false,
+      "customImage": "replace"
+    }
+  }
+}
+```
+
+| Clé | Par défaut | Effet |
+|-----|---------|--------|
+| `theme` | `"light"` | `"dark"` utilise un texte clair sur un fond sombre et votre image `logo.dark`. |
+| `brandColor` | `false` | `true` colore la barre du bas et le badge de section avec `colors.primary`. Une carte sombre utilise `colors.light` si vous l'avez défini. Si vous n'avez pas de `colors`, la carte utilise la couleur d'accent de votre thème. `false` conserve le rouge par défaut. |
+| `accentBar` | `true` | `false` supprime la barre colorée en bas de la carte. |
+| `siteName` | `true` | `false` masque le nom du site sous le logo. Utilisez-le lorsque votre logo affiche déjà le nom. |
+| `customImage` | `"background"` | `"background"` dessine le titre de la page par-dessus votre `og:image`. `"replace"` utilise votre `og:image` comme carte entière. |
+
+La carte ne peut dessiner que des logos SVG, PNG et JPG. Jamdesk convertit en WebP les fichiers de logo PNG et JPG
+de votre dépôt lors du build de votre site, si bien que la carte affiche généralement votre favicon à la place et
+conserve le nom du site, même avec `siteName: false`. Utilisez un logo SVG pour afficher votre logo complet sur la
+carte, et `logo.dark` sur une carte sombre.
+
+Si votre couleur de marque ne ressort pas assez sur la carte, le texte du badge utilise la couleur de texte
+normale à la place. La barre conserve votre couleur de marque, sauf si cette couleur est presque identique au fond
+de la carte. Dans ce cas, la barre est grise.
+
+Par défaut, Jamdesk dessine le titre de la page par-dessus votre `og:image`. Si votre image contient déjà
+son propre texte ou son propre design, définissez `"customImage": "replace"` pour l'afficher telle quelle.
+
+Lorsque votre `og:image` sert de fond à la carte, choisissez le `theme` qui lui correspond : `dark` pour une
+image sombre, `light` pour une image claire.
+
+En mode `replace`, Jamdesk ne dessine aucun titre sur l'image. Si `seo.metatags` définit `og:image`,
+toutes les pages utilisent cette image, et une page qui définit son propre `og:image` utilise celle-ci à la place.
+Seules les pages qui n'ont ni l'un ni l'autre obtiennent une carte générée. Utilisez un PNG ou un JPG de 1200×630.
+Certaines plateformes n'affichent pas les images WebP ou SVG.
+
+Les réseaux sociaux mettent en cache les aperçus de liens : un lien déjà partagé peut donc conserver l'ancienne carte
+pendant un certain temps après la modification de ces paramètres. Vérifiez la nouvelle carte avec l'outil
+[OpenGraph Preview](https://jamdesk.com/utilities/opengraph-preview).
+
+<Note>
+Les anciennes versions de la CLI Jamdesk rejettent `seo.socialCard` dans `jamdesk validate` et
+`jamdesk dev`. Mettez à jour avec `npm i -g jamdesk@latest`.
+</Note>
+
 ## Sitemap et Robots.txt
 
 Chaque site Jamdesk génère automatiquement `sitemap.xml` et `robots.txt` à chaque build.
@@ -223,7 +278,7 @@ Chaque site Jamdesk génère automatiquement `sitemap.xml` et `robots.txt` à ch
 Les URLs dépendent du fait que votre documentation se trouve à la racine d'un domaine ou sous un sous-chemin `/docs` :
 
 <Tabs>
-  <Tab title="Root domain">
+  <Tab title="Domaine racine">
     Si votre documentation se trouve à la racine de votre domaine (par ex. `docs.acme.com` ou `acme.jamdesk.app`) :
 
     ```bash
@@ -231,7 +286,7 @@ Les URLs dépendent du fait que votre documentation se trouve à la racine d'un 
     https://docs.acme.com/robots.txt
     ```
   </Tab>
-  <Tab title="/docs subpath">
+  <Tab title="Sous-chemin /docs">
     Si votre documentation se trouve sous `/docs` sur votre site principal (comme ce site sur `jamdesk.com/docs`) :
 
     ```bash

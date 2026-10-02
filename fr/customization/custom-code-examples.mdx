@@ -1,0 +1,281 @@
+---
+title: Exemples de CSS et JavaScript personnalisés
+description: Ajoutez votre logo et vos couleurs à l'en-tête, plus un bouton Ask AI flottant, avec du CSS et du JavaScript qui résistent aux mises à jour de Jamdesk.
+---
+
+Cette page construit un exemple sur un site de démonstration appelé Harbor. L'en-tête reçoit le logo et les couleurs de Harbor ainsi que deux liens supplémentaires, et un bouton **Ask AI** flottant s'affiche en bas à droite. Vous pouvez copier les fichiers tels quels, puis y mettre votre propre logo et vos propres couleurs.
+
+Les captures d'écran montrent l'interface en anglais.
+
+<Frame>
+  <img src="/images/custom-code/branded-header-ask-ai.webp" alt="Site de documentation avec un en-tête bleu marine, un trait orange en dessous, des boutons Search et Ask AI en forme de pilule, et un bouton Ask AI orange en bas à droite" />
+</Frame>
+
+## Ce qui change dans cet en-tête
+
+Par défaut, l'en-tête du thème Jam se fond dans la page. En mode clair, il est transparent et laisse voir le dégradé doux situé derrière, et en mode sombre il a le même noir presque pur que le reste de la page. Ses boutons ont des coins légèrement arrondis. La version Harbor modifie quatre éléments :
+
+- C'est une barre bleu marine en mode clair comme en mode sombre, ce qui la distingue de la page.
+- Un fin trait orange longe le bord inférieur.
+- Le champ de recherche, **Ask AI** et **Book a demo** sont des pilules entièrement arrondies.
+- Le logo blanc de Harbor remplace celui par défaut.
+
+Les changements se limitent à du CSS et à un fichier de logo. L'en-tête de Jamdesk lui-même n'est pas modifié, donc la recherche, Ask AI, le sélecteur de thème et le menu mobile fonctionnent comme avant.
+
+L'exemple utilise ces fichiers dans votre projet :
+
+```bash
+harbor-docs/
+├── docs.json              ← logo, header links and brand colors
+├── style.css              ← header and button styles
+├── script.js              ← creates the Ask AI button
+└── images/
+    └── harbor-logo.svg    ← white logo for the navy header
+```
+
+## Commencer par docs.json
+
+La première partie ne demande aucun code. Le logo, les couleurs, les liens de l'en-tête et le bouton **Book a demo** se déclarent tous dans `docs.json` :
+
+```json docs.json
+{
+  "logo": {
+    "light": "/images/harbor-logo.svg",
+    "dark": "/images/harbor-logo.svg"
+  },
+  "colors": {
+    "primary": "#C2410C",
+    "light": "#D9480F",
+    "dark": "#9A3412"
+  },
+  "navbar": {
+    "links": [
+      { "label": "Blog", "href": "https://example.com/blog" },
+      { "label": "Status", "href": "https://example.com/status" }
+    ],
+    "primary": {
+      "type": "button",
+      "label": "Book a demo",
+      "href": "https://example.com/demo"
+    }
+  }
+}
+```
+
+Le logo est blanc. Comme l'en-tête est bleu marine en mode clair et en mode sombre, un seul fichier suffit pour les deux.
+
+Jamdesk utilise votre couleur `primary` pour le bouton **Book a demo**, l'élément actif de la barre latérale et les liens, si bien que l'orange apparaît sur tout le site. Le mode sombre utilise la couleur `light` à la place. Choisissez-la assez foncée pour que le texte blanc du bouton reste facile à lire. Consultez [Liens de navigation](/fr/customization/branding#liens-de-navigation) pour toutes les options de la barre de navigation.
+
+<Note>
+Les liens de la barre de navigation s'affichent dans l'en-tête sur les largeurs tablette et ordinateur, dans les thèmes qui placent le logo dans l'en-tête (Jam, Nebula, Halo et Dusk). Sur téléphone, ils passent dans le menu, donc les styles d'en-tête ci-dessous ne s'y appliquent pas. Pulsar place le logo dans la barre latérale et n'a pas de barre d'en-tête sur ordinateur, donc les styles d'en-tête ci-dessous n'y seront pas visibles.
+</Note>
+
+## Styliser l'en-tête
+
+Le texte, les bordures, le champ de recherche et l'arrondi des coins de l'en-tête viennent tous de variables CSS. Si vous définissez ces variables à l'intérieur de l'en-tête, seul l'en-tête change :
+
+```css style.css
+/* header[data-has-tabs] matches the site header only.
+   A plain `header` selector would also match the title
+   block at the top of every page. */
+header[data-has-tabs] {
+  --header-top: #0f1d3a;
+  --header-bottom: #1b2f5b;
+  --header-stripe: #f97316;
+  --color-text-primary: #ffffff;
+  --color-text-secondary: #cbd5e1;
+  --color-text-tertiary: #cbd5e1;
+  --color-text-muted: #94a3b8;
+  --color-bg-primary: #0f1d3a;
+  --color-bg-secondary: rgba(255, 255, 255, 0.08);
+  --color-bg-hover: rgba(255, 255, 255, 0.16);
+  --color-border: rgba(255, 255, 255, 0.16);
+  /* Rounds the search box, Ask AI and buttons into pills */
+  --radius-md: 999px;
+  --radius-lg: 999px;
+}
+
+html.dark header[data-has-tabs] {
+  --header-top: #0a1328;
+  --header-bottom: #13234a;
+  --color-bg-primary: #0a1328;
+}
+
+/* Some themes keep the header background transparent on
+   purpose, so paint the color on a layer behind it. */
+header[data-has-tabs]::before {
+  content: "";
+  position: absolute;
+  inset: 0 -24px; /* reach past the 16-24px page gutter */
+  z-index: -1;
+  background: linear-gradient(
+    90deg, var(--header-top), var(--header-bottom)
+  );
+  border-bottom: 3px solid var(--header-stripe);
+}
+
+/* The sparkle icon uses the accent color, which is hard to
+   see on navy, so give it the stripe color instead */
+header[data-has-tabs] .fa-sparkles {
+  color: #fdba74;
+}
+```
+
+Le bleu marine est appliqué sur une couche `::before` parce que le thème Jam définit le `background` de l'en-tête à `none` avec `!important`. Une règle `background` ordinaire sur l'en-tête serait perdante. La couche se place derrière le contenu de l'en-tête et fonctionne dans tous les thèmes.
+
+Définir `--radius-md` et `--radius-lg` à `999px` transforme les boutons de l'en-tête en pilules. Le changement reste à l'intérieur de `header[data-has-tabs]`, donc les cartes et les blocs de code de la page gardent leurs coins habituels.
+
+L'icône **Ask AI** de l'en-tête utilise votre couleur d'accent, difficile à voir sur du bleu marine. La dernière règle la rend orange clair.
+
+Jamdesk ajoute la classe `dark` à `<html>` en mode sombre, donc le bloc `html.dark` assombrit un peu le bleu marine dans ce mode :
+
+<Frame>
+  <img src="/images/custom-code/branded-header-dark.webp" alt="Le même site de documentation en mode sombre, avec un en-tête bleu marine légèrement plus foncé et le bouton Ask AI orange dans le coin" />
+</Frame>
+
+## Ajouter un bouton Ask AI flottant
+
+Votre script ajoute un `<button>` ordinaire à la page. Un clic dessus envoie <kbd>Ctrl</kbd>+<kbd>I</kbd>, le raccourci clavier qui ouvre et ferme le panneau de chat, donc il fait la même chose que le bouton **Ask AI** de l'en-tête.
+
+```javascript script.js
+(function () {
+  if (document.getElementById('ask-ai-fab')) return;
+
+  var button = document.createElement('button');
+  button.id = 'ask-ai-fab';
+  button.type = 'button';
+
+  // Jamdesk loads Font Awesome, so its icons are available here
+  var icon = document.createElement('i');
+  icon.className = 'fa-solid fa-sparkles';
+  icon.setAttribute('aria-hidden', 'true');
+  button.append(icon, ' Ask AI');
+
+  button.addEventListener('click', function () {
+    // Same as pressing Ctrl+I / Cmd+I: toggles the chat panel
+    var shortcut = { key: 'i', ctrlKey: true, bubbles: true };
+    document.dispatchEvent(new KeyboardEvent('keydown', shortcut));
+  });
+
+  document.body.appendChild(button);
+})();
+```
+
+Ajoutez ensuite les styles du bouton à `style.css` :
+
+```css style.css
+#ask-ai-fab {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 40; /* below the header, search and mobile menu */
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 18px;
+  border: 0;
+  border-radius: 999px;
+  background: #c2410c;
+  color: #fff;
+  font: inherit;
+  font-weight: 600;
+  box-shadow: 0 6px 20px rgba(15, 29, 58, 0.25);
+  cursor: pointer;
+}
+
+#ask-ai-fab:hover {
+  background: #9a3412;
+}
+
+#ask-ai-fab:focus-visible {
+  outline: 2px solid #f97316;
+  outline-offset: 2px;
+}
+
+/* Hide the button while the chat panel is open. On mobile
+   the closed panel stays in the page with data-open="false",
+   so exclude that case. */
+body:has([data-chat-panel]:not([data-open="false"])) #ask-ai-fab {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  #ask-ai-fab {
+    right: 16px;
+    bottom: 16px;
+  }
+}
+```
+
+Sur téléphone, le bouton se place à 16 px des bords. Quand le chat s'ouvre, il couvre la majeure partie de l'écran et le bouton se masque jusqu'à sa fermeture :
+
+<Frame>
+  <img src="/images/custom-code/ask-ai-button-mobile.webp" alt="Vue à la largeur d'un téléphone du site de documentation avec l'en-tête bleu marine et le bouton Ask AI orange en bas à droite" style={{ maxWidth: '375px' }} />
+</Frame>
+
+Le bouton nécessite que le chat IA soit activé. Si `chat.enabled` vaut `false` dans `docs.json`, un clic dessus ne fait rien, donc omettez-le dans ce cas.
+
+Si vous utilisez aussi un widget de support comme Crisp ou Intercom, il se trouve probablement lui aussi dans le coin inférieur droit. Pour les séparer, utilisez `left: 24px` au lieu de `right` sur `#ask-ai-fab`, ou augmentez `bottom` pour que le bouton passe au-dessus du widget.
+
+## Exécuter du code après chaque changement de page
+
+Votre script s'exécute une seule fois, quand un visiteur ouvre le site pour la première fois. Ensuite, un clic sur un lien de la documentation remplace le contenu de la page sans la recharger, donc le script ne s'exécute pas de nouveau. Le bouton Ask AI n'est pas concerné, car il est rattaché à `<body>`, qui reste en place.
+
+Si votre code lit ou modifie le contenu de la page, il doit savoir quand la page change. Cet extrait surveille la colonne principale et vérifie si l'URL a changé. Placez-le dans le même `script.js`, sous le code du bouton :
+
+```javascript script.js
+(function () {
+  var lastPath = location.pathname;
+  var main = document.getElementById('main-content') || document.body;
+
+  function onPageChange() {
+    // Your per-page code goes here
+    console.log('Now on', location.pathname);
+  }
+
+  new MutationObserver(function () {
+    if (location.pathname === lastPath) return;
+    lastPath = location.pathname;
+    onPageChange();
+  }).observe(main, { childList: true, subtree: true });
+})();
+```
+
+`onPageChange` s'exécute une fois par nouvelle page, que le visiteur ait cliqué sur un lien de la barre latérale, utilisé la recherche ou appuyé sur le bouton Retour.
+
+## Sélecteurs à utiliser
+
+Les noms de classe de Jamdesk viennent de Tailwind et peuvent changer à chaque version. Les libellés des boutons changent aussi, car ils sont traduits sur les sites multilingues. Utilisez plutôt ces sélecteurs :
+
+| Sélecteur | Correspond à |
+|----------|---------|
+| `html.dark` | La page quand le mode sombre est activé |
+| `body[data-theme="jam"]` | Le thème actif, par son nom (`jam`, `nebula`, `pulsar`, `halo`, `dusk`) |
+| `header[data-has-tabs]` | L'en-tête du site |
+| `#main-content` | La colonne principale, avec la page et sa table des matières |
+| `#content-scroll-container` | La colonne du contenu de la page |
+| `article .prose` | Le corps de texte de la page courante |
+| `[data-chat-panel]` | Le panneau de chat IA |
+| `[data-theme-toggle]` | Le sélecteur clair/sombre/système |
+| `body[data-jd-ready="true"]` | Défini une fois la première page entièrement chargée |
+
+<Warning>
+Ne déplacez pas les éléments propres à Jamdesk dans d'autres conteneurs et ne les masquez pas avec des scripts. Jamdesk redessine certaines parties de la page pendant que les visiteurs naviguent, donc un élément déplacé peut revenir à sa place ou casser la navigation. Ajoutez plutôt vos propres éléments à côté de ceux de Jamdesk, comme le fait le bouton Ask AI.
+</Warning>
+
+## Tester vos modifications
+
+`jamdesk dev` affiche votre CSS mais n'exécute pas le JavaScript personnalisé, et le chat IA ne fonctionne que sur votre site publié. Pour essayer le script en local, collez-le dans la console de votre navigateur sur la page de preview. Le bouton apparaîtra, mais il n'ouvrira pas le chat avant la publication.
+
+Vérifiez le résultat sur un écran de la taille d'un téléphone (375 px de large) et en mode sombre, pas seulement sur ordinateur. C'est là que les couleurs d'en-tête et les boutons fixes se cassent le plus souvent.
+
+## Et ensuite ?
+
+<Columns cols={2}>
+  <Card title="CSS personnalisé" icon="paintbrush" href="/fr/customization/custom-css">
+    Où placer les fichiers CSS et comment ils se chargent
+  </Card>
+  <Card title="JavaScript personnalisé" icon="code" href="/fr/customization/custom-javascript">
+    Chargement des scripts, ordre des fichiers et limites
+  </Card>
+</Columns>
