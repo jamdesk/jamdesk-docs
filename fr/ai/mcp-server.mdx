@@ -164,28 +164,22 @@ curl -X POST https://docs.acme.com/_mcp \
 
 ## Sites protégés par connexion
 
-Les assistants IA ne peuvent ni saisir un mot de passe ni suivre une redirection vers une page de connexion. Sur un site protégé par mot de passe ou par JWT, l'endpoint MCP accepte à la place une clé API du projet. Créez-en une dans **Settings** > **API Keys** (ce sont les mêmes clés que celles de l'[API de recherche de documentation](/fr/jamdesk-api/docs-search-api)) et envoyez-la comme jeton Bearer :
+Si votre site utilise l'authentification par mot de passe ou par JWT, le serveur MCP a besoin d'une clé API du projet. Créez-en une dans **Project Settings > API Keys** et envoyez-la dans un en-tête :
 
 ```bash
-curl -X POST https://docs.acme.com/_mcp \
-  -H "Authorization: Bearer jd_live_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" \
-  -H "Content-Type: application/json" \
-  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}'
+claude mcp add --transport http my-docs https://docs.example.com/_mcp \
+  --header "Authorization: Bearer jd_live_..."
 ```
 
-Une clé ne fonctionne que pour le projet qui l'a créée et n'ouvre que l'endpoint MCP. Elle ne déverrouille ni les pages ni le chat.
+Avec la clé, un client MCP peut rechercher et lire les pages indexables du site, le même ensemble que couvre la recherche du site. Les pages réservées à des groupes ne sont jamais disponibles via MCP, avec ou sans clé. Traitez la clé comme un mot de passe et révoquez-la dans le dashboard en cas de fuite.
 
-Sans clé valide, l'endpoint répond par une erreur JSON au lieu de la page de connexion :
+Sans clé, le serveur répond par un `401` avec un corps JSON qui explique comment en ajouter une. Une clé d'un autre projet est rejetée. Les codes d'erreur sont :
 
 | Statut | `error` | Signification |
 |--------|---------|---------------|
 | 401 | `auth_required` | Aucune clé n'a été envoyée. |
 | 401 | `invalid_api_key` | La clé n'est pas valide pour ce site. |
 | 503 | `auth_unavailable` | La clé n'a pas pu être vérifiée. Réessayez après le nombre de secondes indiqué dans l'en-tête `Retry-After`. |
-
-<Warning>
-  Les résultats peuvent inclure des pages situées derrière votre connexion. Conservez la clé dans la configuration secrète de votre assistant, hors des fichiers partagés.
-</Warning>
 
 ## Fonctionnement
 
@@ -220,6 +214,10 @@ L'endpoint MCP applique une limite de débit de **60 requêtes par minute** par 
 
 <Accordion title="getPage renvoie null">
   Assurez-vous que le slug correspond exactement au chemin de votre page (sans l'extension `.mdx`). Par exemple, si votre page se trouve à `api/authentication.mdx`, utilisez `api/authentication` comme slug.
+</Accordion>
+
+<Accordion title="401 auth_required sur un site protégé">
+  Le site utilise l'authentification par mot de passe ou par JWT, donc la requête a besoin d'une clé API du projet. Ajoutez l'en-tête `Authorization: Bearer` avec une clé de **Project Settings > API Keys**. Voir [Sites protégés par connexion](#sites-protégés-par-connexion).
 </Accordion>
 
 ## Et ensuite ?

@@ -164,28 +164,22 @@ curl -X POST https://docs.acme.com/_mcp \
 
 ## Login-Protected Sites
 
-AI assistants can't fill in a password prompt or follow a login redirect. On a site with password or JWT authentication, the MCP endpoint accepts a project API key instead. Create one under **Settings** > **API Keys** (the same keys the [Docs Search API](/jamdesk-api/docs-search-api) uses) and send it as a Bearer token:
+If your site uses password or JWT authentication, the MCP server needs a project API key. Create one in **Project Settings > API Keys** and send it as a header:
 
 ```bash
-curl -X POST https://docs.acme.com/_mcp \
-  -H "Authorization: Bearer jd_live_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" \
-  -H "Content-Type: application/json" \
-  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}'
+claude mcp add --transport http my-docs https://docs.example.com/_mcp \
+  --header "Authorization: Bearer jd_live_..."
 ```
 
-A key works only for the project that created it, and it opens the MCP endpoint only. It doesn't unlock pages or chat.
+With the key, an MCP client can search and read the site's searchable pages, the same set the site search covers. Group-restricted pages are never available through MCP, with or without a key. Treat the key like a password and revoke it in the dashboard if it leaks.
 
-Without a valid key, the endpoint answers with a JSON error instead of the login page:
+Without a key, the server answers with `401` and a JSON body that says how to add one. A key from another project is rejected. The error codes are:
 
 | Status | `error` | Meaning |
 |--------|---------|---------|
 | 401 | `auth_required` | No key was sent. |
 | 401 | `invalid_api_key` | The key isn't valid for this site. |
 | 503 | `auth_unavailable` | The key couldn't be checked. Retry after the number of seconds in the `Retry-After` header. |
-
-<Warning>
-  Results can include pages that are behind your login. Keep the key in your assistant's secret configuration and out of shared files.
-</Warning>
 
 ## How It Works
 
@@ -220,6 +214,10 @@ The MCP endpoint has a rate limit of **60 requests per minute** per IP address. 
 
 <Accordion title="getPage returns null">
   Make sure the slug matches your page path exactly (without the `.mdx` extension). For example, if your page is at `api/authentication.mdx`, use `api/authentication` as the slug.
+</Accordion>
+
+<Accordion title="401 auth_required on a protected site">
+  The site uses password or JWT authentication, so the request needs a project API key. Add the `Authorization: Bearer` header with a key from **Project Settings > API Keys**. See [Login-Protected Sites](#login-protected-sites).
 </Accordion>
 
 ## What's Next?

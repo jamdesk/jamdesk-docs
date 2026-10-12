@@ -164,28 +164,22 @@ curl -X POST https://docs.acme.com/_mcp \
 
 ## Sitios protegidos con inicio de sesión
 
-Los asistentes de IA no pueden rellenar una solicitud de contraseña ni seguir una redirección de inicio de sesión. En un sitio con autenticación por contraseña o JWT, el endpoint MCP acepta en su lugar una clave de API del proyecto. Crea una en **Settings** > **API Keys** (las mismas claves que usa la [API de búsqueda de documentación](/es/jamdesk-api/docs-search-api)) y envíala como token Bearer:
+Si tu sitio usa autenticación por contraseña o JWT, el servidor MCP necesita una clave de API del proyecto. Crea una en **Project Settings > API Keys** y envíala como encabezado:
 
 ```bash
-curl -X POST https://docs.acme.com/_mcp \
-  -H "Authorization: Bearer jd_live_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" \
-  -H "Content-Type: application/json" \
-  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}'
+claude mcp add --transport http my-docs https://docs.example.com/_mcp \
+  --header "Authorization: Bearer jd_live_..."
 ```
 
-Una clave solo funciona para el proyecto que la creó y abre únicamente el endpoint MCP. No desbloquea páginas ni el chat.
+Con la clave, un cliente MCP puede buscar y leer las páginas con búsqueda habilitada del sitio, el mismo conjunto que cubre la búsqueda del sitio. Las páginas restringidas por grupo nunca están disponibles a través de MCP, con o sin clave. Trata la clave como una contraseña y revócala en el dashboard si se filtra.
 
-Sin una clave válida, el endpoint responde con un error JSON en lugar de la página de inicio de sesión:
+Sin clave, el servidor responde con `401` y un cuerpo JSON que explica cómo añadir una. Una clave de otro proyecto se rechaza. Los códigos de error son:
 
 | Estado | `error` | Significado |
 |--------|---------|-------------|
 | 401 | `auth_required` | No se envió ninguna clave. |
 | 401 | `invalid_api_key` | La clave no es válida para este sitio. |
 | 503 | `auth_unavailable` | No se pudo comprobar la clave. Reintenta pasados los segundos indicados en el encabezado `Retry-After`. |
-
-<Warning>
-  Los resultados pueden incluir páginas que están detrás de tu inicio de sesión. Guarda la clave en la configuración secreta de tu asistente y fuera de archivos compartidos.
-</Warning>
 
 ## Cómo funciona
 
@@ -220,6 +214,10 @@ El endpoint de MCP tiene un límite de frecuencia de **60 solicitudes por minuto
 
 <Accordion title="getPage devuelve null">
   Asegúrate de que el slug coincida exactamente con la ruta de tu página (sin la extensión `.mdx`). Por ejemplo, si tu página está en `api/authentication.mdx`, usa `api/authentication` como slug.
+</Accordion>
+
+<Accordion title="401 auth_required en un sitio protegido">
+  El sitio usa autenticación por contraseña o JWT, así que la solicitud necesita una clave de API del proyecto. Añade el encabezado `Authorization: Bearer` con una clave de **Project Settings > API Keys**. Consulta [Sitios protegidos con inicio de sesión](#sitios-protegidos-con-inicio-de-sesión).
 </Accordion>
 
 ## ¿Qué sigue?
