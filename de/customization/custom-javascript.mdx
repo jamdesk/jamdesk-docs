@@ -1,13 +1,13 @@
 ---
 title: Eigenes JavaScript
-description: Fügen Sie Ihrer Dokumentationswebsite JavaScript für Chat-Widgets, Analytics, Drittanbieterintegrationen und weitere clientseitige Funktionen hinzu.
+description: Füge deiner Dokumentationsseite JavaScript für Chat-Widgets, Analysen, Drittanbieter-Integrationen und andere Funktionen im Browser hinzu.
 ---
 
-Mit Jamdesk können Sie eigenes JavaScript hinzufügen, das auf jeder Seite Ihrer Dokumentationswebsite ausgeführt wird. Verwenden Sie es für Chat-Widgets, Analytics oder andere clientseitige Skripts, die Sie benötigen.
+Mit Jamdesk kannst du eigenes JavaScript hinzufügen, das auf jeder Seite deiner Dokumentationswebsite ausgeführt wird. Verwende es für Chat-Widgets, Analysen oder andere clientseitige Skripte, die du benötigst.
 
 ## Benutzerdefiniertes JavaScript hinzufügen
 
-Erstellen Sie eine JavaScript-Datei in Ihrem Dokumentationsverzeichnis und verweisen Sie in `docs.json` darauf:
+Erstelle eine JavaScript-Datei in deinem Dokumentationsverzeichnis und verweise in `docs.json` darauf:
 
 ```json docs.json
 {
@@ -22,11 +22,11 @@ Erstellen Sie eine JavaScript-Datei in Ihrem Dokumentationsverzeichnis und verwe
 console.log('Hello from custom JS!');
 ```
 
-Ihr Skript wird direkt in den HTML-Code der Seite eingefügt und beim Laden der Seite ausgeführt.
+Dein Skript wird direkt in den HTML-Code der Seite eingebettet und beim Laden der Seite ausgeführt.
 
 ## Automatische Erkennung
 
-Wenn Sie `styling.js` nicht konfigurieren, erkennt Jamdesk automatisch `.js`-Dateien im Stammverzeichnis Ihres Projekts. Legen Sie einfach eine Datei namens `script.js` neben Ihrer `docs.json` ab, damit sie eingebunden wird.
+Wenn du `styling.js` nicht konfigurierst, erkennt Jamdesk automatisch `.js`-Dateien im Stammverzeichnis deines Projekts. Lege einfach eine Datei `script.js` neben deiner `docs.json` ab, damit sie eingebunden wird.
 
 ```bash
 my-docs/
@@ -38,11 +38,11 @@ my-docs/
 
 Wenn `styling.js` in `docs.json` konfiguriert ist, wird die automatische Erkennung deaktiviert und es werden nur die angegebenen Dateien verwendet.
 
-<Note>Die automatische Erkennung umfasst **alle** `.js`-Dateien im Stammverzeichnis Ihres Projekts. Wenn sich neben Ihren Dokumentationsdateien Hilfsskripte wie `eslint.config.js` oder `postcss.config.js` befinden, legen Sie mit `styling.js` in `docs.json` genau fest, welche Dateien eingebunden werden sollen.</Note>
+<Note>Bei der automatischen Erkennung werden **alle** `.js`-Dateien im Stammverzeichnis deines Projekts eingebunden. Wenn sich neben deinen Dokumentationsdateien Hilfsskripte wie `eslint.config.js` oder `postcss.config.js` befinden, verwende `styling.js` in `docs.json`, um genau festzulegen, welche Dateien eingebunden werden sollen.</Note>
 
 ## Mehrere Dateien
 
-Binden Sie mehrere Skripts ein, indem Sie ein Array übergeben:
+Binde mehrere Skripte ein, indem du ein Array angibst:
 
 ```json docs.json
 {
@@ -52,11 +52,11 @@ Binden Sie mehrere Skripts ein, indem Sie ein Array übergeben:
 }
 ```
 
-Bei der automatischen Erkennung werden alle `.js`-Dateien im Stammverzeichnis alphabetisch sortiert eingebunden. Wenn Sie `analytics.js` und `chat.js` haben, werden sie in dieser Reihenfolge geladen.
+Bei der automatischen Erkennung werden alle `.js`-Dateien im Stammverzeichnis alphabetisch sortiert eingebunden. Wenn du `analytics.js` und `chat.js` hast, werden sie in dieser Reihenfolge geladen.
 
 ## Beispiele
 
-Eine ausführlichere Anleitung, die ein Skript mit CSS kombiniert, finden Sie unter [CSS- und JavaScript-Beispiele](/de/customization/custom-code-examples). Dabei werden eine schwebende Ask-AI-Schaltfläche und eine Kopfzeile in den Markenfarben hinzugefügt.
+Eine ausführlichere Anleitung, die ein Skript mit CSS kombiniert, findest du unter [CSS- & JS-Beispiele](/de/customization/custom-code-examples). Sie fügt eine schwebende Schaltfläche „Ask AI“ und einen Header in Markenfarben hinzu.
 
 ### Chat-Widget (Crisp)
 
@@ -99,29 +99,37 @@ window.addEventListener('load', function () {
 
 ## Funktionsweise
 
-Ihre JavaScript-Dateien werden während des Build-Prozesses eingelesen und direkt in den HTML-Code jeder Seite eingebettet. Das Script-Tag wird am Ende von `<body>` platziert, sodass das DOM verfügbar ist, wenn Ihr Code ausgeführt wird.
+Deine JavaScript-Dateien werden während des Build-Prozesses gelesen und direkt in den HTML-Code jeder Seite eingebettet. Das Skript-Tag wird am Ende von `<body>` eingefügt, sodass das DOM verfügbar ist, wenn dein Code ausgeführt wird.
 
-Eigenes JavaScript wird nur auf Ihrer veröffentlichten Website ausgeführt. `jamdesk dev` lässt es weg. Um ein Skript lokal auszuprobieren, fügen Sie es daher in der Browserkonsole der Vorschauseite ein.
+Eigenes JavaScript wird auch in `jamdesk dev` ausgeführt (CLI 1.1.222 und höher), damit du ein Skript vor dem Push testen kannst. Fehler, die dein Skript auslöst, erscheinen in der Browserkonsole. In `jamdesk dev` ist `window.__JAMDESK_DEV__` auf `true` gesetzt. So kannst du produktionsspezifischen Code wie Analysen überspringen:
 
-Das Skript wird einmal ausgeführt, wenn ein Besucher Ihre Website zum ersten Mal lädt. Wenn Sie in der Dokumentation auf einen Link klicken, wird der Seiteninhalt ohne vollständiges Neuladen ausgetauscht. Das Skript wird dann nicht erneut ausgeführt. Wenn Ihr Code mit dem Seiteninhalt arbeitet, [reagieren Sie auf Seitenänderungen](/de/customization/custom-code-examples#code-nach-jedem-seitenwechsel-ausführen).
+```javascript
+if (!window.__JAMDESK_DEV__) {
+  // analytics, chat widgets and other production-only code
+}
+```
+
+Wenn du die Cookie-Einwilligung mit `integrations.cookies` konfigurierst, wird dein Skript nur auf der veröffentlichten Website ausgeführt, nachdem der Besucher seine Einwilligung erteilt hat.
+
+Das Skript wird einmal ausgeführt, wenn ein Besucher deine Website zum ersten Mal lädt. Wenn jemand auf einen Link in der Dokumentation klickt, wird der Seiteninhalt ohne vollständiges Neuladen ausgetauscht. Das Skript wird daher nicht erneut ausgeführt. Wenn dein Code mit dem Seiteninhalt arbeitet, [reagiere auf Seitenänderungen](/de/customization/custom-code-examples#code-nach-jedem-seitenwechsel-ausführen).
 
 ## Einschränkungen
 
-- Skripts werden auf **jeder Seite** ausgeführt – einzelne Seiten lassen sich nicht gezielt auswählen
-- Änderungen werden erst mit dem nächsten **Build** wirksam; `jamdesk dev` führt keine eigenen Skripts aus
-- Skripts werden in den HTML-Code **eingebettet** und nicht als separate Dateien bereitgestellt
-- Für Analytics können Sie stattdessen die integrierten [Integrationen](/de/integrations/google-analytics) verwenden, die Einwilligung und Performance automatisch berücksichtigen
+- Skripte werden auf **jeder Seite** ausgeführt. Es ist nicht möglich, sie auf bestimmte Seiten zu beschränken.
+- Änderungen werden mit deinem nächsten **Build** wirksam.
+- Skripte werden in den HTML-Code **eingebettet** und nicht als separate Dateien bereitgestellt.
+- Für Analysen empfiehlt sich stattdessen die Verwendung der integrierten [Integrationen](/de/integrations/google-analytics), die Einwilligung und Leistung automatisch berücksichtigen.
 
 ## Wie geht es weiter?
 
 <Columns cols={2}>
   <Card title="Eigenes CSS" icon="paintbrush" href="/de/customization/custom-css">
-    Überschreiben Sie Theme-Stile mit eigenem CSS
+    Überschreibe Theme-Stile mit eigenem CSS
   </Card>
-  <Card title="CSS- und JavaScript-Beispiele" icon="wand-magic-sparkles" href="/de/customization/custom-code-examples">
-    Eine schwebende Ask-AI-Schaltfläche und eine Kopfzeile im Markendesign
+  <Card title="CSS- & JS-Beispiele" icon="wand-magic-sparkles" href="/de/customization/custom-code-examples">
+    Eine schwebende Schaltfläche „Ask AI“ und ein Header im Markenstil
   </Card>
   <Card title="Integrationen" icon="plug" href="/de/integrations/google-analytics">
-    Integrierte Analytics und Drittanbieterintegrationen
+    Integrierte Analysen und Integrationen von Drittanbietern
   </Card>
 </Columns>

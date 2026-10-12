@@ -1,24 +1,24 @@
 ---
-title: API de pesquisa de docs
-description: Pesquise sua documentação Jamdesk por código e potencialize chatbots, bots do Slack, buscas personalizadas e agentes de IA com respostas atualizadas.
+title: API de busca de docs
+description: Pesquise a documentação do Jamdesk por código e use respostas atualizadas em chatbots, bots do Slack, mecanismos de busca e agentes de IA.
 ---
 
-A API de pesquisa de docs oferece acesso programático ao conteúdo da sua documentação por meio de pesquisa semântica. Um endpoint (`POST /_api/search`) recebe uma consulta em linguagem natural e retorna as passagens mais relevantes dos seus docs, classificadas por relevância.
+A API de busca de docs oferece acesso programático ao conteúdo da sua documentação por meio de busca semântica. Um endpoint (`POST /_api/search`) recebe uma consulta em linguagem natural e retorna as passagens mais relevantes da documentação, classificadas por relevância.
 
 ## Casos de uso
 
 <Columns cols={2}>
   <Card title="Chatbots de suporte" icon="comment-dots">
-    Conecte o Intercom Fin, o Zendesk AI ou um chatbot personalizado aos seus docs para responder a perguntas com conteúdo preciso e referenciado.
+    Conecte o Intercom Fin, o Zendesk AI ou um chatbot personalizado à sua documentação para responder a perguntas com conteúdo preciso e referenciado.
   </Card>
   <Card title="Bots do Slack" icon="slack">
     Crie um comando `/docs` do Slack que pesquise sua documentação e publique os principais resultados em qualquer canal.
   </Card>
-  <Card title="Pesquisa personalizada" icon="magnifying-glass">
-    Adicione uma interface de pesquisa ao seu produto, dashboard ou ferramentas internas para exibir docs relevantes no contexto.
+  <Card title="Busca personalizada" icon="magnifying-glass">
+    Adicione uma interface de busca ao seu produto, dashboard ou ferramentas internas para exibir a documentação relevante no contexto.
   </Card>
   <Card title="Agentes de IA" icon="robot">
-    Dê a agentes de IA, como Claude ou GPT, uma ferramenta que recupere sua documentação atual em vez de depender dos dados de treinamento.
+    Dê a agentes de IA, como Claude ou GPT, uma ferramenta que recupere sua documentação atualizada em vez de depender dos dados de treinamento deles.
   </Card>
 </Columns>
 
@@ -26,10 +26,10 @@ A API de pesquisa de docs oferece acesso programático ao conteúdo da sua docum
 
 <Steps>
   <Step title="Gere uma chave de API">
-    Acesse **Project Settings → API Keys** no [dashboard do Jamdesk](https://dashboard.jamdesk.com). Clique em **Generate Key**, dê um nome à chave e copie-a. Ela começa com `jd_live_`, seguida por 32 caracteres hexadecimais (40 caracteres no total), e é exibida apenas uma vez.
+    Acesse **Project Settings → API Keys** no [dashboard do Jamdesk](https://dashboard.jamdesk.com). Clique em **Generate Key**, dê um nome à chave e copie-a. Ela começa com `jd_live_`, seguida de 32 caracteres hexadecimais (40 caracteres no total), e é exibida apenas uma vez.
   </Step>
-  <Step title="Faça sua primeira solicitação de pesquisa">
-    Envie uma solicitação `POST` para `/_api/search` no subdomínio dos seus docs:
+  <Step title="Faça sua primeira solicitação de busca">
+    Envie uma solicitação `POST` para `/_api/search` no subdomínio da sua documentação:
 
     ```bash
     curl -X POST https://your-project.jamdesk.app/_api/search \
@@ -39,7 +39,7 @@ A API de pesquisa de docs oferece acesso programático ao conteúdo da sua docum
     ```
   </Step>
   <Step title="Use os resultados">
-    A resposta retorna uma matriz de passagens correspondentes com pontuações de relevância e metadados da página:
+    A resposta retorna uma matriz de passagens correspondentes, com pontuações de relevância e metadados das páginas:
 
     ```json
     {
@@ -70,58 +70,62 @@ Todas as solicitações exigem um token Bearer no cabeçalho `Authorization`.
 Authorization: Bearer jd_live_c83003a54ae0a83123454c3f7ec82f0a
 ```
 
+<Info>
+  A Search API funciona em sites com autenticação por senha ou JWT. Ela verifica sua chave de API, não o login de um visitante, então você não precisa adicionar `/_api/search` a `auth.jwt.public`. Os resultados podem incluir páginas protegidas por login; por isso, chame a API pelo servidor e nunca coloque a chave no código do navegador. Os resultados seguem as mesmas regras da busca do site: páginas restritas a grupos nunca são retornadas, e páginas ocultas ou com `search: false` são excluídas, a menos que você as tenha tornado pesquisáveis.
+</Info>
+
 ### Gerar chaves de API
 
 <Steps>
-  <Step title="Abra as configurações do projeto">
+  <Step title="Abra Project Settings">
     No dashboard do Jamdesk, acesse seu projeto e clique em **Settings**.
   </Step>
   <Step title="Acesse API Keys">
     Selecione a aba **API Keys**.
   </Step>
   <Step title="Crie uma chave">
-    Clique em **Generate Key**, insira um nome descritivo (por exemplo, "Intercom chatbot") e clique em **Create**.
+    Clique em **Generate Key**, insira um nome descritivo (por exemplo, "chatbot do Intercom") e clique em **Create**.
   </Step>
   <Step title="Copie a chave">
-    Copie a chave imediatamente. Ela começa com `jd_live_`, seguida por 32 caracteres hexadecimais, e é exibida **apenas uma vez**. Armazene-a no seu gerenciador de secrets ou nas variáveis de ambiente.
+    Copie a chave imediatamente. Ela começa com `jd_live_`, seguida de 32 caracteres hexadecimais, e é exibida **apenas uma vez**. Armazene-a no seu gerenciador de segredos ou nas variáveis de ambiente.
   </Step>
 </Steps>
 
 ### Gerenciamento de chaves
 
 <Info>
-As chaves de API têm escopo limitado a um único projeto. Uma chave para `acme.jamdesk.app` não pode consultar a documentação de outro projeto.
+As chaves de API são vinculadas a um único projeto. Uma chave para `acme.jamdesk.app` não pode consultar a documentação de outro projeto.
 </Info>
 
 | Regra | Detalhe |
 |------|--------|
 | **Formato** | `jd_live_<32 hex chars>` (40 caracteres no total, nunca expira) |
 | **Escopo** | Uma chave por projeto (não pode acessar outros projetos) |
-| **Rotação** | Revogue e gere novamente a qualquer momento em Project Settings |
-| **Armazenamento** | Armazene nas variáveis de ambiente ou em um gerenciador de secrets; nunca faça commit no controle de versão |
+| **Rotação** | Revogue e gere uma nova chave a qualquer momento em Project Settings |
+| **Armazenamento** | Armazene em variáveis de ambiente ou em um gerenciador de segredos; nunca faça commit no controle de origem |
 
 ### Revogar chaves
 
-Para revogar uma chave, acesse **Project Settings → API Keys**, encontre a chave pelo nome e clique em **Revoke**. As chaves revogadas deixam de funcionar imediatamente. Gere uma nova chave para substituí-la.
+Para revogar uma chave, acesse **Project Settings → API Keys**, localize a chave pelo nome e clique em **Revoke**. As chaves revogadas param de funcionar imediatamente. Gere uma nova chave para substituí-la.
 
 ## Limites de requisições
 
-As solicitações são limitadas por chave de API.
+As solicitações têm limites por chave de API.
 
 | Plano | Limite |
 |------|-------|
 | **Pro** | 60 solicitações / minuto |
 | **Enterprise** | Personalizado; entre em contato com o [suporte](mailto:support@jamdesk.com) |
 
-Quando você excede o limite, a API retorna `429 Too Many Requests` com um cabeçalho `Retry-After: 60` e `{"error": "Rate limit exceeded"}` no corpo.
+Ao exceder o limite, a API retorna `429 Too Many Requests` com o cabeçalho `Retry-After: 60` e `{"error": "Rate limit exceeded"}` no corpo.
 
 <Warning>
-Se precisar de limites de requisições maiores para uma integração em produção, [entre em contato conosco](mailto:support@jamdesk.com) para discutir as opções Enterprise.
+Se precisar de limites maiores para uma integração em produção, [entre em contato conosco](mailto:support@jamdesk.com) para conversar sobre as opções Enterprise.
 </Warning>
 
 ## Limites de consulta
 
-Cada solicitação aceita um parâmetro `limit` que controla quantos resultados serão retornados. O máximo é **20**, o padrão é **5** e o mínimo é **1**. Não há paginação; todos os resultados correspondentes são retornados em uma única resposta. Se precisar de mais contexto, tente fazer uma consulta mais específica em vez de aumentar o limite.
+Cada solicitação aceita um parâmetro `limit` que controla quantos resultados retornar. O máximo é **20**, o padrão é **5** e o mínimo é **1**. Não há paginação; todos os resultados correspondentes são retornados em uma única resposta. Se precisar de mais contexto, experimente uma consulta mais específica em vez de aumentar o limite.
 
 Uma consulta sem correspondências retorna HTTP 200 com uma matriz de resultados vazia:
 
@@ -131,7 +135,7 @@ Uma consulta sem correspondências retorna HTTP 200 com uma matriz de resultados
 
 ## Filtrar por linguagem
 
-Se o site dos seus docs for compatível com vários idiomas, a API filtrará os resultados para um único idioma por solicitação. Envie `language` no corpo da solicitação com um código BCP-47 (por exemplo, `en`, `es`, `fr`, `pt-BR`, `zh-Hans`).
+Se o site da sua documentação oferecer suporte a vários idiomas, a API filtra os resultados por um único idioma em cada solicitação. Envie `language` no corpo da solicitação com um código BCP-47 (por exemplo, `en`, `es`, `fr`, `pt-BR`, `zh-Hans`).
 
 ```bash
 curl -X POST https://your-project.jamdesk.app/_api/search \
@@ -141,49 +145,49 @@ curl -X POST https://your-project.jamdesk.app/_api/search \
 ```
 
 | Regra | Detalhe |
-|--------|--------|
+|------|--------|
 | **Padrão** | `en` (inglês). Omita o campo ou envie `null` para usar o padrão. |
 | **Formato** | BCP-47 (`^[a-zA-Z]{2,3}([-_][a-zA-Z]{2,4})?$`). Exemplos: `en`, `es`, `fr`, `pt-BR`, `zh-Hans`. |
 | **Validação** | Valores malformados retornam `400` com `{"error": "Invalid language code"}`. |
-| **Tags de 3 segmentos** | Atualmente não são compatíveis. Códigos como `zh-Hant-HK` e `sr-Latn-RS` retornam `400`. [Entre em contato com o suporte](mailto:support@jamdesk.com) se precisar deles. |
-| **Projetos multilíngues** | O filtro é rigoroso: somente os trechos marcados com o idioma solicitado são retornados. Uma solicitação para `de` em um projeto que tenha apenas inglês e francês retorna um conjunto de resultados vazio, não um `400`. |
-| **Projetos de idioma único** | O filtro é ignorado; você sempre recebe o conjunto completo de resultados. Enviar `language` não causa problemas nem erros. |
-| **Repetido na resposta** | Toda resposta bem-sucedida inclui um campo `language` com o valor resolvido pelo servidor (o valor da solicitação ou o padrão `en`). |
+| **Tags com 3 segmentos** | Não têm suporte no momento. Códigos como `zh-Hant-HK` e `sr-Latn-RS` retornam `400`. [Entre em contato com o suporte](mailto:support@jamdesk.com) se precisar desses códigos. |
+| **Projetos multilíngues** | O filtro é rigoroso: somente blocos marcados com o idioma solicitado são retornados. Uma solicitação para `de` em um projeto que só tem inglês e francês retorna um conjunto vazio de resultados, não um `400`. |
+| **Projetos com um único idioma** | O filtro é ignorado; você sempre recebe o conjunto completo de resultados. Enviar `language` não causa problemas nem erros. |
+| **Incluído na resposta** | Toda resposta bem-sucedida inclui um campo `language` com o valor resolvido pelo servidor (valor da solicitação ou padrão `en`). |
 
 <Info>
-Um projeto é multilíngue quando seu `docs.json` tem uma matriz `navigation.languages` com duas ou mais entradas. Para verificar se o site é multilíngue, abra a aba **Settings → Languages** no dashboard ou abra `docs.json` diretamente.
+Um projeto é multilíngue quando o `docs.json` contém um array `navigation.languages` com duas ou mais entradas. Para verificar se seu site é multilíngue, abra a aba **Settings → Languages** no dashboard ou abra o `docs.json` diretamente.
 </Info>
 
 <Warning>
-O padrão `en` se aplica mesmo a projetos que não têm uma versão em inglês. Se o projeto multilíngue tiver, por exemplo, apenas francês e espanhol, chamar o endpoint sem um campo `language` filtrará por `en` e retornará um conjunto de resultados vazio. Sempre envie um `language` explícito em sites que não tenham apenas inglês.
+O padrão `en` também se aplica a projetos sem uma versão em inglês. Se seu projeto multilíngue, por exemplo, tiver apenas francês e espanhol, chamar o endpoint sem o campo `language` filtrará por `en` e retornará um conjunto vazio de resultados. Em sites sem uma versão em inglês, sempre envie um valor explícito para `language`.
 </Warning>
 
 ## Tratamento de erros
 
-Todas as respostas de erro incluem um campo `error` legível por máquina, que pode ser usado para ramificar o fluxo programaticamente.
+Todas as respostas de erro incluem um campo `error` legível por máquina, que você pode usar em ramificações programáticas.
 
 | Status | Valor de `error` | Significado | Ação |
 |--------|---------------|---------|--------|
-| **400** | `Missing or empty "query" field` | O corpo da solicitação não contém o campo `query` ou ele está vazio | Adicione uma string `query` não vazia |
-| **400** | `Invalid language code` | O campo `language` não é uma string ou não corresponde ao padrão BCP-47 (`null` é válido; strings vazias, com espaços em branco e tags de 3 segmentos não são) | Use um código válido de 1 ou 2 segmentos, como `en`, `es`, `fr` ou `pt-BR` |
+| **400** | `Missing or empty "query" field` | O corpo da solicitação está ausente ou não contém `query` | Adicione uma string `query` não vazia |
+| **400** | `Invalid language code` | O campo `language` não é uma string ou não corresponde ao padrão BCP-47 (`null` é válido; strings vazias ou com espaços em branco e tags com 3 segmentos não são) | Use um código válido de 1 ou 2 segmentos, como `en`, `es`, `fr` ou `pt-BR` |
 | **401** | `invalid_key_format` | O cabeçalho `Authorization` está ausente ou a chave não corresponde a `jd_live_<32 hex>` | Verifique o formato do cabeçalho; ele deve ser `Bearer jd_live_...` |
 | **401** | `invalid_key` | A chave não é reconhecida ou foi revogada | Gere uma nova chave no dashboard |
 | **403** | `wrong_project` | A chave é válida, mas foi gerada para outro projeto | Use uma chave correspondente ao slug do projeto na URL |
-| **429** | `Rate limit exceeded` | Foram excedidas 60 solicitações por minuto | Aguarde o número de segundos indicado no cabeçalho `Retry-After` |
-| **502** | `Search temporarily unavailable` | O back-end da pesquisa vetorial está indisponível | Tente novamente após uma breve espera |
-| **503** | `lookup_failed` ou `redis_unavailable` | O back-end de verificação de chaves está inacessível | Tente novamente após uma breve espera |
+| **429** | `Rate limit exceeded` | O limite de 60 solicitações por minuto foi excedido | Aguarde o número de segundos indicado no cabeçalho `Retry-After` |
+| **502** | `Search temporarily unavailable` | O backend de busca vetorial está indisponível | Tente novamente após uma breve espera |
+| **503** | `lookup_failed` ou `redis_unavailable` | O backend de verificação de chaves está inacessível | Tente novamente após uma breve espera |
 
 <Info>
-401 e 403 são falhas permanentes. Tentar novamente com a mesma chave não ajudará. 429, 502 e 503 são temporários; tente novamente usando recuo exponencial.
+401 e 403 são falhas permanentes. Tentar novamente com a mesma chave não resolverá o problema. 429, 502 e 503 são transitórios; portanto, tente novamente com um intervalo exponencial.
 </Info>
 
 ## CORS
 
-O CORS está habilitado em todos os endpoints. Clientes baseados em navegador (aplicativos de página única, extensões de navegador e sites estáticos) podem chamar `/_api/search` diretamente, sem um proxy de back-end. Todas as origens são permitidas.
+O CORS está habilitado em todos os endpoints. Clientes baseados em navegador (aplicativos de página única, extensões de navegador e sites estáticos) podem chamar `/_api/search` diretamente, sem um proxy de backend. Todas as origens são permitidas.
 
 ## SDKs
 
-Atualmente, não há SDKs oficiais de linguagem. Use a REST API diretamente por meio de `fetch`, `requests`, `curl` ou qualquer cliente HTTP. A [coleção do Postman](#coleção-do-postman) abaixo fornece exemplos prontos para bifurcar.
+No momento, não há SDKs oficiais para linguagens. Use a REST API diretamente com `fetch`, `requests`, `curl` ou qualquer cliente HTTP. A [coleção do Postman](#coleção-do-postman) abaixo oferece exemplos prontos para copiar e adaptar.
 
 ## Versionamento
 
@@ -191,42 +195,42 @@ A API está atualmente na versão **v1.0.0**. Alterações incompatíveis (renom
 
 ## Especificação OpenAPI
 
-A especificação completa da OpenAPI 3.1 está disponível como YAML. Importe-a na sua ferramenta de geração de código, cliente de API ou pipeline de testes de contrato.
+A especificação completa do OpenAPI 3.1 está disponível em YAML. Importe-a para sua ferramenta de geração de código, cliente de API ou pipeline de testes de contrato.
 
 <Columns cols={2}>
-  <Card title="Baixar YAML da OpenAPI" icon="file-arrow-down" href="https://raw.githubusercontent.com/jamdesk/jamdesk-docs/main/openapi/docs-search-api.yaml">
+  <Card title="Baixar YAML do OpenAPI" icon="file-arrow-down" href="https://raw.githubusercontent.com/jamdesk/jamdesk-docs/main/openapi/docs-search-api.yaml">
     `docs-search-api.yaml` (OpenAPI 3.1, sempre sincronizado com a versão publicada mais recente).
   </Card>
-  <Card title="Navegar no GitHub" icon="github" href="https://github.com/jamdesk/jamdesk-docs/blob/main/openapi/docs-search-api.yaml">
+  <Card title="Explorar no GitHub" icon="github" href="https://github.com/jamdesk/jamdesk-docs/blob/main/openapi/docs-search-api.yaml">
     Leia o código-fonte da especificação, registre problemas ou acompanhe as alterações.
   </Card>
 </Columns>
 
 ## Coleção do Postman
 
-Publicamos um workspace oficial do Postman com a especificação completa da OpenAPI e uma coleção pronta para bifurcar, para que você possa testar solicitações na interface do Postman sem escrever código.
+Publicamos um workspace oficial do Postman com a especificação completa do OpenAPI e uma coleção pronta para copiar e adaptar, para que você possa testar solicitações na interface do Postman sem escrever código.
 
 <Columns cols={2}>
-  <Card title="Workspace da API Docs do Jamdesk" icon="rocket" href="https://www.postman.com/jamdesk/jamdesk-docs-api">
-    Bifurque a coleção e execute solicitações no Postman. Inclui uma pasta de introdução e exemplos funcionais.
+  <Card title="Workspace da API de docs do Jamdesk" icon="rocket" href="https://www.postman.com/jamdesk/jamdesk-docs-api">
+    Faça fork da coleção e execute solicitações no Postman. Inclui uma pasta de primeiros passos e exemplos funcionais.
   </Card>
   <Card title="Todas as APIs do Jamdesk" icon="layer-group" href="https://www.postman.com/jamdesk">
-    Navegue por todos os workspaces públicos de APIs do Jamdesk e mantenha-se atualizado à medida que novas APIs são lançadas.
+    Explore todos os workspaces públicos de API do Jamdesk e acompanhe as novidades à medida que novas APIs forem lançadas.
   </Card>
 </Columns>
 
 <Warning>
-Depois de bifurcar a coleção, você **deve** atualizar duas variáveis da coleção antes que qualquer solicitação funcione:
+Depois de fazer fork da coleção, você **precisa** atualizar duas variáveis da coleção antes que qualquer solicitação funcione:
 
-- **`baseUrl`**: defina o endereço do seu próprio site de docs do Jamdesk. Para a maioria dos clientes, ele é `https://your-project.jamdesk.app` (substitua `your-project` pelo slug do projeto). Clientes com domínio personalizado devem usar o próprio host. Clientes que disponibilizam docs em um subcaminho devem incluir o caminho completo (por exemplo, `https://example.com/docs`).
-- **`apiKey`**: substitua o valor de espaço reservado por uma chave real gerada em **Dashboard → Project Settings → API Keys**.
+- **`baseUrl`**: defina o endereço do seu próprio site de documentação do Jamdesk. Para a maioria dos clientes, é `https://your-project.jamdesk.app` (substitua `your-project` pelo slug do seu projeto). Clientes com domínio personalizado usam seu próprio host. Clientes que disponibilizam a documentação em um subcaminho devem incluir o caminho completo (por exemplo, `https://example.com/docs`).
+- **`apiKey`**: substitua o valor de exemplo por uma chave real gerada em **Dashboard → Project Settings → API Keys**.
 </Warning>
 
 ## Próximas etapas
 
 <Columns cols={2}>
-  <Card title="Endpoint de pesquisa" icon="magnifying-glass" href="/pt/jamdesk-api/search">
-    Referência completa com esquemas de solicitação/resposta e playground interativo
+  <Card title="Endpoint de busca" icon="magnifying-glass" href="/pt/jamdesk-api/search">
+    Referência completa com esquemas de solicitação e resposta e ambiente de testes interativo
   </Card>
   <Card title="Guias de integração" icon="plug" href="/pt/jamdesk-api/integrations">
     Guias passo a passo para Intercom, Zendesk, bots do Slack e chatbots personalizados

@@ -1,13 +1,13 @@
 ---
 title: 自定义 JavaScript
-description: 为文档站点添加自定义 JavaScript，用于聊天组件、分析和第三方集成等客户端功能。
+description: 为文档站点添加自定义 JavaScript，用于聊天组件、分析、第三方集成及其他客户端功能。
 ---
 
-Jamdesk 支持添加自定义 JavaScript，使其在文档站点的每个页面上运行。可将其用于聊天组件、分析或所需的其他客户端脚本。
+Jamdesk 支持添加自定义 JavaScript，并在文档站点的每个页面运行。你可以用它添加聊天组件、分析功能或所需的其他客户端脚本。
 
 ## 添加自定义 JavaScript
 
-在文档目录中创建 JavaScript 文件，并在 `docs.json` 中引用它：
+在文档目录中创建 JavaScript 文件，并在 `docs.json` 中引用：
 
 ```json docs.json
 {
@@ -22,11 +22,11 @@ Jamdesk 支持添加自定义 JavaScript，使其在文档站点的每个页面�
 console.log('Hello from custom JS!');
 ```
 
-脚本会直接内嵌到页面 HTML 中，因此会在页面加载时执行。
+脚本会直接内联到页面 HTML 中，因此页面加载时就会执行。
 
 ## 自动检测
 
-如果未配置 `styling.js`，Jamdesk 会自动检测项目根目录中的 `.js` 文件。只需将 `script.js` 放在 `docs.json` 旁边，系统便会将其包含在内。
+如果未配置 `styling.js`，Jamdesk 会自动检测项目根目录中的 `.js` 文件。只需将 `script.js` 放在 `docs.json` 旁边，系统就会将其包含在内。
 
 ```bash
 my-docs/
@@ -36,9 +36,9 @@ my-docs/
 └── getting-started.mdx
 ```
 
-在 `docs.json` 中配置 `styling.js` 后，自动检测会停用，系统只会使用指定的文件。
+在 `docs.json` 中配置 `styling.js` 后，自动检测将会停用，系统只会使用指定的文件。
 
-<Note>自动检测会包含项目根目录中的**所有** `.js` 文件。如果文档目录中还有 `eslint.config.js` 或 `postcss.config.js` 等实用脚本，请在 `docs.json` 中使用 `styling.js` 明确指定要包含的文件。</Note>
+<Note>自动检测会包含项目根目录中的**所有** `.js` 文件。如果文档目录中还有 `eslint.config.js` 或 `postcss.config.js` 之类的实用脚本，请在 `docs.json` 中使用 `styling.js`，明确指定要包含的文件。</Note>
 
 ## 多个文件
 
@@ -56,7 +56,7 @@ my-docs/
 
 ## 示例
 
-如需查看将脚本与 CSS 配合使用的详细演示，请参阅 [CSS 与 JS 示例](/cn/customization/custom-code-examples)。示例会添加一个悬浮的 Ask AI 按钮和一个品牌色标题栏。
+如需查看将脚本与 CSS 配合使用的详细演示，请参阅 [CSS 和 JS 示例](/cn/customization/custom-code-examples)。该示例会添加一个悬浮的 Ask AI 按钮和一个品牌色标题栏。
 
 ### 聊天小组件（Crisp）
 
@@ -99,18 +99,26 @@ window.addEventListener('load', function () {
 
 ## 工作原理
 
-构建过程中会读取 JavaScript 文件，并将其直接嵌入每个页面的 HTML 中。脚本标签位于 `<body>` 末尾，因此代码运行时 DOM 已就绪。
+构建过程中会读取 JavaScript 文件，并将其直接嵌入每个页面的 HTML 中。脚本标签会放在 `<body>` 末尾，因此代码运行时 DOM 已可用。
 
-自定义 JavaScript 只会在已发布的网站上运行。`jamdesk dev` 不会加载这些脚本；如需在本地测试脚本，请将其粘贴到预览页面的浏览器控制台中。
+在 `jamdesk dev`（CLI 1.1.222 及更高版本）中也会运行自定义 JavaScript，因此你可以在推送前测试脚本。脚本抛出的错误会显示在浏览器控制台中。在 `jamdesk dev` 中，`window.__JAMDESK_DEV__` 的值为 `true`，因此你可以跳过分析等仅用于生产环境的代码：
 
-访客首次加载网站时，脚本会运行一次。在文档中点击链接只会替换页面内容，不会完整重新加载页面，因此脚本不会再次运行。如果代码需要与页面内容交互，请[监听页面变化](/cn/customization/custom-code-examples#每次页面更改后运行代码)。
+```javascript
+if (!window.__JAMDESK_DEV__) {
+  // analytics, chat widgets and other production-only code
+}
+```
+
+如果使用 `integrations.cookies` 配置了 Cookie 同意功能，脚本只会在已发布的网站上运行，并且只有在访客同意后才会运行。
+
+访客首次加载网站时，脚本会运行一次。点击文档中的链接会切换页面内容，但不会完整重新加载页面，因此脚本不会再次运行。如果代码需要处理页面内容，请[监听页面变更](/cn/customization/custom-code-examples#每次页面更改后运行代码)。
 
 ## 限制
 
-- 脚本会在**每个页面**上运行，无法针对特定页面
-- 更改会在下一次**构建**时生效；`jamdesk dev` 不会运行自定义脚本
-- 脚本会**内嵌**到 HTML 中，而不会作为单独的文件提供
-- 对于分析功能，可以考虑改用内置的[集成](/cn/integrations/google-analytics)，它会自动处理用户同意和性能问题
+- 脚本会在**每个页面**上运行，无法指定特定页面
+- 更改会在下一次**构建**时生效
+- 脚本会**内联**到 HTML 中，而不会作为独立文件提供
+- 对于分析功能，可以考虑改用内置的[集成](/cn/integrations/google-analytics)，它们会自动处理同意管理和性能优化
 
 ## 接下来做什么？
 
@@ -118,10 +126,10 @@ window.addEventListener('load', function () {
   <Card title="自定义 CSS" icon="paintbrush" href="/cn/customization/custom-css">
     使用自定义 CSS 覆盖主题样式
   </Card>
-  <Card title="CSS 与 JS 示例" icon="wand-magic-sparkles" href="/cn/customization/custom-code-examples">
-    悬浮的 Ask AI 按钮和品牌化标题栏
+  <Card title="CSS 和 JS 示例" icon="wand-magic-sparkles" href="/cn/customization/custom-code-examples">
+    添加悬浮的 Ask AI 按钮和品牌风格标题栏
   </Card>
   <Card title="集成" icon="plug" href="/cn/integrations/google-analytics">
-    内置分析和第三方集成
+    使用内置分析功能和第三方集成
   </Card>
 </Columns>

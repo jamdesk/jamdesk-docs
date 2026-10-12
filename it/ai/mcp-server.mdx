@@ -1,23 +1,23 @@
 ---
 title: Server MCP
 sidebarTitle: Server MCP
-description: Ogni sito Jamdesk include un server MCP integrato. Gli assistenti AI come Claude e Cursor possono cercare e leggere direttamente la documentazione.
+description: Ogni sito Jamdesk include un server MCP integrato. Assistenti AI come Claude e Cursor possono cercare e leggere direttamente la documentazione del sito.
 ---
 
-Ogni sito Jamdesk include un server MCP (Model Context Protocol) integrato. Mentre `llms.txt` fornisce agli strumenti AI un'istantanea statica della documentazione, MCP consente di cercarla e interrogarla interattivamente, utile quando gli agenti AI devono trovare risposte specifiche invece di leggere tutto.
+Ogni sito Jamdesk include un server MCP (Model Context Protocol) integrato. Mentre `llms.txt` fornisce agli strumenti AI un’istantanea statica della documentazione, MCP consente di cercare e interrogare i contenuti in modo interattivo: è utile quando gli agenti AI devono trovare risposte specifiche invece di leggere tutto.
 
-## Che cos'è MCP?
+## Che cos’è MCP?
 
-Il [Model Context Protocol](https://modelcontextprotocol.io) è uno standard aperto che consente agli strumenti AI di accedere a fonti dati esterne. La documentazione Jamdesk espone due strumenti tramite MCP:
+Il [Model Context Protocol](https://modelcontextprotocol.io) è uno standard aperto che consente agli strumenti AI di accedere a fonti di dati esterne. La documentazione Jamdesk espone due strumenti tramite MCP:
 
 | Strumento | Scopo |
 |------|---------|
-| `searchDocs` | Cerca nella documentazione per parola chiave e restituisce risultati ordinati per rilevanza |
+| `searchDocs` | Cerca nella documentazione per parola chiave e restituisce risultati ordinati per pertinenza |
 | `getPage` | Recupera il contenuto completo di una pagina specifica |
 
-## URL dell'endpoint
+## URL dell’endpoint
 
-L'endpoint MCP è l'URL della documentazione con `/_mcp` aggiunto. Se hai un [dominio personalizzato](/it/deploy/custom-domains) attivo, utilizzalo:
+L’endpoint MCP è l’URL della documentazione con `/_mcp` aggiunto. Se hai attivato un [dominio personalizzato](/it/deploy/custom-domains), usalo:
 
 | Configurazione | Endpoint |
 |-------|----------|
@@ -25,7 +25,7 @@ L'endpoint MCP è l'URL della documentazione con `/_mcp` aggiunto. Se hai un [do
 | Nessun dominio personalizzato | `https://my-project.jamdesk.app/_mcp` |
 
 <Note>
-  Preferisci l'endpoint del dominio personalizzato ogni volta che è collegato: mantiene il tuo branding in ogni URL visualizzato dagli strumenti AI e continua a funzionare anche se in seguito nascondi il sottodominio `.jamdesk.app` con [Solo dominio personalizzato](/it/deploy/custom-domain-only).
+  Quando è collegato un dominio personalizzato, preferisci il relativo endpoint: mantiene il tuo brand in tutti gli URL visibili agli strumenti AI e continua a funzionare anche se in seguito nascondi il sottodominio `.jamdesk.app` con [Solo dominio personalizzato](/it/deploy/custom-domain-only).
 </Note>
 
 ## Configurazione rapida
@@ -40,10 +40,10 @@ L'endpoint MCP è l'URL della documentazione con `/_mcp` aggiunto. Se hai un [do
 
     Sostituisci `docs.acme.com` con il dominio della documentazione oppure con `my-project.jamdesk.app` se non hai collegato un dominio personalizzato.
 
-    Ora, quando chiedi a Claude informazioni sul tuo progetto, può cercare e leggere direttamente la documentazione.
+    Da quel momento, quando chiedi a Claude informazioni sul tuo progetto, potrà cercare e leggere direttamente la documentazione.
   </Tab>
   <Tab title="Cursor">
-    Aggiungi quanto segue al file `.cursor/mcp.json` del progetto:
+    Aggiungi la configurazione al file `.cursor/mcp.json` del progetto:
 
     ```json
     {
@@ -63,7 +63,7 @@ L'endpoint MCP è l'URL della documentazione con `/_mcp` aggiunto. Se hai un [do
 
 ### searchDocs
 
-Cerca nella documentazione e ottieni risultati ordinati per rilevanza.
+Cerca nella documentazione e ottieni risultati ordinati per pertinenza.
 
 **Parametri:**
 
@@ -73,7 +73,7 @@ Cerca nella documentazione e ottieni risultati ordinati per rilevanza.
 | `limit` | number | No | Numero massimo di risultati (predefinito: 10, massimo: 50) |
 | `type` | string | No | Filtra per tipo di contenuto: `all`, `api`, `guide`, `quickstart`, `help`, `component` |
 
-**Esempio di richiesta:**
+**Eempio di richiesta:**
 
 ```json
 {
@@ -107,7 +107,7 @@ Cerca nella documentazione e ottieni risultati ordinati per rilevanza.
 
 ### getPage
 
-Recupera il contenuto completo di una pagina della documentazione specifica.
+Recupera il contenuto completo di una pagina specifica della documentazione.
 
 **Parametri:**
 
@@ -146,9 +146,9 @@ Recupera il contenuto completo di una pagina della documentazione specifica.
 }
 ```
 
-## Test dell'endpoint
+## Testare l’endpoint
 
-Puoi testare direttamente l'endpoint MCP con curl:
+Puoi testare direttamente l’endpoint MCP con curl:
 
 ```bash
 # List available tools
@@ -162,46 +162,69 @@ curl -X POST https://docs.acme.com/_mcp \
   -d '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"searchDocs","arguments":{"query":"getting started"}}}'
 ```
 
+## Siti protetti da login
+
+Se il sito usa l’autenticazione con password o JWT, il server MCP richiede una chiave API del progetto. Creane una in **Project Settings > API Keys** e inviala come header:
+
+```bash
+claude mcp add --transport http my-docs https://docs.example.com/_mcp \
+  --header "Authorization: Bearer jd_live_..."
+```
+
+Con la chiave, un client MCP può cercare e leggere le pagine consultabili del sito, ovvero lo stesso insieme di pagine coperto dalla ricerca del sito. Le pagine con accesso limitato a gruppi non sono mai disponibili tramite MCP, con o senza chiave. Le pagine nascoste e quelle con `search: false` vengono escluse, a meno che non siano state rese consultabili. Tratta la chiave come una password e revocala nel dashboard se viene esposta.
+
+Senza una chiave, il server risponde con `401` e un corpo JSON che spiega come aggiungerne una. Le chiavi di un altro progetto vengono rifiutate. I codici di errore sono:
+
+| Stato | `error` | Significato |
+|--------|---------|---------|
+| 401 | `auth_required` | Non è stata inviata alcuna chiave. |
+| 401 | `invalid_api_key` | La chiave non è valida per questo sito. |
+| 503 | `auth_unavailable` | Non è stato possibile verificare la chiave. Riprova dopo il numero di secondi indicato nell’header `Retry-After`. |
+
 ## Come funziona
 
-L'endpoint MCP utilizza un indice di ricerca creato insieme alla documentazione:
+L’endpoint MCP usa un indice di ricerca creato insieme alla documentazione:
 
-- **Classificazione BM25** - Ordina i risultati in base alla rilevanza
-- **Corrispondenza fuzzy** - Gestisce gli errori di battitura (tolleranza di 1 carattere)
-- **Incremento dei campi** - I titoli e le intestazioni delle sezioni hanno un peso maggiore rispetto al contenuto del corpo
-- **Filtro per tipo** - Filtra i risultati per tipo di contenuto (API, guida ecc.)
+- **Ranking BM25** - Ordina i risultati per pertinenza
+- **Ricerca approssimativa** - Gestisce gli errori di battitura (tolleranza di 1 carattere)
+- **Ponderazione dei campi** - Titoli e intestazioni delle sezioni hanno un peso maggiore rispetto al corpo del testo
+- **Filtro per tipo** - Filtra i risultati per tipo di contenuto (API, guide e così via)
 
-L'indice viene ricostruito a ogni deploy.
+L’indice viene ricreato a ogni deploy.
 
 ## Limiti di frequenza
 
-L'endpoint MCP ha un limite di **60 richieste al minuto** per indirizzo IP. È sufficiente per il normale utilizzo da parte degli assistenti AI. Se superi il limite, riceverai una risposta 429.
+L’endpoint MCP ha un limite di **60 richieste al minuto** per indirizzo IP. È sufficiente per il normale utilizzo degli assistenti AI. Se superi il limite, riceverai una risposta 429.
 
 ## Risoluzione dei problemi
 
 <Accordion title="Il server MCP non si connette">
-  Verifica che l'URL dell'endpoint sia corretto e accessibile:
+  Verifica che l’URL dell’endpoint sia corretto e accessibile:
 
   ```bash
   curl https://docs.acme.com/_mcp
   ```
 
-  Dovresti visualizzare una risposta JSON con le informazioni sul server. In caso contrario, verifica che la documentazione sia stata compilata almeno una volta.
+  Dovresti ricevere una risposta JSON con le informazioni sul server. In caso contrario, verifica che la documentazione sia stata compilata almeno una volta.
 </Accordion>
 
 <Accordion title="La ricerca non restituisce risultati">
-  L'indice di ricerca viene generato durante la compilazione. Se hai aggiunto contenuti di recente, avvia una nuova compilazione dal dashboard Jamdesk per aggiornare l'indice.
+  L’indice di ricerca viene generato durante il build. Se hai aggiunto contenuti di recente, avvia una nuova compilazione dal dashboard Jamdesk per aggiornare l’indice.
 </Accordion>
 
 <Accordion title="getPage restituisce null">
-  Assicurati che lo slug corrisponda esattamente al percorso della pagina, senza l'estensione `.mdx`. Ad esempio, se la pagina si trova in `api/authentication.mdx`, usa `api/authentication` come slug.
+  Verifica che lo slug corrisponda esattamente al percorso della pagina, senza l’estensione `.mdx`. Ad esempio, se la pagina si trova in `api/authentication.mdx`, usa `api/authentication` come slug.
 </Accordion>
 
-## Cosa fare ora?
+<Accordion title="401 auth_required su un sito protetto">
+  Il sito usa l’autenticazione con password o JWT, quindi la richiesta necessita di una chiave API del progetto. Aggiungi l’header `Authorization: Bearer` con una chiave disponibile in **Project Settings > API Keys**. Consulta [Siti protetti da login](#siti-protetti-da-login).
+</Accordion>
+
+## Prossimi passi
 
 <Columns cols={2}>
-  <Card title="Scrivere con l'AI" icon="wand-magic-sparkles" href="/it/ai/writing-with-ai">
-    Suggerimenti per utilizzare gli strumenti AI nella scrittura della documentazione
+  <Card title="Scrivere con AI" icon="wand-magic-sparkles" href="/it/ai/writing-with-ai">
+    Suggerimenti per usare gli strumenti AI per scrivere la documentazione
   </Card>
   <Card title="llms.txt" icon="file-lines" href="/it/ai/llms-txt">
     Indice delle pagine generato automaticamente per gli strumenti AI

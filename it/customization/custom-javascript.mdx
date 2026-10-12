@@ -1,13 +1,13 @@
 ---
 title: JavaScript personalizzato
-description: Aggiungi JavaScript personalizzato al sito della documentazione per widget di chat, analisi, integrazioni di terze parti e altre funzioni lato client.
+description: Aggiungi JavaScript personalizzato al sito di documentazione per widget di chat, analisi, integrazioni di terze parti e altre funzioni lato client.
 ---
 
-Jamdesk consente di aggiungere JavaScript personalizzato, eseguito su ogni pagina del sito della documentazione. Puoi usarlo per widget di chat, analisi o qualsiasi altro script lato client di cui hai bisogno.
+Jamdesk consente di aggiungere JavaScript personalizzato che viene eseguito su ogni pagina del sito di documentazione. Usalo per widget di chat, analisi o qualsiasi altro script lato client di cui hai bisogno.
 
 ## Aggiungere JavaScript personalizzato
 
-Crea un file JavaScript nella directory della documentazione e inseriscine il riferimento in `docs.json`:
+Crea un file JavaScript nella directory della documentazione e richiamalo in `docs.json`:
 
 ```json docs.json
 {
@@ -22,7 +22,7 @@ Crea un file JavaScript nella directory della documentazione e inseriscine il ri
 console.log('Hello from custom JS!');
 ```
 
-Lo script viene inserito direttamente nell'HTML della pagina, quindi viene eseguito al caricamento.
+Lo script viene incorporato direttamente nell'HTML della pagina, quindi viene eseguito al caricamento della pagina.
 
 ## Rilevamento automatico
 
@@ -36,7 +36,7 @@ my-docs/
 └── getting-started.mdx
 ```
 
-Quando `styling.js` è configurato in `docs.json`, il rilevamento automatico viene disattivato e vengono usati solo i file specificati.
+Quando `styling.js` è configurato in `docs.json`, il rilevamento automatico viene disabilitato e vengono usati solo i file specificati.
 
 <Note>Il rilevamento automatico include **tutti** i file `.js` nella directory principale del progetto. Se accanto alla documentazione hai script di utilità come `eslint.config.js` o `postcss.config.js`, usa `styling.js` in `docs.json` per specificare esattamente quali file includere.</Note>
 
@@ -52,11 +52,11 @@ Per includere più script, passa un array:
 }
 ```
 
-Con il rilevamento automatico vengono inclusi tutti i file `.js` nella directory principale, in ordine alfabetico. Se hai `analytics.js` e `chat.js`, vengono caricati in quest'ordine.
+Con il rilevamento automatico, vengono inclusi tutti i file `.js` nella directory principale, in ordine alfabetico. Se hai `analytics.js` e `chat.js`, verranno caricati in quest'ordine.
 
 ## Esempi
 
-Per una guida più dettagliata che combina uno script e CSS, consulta [Esempi di CSS e JS](/it/customization/custom-code-examples). Aggiunge un pulsante Ask AI mobile e un'intestazione con i colori del brand.
+Per una guida più dettagliata che abbina uno script al CSS, consulta [Esempi CSS e JS](/it/customization/custom-code-examples). Aggiunge un pulsante Ask AI mobile e un'intestazione con i colori del brand.
 
 ### Widget di chat (Crisp)
 
@@ -99,26 +99,34 @@ window.addEventListener('load', function () {
 
 ## Come funziona
 
-I file JavaScript vengono letti durante il processo di build e incorporati direttamente nell'HTML di ogni pagina. Il tag script viene inserito alla fine di `<body>`, così il DOM è disponibile quando viene eseguito il codice.
+I file JavaScript vengono letti durante il processo di build e incorporati direttamente nell'HTML di ogni pagina. Il tag script viene posizionato alla fine di `<body>`, così il DOM è disponibile quando il codice viene eseguito.
 
-JavaScript personalizzato viene eseguito solo sul sito pubblicato. `jamdesk dev` lo esclude; per provare uno script in locale, incollalo nella console del browser sulla pagina di anteprima.
+Il JavaScript personalizzato viene eseguito anche in `jamdesk dev` (CLI 1.1.222 e versioni successive), così puoi testare uno script prima di eseguire il push. Gli errori generati dallo script vengono visualizzati nella console del browser. In `jamdesk dev`, `window.__JAMDESK_DEV__` è `true`, quindi puoi escludere il codice destinato solo alla produzione, come quello per le analisi:
 
-Lo script viene eseguito una volta, quando un visitatore carica il sito per la prima volta. Facendo clic su un link nella documentazione, il contenuto della pagina viene sostituito senza un ricaricamento completo, quindi lo script non viene eseguito di nuovo. Se il codice interagisce con il contenuto della pagina, [rileva i cambi di pagina](/it/customization/custom-code-examples#esegui-il-codice-dopo-ogni-cambio-di-pagina).
+```javascript
+if (!window.__JAMDESK_DEV__) {
+  // analytics, chat widgets and other production-only code
+}
+```
+
+Se configuri il consenso ai cookie con `integrations.cookies`, lo script viene eseguito solo sul sito pubblicato, dopo che il visitatore ha dato il proprio consenso.
+
+Lo script viene eseguito una volta, quando un visitatore carica il sito per la prima volta. Facendo clic su un link nella documentazione, il contenuto della pagina viene sostituito senza ricaricarla completamente, quindi lo script non viene eseguito di nuovo. Se il codice interagisce con il contenuto della pagina, [rileva le modifiche alla pagina](/it/customization/custom-code-examples#esegui-il-codice-dopo-ogni-cambio-di-pagina).
 
 ## Limitazioni
 
-- Gli script vengono eseguiti su **tutte le pagine**: non è possibile limitarli a pagine specifiche
-- Le modifiche diventano effettive alla build successiva; `jamdesk dev` non esegue gli script personalizzati
-- Gli script vengono **inseriti** nell'HTML, non serviti come file separati
+- Gli script vengono eseguiti su **ogni pagina**. Non è possibile limitarli a pagine specifiche
+- Le modifiche diventano effettive con la build successiva
+- Gli script vengono **incorporati** nell'HTML, non distribuiti come file separati
 - Per le analisi, valuta l'uso delle [integrazioni](/it/integrations/google-analytics) integrate, che gestiscono automaticamente il consenso e le prestazioni
 
 ## Cosa fare ora?
 
 <Columns cols={2}>
   <Card title="CSS personalizzato" icon="paintbrush" href="/it/customization/custom-css">
-    Sovrascrivi gli stili del tema con CSS personalizzato
+    Personalizza gli stili del tema con CSS personalizzato
   </Card>
-  <Card title="Esempi di CSS e JS" icon="wand-magic-sparkles" href="/it/customization/custom-code-examples">
+  <Card title="Esempi CSS e JS" icon="wand-magic-sparkles" href="/it/customization/custom-code-examples">
     Un pulsante Ask AI mobile e un'intestazione con il brand
   </Card>
   <Card title="Integrazioni" icon="plug" href="/it/integrations/google-analytics">

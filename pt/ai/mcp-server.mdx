@@ -1,23 +1,23 @@
 ---
 title: Servidor MCP
 sidebarTitle: Servidor MCP
-description: Cada site Jamdesk inclui um servidor MCP integrado. Assistentes de IA como Claude e Cursor podem pesquisar e ler sua documentação diretamente.
+description: Todos os sites Jamdesk incluem um servidor MCP integrado. Assistentes de IA, como Claude e Cursor, podem pesquisar e ler sua documentação diretamente.
 ---
 
-Cada site Jamdesk inclui um servidor MCP (Model Context Protocol) integrado. Enquanto `llms.txt` fornece às ferramentas de IA uma captura estática da sua documentação, o MCP permite que elas pesquisem e consultem interativamente — útil quando os agentes de IA precisam encontrar respostas específicas em vez de ler tudo.
+Todos os sites Jamdesk incluem um servidor MCP (Model Context Protocol). Enquanto o `llms.txt` oferece às ferramentas de IA uma visão estática da sua documentação, o MCP permite pesquisar e consultar conteúdo de forma interativa — útil quando agentes de IA precisam encontrar respostas específicas em vez de ler tudo.
 
 ## O que é MCP?
 
-O [Model Context Protocol](https://modelcontextprotocol.io) é um padrão aberto que permite que ferramentas de IA acessem fontes de dados externas. Sua documentação do Jamdesk expõe duas ferramentas via MCP:
+O [Model Context Protocol](https://modelcontextprotocol.io) é um padrão aberto que permite que ferramentas de IA acessem fontes de dados externas. Sua documentação do Jamdesk disponibiliza duas ferramentas por meio do MCP:
 
 | Ferramenta | Finalidade |
 |------|---------|
-| `searchDocs` | Pesquisa a documentação por palavra-chave e retorna resultados classificados |
+| `searchDocs` | Pesquisa a documentação por palavra-chave e retorna resultados classificados por relevância |
 | `getPage` | Recupera o conteúdo completo de uma página específica |
 
 ## URL do endpoint
 
-Seu endpoint MCP é a URL da documentação com `/_mcp` anexado. Se você tiver um [domínio personalizado](/pt/deploy/custom-domains) ativo, use-o:
+Seu endpoint MCP é a URL da documentação com `/_mcp` acrescentado. Se você já tiver um [domínio personalizado](/pt/deploy/custom-domains) ativo, use-o:
 
 | Configuração | Endpoint |
 |-------|----------|
@@ -25,7 +25,7 @@ Seu endpoint MCP é a URL da documentação com `/_mcp` anexado. Se você tiver 
 | Sem domínio personalizado | `https://my-project.jamdesk.app/_mcp` |
 
 <Note>
-  Prefira o endpoint do domínio personalizado sempre que houver um conectado — isso mantém sua marca em todas as URLs que as ferramentas de IA veem e continua funcionando mesmo que você oculte posteriormente seu subdomínio `.jamdesk.app` com [Somente domínio personalizado](/pt/deploy/custom-domain-only).
+  Prefira o endpoint do domínio personalizado sempre que ele estiver conectado — assim, sua marca aparece em todas as URLs vistas pelas ferramentas de IA, e o endpoint continua funcionando mesmo que você oculte o subdomínio `.jamdesk.app` mais tarde com [Somente domínio personalizado](/pt/deploy/custom-domain-only).
 </Note>
 
 ## Configuração rápida
@@ -43,7 +43,7 @@ Seu endpoint MCP é a URL da documentação com `/_mcp` anexado. Se você tiver 
     Agora, quando você perguntar ao Claude sobre seu projeto, ele poderá pesquisar e ler sua documentação diretamente.
   </Tab>
   <Tab title="Cursor">
-    Adicione ao `.cursor/mcp.json` do seu projeto:
+    Adicione ao arquivo `.cursor/mcp.json` do seu projeto:
 
     ```json
     {
@@ -63,15 +63,15 @@ Seu endpoint MCP é a URL da documentação com `/_mcp` anexado. Se você tiver 
 
 ### searchDocs
 
-Pesquise sua documentação e obtenha resultados classificados.
+Pesquise sua documentação e obtenha resultados classificados por relevância.
 
 **Parâmetros:**
 
 | Parâmetro | Tipo | Obrigatório | Descrição |
 |-----------|------|----------|-------------|
 | `query` | string | Sim | Termos de pesquisa (por exemplo, "authentication", "getting started") |
-| `limit` | number | Não | Máximo de resultados (padrão: 10, máximo: 50) |
-| `type` | string | Não | Filtra por tipo de conteúdo: `all`, `api`, `guide`, `quickstart`, `help`, `component` |
+| `limit` | number | Não | Número máximo de resultados (padrão: 10, máximo: 50) |
+| `type` | string | Não | Filtre pelo tipo de conteúdo: `all`, `api`, `guide`, `quickstart`, `help`, `component` |
 
 **Exemplo de solicitação:**
 
@@ -162,24 +162,43 @@ curl -X POST https://docs.acme.com/_mcp \
   -d '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"searchDocs","arguments":{"query":"getting started"}}}'
 ```
 
+## Sites protegidos por login
+
+Se seu site usa autenticação por senha ou JWT, o servidor MCP precisa de uma chave de API do projeto. Crie uma em **Project Settings > API Keys** e envie-a em um cabeçalho:
+
+```bash
+claude mcp add --transport http my-docs https://docs.example.com/_mcp \
+  --header "Authorization: Bearer jd_live_..."
+```
+
+Com a chave, um cliente MCP pode pesquisar e ler as páginas pesquisáveis do site, o mesmo conjunto abrangido pela busca do site. Páginas restritas a grupos nunca ficam disponíveis pelo MCP, com ou sem chave. Páginas ocultas e páginas com `search: false` são excluídas, a menos que você as tenha tornado pesquisáveis. Trate a chave como uma senha e revogue-a no dashboard se ela vazar.
+
+Sem uma chave, o servidor responde com `401` e um corpo JSON que explica como adicionar uma. Uma chave de outro projeto é rejeitada. Os códigos de erro são:
+
+| Status | `error` | Significado |
+|--------|---------|---------|
+| 401 | `auth_required` | Nenhuma chave foi enviada. |
+| 401 | `invalid_api_key` | A chave não é válida para este site. |
+| 503 | `auth_unavailable` | Não foi possível verificar a chave. Tente novamente após o número de segundos indicado no cabeçalho `Retry-After`. |
+
 ## Como funciona
 
 O endpoint MCP usa um índice de pesquisa criado junto com sua documentação:
 
 - **Classificação BM25** - Classifica os resultados por relevância
-- **Correspondência difusa** - Lida com erros de digitação (tolerância de 1 caractere)
-- **Priorização de campos** - Títulos e cabeçalhos de seção têm um peso maior que o conteúdo do corpo
-- **Filtragem por tipo** - Filtra os resultados por tipo de conteúdo (API, guia etc.)
+- **Correspondência aproximada** - Lida com erros de digitação (tolerância de 1 caractere)
+- **Priorização de campos** - Títulos e cabeçalhos de seção têm mais peso que o conteúdo do corpo
+- **Filtro por tipo** - Filtra resultados pelo tipo de conteúdo (API, guia etc.)
 
-O índice é recriado a cada deploy.
+O índice é reconstruído a cada implantação.
 
 ## Limites de taxa
 
-O endpoint MCP tem um limite de **60 solicitações por minuto** por endereço IP. Isso é suficiente para o uso normal por assistentes de IA. Se você exceder o limite, receberá uma resposta 429.
+O endpoint MCP tem um limite de **60 solicitações por minuto** por endereço IP. Isso é suficiente para o uso normal de assistentes de IA. Se você exceder o limite, receberá uma resposta `429`.
 
 ## Solução de problemas
 
-<Accordion title="O servidor MCP não se conecta">
+<Accordion title="O servidor MCP não conecta">
   Verifique se a URL do endpoint está correta e acessível:
 
   ```bash
@@ -190,18 +209,22 @@ O endpoint MCP tem um limite de **60 solicitações por minuto** por endereço I
 </Accordion>
 
 <Accordion title="A pesquisa não retorna resultados">
-  O índice de pesquisa é gerado no momento da compilação. Se você adicionou conteúdo recentemente, acione uma nova compilação no dashboard do Jamdesk para atualizar o índice.
+  O índice de pesquisa é gerado no momento do build. Se você adicionou conteúdo recentemente, inicie uma nova compilação no dashboard do Jamdesk para atualizar o índice.
 </Accordion>
 
 <Accordion title="getPage retorna null">
-  Certifique-se de que o slug corresponde exatamente ao caminho da sua página (sem a extensão `.mdx`). Por exemplo, se sua página estiver em `api/authentication.mdx`, use `api/authentication` como slug.
+  Confira se o slug corresponde exatamente ao caminho da página, sem a extensão `.mdx`. Por exemplo, se a página estiver em `api/authentication.mdx`, use `api/authentication` como slug.
 </Accordion>
 
-## O que vem a seguir?
+<Accordion title="401 auth_required em um site protegido">
+  O site usa autenticação por senha ou JWT, então a solicitação precisa de uma chave de API do projeto. Adicione o cabeçalho `Authorization: Bearer` com uma chave de **Project Settings > API Keys**. Consulte [Sites protegidos por login](#sites-protegidos-por-login).
+</Accordion>
+
+## Próximos passos
 
 <Columns cols={2}>
   <Card title="Escrever com IA" icon="wand-magic-sparkles" href="/pt/ai/writing-with-ai">
-    Dicas para usar ferramentas de IA na criação de documentação
+    Dicas para usar ferramentas de IA na escrita da documentação
   </Card>
   <Card title="llms.txt" icon="file-lines" href="/pt/ai/llms-txt">
     Índice de páginas gerado automaticamente para ferramentas de IA
