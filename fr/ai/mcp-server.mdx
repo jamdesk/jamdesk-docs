@@ -162,6 +162,31 @@ curl -X POST https://docs.acme.com/_mcp \
   -d '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"searchDocs","arguments":{"query":"getting started"}}}'
 ```
 
+## Sites protégés par connexion
+
+Les assistants IA ne peuvent ni saisir un mot de passe ni suivre une redirection vers une page de connexion. Sur un site protégé par mot de passe ou par JWT, l'endpoint MCP accepte à la place une clé API du projet. Créez-en une dans **Settings** > **API Keys** (ce sont les mêmes clés que celles de l'[API de recherche de documentation](/fr/jamdesk-api/docs-search-api)) et envoyez-la comme jeton Bearer :
+
+```bash
+curl -X POST https://docs.acme.com/_mcp \
+  -H "Authorization: Bearer jd_live_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}'
+```
+
+Une clé ne fonctionne que pour le projet qui l'a créée et n'ouvre que l'endpoint MCP. Elle ne déverrouille ni les pages ni le chat.
+
+Sans clé valide, l'endpoint répond par une erreur JSON au lieu de la page de connexion :
+
+| Statut | `error` | Signification |
+|--------|---------|---------------|
+| 401 | `auth_required` | Aucune clé n'a été envoyée. |
+| 401 | `invalid_api_key` | La clé n'est pas valide pour ce site. |
+| 503 | `auth_unavailable` | La clé n'a pas pu être vérifiée. Réessayez après le nombre de secondes indiqué dans l'en-tête `Retry-After`. |
+
+<Warning>
+  Les résultats peuvent inclure des pages situées derrière votre connexion. Conservez la clé dans la configuration secrète de votre assistant, hors des fichiers partagés.
+</Warning>
+
 ## Fonctionnement
 
 L'endpoint MCP utilise un index de recherche construit en même temps que votre documentation :

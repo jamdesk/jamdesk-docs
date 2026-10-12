@@ -162,6 +162,31 @@ curl -X POST https://docs.acme.com/_mcp \
   -d '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"searchDocs","arguments":{"query":"getting started"}}}'
 ```
 
+## Sitios protegidos con inicio de sesión
+
+Los asistentes de IA no pueden rellenar una solicitud de contraseña ni seguir una redirección de inicio de sesión. En un sitio con autenticación por contraseña o JWT, el endpoint MCP acepta en su lugar una clave de API del proyecto. Crea una en **Settings** > **API Keys** (las mismas claves que usa la [API de búsqueda de documentación](/es/jamdesk-api/docs-search-api)) y envíala como token Bearer:
+
+```bash
+curl -X POST https://docs.acme.com/_mcp \
+  -H "Authorization: Bearer jd_live_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}'
+```
+
+Una clave solo funciona para el proyecto que la creó y abre únicamente el endpoint MCP. No desbloquea páginas ni el chat.
+
+Sin una clave válida, el endpoint responde con un error JSON en lugar de la página de inicio de sesión:
+
+| Estado | `error` | Significado |
+|--------|---------|-------------|
+| 401 | `auth_required` | No se envió ninguna clave. |
+| 401 | `invalid_api_key` | La clave no es válida para este sitio. |
+| 503 | `auth_unavailable` | No se pudo comprobar la clave. Reintenta pasados los segundos indicados en el encabezado `Retry-After`. |
+
+<Warning>
+  Los resultados pueden incluir páginas que están detrás de tu inicio de sesión. Guarda la clave en la configuración secreta de tu asistente y fuera de archivos compartidos.
+</Warning>
+
 ## Cómo funciona
 
 El endpoint de MCP utiliza un índice de búsqueda que se genera junto con tu documentación:

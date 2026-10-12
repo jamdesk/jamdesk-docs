@@ -162,6 +162,31 @@ curl -X POST https://docs.acme.com/_mcp \
   -d '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"searchDocs","arguments":{"query":"getting started"}}}'
 ```
 
+## Login-Protected Sites
+
+AI assistants can't fill in a password prompt or follow a login redirect. On a site with password or JWT authentication, the MCP endpoint accepts a project API key instead. Create one under **Settings** > **API Keys** (the same keys the [Docs Search API](/jamdesk-api/docs-search-api) uses) and send it as a Bearer token:
+
+```bash
+curl -X POST https://docs.acme.com/_mcp \
+  -H "Authorization: Bearer jd_live_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}'
+```
+
+A key works only for the project that created it, and it opens the MCP endpoint only. It doesn't unlock pages or chat.
+
+Without a valid key, the endpoint answers with a JSON error instead of the login page:
+
+| Status | `error` | Meaning |
+|--------|---------|---------|
+| 401 | `auth_required` | No key was sent. |
+| 401 | `invalid_api_key` | The key isn't valid for this site. |
+| 503 | `auth_unavailable` | The key couldn't be checked. Retry after the number of seconds in the `Retry-After` header. |
+
+<Warning>
+  Results can include pages that are behind your login. Keep the key in your assistant's secret configuration and out of shared files.
+</Warning>
+
 ## How It Works
 
 The MCP endpoint uses a search index built alongside your docs:
