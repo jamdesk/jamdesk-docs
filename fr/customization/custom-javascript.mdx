@@ -101,14 +101,22 @@ window.addEventListener('load', function () {
 
 Vos fichiers JavaScript sont lus pendant le processus de build et intégrés directement dans le HTML de chaque page. La balise script est placée à la fin de `<body>`, de sorte que le DOM est disponible lorsque votre code s'exécute.
 
-Le JavaScript personnalisé ne s'exécute que sur votre site publié. `jamdesk dev` l'ignore : pour tester un script en local, collez-le dans la console de votre navigateur sur la page de preview.
+Le JavaScript personnalisé s'exécute aussi dans `jamdesk dev` (CLI 1.1.222 et versions ultérieures), ce qui vous permet de tester un script avant de faire un push. Les erreurs levées par votre script s'affichent dans la superposition d'erreurs de dev. Dans `jamdesk dev`, `window.__JAMDESK_DEV__` vaut `true`, vous pouvez donc ignorer le code réservé à la production, comme l'analytique :
+
+```javascript
+if (!window.__JAMDESK_DEV__) {
+  // analytics, chat widgets and other production-only code
+}
+```
+
+Si vous configurez le consentement aux cookies avec `integrations.cookies`, votre script ne s'exécute que sur le site publié, une fois le consentement donné.
 
 Le script s'exécute une seule fois, lorsqu'un visiteur charge votre site pour la première fois. Cliquer sur un lien à l'intérieur de la documentation remplace le contenu de la page sans rechargement complet, le script ne s'exécute donc pas à nouveau. Si votre code manipule le contenu de la page, [surveillez les changements de page](/fr/customization/custom-code-examples#exécuter-du-code-après-chaque-changement-de-page).
 
 ## Limites
 
 - Les scripts s'exécutent sur **chaque page** : il n'est pas possible de cibler des pages précises
-- Les modifications sont prises en compte au **build** suivant ; `jamdesk dev` n'exécute pas les scripts personnalisés
+- Les modifications sont prises en compte au **build** suivant
 - Les scripts sont **intégrés** au HTML, et non servis comme des fichiers distincts
 - Pour l'analytique, envisagez plutôt d'utiliser les [intégrations](/fr/integrations/google-analytics) intégrées, qui gèrent automatiquement le consentement et les performances
 
