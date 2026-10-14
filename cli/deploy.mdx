@@ -21,7 +21,7 @@ jamdesk deploy       # From your project directory
 | `--detach` | Queue the build and exit immediately (prints a dashboard link) |
 | `--full-rebuild` | Force a full rebuild, bypassing the build cache |
 | `--project <id>` | Deploy to a specific project ID (skips interactive selection) |
-| `--allow-empty` | Allow deploying with zero `.mdx` content pages. By default the CLI refuses to deploy an empty project so a wrong working directory can't accidentally publish an empty site (snippets don't count as content pages) |
+| `--allow-empty` | Allow deploying with zero `.mdx` content pages. By default the CLI refuses to deploy an empty project. This stops a wrong working directory from publishing an empty site. Snippets don't count as content pages |
 
 `jamdesk push` is an alias for `jamdesk deploy`.
 
@@ -29,24 +29,24 @@ jamdesk deploy       # From your project directory
 
 <Steps>
   <Step title="Authenticate">
-    Verifies your session is valid. If your token has expired, you'll be prompted to run `jamdesk login`.
+    Verifies your session. An expired token prompts you to run `jamdesk login`.
   </Step>
   <Step title="Load config">
     Reads and validates `docs.json` from the current directory.
   </Step>
   <Step title="Resolve project">
-    Reads `projectId` from `docs.json`. If it's missing (first deploy), the CLI prompts you to select from your projects. Your choice is saved back to `docs.json` so the next deploy skips the prompt.
+    Reads `projectId` from `docs.json`. It's missing on the first deploy. The CLI then prompts you to pick a project. The CLI saves your choice to `docs.json`. The next deploy skips the prompt.
 
     Use `--project <id>` to override.
   </Step>
   <Step title="Package files">
-    Creates a compressed tarball of your docs, respecting `.gitignore`. If any files look like they might contain secrets, the CLI prints a warning (but doesn't block the upload).
+    Creates a compressed tarball of your docs. Files in `.gitignore` are left out. The CLI warns about files that look like secrets. The warning doesn't block the upload.
   </Step>
   <Step title="Upload">
     Sends the tarball to Jamdesk via a presigned URL. Maximum upload size is 100 MB.
   </Step>
   <Step title="Build">
-    Queues a build and polls for status, printing each phase as it completes. Press Ctrl+C to stop polling; the build continues in the background.
+    Queues a build and polls for status. Each phase prints as it completes. Press Ctrl+C to stop polling. The build continues in the background.
   </Step>
   <Step title="Done">
     Prints the live URL when the build finishes.
@@ -55,7 +55,7 @@ jamdesk deploy       # From your project directory
 
 ## Build Phases
 
-During polling, you'll see each phase complete in sequence:
+The CLI prints each phase in order while it polls:
 
 | Phase | Description |
 |-------|-------------|
@@ -68,7 +68,7 @@ During polling, you'll see each phase complete in sequence:
 
 ## File Exclusions
 
-The following are always excluded from uploads, regardless of your `.gitignore`:
+These are always excluded from uploads, whatever your `.gitignore` says:
 
 `.git`, `node_modules`, `.next`, `.env`, `.env.*`, `*.pem`, `*.key`, `credentials.json`, `.gcloud`, `.DS_Store`, `Thumbs.db`
 
@@ -108,19 +108,19 @@ Add them to `.gitignore` to suppress the warning and exclude them from uploads.
 
 <AccordionGroup>
   <Accordion title='"A build is already in progress"'>
-    Only one build runs at a time per project. Wait for the current build to finish; check status in the dashboard under **Deployments**.
+    Each project runs one build at a time. Wait for the current build to finish. Check status in the dashboard under **Deployments**.
   </Accordion>
 
   <Accordion title='"docs.json not found or invalid"'>
-    Make sure you're running the command from the directory that contains `docs.json`. Run `jamdesk validate` to check for config errors.
+    Run the command from the directory that contains `docs.json`. Run `jamdesk validate` to check for config errors.
   </Accordion>
 
   <Accordion title='"Upload too large"'>
-    The 100 MB limit applies to the compressed tarball of all non-excluded files. Review what's being included. Large images, videos, or data files are common causes; add them to `.gitignore` to exclude.
+    The 100 MB limit applies to the compressed tarball of every file not excluded. Large images, videos, or data files are common causes. Add them to `.gitignore` to exclude them.
   </Accordion>
 
   <Accordion title="Deploy hangs during polling">
-    Press Ctrl+C to exit; the build keeps running in the background. Check the dashboard for status. If this happens consistently, your network may be dropping the polling requests.
+    Press Ctrl+C to exit. The build keeps running in the background. Check the dashboard for status. A hang that keeps coming back can mean your network drops the polling requests.
   </Accordion>
 
   <Accordion title='"No projects found"'>

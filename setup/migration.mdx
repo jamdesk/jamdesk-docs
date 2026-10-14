@@ -1,6 +1,6 @@
 ---
 title: Migration Guide
-description: Moving from another documentation platform? Jamdesk can help automate the transition, or you can migrate manually for full control.
+description: Move to Jamdesk from another documentation platform with the migrate command or by hand.
 ---
 <Visibility for="agents">
 
@@ -10,22 +10,20 @@ description: Moving from another documentation platform? Jamdesk can help automa
 
 
 
-Mintlify projects have a one-command path: `jamdesk migrate` reads `mint.json`, writes `docs.json`, and rewrites your MDX in place. Coming from GitBook, Docusaurus, ReadMe, Confluence, or somewhere else? The "Other Platforms" tab walks through the manual steps. They're short if you can get your content out as Markdown.
+Migrate a Mintlify project with one command: `jamdesk migrate` reads `mint.json`, writes `docs.json`, and rewrites your MDX in place. For GitBook, Docusaurus, ReadMe, Confluence, or another platform, follow the manual steps in the "Other Platforms" tab.
 
 <YouTube id="DvIHWeBliK0" />
 
 <Info>
-**Export as Markdown first if you can.** Jamdesk is built on MDX, so anything already in Markdown drops in with a `.mdx` rename and a few lines of frontmatter.
+**Export as Markdown first if you can.** Jamdesk is built on MDX. A Markdown file needs only a `.mdx` rename and a few lines of frontmatter.
 </Info>
 
 ## Choose Your Path
 
 <Tabs>
   <Tab title="From Mintlify">
-    The CLI does the bulk of the work for you.
-
     <Card title="Mintlify to Jamdesk Guide" icon="book-open" href="https://jamdesk.com/blog/migrating-from-mintlify-to-jamdesk">
-      Read the migration walkthrough with background, examples, and migration tips.
+      Migration walkthrough with background, examples, and tips.
     </Card>
 
     ### Automated Migration
@@ -41,24 +39,24 @@ Mintlify projects have a one-command path: `jamdesk migrate` reads `mint.json`, 
         jamdesk migrate
         ```
 
-        From the project root, this runs in one pass:
+        Run it from the project root. It does the following:
 
         - Reads `mint.json` and writes `docs.json`
         - Renames deprecated components in MDX files (e.g. `CardGroup` → `Columns`)
         - Moves orphan snippet MDX files into `/snippets/` and rewrites every parent-relative import (`../foo/bar.mdx`) to a root-relative one (`/snippets/foo/bar.mdx`)
-        - Extracts inline components that use React hooks into `/snippets/<name>.tsx` with the `'use client'` directive, then rewrites the original MDX to import from `/snippets/`
+        - Extracts inline components that use React hooks into `/snippets/<name>.tsx` with the `'use client'` directive and rewrites the original MDX to import from `/snippets/`
         - Auto-fixes mechanical MDX syntax issues that would crash the build
 
-        The command is idempotent: re-run it after edits and it picks up only what's new. Anything it can't safely auto-handle is printed as a warning with the file, the import, and the action to take.
+        The command is idempotent. Re-run it after edits to pick up only what's new. Anything it can't safely fix prints as a warning with the file, the import, and the action to take.
       </Step>
       <Step title="Review and adjust">
-        Check the generated `docs.json` and MDX files. Verify navigation structure and any warnings printed by the CLI.
+        Check the generated `docs.json` and MDX files. Verify the navigation structure and fix any warnings printed by the CLI.
       </Step>
     </Steps>
 
     ### Configuration Mapping
 
-    The CLI converts `mint.json` to `docs.json` automatically. These are the key differences so you can verify the output.
+    The CLI converts `mint.json` to `docs.json`. Use these differences to verify the output.
 
     **Mintlify (`mint.json`):**
     ```json
@@ -92,7 +90,7 @@ Mintlify projects have a one-command path: `jamdesk migrate` reads `mint.json`, 
 
     ### Component Compatibility
 
-    Most Mintlify components have direct equivalents in Jamdesk. A few have different names or syntax.
+    Most Mintlify components have direct Jamdesk equivalents. A few have different names or syntax.
 
     | Mintlify Component | Jamdesk Equivalent | Notes |
     |---|---|---|
@@ -111,7 +109,7 @@ Mintlify projects have a one-command path: `jamdesk migrate` reads `mint.json`, 
 
     <AccordionGroup>
       <Accordion title="CardGroup becomes Columns">
-        `jamdesk migrate` renames `CardGroup` to `Columns` for you across every MDX file. The `cols` prop carries over unchanged. Check any files you've edited after running the migration.
+        `jamdesk migrate` renames `CardGroup` to `Columns` in every MDX file. The `cols` prop carries over unchanged. Check any files you edited after running the migration.
       </Accordion>
       <Accordion title="ResponseField becomes ParamField">
         Rename `<ResponseField>` to `<ParamField>`. Props stay the same.
@@ -131,13 +129,13 @@ Mintlify projects have a one-command path: `jamdesk migrate` reads `mint.json`, 
       <Accordion title="Snippets are relocated and rewired automatically">
         Jamdesk resolves only root-relative `/snippets/*` imports. Mintlify projects often keep snippet MDX files anywhere in the tree and import them with parent-relative paths (`import X from '../shared/x.mdx'`).
 
-        `jamdesk migrate` does three things here in one pass:
+        `jamdesk migrate` fixes this:
 
-        - Detects MDX files that are imported as snippets but live outside `/snippets/`, and moves them under `/snippets/` while preserving their relative path (so locale-prefixed snippets like `de/foo.mdx` don't collide).
+        - Moves MDX files that are imported as snippets but live outside `/snippets/` into `/snippets/`. It keeps their relative path, so locale-prefixed snippets like `de/foo.mdx` don't collide.
         - Rewrites every parent-relative snippet import in every MDX file to the new root-relative path.
         - Extracts any inline component that uses React hooks into a `'use client'` file at `/snippets/<name>.tsx` and replaces the inline export with an import from `/snippets/`.
 
-        If you used Mintlify's `<Snippet file="my-snippet.mdx" />` JSX element, swap it for an MDX import. That one isn't auto-rewritten:
+        Swap Mintlify's `<Snippet file="my-snippet.mdx" />` JSX element for an MDX import. The CLI doesn't rewrite it:
 
         ```mdx
         {/* Before (Mintlify) */}
@@ -149,23 +147,21 @@ Mintlify projects have a one-command path: `jamdesk migrate` reads `mint.json`, 
         <MySnippet />
         ```
 
-        The relocator is conservative. If your project has no resolved navigation, or the planned moves exceed `max(5, 25%)` of all MDX files, it aborts without touching anything and tells you why. Re-run after fixing the abort reason.
+        The relocator aborts without touching anything if your project has no resolved navigation or the planned moves exceed `max(5, 25%)` of all MDX files. It prints the reason. Fix it and re-run.
       </Accordion>
       <Accordion title="topbarLinks maps to navbar.links">
-        Mintlify's `topbarLinks` and `topbarCtaButton` both map to `navbar.links` in `docs.json`. The `name` field becomes `label`, and `url` becomes `href`.
+        Mintlify's `topbarLinks` and `topbarCtaButton` map to `navbar.links` in `docs.json`. The `name` field becomes `label`. The `url` field becomes `href`.
       </Accordion>
     </AccordionGroup>
   </Tab>
 
   <Tab title="From Other Platforms">
-    For GitBook, ReadMe, Docusaurus, Confluence, Notion, or other documentation tools.
-
     <Card title="HTML to MDX Converter" icon="file-code" href="https://jamdesk.com/utilities/html-to-mdx" horizontal>
-      Exporting from a platform that gives you HTML (Confluence, Notion, and many others)? Paste it into the free HTML to MDX converter to get clean MDX you can drop straight into your project.
+      Paste HTML exported from Confluence, Notion, or another platform into the free converter. Get MDX for your project.
     </Card>
 
     <Tip>
-      Need help with your migration? [Let us know](mailto:contact@jamdesk.com) and we'll get you set up.
+      For migration help, [contact us](mailto:contact@jamdesk.com).
     </Tip>
 
     ### From GitBook
@@ -174,7 +170,7 @@ Mintlify projects have a one-command path: `jamdesk migrate` reads `mint.json`, 
 
     <Steps>
       <Step title="Export your content">
-        Export your GitBook space as Markdown. If you're using GitBook's Git sync, your content is already in a Git repo as `.md` files.
+        Export your GitBook space as Markdown. With GitBook's Git sync, your content is already in a Git repo as `.md` files.
       </Step>
       <Step title="Convert files to MDX">
         Rename `.md` files to `.mdx` and add frontmatter to each file:
@@ -189,7 +185,7 @@ Mintlify projects have a one-command path: `jamdesk migrate` reads `mint.json`, 
         ```
       </Step>
       <Step title="Map navigation from SUMMARY.md">
-        GitBook uses `SUMMARY.md` to define its sidebar. Convert this to `docs.json` navigation groups.
+        Convert the `SUMMARY.md` sidebar to `docs.json` navigation groups.
 
         **GitBook (`SUMMARY.md`):**
         ```markdown
@@ -233,7 +229,7 @@ Mintlify projects have a one-command path: `jamdesk migrate` reads `mint.json`, 
 
     ### From Docusaurus
 
-    Docusaurus projects already use MDX, so most content transfers directly.
+    Docusaurus projects already use MDX. Most content transfers directly.
 
     <Steps>
       <Step title="Copy your MDX files">
@@ -304,11 +300,11 @@ Mintlify projects have a one-command path: `jamdesk migrate` reads `mint.json`, 
 
     ### From Other Tools
 
-    For Confluence, Notion, ReadMe, or any other platform, the process is the same: get your content into Markdown, then set up the Jamdesk project structure.
+    For Confluence, Notion, ReadMe, or another platform, get your content into Markdown. Then set up the Jamdesk project structure.
 
     <Steps>
       <Step title="Export as Markdown">
-        Most platforms have a Markdown or HTML export option. Use Markdown if available. For HTML, convert to Markdown using a tool like [Pandoc](https://pandoc.org/).
+        Most platforms have a Markdown or HTML export option. Use Markdown if available. Convert HTML to Markdown with a tool like [Pandoc](https://pandoc.org/).
 
         ```bash
         # Convert HTML to Markdown with Pandoc
@@ -316,7 +312,7 @@ Mintlify projects have a one-command path: `jamdesk migrate` reads `mint.json`, 
         ```
       </Step>
       <Step title="Create docs.json">
-        Start with a minimal configuration and build out your navigation as you add pages.
+        Start with a minimal configuration. Add to the navigation as you add pages.
       </Step>
       <Step title="Convert files to MDX">
         Rename `.md` files to `.mdx` and add frontmatter (`title`, `description`) to each file.

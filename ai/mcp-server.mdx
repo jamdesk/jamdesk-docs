@@ -4,11 +4,11 @@ sidebarTitle: MCP Server
 description: Every Jamdesk site includes a built-in MCP server. AI assistants like Claude and Cursor can search and read your docs directly.
 ---
 
-Every Jamdesk site includes a built-in MCP (Model Context Protocol) server. While `llms.txt` gives AI tools a static snapshot of your docs, MCP lets them search and query interactively — useful when AI agents need to find specific answers rather than reading everything.
+Every Jamdesk site has a built-in MCP (Model Context Protocol) server. `llms.txt` gives AI tools a static snapshot of your docs. MCP lets them search and query your docs to find specific answers without reading everything.
 
 ## What is MCP?
 
-The [Model Context Protocol](https://modelcontextprotocol.io) is an open standard that allows AI tools to access external data sources. Your Jamdesk docs expose two tools via MCP:
+The [Model Context Protocol](https://modelcontextprotocol.io) is an open standard for connecting AI tools to external data sources. Your Jamdesk docs expose two MCP tools:
 
 | Tool | Purpose |
 |------|---------|
@@ -25,7 +25,7 @@ Your MCP endpoint is your docs URL with `/_mcp` appended. If you have a [custom 
 | No custom domain | `https://my-project.jamdesk.app/_mcp` |
 
 <Note>
-  Prefer the custom domain endpoint whenever one is connected — it keeps your branding in every URL AI tools see, and it keeps working even if you later hide your `.jamdesk.app` subdomain with [Custom domain only](/deploy/custom-domain-only).
+  Use the custom domain endpoint when one is connected. It keeps your branding in every URL AI tools see. It also keeps working if you later hide your `.jamdesk.app` subdomain with [Custom domain only](/deploy/custom-domain-only).
 </Note>
 
 ## Quick Setup
@@ -38,9 +38,9 @@ Your MCP endpoint is your docs URL with `/_mcp` appended. If you have a [custom 
     claude mcp add --transport http my-docs https://docs.acme.com/_mcp
     ```
 
-    Replace `docs.acme.com` with your docs domain — or with `my-project.jamdesk.app` if you haven't connected a custom domain.
+    Replace `docs.acme.com` with your docs domain. Use `my-project.jamdesk.app` if you haven't connected a custom domain.
 
-    Now when you ask Claude about your project, it can search and read your documentation directly.
+    Claude can now search and read your documentation when you ask about your project.
   </Tab>
   <Tab title="Cursor">
     Add to your project's `.cursor/mcp.json`:
@@ -55,7 +55,7 @@ Your MCP endpoint is your docs URL with `/_mcp` appended. If you have a [custom 
     }
     ```
 
-    Cursor will automatically connect to your docs when you open the project.
+    Cursor connects to your docs when you open the project.
   </Tab>
 </Tabs>
 
@@ -148,7 +148,7 @@ Retrieve the full content of a specific documentation page.
 
 ## Testing the Endpoint
 
-You can test your MCP endpoint directly with curl:
+Test your MCP endpoint with curl:
 
 ```bash
 # List available tools
@@ -171,7 +171,7 @@ claude mcp add --transport http my-docs https://docs.example.com/_mcp \
   --header "Authorization: Bearer jd_live_..."
 ```
 
-With the key, an MCP client can search and read the site's searchable pages, the same set the site search covers. Group-restricted pages are never available through MCP, with or without a key. Hidden pages and pages with `search: false` are left out unless you've made them searchable. Treat the key like a password and revoke it in the dashboard if it leaks.
+A key lets an MCP client search and read the site's searchable pages, the same set the site search covers. Group-restricted pages are never available through MCP, with or without a key. Hidden pages and pages with `search: false` are left out unless you've made them searchable. Treat the key like a password. Revoke it in the dashboard if it leaks.
 
 Without a key, the server answers with `401` and a JSON body that says how to add one. A key from another project is rejected. The error codes are:
 
@@ -185,16 +185,16 @@ Without a key, the server answers with `401` and a JSON body that says how to ad
 
 The MCP endpoint uses a search index built alongside your docs:
 
-- **BM25 ranking** - Ranks results by relevance
-- **Fuzzy matching** - Handles typos (1-character tolerance)
-- **Field boosting** - Titles and section headers are weighted higher than body content
-- **Type filtering** - Filter results by content type (API, guide, etc.)
+- **BM25 ranking:** ranks results by relevance
+- **Fuzzy matching:** tolerates 1-character typos
+- **Field boosting:** titles and section headers weigh more than body content
+- **Type filtering:** filter results by content type (API, guide, etc.)
 
 The index rebuilds with every deploy.
 
 ## Rate Limits
 
-The MCP endpoint has a rate limit of **60 requests per minute** per IP address. This is sufficient for normal AI assistant usage. If you exceed the limit, you'll receive a 429 response.
+The MCP endpoint has a rate limit of **60 requests per minute** per IP address. This is enough for normal AI assistant use. Requests over the limit get a 429 response.
 
 ## Troubleshooting
 
@@ -209,15 +209,15 @@ The MCP endpoint has a rate limit of **60 requests per minute** per IP address. 
 </Accordion>
 
 <Accordion title="Search returns no results">
-  The search index is generated at build time. If you recently added content, trigger a rebuild from your Jamdesk dashboard to update the index.
+  Jamdesk generates the search index at build time. Trigger a rebuild from your Jamdesk dashboard to index new content.
 </Accordion>
 
 <Accordion title="getPage returns null">
-  Make sure the slug matches your page path exactly (without the `.mdx` extension). For example, if your page is at `api/authentication.mdx`, use `api/authentication` as the slug.
+  Match the slug to your page path exactly, without the `.mdx` extension. A page at `api/authentication.mdx` has the slug `api/authentication`.
 </Accordion>
 
 <Accordion title="401 auth_required on a protected site">
-  The site uses password or JWT authentication, so the request needs a project API key. Add the `Authorization: Bearer` header with a key from **Project Settings > API Keys**. See [Login-Protected Sites](#login-protected-sites).
+  The site uses password or JWT authentication. The request needs a project API key. Add the `Authorization: Bearer` header with a key from **Project Settings > API Keys**. See [Login-Protected Sites](#login-protected-sites).
 </Accordion>
 
 ## What's Next?

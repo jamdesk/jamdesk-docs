@@ -16,7 +16,7 @@ hidden: true
 ---
 ```
 
-The page renders normally when someone visits its URL, but Jamdesk:
+The page still renders at its URL. Jamdesk:
 
 - Drops it from the sidebar
 - Adds `<meta name="robots" content="noindex, follow">` so search engines skip it
@@ -48,7 +48,7 @@ Every page under the hidden node inherits the rule. The same flag works on `tabs
 
 ## Keep hidden pages in search
 
-If you want a hidden tab or group out of the sidebar but still indexed for site search, AI answers, and the sitemap, add `"searchable": true`:
+Add `"searchable": true` to keep a hidden tab or group indexed for site search, AI answers, and the sitemap:
 
 ```json
 {
@@ -63,7 +63,7 @@ Frontmatter `hidden: true` on a child page still wins. `searchable` only re-open
 
 ## Keep a page out of search only
 
-Sometimes a page should stay in the sidebar and stay indexable, but stop turning up when someone searches or asks a question. Add `search: false` to its frontmatter:
+Add `search: false` to the frontmatter of a page that should stay in the sidebar and stay indexable, but not turn up in site search or AI answers:
 
 ```yaml
 ---
@@ -72,42 +72,42 @@ search: false
 ---
 ```
 
-The page keeps its place in navigation, your sitemap, `llms.txt`, and your RSS feed, and search engines still index it. What it leaves is the *lookup* surfaces: on-site search, AI chat answers, and the MCP server.
+The page keeps its place in navigation, your sitemap, `llms.txt`, and your RSS feed. Search engines still index it. It leaves the *lookup* surfaces: on-site search, AI chat answers, and the MCP server.
 
 <Note>
-`search: false` is the opposite job from `hidden: true`. `hidden` takes a page out of navigation and the indexing surfaces; `search: false` leaves all of that alone and only stops the page being retrieved. Don't confuse it with the navigation-level `searchable`, which opts hidden pages back *into* search.
+`search: false` is the opposite job from `hidden: true`. `hidden` takes a page out of navigation and the indexing surfaces. `search: false` leaves all of that alone and only stops the page being retrieved. Don't confuse it with the navigation-level `searchable`, which opts hidden pages back *into* search.
 </Note>
 
 ## How much of a page gets indexed
 
-Search doesn't index a page as one blob. It indexes it **section by section** — each heading becomes its own search entry, so a reader searching for "Rate limits" lands on that heading rather than the top of a long page.
+Search doesn't index a page as one blob. It indexes it **section by section**. Each heading becomes its own search entry. A search for "Rate limits" lands on that heading rather than the top of a long page.
 
-Two limits apply to that, and both are automatic:
+Two limits apply automatically:
 
 | Limit | Value | What happens past it |
 |---|---|---|
-| Entries per page | 50 | Sections are indexed in page order. Once the 50th is used, every remaining section is left out of search. |
+| Entries per page | 50 | Sections are indexed in page order. Sections after the 50th are left out of search. |
 | Text per section | First 300 characters | Wording deeper into a section isn't matched. |
 
 The page itself takes one of the 50 slots, so 49 sections are indexed.
 
-The cap exists because search weighs every entry against the rest of your index. One page emitting hundreds of entries crowds the others out of results — a generated changelog can single-handedly account for half an index and push genuinely relevant pages off the first screen.
+The cap exists because search weighs every entry against the rest of your index. One page emitting hundreds of entries crowds the others out of results. A generated changelog can fill half an index and push relevant pages off the first screen.
 
 <Warning>
 A page over the cap still renders in full. Only its later sections stop being findable, and nothing on the page tells your readers that.
 
-If a page has more than ~50 headings, either split it into several pages — better navigation anyway — or, if it's machine-generated and nobody searches it by hand, add `search: false` to keep the whole thing out of the index.
+Split a page with more than ~50 headings into several pages. That also improves navigation. For a machine-generated page that nobody searches by hand, add `search: false` instead to keep the whole page out of the index.
 </Warning>
 
-To put a term where search can weigh it properly, use the page title (weighted highest), then a heading, then the description. Body text is weighted lowest and only its first 300 characters per section count.
+Put a term where search weighs it most: the page title (weighted highest), then a heading, then the description. Body text is weighted lowest. Only its first 300 characters per section count.
 
 <Note>
-`seo.metatags.keywords` does *not* feed site search. It emits an HTML `<meta name="keywords">` tag, which Google has stated it ignores for ranking. There's no way to attach extra search terms to a page — put the words you want matched in the title, a heading, or the description.
+`seo.metatags.keywords` does *not* feed site search. It emits an HTML `<meta name="keywords">` tag. Google has stated it ignores that tag for ranking. You can't attach extra search terms to a page. Put the words you want matched in the title, a heading, or the description.
 </Note>
 
 ## Project-wide controls
 
-Both flags live under `seo` in `docs.json`:
+These flags live under `seo` in `docs.json`:
 
 | Flag | Default | Effect |
 |---|---|---|
@@ -128,13 +128,13 @@ Example:
 
 | Scenario | Frontmatter | docs.json | Visible in sidebar | Direct URL | In sitemap |
 |---|---|---|---|---|---|
-| Normal page | — | listed | Yes | Yes | Yes |
+| Normal page | - | listed | Yes | Yes | Yes |
 | Hidden via frontmatter | `hidden: true` | listed | No | Yes | No |
-| Page not in nav (orphan) | — | omitted | No | Yes | No |
-| Hidden group | — | `hidden: true` on group | No | Yes | No |
-| Hidden + searchable group | — | `hidden: true, searchable: true` | No | Yes | Yes |
+| Page not in nav (orphan) | - | omitted | No | Yes | No |
+| Hidden group | - | `hidden: true` on group | No | Yes | No |
+| Hidden + searchable group | - | `hidden: true, searchable: true` | No | Yes | Yes |
 | Out of search only | `search: false` | listed | Yes | Yes | Yes |
-| Project opts into indexing all | — | any | Same as above | Yes | Yes |
+| Project opts into indexing all | - | any | Same as above | Yes | Yes |
 
 ## When to use each
 
@@ -142,6 +142,6 @@ Example:
 - **Internal sections** for a small team: a hidden group or tab
 - **Compliance docs** that should be public but not promoted: hidden group with `searchable: true`
 - **Full-repo indexing** for AI grounding only: `seo.indexing: "all"`
-- **Superseded pages** you still want linkable and indexed, just not surfaced by search or AI: frontmatter `search: false`
+- **Superseded pages** you still want linkable and indexed but not surfaced by search or AI: frontmatter `search: false`
 
-Hidden pages aren't access control. Anyone who has the URL can read them. For real access control, see [Password Protection](/setup/password-protection).
+Hidden pages aren't access control. Anyone who has the URL can read them. For access control, see [Password Protection](/setup/password-protection).

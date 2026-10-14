@@ -1,9 +1,9 @@
 ---
 title: Monorepo Support
-description: Keep documentation alongside your code. Jamdesk supports monorepos and any repository where docs aren't at the root.
+description: Keep documentation alongside your code in a monorepo or any repository where docs aren't at the root.
 ---
 
-If your `docs.json` lives in a subdirectory -- `docs/`, `packages/docs/`, or anywhere else -- toggle on monorepo mode in project settings and specify the path. Jamdesk will scope builds to that directory and ignore everything outside it.
+If your `docs.json` lives in a subdirectory (`docs/`, `packages/docs/`, or anywhere else), turn on monorepo mode in project settings and enter the path. Jamdesk builds only that directory.
 
 <Note>
 **Prerequisites:** You need a [Jamdesk project](/setup/creating-projects) connected to a [GitHub repository](/setup/connecting-github) before configuring monorepo support.
@@ -34,7 +34,7 @@ flowchart LR
 
 <Steps>
   <Step title="Open project settings">
-    Go to your project in the [Jamdesk dashboard](https://dashboard.jamdesk.com) and navigate to **Settings**.
+    Open your project in the [Jamdesk dashboard](https://dashboard.jamdesk.com) and go to **Settings**.
   </Step>
 
   <Step title="Enable monorepo mode">
@@ -46,23 +46,21 @@ flowchart LR
   </Step>
 
   <Step title="Enter your docs path">
-    Specify the path to the directory containing your `docs.json` file.
+    Enter the path to the directory that contains your `docs.json` file.
 
     <Frame>
       <img src="/images/help-center/dashboard/docs-path-input.webp" alt="Docs path input showing preview" />
     </Frame>
 
-    The preview shows where Jamdesk will look for your configuration file.
+    The preview shows where Jamdesk looks for your configuration file.
   </Step>
 
   <Step title="Save and rebuild">
-    Click **Save Changes** to apply. Your next build will use the new path.
+    Click **Save Changes**. Your next build uses the new path.
   </Step>
 </Steps>
 
 ## Understanding the Docs Path
-
-The docs path tells Jamdesk where to find your `docs.json` configuration file within the repository.
 
 <Warning>
 Enter only the directory path, not the filename. Use `docs` not `docs/docs.json`.
@@ -79,7 +77,7 @@ Enter only the directory path, not the filename. Use `docs` not `docs/docs.json`
 
 ### What Gets Included
 
-When you set a docs path, Jamdesk only processes files within that directory:
+Jamdesk processes only files inside the docs path:
 
 - **Content files** (`.mdx`, `.md`) are compiled into pages
 - **Assets** in subdirectories (like `images/`) are included
@@ -88,8 +86,6 @@ When you set a docs path, Jamdesk only processes files within that directory:
 Files outside the docs path are ignored during builds.
 
 ## Common Monorepo Patterns
-
-Choose the pattern that matches your project structure:
 
 <Tabs>
   <Tab title="Dedicated /docs">
@@ -164,7 +160,7 @@ Asset paths in `docs.json` are always relative to your docs directory, not the r
 
 ### Example
 
-If your docs are in `packages/docs/`:
+For docs in `packages/docs/`:
 
 ```json packages/docs/docs.json
 {
@@ -180,7 +176,7 @@ These paths reference:
 - `packages/docs/images/favicon.svg`
 
 <Warning>
-Do not use absolute paths from the repository root. This will not work:
+Don't use absolute paths from the repository root. This fails:
 
 ```json
 "favicon": "/packages/docs/images/favicon.svg"
@@ -189,7 +185,7 @@ Do not use absolute paths from the repository root. This will not work:
 
 ### In MDX Files
 
-The same rule applies to images in your content:
+Images in MDX follow the same rule:
 
 ```mdx
 ![Screenshot](/images/tabs-preview.png)
@@ -199,7 +195,7 @@ This references an image at `[docs-path]/images/tabs-preview.png`.
 
 ## Internal Links
 
-Internal links work the same regardless of your repository structure. Use paths relative to your docs root:
+Internal links don't depend on your repository structure. Use paths relative to your docs root:
 
 ```mdx
 [See the quickstart guide](/quickstart)
@@ -210,22 +206,20 @@ These paths match your navigation structure, not your file system.
 
 ## Build Behavior
 
-Jamdesk only watches for changes within your configured docs path:
+Only changes inside the docs path trigger a build:
 
 - Changes to `packages/docs/**` trigger a build
 - Changes to `packages/core/**` do not trigger a build
 
-This keeps builds fast and focused on documentation changes.
-
 <Tip>
 **Need to rebuild when other code changes?**
 
-If you generate documentation from source code (like API docs from code comments), trigger a manual rebuild from the dashboard or set up a webhook in your CI pipeline.
+For docs generated from source code (like API docs from code comments), trigger a manual rebuild from the dashboard or set up a webhook in your CI pipeline.
 </Tip>
 
 ## Workspace Tools Compatibility
 
-Jamdesk works with all major monorepo tools. No special configuration is needed beyond setting the docs path.
+Set the docs path. No other configuration is needed for these monorepo tools.
 
 | Tool | Supported |
 |------|-----------|
@@ -242,7 +236,7 @@ Jamdesk works with all major monorepo tools. No special configuration is needed 
   <Accordion title="docs.json not found error" icon="circle-exclamation">
     1. Verify the exact path in your repository matches what you entered
     2. Ensure `docs.json` exists at that location
-    3. Check for typos - paths are case-sensitive
+    3. Check for typos. Paths are case-sensitive
     4. Remember: use `docs` not `docs/docs.json`
 
     **Quick check:** In your repository, the file should exist at `[your-docs-path]/docs.json`
@@ -251,27 +245,27 @@ Jamdesk works with all major monorepo tools. No special configuration is needed 
   <Accordion title="Assets not loading" icon="image">
     Asset paths must be relative to your docs directory.
 
-    **Correct** - relative to docs directory:
+    **Correct** (relative to docs directory):
     ```json
     "favicon": "/images/favicon.svg"
     ```
 
-    **Wrong** - absolute from repo root:
+    **Wrong** (absolute from repo root):
     ```json
     "favicon": "/packages/docs/images/favicon.svg"
     ```
 
-    Check that your images actually exist in `[docs-path]/images/`.
+    Check that your images exist in `[docs-path]/images/`.
   </Accordion>
 
   <Accordion title="Changes not triggering builds" icon="rotate">
-    Only changes within your configured docs path trigger automatic builds.
+    Only changes inside the docs path trigger automatic builds.
 
     1. Verify you're modifying files inside the docs path
     2. Check that you're pushing to the correct branch
     3. View webhook delivery status in GitHub repository settings
 
-    If you need builds triggered by changes outside the docs path, use manual rebuilds or CI webhooks.
+    To build on changes outside the docs path, use manual rebuilds or CI webhooks.
   </Accordion>
 </AccordionGroup>
 

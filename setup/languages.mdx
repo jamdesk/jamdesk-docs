@@ -3,15 +3,15 @@ title: Multi-Language Support
 description: Serve documentation in multiple languages with a language switcher. Each language gets its own navigation structure and translated content.
 ---
 
-If your docs need to reach users in more than one language, you can define separate navigation trees per locale and let readers switch with a dropdown in the top bar.
+Define a separate navigation tree for each locale. Readers switch languages from a dropdown in the top bar.
 
 <Note>
-  Jamdesk can translate your pages for you: see [AI Translation](/setup/ai-translation). This page covers the navigation and language-switcher configuration, which applies whether the translations come from Jamdesk, your own translators, or another tool.
+  Jamdesk can translate your pages for you: see [AI Translation](/setup/ai-translation). This page covers the navigation and language-switcher configuration. It applies whether the translations come from Jamdesk, your own translators, or another tool.
 </Note>
 
 ## Configuration
 
-Wrap your navigation in a `languages` array, with each language containing its own navigation structure:
+Wrap your navigation in a `languages` array. Give every language its own navigation structure:
 
 ```json docs.json
 {
@@ -109,7 +109,7 @@ Reference pages in navigation using their full path (with the language prefix):
 
 ## Language-Specific Settings
 
-Each language can have its own configuration:
+Give a language its own configuration inside its entry:
 
 ```json
 {
@@ -129,12 +129,12 @@ Each language can have its own configuration:
 ```
 
 <Note>
-Banners are set globally at the top level of `docs.json` (see [Banner](/config/docs-json-reference#banner)), not per language. One banner shows on every page across all languages.
+Banners are set globally at the top level of `docs.json` (see [Banner](/config/docs-json-reference#banner)), not per language. One banner shows on every page in every language.
 </Note>
 
 ## Translating Navbar Labels
 
-Top-nav links and the primary CTA accept an optional `labels` object with per-language overrides. When the reader is on a language-prefixed URL (e.g. `/fr/...`), the matching override is used; otherwise the default `label` is shown.
+Top-nav links and the primary CTA accept an optional `labels` object with per-language overrides. A language-prefixed URL (e.g. `/fr/...`) shows the matching override. Any other URL shows the default `label`.
 
 ```json docs.json
 {
@@ -161,11 +161,11 @@ Top-nav links and the primary CTA accept an optional `labels` object with per-la
 }
 ```
 
-Built-in UI strings (the **Search** button, **Ask AI** button, and the **More** tabs dropdown) are translated automatically for every supported language. You don't need to configure those.
+Built-in UI strings (the **Search** button, **Ask AI** button, and the **More** tabs dropdown) are translated automatically for every supported language.
 
 ## Default Language
 
-The first language in the array is the default. Users landing on your docs see this language first. The language switcher allows them to change.
+The first language in the array is the default. Readers see it first and can change it from the language switcher.
 
 ## URL Structure
 
@@ -179,7 +179,7 @@ Language prefixes appear in URLs:
 
 ## Automatic language routing
 
-By default everyone lands on your default language and switches manually. Turn on `localization.autoRedirect` to send first-time visitors straight to their own language:
+Every visitor lands on your default language and switches manually. Turn on `localization.autoRedirect` to send first-time visitors to their browser's language:
 
 ```json docs.json
 {
@@ -189,14 +189,14 @@ By default everyone lands on your default language and switches manually. Turn o
 }
 ```
 
-A visitor whose browser asks for French gets `/fr` instead of `/`. Their language is remembered for a year, so they're only matched once, and if they pick a language from the switcher that wins from then on.
+A browser that asks for French gets `/fr` instead of `/`. Jamdesk remembers the language for a year. A language picked from the switcher wins from then on.
 
-**Only your site root is ever redirected.** Everything else is left exactly as the visitor asked for it:
+**Only your site root is ever redirected.** Every other URL opens as requested:
 
-- **A language URL always opens in that language.** `/fr/guides/authentication` — or just `/fr` — serves French to everyone, whatever their browser asks for. Someone chose that URL, so a link you paste into a ticket or a search result opens the same page for the person who clicks it.
+- **A language URL always opens in that language.** `/fr/guides/authentication` (or `/fr`) serves French whatever the browser asks for. A link pasted into a ticket or a search result opens the same page for whoever clicks it.
 - **Deep links are never redirected.** `/guides/authentication` serves that page for everyone.
 - **Crawlers are never redirected.** Google and other bots keep seeing your default language at the root, and your `hreflang` tags keep deciding what gets indexed.
-- **It never invents a language.** If the visitor's browser asks for a language you don't publish, nothing happens — they stay on your default root.
+- **It never invents a language.** A browser that asks for a language you don't publish stays on your default root.
 
 <Note>
 Requires two or more entries in `navigation.languages`. On a single-language site the setting does nothing.
@@ -208,7 +208,7 @@ If you front your docs with your own Cloudflare Cache Rule, leave redirects unca
 
 ## llms.txt for Each Language
 
-Every language you publish gets its own [`llms.txt`](/ai/llms-txt) index and full-content file, so an AI tool can read your docs in one language without loading the others:
+Every language you publish gets its own [`llms.txt`](/ai/llms-txt) index and full-content file. An AI tool can read one language without loading the others:
 
 | Language | Index | Full content |
 |----------|-------|--------------|
@@ -220,9 +220,9 @@ The root `docs.example.com/llms.txt` serves the same file as `/en/llms.txt`. The
 
 ## Partial Translations
 
-You don't need to translate every page. If a page doesn't exist in a language, users see a fallback message with a link to the English version.
+You don't need to translate every page. A page missing from a language shows a fallback message with a link to the English version.
 
-For pages that shouldn't be translated (like API reference), you can reference the same page across languages:
+For pages that shouldn't be translated (like API reference), reference the same page in every language:
 
 ```json
 {
@@ -257,7 +257,7 @@ openapi/
 └── api.zh.yaml        # Simplified Chinese
 ```
 
-No configuration or `docs.json` change is required. Jamdesk resolves the matching spec at render time based on the URL's language prefix. A page at `/fr/api-reference/create-ticket` looks for `api.fr.yaml` first, falling back to `api.yaml` if no translation exists.
+No configuration or `docs.json` change is required. Jamdesk picks the spec at render time from the URL's language prefix. A page at `/fr/api-reference/create-ticket` looks for `api.fr.yaml` first. It falls back to `api.yaml` if no translation exists.
 
 ### What to translate in the spec
 
@@ -274,15 +274,15 @@ Translate human-readable prose. Keep every structural value identical across lan
 
 ### Fallback behavior
 
-If a page is requested under a localized URL but no translated spec exists, Jamdesk renders the English spec inside the translated page shell. Users see a mixed-language endpoint block rather than a 404. This matches the broader partial-translations behavior for MDX pages.
+A localized URL with no translated spec renders the English spec inside the translated page shell. Readers see a mixed-language endpoint block rather than a 404. MDX pages behave the same way.
 
 <Note>
-  The `jamdesk` CLI's local preview (`jamdesk dev`) resolves OpenAPI specs by filename only. It doesn't yet apply the language suffix lookup. When iterating on translations locally, use the production Jamdesk preview URL (`<project>.jamdesk.app/<lang>/...`) or swap the source file temporarily. This only affects local development; hosted and ISR renders pick the translated spec correctly.
+  The `jamdesk` CLI's local preview (`jamdesk dev`) resolves OpenAPI specs by filename only. It doesn't yet apply the language suffix lookup. To test translations, use the production Jamdesk preview URL (`<project>.jamdesk.app/<lang>/...`) or swap the source file temporarily. Hosted and ISR renders pick the translated spec correctly.
 </Note>
 
 ### Removing a language-specific spec
 
-Deleting `api.<lang>.yaml` causes the page to fall back to the English spec on the next render (no rebuild required). To retranslate from scratch, delete the file and regenerate. No `docs.json` change is needed — spec resolution is purely filename-based.
+Deleting `api.<lang>.yaml` causes the page to fall back to the English spec on the next render (no rebuild required). To retranslate from scratch, delete the file and regenerate. Spec resolution uses filenames only, so no `docs.json` change is needed.
 
 ### Example
 
@@ -314,13 +314,13 @@ paths:
       operationId: createTicket
 ```
 
-Notice that `/tickets`, `post`, and `createTicket` stay identical. Only the prose changes.
+`/tickets`, `post`, and `createTicket` stay identical. Only the prose changes.
 
 ## Translation Workflow
 
 <Steps>
   <Step title="Start with English">
-    Write your docs in English first. This becomes your source of truth.
+    Write your docs in English first. English is the source of truth.
   </Step>
   <Step title="Add language directories">
     Create directories for each target language (`es/`, `fr/`, etc.).
@@ -335,7 +335,7 @@ Notice that `/tickets`, `post`, and `createTicket` stay identical. Only the pros
 
 ## RTL Languages
 
-Right-to-left languages like Arabic and Hebrew are supported. Jamdesk automatically applies RTL styling when these languages are active.
+Jamdesk applies RTL styling to right-to-left languages like Arabic and Hebrew.
 
 ## What's Next?
 

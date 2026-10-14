@@ -1,9 +1,9 @@
 ---
 title: Authentication
-description: "Log in, manage sessions, and understand how the Jamdesk CLI authenticates. Covers token storage, session refresh, team accounts, and CI/CD environments."
+description: "Log in, check sessions, and see how the Jamdesk CLI authenticates. Covers token storage, session refresh, team accounts, and CI/CD environments."
 ---
 
-The CLI uses browser-based authentication to connect to your Jamdesk account. You need to log in before deploying.
+The CLI logs in to your Jamdesk account through the browser. Log in before you deploy.
 
 ## Login
 
@@ -11,7 +11,7 @@ The CLI uses browser-based authentication to connect to your Jamdesk account. Yo
 jamdesk login
 ```
 
-This opens the Jamdesk dashboard in your browser for authentication. Under the hood:
+This opens the Jamdesk dashboard in your browser. The flow:
 
 1. The CLI starts a local HTTP server on `127.0.0.1:9876` (falls back to an OS-assigned port if 9876 is busy)
 2. Your browser opens to `dashboard.jamdesk.com/cli-auth`
@@ -19,7 +19,7 @@ This opens the Jamdesk dashboard in your browser for authentication. Under the h
 4. The dashboard sends your credentials back to the CLI's local server
 5. Credentials are stored in `~/.jamdeskrc`
 
-A state parameter is verified on callback to prevent cross-site request forgery. The login flow times out after 2 minutes.
+The CLI verifies a state parameter on callback to prevent cross-site request forgery. The login flow times out after 2 minutes.
 
 ```bash Expected output
 $ jamdesk login
@@ -31,7 +31,7 @@ $ jamdesk login
 ✔ Logged in as you@example.com
 ```
 
-**Headless and SSH environments**: The URL is always printed to the terminal, even when the browser can't be opened. Copy and paste it into any browser.
+**Headless and SSH environments**: The CLI always prints the URL to the terminal, even when it can't open a browser. Paste the URL into any browser.
 
 ## Logout
 
@@ -52,9 +52,9 @@ $ jamdesk logout
 jamdesk whoami
 ```
 
-Shows your authenticated email and validates the session by refreshing the token. This is a live check, not a local cache read.
+Shows your logged-in email. It refreshes the token to validate the session. It never reads a local cache.
 
-Three possible states:
+Possible states:
 
 <CodeGroup>
 ```bash Logged in
@@ -92,19 +92,19 @@ Credentials are stored in `~/.jamdeskrc` as JSON with `0600` permissions (owner-
 The CLI uses a **refresh token + ID token** architecture:
 
 - **ID tokens** expire in ~1 hour and are used for API calls
-- The CLI **auto-refreshes** ID tokens using the stored refresh token, with a 5-minute buffer before expiry
+- The CLI **auto-refreshes** ID tokens with the stored refresh token 5 minutes before expiry
 - Refresh tokens are long-lived but can be revoked (password change, account deletion)
-- If the refresh token is permanently invalid (`TOKEN_EXPIRED`, `USER_NOT_FOUND`, `INVALID_REFRESH_TOKEN`), stored auth is cleared automatically
+- The CLI clears stored auth when the refresh token is permanently invalid (`TOKEN_EXPIRED`, `USER_NOT_FOUND`, `INVALID_REFRESH_TOKEN`)
 
-You don't need to manage tokens manually. The CLI handles refreshes transparently on every authenticated command.
+The CLI refreshes tokens on every authenticated command. You never refresh them by hand.
 
 ## Troubleshooting
 
 <AccordionGroup>
   <Accordion title="Login times out after 2 minutes">
-    The CLI's local callback server may be blocked by a firewall. Copy the printed URL and open it manually in your browser.
+    A firewall may block the CLI's local callback server. Copy the printed URL and open it in your browser.
 
-    If port 9876 is in use by another process, the CLI will pick a different port automatically. Check the URL in the terminal output.
+    The CLI picks a different port when another process uses 9876. Check the URL in the terminal output.
   </Accordion>
 
   <Accordion title='"Session expired" on every command'>
@@ -114,7 +114,7 @@ You don't need to manage tokens manually. The CLI handles refreshes transparentl
   </Accordion>
 
   <Accordion title="Browser doesn't open">
-    This is expected in headless environments (SSH, Docker, CI). Copy the URL from the terminal and open it in any browser that can reach your machine's callback port.
+    Headless environments (SSH, Docker, CI) can't open a browser. Copy the URL from the terminal and open it in any browser that can reach your machine's callback port.
   </Accordion>
 
   <Accordion title='"Not logged in" right after logging in'>
@@ -124,7 +124,7 @@ You don't need to manage tokens manually. The CLI handles refreshes transparentl
     cat ~/.jamdeskrc
     ```
 
-    File permissions should be `0600`. If the file is missing, your home directory may have permission issues; check with `ls -la ~`.
+    File permissions should be `0600`. A missing file can mean a permission problem on your home directory. Check it with `ls -la ~`.
   </Accordion>
 </AccordionGroup>
 

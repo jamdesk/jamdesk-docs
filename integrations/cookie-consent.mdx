@@ -3,9 +3,9 @@ title: Cookie Consent
 description: Gate analytics scripts behind cookie consent with integrations.cookies, and load an Osano or Termly consent banner on your docs site.
 ---
 
-Jamdesk can withhold every analytics and tracking script (Google Analytics, Google Tag Manager, Plausible, Crisp chat, custom JavaScript, and Jamdesk's own built-in analytics) until a visitor consents to cookies. Consent is read from the browser's `localStorage`, so it works with any consent management platform (CMP) that records consent there, including Osano and Termly.
+Jamdesk can withhold every analytics and tracking script (Google Analytics, Google Tag Manager, Plausible, Crisp chat, custom JavaScript, and Jamdesk's own built-in analytics) until a visitor consents to cookies. Jamdesk reads consent from the browser's `localStorage`. Any consent management platform (CMP) that records consent there works, including Osano and Termly.
 
-This helps you comply with privacy regulations such as the GDPR, CCPA, and the ePrivacy Directive, since no tracking runs before the visitor agrees.
+No tracking runs before the visitor agrees. That helps you comply with privacy regulations such as the GDPR, CCPA, and the ePrivacy Directive.
 
 ## How It Works
 
@@ -22,21 +22,21 @@ Set a `localStorage` key and the value that means "consent granted" in `docs.jso
 }
 ```
 
-When `integrations.cookies` is set, no analytics script loads until `localStorage["jamdesk_consent"]` equals `"granted"`. The moment your consent banner records acceptance, the scripts load, with no page reload needed. If a visitor revokes consent, scripts stop loading from their next full page load (scripts already running in the current page keep running until the visitor navigates away or reloads).
+With `integrations.cookies` set, no analytics script loads until `localStorage["jamdesk_consent"]` equals `"granted"`. Scripts load as soon as your consent banner records acceptance, with no page reload. Revoked consent takes effect on the visitor's next full page load. Scripts already running in the current page keep running until the visitor navigates away or reloads.
 
 <Info>
-Both `key` and `value` are required. If either is missing or empty, consent gating is off and scripts load normally.
+`key` and `value` are required. A missing or empty `key` or `value` turns consent gating off. Scripts then load normally.
 </Info>
 
 <Warning>
-Gating applies to Jamdesk's built-in analytics too: visitors who never consent are not counted, so expect lower pageview numbers in your project dashboard after you enable this.
+Gating applies to Jamdesk's built-in analytics too. Visitors who never consent are not counted. Expect lower pageview numbers in your project dashboard after you enable this.
 </Warning>
 
 ## Connecting Your Consent Banner
 
-Most CMPs (including Osano and Termly) don't expose a simple, stable `localStorage` flag you can point Jamdesk at directly: they store consent in cookies or in values that change per visitor. Instead, add a short **bridge snippet** in your CMP's own custom-code area that writes `jamdesk_consent` when a visitor accepts. Because the snippet runs as part of the CMP (not as Jamdesk custom JavaScript, which is itself gated), it always runs.
+Most CMPs (including Osano and Termly) don't expose a stable `localStorage` flag for Jamdesk to read. They store consent in cookies or in values that change per visitor. Add a short **bridge snippet** in your CMP's own custom-code area instead. It writes `jamdesk_consent` when a visitor accepts. The snippet runs as part of the CMP, so it always runs. Jamdesk custom JavaScript can't do this job because it is itself gated.
 
-The snippet writes `granted` on consent and removes the key when consent is withdrawn, so gating re-applies on the next page load.
+The snippet writes `granted` on consent. It removes the key when consent is withdrawn. Gating then re-applies on the next page load.
 
 ## Osano
 
@@ -54,7 +54,7 @@ Add your Osano script in `docs.json`:
 
 The script URL comes from your Osano dashboard. It always starts with `https://cmp.osano.com/` and ends with `/osano.js`.
 
-Then add this bridge in Osano (Consent Manager → your config → custom JavaScript) so consent reaches Jamdesk:
+Then add this bridge in Osano (Consent Manager → your config → custom JavaScript):
 
 ```js
 function jdOsanoBridge(consent) {
@@ -89,9 +89,9 @@ Add your Termly script in `docs.json`:
 }
 ```
 
-The URL comes from Termly's embed instructions for your website (the Resource Blocker script). The `?autoBlock=on` query enables Termly's automatic script blocking and is optional.
+The URL comes from Termly's embed instructions for your website (the Resource Blocker script). The `?autoBlock=on` query is optional. It turns on Termly's automatic script blocking.
 
-Then add this bridge in Termly (your website → custom HTML/JavaScript) so consent reaches Jamdesk:
+Then add this bridge in Termly (your website → custom HTML/JavaScript):
 
 ```js
 function jdTermlyBridge() {
@@ -112,7 +112,7 @@ function jdTermlyBridge() {
 })();
 ```
 
-Both Osano and Termly load first in the page `<head>`, before any other script, so their automatic blocking works.
+Osano and Termly load first in the page `<head>`, before any other script. Their automatic blocking depends on this.
 
 <Warning>
 If your CMP runs in strict or auto-blocking mode, allowlist `*.jamdesk.app` and your custom docs domain in its managed rules (Osano: classification/allowlist; Termly: Domain Rules or Custom Blocking Map). Otherwise the CMP may block your docs site's own assets and break the page.
@@ -120,14 +120,14 @@ If your CMP runs in strict or auto-blocking mode, allowlist `*.jamdesk.app` and 
 
 ## Testing Your Setup
 
-Gating runs only on your live, published site, not in `jamdesk dev` (the local preview ignores consent configuration). To test:
+Gating runs only on your live, published site. The `jamdesk dev` local preview ignores consent configuration. Test it:
 
 1. Open your live docs site with an empty `localStorage`. Analytics should not load (check the browser Network tab: no requests to Google, Plausible, or `/api/ev`).
 2. In the browser console, run `localStorage.setItem("jamdesk_consent", "granted")`. The scripts should load within about a second, without a reload.
 
 ## Disabling Jamdesk Analytics Entirely
 
-To turn off Jamdesk's built-in (cookieless) analytics for all visitors regardless of consent:
+Turn off Jamdesk's built-in (cookieless) analytics for every visitor, regardless of consent:
 
 ```json docs.json
 {
@@ -139,7 +139,7 @@ To turn off Jamdesk's built-in (cookieless) analytics for all visitors regardles
 
 <Columns cols={2}>
   <Card title="Google Tag Manager" icon="tags" href="/integrations/google-tag-manager">
-    Manage tags and GTM consent mode
+    Load tags and set GTM consent mode
   </Card>
   <Card title="Google Analytics" icon="chart-simple" href="/integrations/google-analytics">
     Add GA4 directly

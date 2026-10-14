@@ -6,16 +6,16 @@ description: >-
 ---
 
 <Note>
-  JWT authentication requires a paid plan and a Jamdesk project [connected to a Git repository](/setup/connecting-github). Configuration lives in `docs.json`, so it rides along with your normal build-and-deploy flow.
+  JWT authentication requires a paid plan and a Jamdesk project [connected to a Git repository](/setup/connecting-github). Configuration lives in `docs.json`. It deploys with your normal builds.
 </Note>
 
-If your product already has its own login system, JWT authentication lets you gate your docs behind it instead of handing out a shared passphrase. Your backend signs a short-lived token when a signed-in user clicks through to the docs. Jamdesk verifies it once, mints a session, and the visitor browses normally from then on. Visitors never need a Jamdesk account or a shared password.
+JWT authentication gates your docs behind your product's own login instead of a shared passphrase. Your backend signs a short-lived token when a signed-in visitor clicks through to the docs. Jamdesk verifies it once and mints a session. The visitor then browses normally. Visitors never need a Jamdesk account or a shared password.
 
 ## How this differs from password protection
 
-[Password protection](/setup/password-protection) gives every visitor the same shared passphrase, which works well for internal docs, staging previews, or a single partner audience. JWT authentication is per-user: each visitor's identity, session length, and page access come from a token *your* backend signs. Docs access can follow your existing customer accounts, plans, or roles instead of one shared secret.
+[Password protection](/setup/password-protection) gives every visitor the same shared passphrase. It works well for internal docs, staging previews, or one partner audience. JWT authentication is per-user: each visitor's identity, session length, and page access come from a token *your* backend signs. Docs access can follow your existing customer accounts, plans, or roles instead of one shared secret.
 
-The two modes are mutually exclusive: `auth.password` and `auth.jwt` cannot both be enabled at once. See [Migrating from password protection](#migrating-from-password-protection) below if you're switching from one to the other.
+`auth.password` and `auth.jwt` cannot be enabled at the same time. See [Migrating from password protection](#migrating-from-password-protection) to switch from one to the other.
 
 ## Setup steps
 
@@ -36,13 +36,13 @@ The two modes are mutually exclusive: `auth.password` and `auth.jwt` cannot both
     }
     ```
 
-    `loginUrl` is required whenever `enabled: true`, and it must be an absolute `https://` URL. Unauthenticated visitors are redirected here with `?redirect=<path>` so your login flow knows where to send them back. `public` is optional: paths or globs (`*` for one segment, `**` for any depth) that stay reachable without signing in.
+    `loginUrl` is required whenever `enabled: true`. It must be an absolute `https://` URL. Unauthenticated visitors are redirected here with `?redirect=<path>`. Your login flow uses it to send them back. `public` is optional: paths or globs (`*` for one segment, `**` for any depth) that stay reachable without signing in.
   </Step>
 
   <Step title="Generate the signing key">
     Open **Project Settings** in the dashboard and find the **JWT authentication** card. Click **Generate signing key**.
 
-    Jamdesk creates an Ed25519 keypair, keeps only the *public* key, and shows you the *private* key exactly once. Copy it into your secret manager immediately. Jamdesk never stores or emails the private key and can't recover it if you lose it. If that happens, rotate the key. Rotation is a hard cutover, so read [Rotating the signing key](#rotating-the-signing-key) before you click.
+    Jamdesk creates an Ed25519 keypair and keeps only the *public* key. It shows you the *private* key exactly once. Copy it into your secret manager immediately. Jamdesk never stores or emails the private key. It can't recover a lost key. Rotate the key if you lose it. Rotation is a hard cutover. Read [Rotating the signing key](#rotating-the-signing-key) before you click.
   </Step>
 
   <Step title="Commit and rebuild">
@@ -52,15 +52,15 @@ The two modes are mutually exclusive: `auth.password` and `auth.jwt` cannot both
     git push
     ```
 
-    Once the build publishes, the site gates every page. Requests without a valid session redirect to your `loginUrl`.
+    The published build gates every page. Requests without a valid session redirect to your `loginUrl`.
   </Step>
 </Steps>
 
 ## Integrate your login flow
 
-When a signed-in user clicks through to your docs, your backend signs a JWT and redirects the browser to the docs site's callback URL with the token in the URL fragment (after the `#`). Fragments never reach your server logs or any reverse proxy, because browsers don't send them with the request.
+Your backend signs a JWT when a signed-in visitor clicks through to your docs. It redirects the browser to the docs site's callback URL with the token in the URL fragment (after the `#`). Browsers don't send fragments with the request. They never reach your server logs or any reverse proxy.
 
-The token must be signed with EdDSA (Ed25519, matching the key you generated in the dashboard), and its `exp` claim should be no more than about 10 seconds in the future. That's a handshake window, not a session length. The actual session length is controlled separately by the `expiresAt` field in the payload (see the [payload reference](#payload-reference) below).
+Sign the token with EdDSA (Ed25519, matching the key you generated in the dashboard). Its `exp` claim should be no more than about 10 seconds in the future. That's a handshake window, not a session length. The session length is set separately by the `expiresAt` field in the payload (see the [payload reference](#payload-reference) below).
 
 <CodeGroup>
 ```typescript TypeScript (jose)
@@ -137,14 +137,14 @@ def docs_login():
 
 1. A visitor requests a protected page (say, `/quickstart`) without a valid session. Jamdesk responds with a redirect to `{loginUrl}?redirect=%2Fquickstart`.
 2. Your login flow authenticates the visitor (however you normally do that), signs a JWT, and redirects them to `https://<your-docs-host>/_jd/auth/callback?redirect=%2Fquickstart#<jwt>`.
-3. The callback page reads the token out of the fragment client-side and posts it to Jamdesk's token-exchange endpoint. Jamdesk verifies the signature and claims, and on success sets a signed session cookie.
-4. The browser is redirected to the original destination, `/quickstart`, now with a valid session. The `redirect` value is preserved end-to-end so visitors land exactly where they started.
+3. The callback page reads the token out of the fragment client-side and posts it to Jamdesk's token-exchange endpoint. Jamdesk verifies the signature and claims. On success, it sets a signed session cookie.
+4. The browser is redirected to the original destination, `/quickstart`, now with a valid session. The `redirect` value is preserved end to end. Visitors land where they started.
 
-If your backend can't determine a `redirect` value (someone bookmarked your login page directly, for example), omit it and Jamdesk falls back to `/`.
+Omit `redirect` if your backend can't determine it (a bookmarked login page, for example). Jamdesk falls back to `/`.
 
 ## Public pages
 
-Some pages should stay reachable without signing in, such as a status page or a public changelog. There are three ways to mark a page public, and they all merge into one allow-list:
+Keep pages such as a status page or a public changelog reachable without sign-in. Mark a page public in three ways. They merge into one allow-list:
 
 **Frontmatter**, for one page at a time:
 
@@ -181,7 +181,7 @@ public: true
 }
 ```
 
-Marking a page public opens the page itself. The images and videos on it are served from your project's asset paths, which stay behind the gate, so a signed-out visitor sees a public page without its pictures. Add the asset paths to `auth.jwt.public[]` when a public page needs them:
+Marking a page public opens the page itself. Its images and videos are served from your project's asset paths. Those paths stay behind the gate. A signed-out visitor sees the public page without its pictures. Add the asset paths a public page needs to `auth.jwt.public[]`:
 
 ```json docs.json
 {
@@ -193,11 +193,11 @@ Marking a page public opens the page itself. The images and videos on it are ser
 }
 ```
 
-Scope the glob to the folders your public pages actually use. Asset paths are never group-checked, so a broad glob such as `/_jd/images/**` serves every image on the site to anyone at all, including the screenshots inside pages you restricted with `groups`. Keep the images for public pages in their own folder and open only that folder.
+Scope the glob to the folders your public pages use. Asset paths are never group-checked. A broad glob such as `/_jd/images/**` serves every image on the site to anyone, including the screenshots inside pages you restricted with `groups`. Keep the images for public pages in their own folder and open only that folder.
 
 ## Group-based access
 
-Some pages should only be visible to certain authenticated users, such as an admin runbook or an enterprise-only reference. Add `groups` to a page's frontmatter:
+Limit a page such as an admin runbook or an enterprise-only reference to certain signed-in visitors. Add `groups` to its frontmatter:
 
 ```yaml
 ---
@@ -206,22 +206,22 @@ groups: ["admin"]
 ---
 ```
 
-A visitor's session carries the `groups` array your backend put in the JWT payload. If a page declares `groups` and the visitor's session doesn't intersect with that list, they get a 404 rather than a 401 or an unlock screen. This is deliberate: a group-restricted page doesn't reveal its own existence to users outside the group.
+A visitor's session carries the `groups` array your backend put in the JWT payload. A visitor whose session shares no group with a page's `groups` list gets a 404, not a 401 or an unlock screen. A group-restricted page doesn't reveal that it exists to visitors outside the group.
 
 Details that affect how you use `groups`:
 
-- Group pages are excluded from the sitemap, search, AI chat, and MCP, even for users who are in the group. Exclusion from these discovery surfaces is a build-time decision, not a per-visitor one. A member of the `admin` group can still open `/admin/api-keys` directly (by URL or internal link), but it won't turn up in search results, chat answers, or `llms.txt`. If you need a restricted page to be findable by its own audience, link to it from another page that audience can already reach.
-- An empty `groups: []` means no restriction at all, not "nobody can see this." To remove a page's group restriction, delete the `groups` field entirely rather than setting it to an empty array.
-- To restrict a page to nobody, unpublish it. There's no `groups` value that means "nobody": group membership is additive, and any overlap grants access.
-- Localized copies inherit the base page's `groups` automatically, unless the translation declares its own `groups` in its frontmatter. Translating a restricted page doesn't accidentally make the translation public.
-- Jamdesk works out which top-level folders are translations from `navigation.languages`, plus any top-level folder named after a language code (`fr`, `it`, `cs`, and so on) that has pages inside it. A folder that only shares a name with a language code, say an `it` folder holding IT runbooks, is treated as a translation too, and its pages inherit the `groups` of any root page at the same path. This can only restrict more, never less. Rename the folder if it gets in your way.
-- `groups` restricts pages, not the images, videos, and other files a page embeds. An asset that only a restricted page links to is still served to any signed-in visitor who asks for its URL, whatever groups their session carries. Asset URLs follow your repository's file paths, so a name like `images/admin/sso-config.png` is easy to guess. Keep anything you don't want every signed-in reader to see out of the docs repository.
-- The sidebar, tabs, breadcrumbs, and previous/next links are filtered per visitor. A page the visitor's groups don't cover is left out, and a group or tab that ends up empty is left out with it, so the name of a restricted section isn't shown to people outside it. This filtering happens at request time and is separate from the build-time exclusions above, which apply to everyone.
-- Keep group names short. Groups travel inside the session cookie: up to 32 groups per session, 64 characters each. Exceeding either limit doesn't trim the list; Jamdesk rejects the entire token with a 401 and grants no session.
+- Group pages are excluded from the sitemap, search, AI chat, and MCP, even for visitors in the group. Exclusion from these discovery surfaces is a build-time decision, not a per-visitor one. A member of the `admin` group can still open `/admin/api-keys` directly (by URL or internal link). It won't turn up in search results, chat answers, or `llms.txt`. Link to a restricted page from a page its audience can already reach to make it findable.
+- An empty `groups: []` means no restriction at all, not "nobody can see this." Remove a page's group restriction by deleting the `groups` field, not by setting it to an empty array.
+- Unpublish a page to hide it from everyone. No `groups` value means "nobody". Group membership is additive. Any overlap grants access.
+- Localized copies inherit the base page's `groups` automatically, unless the translation declares its own `groups` in its frontmatter.
+- Jamdesk works out which top-level folders are translations from `navigation.languages`, plus any top-level folder named after a language code (`fr`, `it`, `cs`, and so on) that has pages inside it. A folder that only shares a name with a language code, say an `it` folder holding IT runbooks, is treated as a translation too. Its pages inherit the `groups` of any root page at the same path. This can only restrict more, never less. Rename the folder if it gets in your way.
+- `groups` restricts pages, not the images, videos, and other files a page embeds. An asset that only a restricted page links to is still served to any signed-in visitor who asks for its URL, whatever groups their session carries. Asset URLs follow your repository's file paths. A name like `images/admin/sso-config.png` is easy to guess. Keep anything you don't want every signed-in reader to see out of the docs repository.
+- The sidebar, tabs, breadcrumbs, and previous/next links are filtered per visitor. A page the visitor's groups don't cover is left out. A group or tab that ends up empty is left out too. The name of a restricted section isn't shown to visitors outside it. This filtering happens at request time and is separate from the build-time exclusions above, which apply to everyone.
+- Keep group names short. Groups travel inside the session cookie: up to 32 groups per session, 64 characters each. Exceeding either limit doesn't trim the list. Jamdesk rejects the entire token with a 401 and grants no session.
 
 ## API playground pre-fill
 
-If your docs have an [API playground](/api-reference/playground), you can pre-fill it for signed-in visitors so they don't have to paste in their own API key. Include `apiPlaygroundInputs` in your JWT payload:
+Pre-fill the [API playground](/api-reference/playground) for signed-in visitors. They skip pasting in their own API key. Include `apiPlaygroundInputs` in your JWT payload:
 
 ```json
 {
@@ -244,31 +244,31 @@ If your docs have an [API playground](/api-reference/playground), you can pre-fi
 | Field | Required | Description |
 |---|---|---|
 | `host` | Yes | Must exactly match the request host (case-insensitive): your `*.jamdesk.app` subdomain or your custom domain. A token signed for one host is rejected on any other. |
-| `expiresAt` | No | Unix timestamp (seconds) for when the resulting *session* should expire. Capped at 30 days; defaults to 7 days if omitted. This is independent of the token's own short-lived `exp` claim. |
+| `expiresAt` | No | Unix timestamp (seconds) for when the resulting *session* should expire. Capped at 30 days. Defaults to 7 days if omitted. This is independent of the token's own short-lived `exp` claim. |
 | `groups` | No | Array of group names the session should carry, up to 32 entries of 64 characters each. Exceeding either limit rejects the whole token (401, no session) rather than truncating the list. |
-| `apiPlaygroundInputs` | No | Pre-fill values for the API playground. Serialized size is capped at 2KB. If it doesn't fit, it's dropped without an error and the session is still granted. |
+| `apiPlaygroundInputs` | No | Pre-fill values for the API playground. Serialized size is capped at 2KB. Oversized values are dropped without an error. The session is still granted. |
 
 ## Rotating the signing key
 
-**Rotate signing key** on the dashboard card generates a new keypair and shows the new private key once, the same way the first generation did. There is no overlap period. Within about 15 seconds the old key stops being accepted and every existing session ends. Until your backend signs with the new key, every sign-in is rejected and visitors bounce between your login page and the docs.
+Click **Rotate signing key** on the dashboard card to generate a new keypair. The new private key is shown once, like the first one. There is no overlap period. The old key stops being accepted within about 15 seconds. Every existing session ends. Every sign-in is rejected until your backend signs with the new key. Visitors bounce between your login page and the docs.
 
-So the order matters:
+Follow this order:
 
 1. Have a deploy ready that reads the signing key from your secret manager rather than from a hardcoded value.
 2. Click **Rotate signing key** and copy the new private key.
 3. Update the secret and deploy. Sign-ins work again as soon as your backend is using the new key.
 
-Rotate at a quiet time if you can, and tell whoever owns the backend deploy before you click.
+Rotate at a quiet time if you can. Tell whoever owns the backend deploy before you click.
 
-If all you want is to end everyone's session, after a laptop went missing for example, use **Revoke sessions** instead. It keeps the key, so nothing in your backend changes; every visitor just has to sign in again.
+Use **Revoke sessions** instead to end every session without a new key, for example after a laptop goes missing. It keeps the key. Nothing in your backend changes. Every visitor signs in again.
 
-**Clear signing key** removes the public key from Jamdesk. `auth.jwt` is still enabled in `docs.json`, so the site is locked: visitors see a page saying the site is private instead of your login page, and no token works until you generate a new key. The same applies if you turn on `auth.jwt` before generating a key. Project API keys still work for the Search API and MCP. Clear it only when you're moving the site to another access mode or retiring it.
+**Clear signing key** removes the public key from Jamdesk. `auth.jwt` stays enabled in `docs.json`. The site locks. Visitors see a page saying the site is private instead of your login page. No token works until you generate a new key. The same applies if you turn on `auth.jwt` before generating a key. Project API keys still work for the Search API and MCP. Clear it only when you're moving the site to another access mode or retiring it.
 
 ## Logout
 
-Signed-in visitors get a **Log out** link in the docs header. It sends them to `/_jd/auth/logout`, which clears the session cookie and redirects to your `loginUrl`. You can also link to it directly from your own app if you want a "sign out of docs" link elsewhere. It's a plain `GET` request with no body or headers required.
+Signed-in visitors get a **Log out** link in the docs header. It sends them to `/_jd/auth/logout`. That route clears the session cookie and redirects to your `loginUrl`. Link to it from your own app for a "sign out of docs" link elsewhere. It's a plain `GET` request with no body or headers required.
 
-Logging out of the docs doesn't log the visitor out of your product. If your login flow signs a token for anyone who already has an app session, a visitor who clicks **Log out** and then opens a docs link is signed straight back in. That's usually what you want. If you need a real sign-out, have your `loginUrl` handler check for an explicit sign-in rather than minting a token automatically, or point your own logout at the docs logout URL as well.
+Logging out of the docs doesn't log the visitor out of your product. Your login flow may sign a token for any visitor with an app session. A visitor who clicks **Log out** and opens a docs link is then signed straight back in. That's usually what you want. For a full sign-out, have your `loginUrl` handler require an explicit sign-in instead of minting a token automatically. Or point your own logout at the docs logout URL too.
 
 ## Feature behavior under auth
 
@@ -276,46 +276,46 @@ Logging out of the docs doesn't log the visitor out of your product. If your log
 |---|---|
 | `llms.txt` / `llms-full.txt` / sitemap | Gated with the rest of the site: unreachable without a valid session, same as any other page. |
 | Group-restricted pages | Excluded from all of the above artifacts, plus search and AI chat, regardless of the requesting session's groups (see [Group-based access](#group-based-access)). |
-| Search API (`/_api/search`) | Not gated. It authenticates with your `jd_live_` API key instead of the login cookie, so keep the key on your server. Group-restricted pages are never in results. |
+| Search API (`/_api/search`) | Not gated. It authenticates with your `jd_live_` API key instead of the login cookie. Keep the key on your server. Group-restricted pages are never in results. |
 | MCP server (`/_mcp`) | Send a project API key as `Authorization: Bearer <key>`. Without one, the server answers with a JSON 401 instead of the login redirect. See [MCP Server](/ai/mcp-server#login-protected-sites). |
 | AI chat | Available to signed-in visitors. If the session expires, the chat asks the visitor to reload the page and sign in again. |
-| `robots.txt` | Always public. Search engines can see that a docs site exists and is gated; they can't see its content. |
+| `robots.txt` | Always public. Search engines can see that a docs site exists and is gated. They can't see its content. |
 
 ## Troubleshooting
 
 <Accordion title="I rotated the signing key but old sessions still seem to work">
-  Rotation and revocation take effect within about 15 seconds, not instantly, because the edge gate briefly caches auth config to keep every page request fast. **Rotate** in the dashboard does invalidate every existing session; give it up to 15 seconds before treating a still-valid old session as a bug.
+  Rotation and revocation take effect within about 15 seconds, not instantly. The edge gate briefly caches auth config to keep page requests fast. **Rotate** in the dashboard does invalidate every existing session. Give it up to 15 seconds before treating a still-valid old session as a bug.
 </Accordion>
 
 <Accordion title="The dashboard shows a &quot;Runtime out of sync&quot; banner">
-  The dashboard and the runtime cache disagree about your signing key, usually because a temporary write failure interrupted a generate, rotate, or clear. The banner says which way: either the latest key hasn't reached the cache yet (tokens signed with it may be rejected), or a key you cleared is still cached (tokens signed with it are still accepted). Jamdesk checks again every time you open the settings page. If the banner stays, click **Retry sync**. If that keeps failing, rotate the key, or generate and clear again in the cleared case. A banner that says Jamdesk could not verify the state at all means the check itself failed; retry once the runtime is reachable.
+  The dashboard and the runtime cache disagree about your signing key. A temporary write failure usually interrupted a generate, rotate, or clear. The banner says which way: either the latest key hasn't reached the cache yet (tokens signed with it may be rejected), or a key you cleared is still cached (tokens signed with it are still accepted). Jamdesk checks again every time you open the settings page. If the banner stays, click **Retry sync**. If that keeps failing, rotate the key, or generate and clear again in the cleared case. A banner that says Jamdesk could not verify the state at all means the check itself failed. Retry when the runtime is reachable.
 </Accordion>
 
 <Accordion title="Visitors get a 401 even with a token I know is valid">
-  Check the `host` claim against the exact host being requested. If your docs are reachable at both a custom domain (`docs.example.com`) and the underlying `*.jamdesk.app` subdomain, a token signed for one will be rejected on the other: `host` binding is exact and case-insensitive but not alias-aware. Sign tokens for whichever host you actually link to, or sign two variants if you link to both.
+  Check the `host` claim against the exact host being requested. Your docs may be reachable at a custom domain (`docs.example.com`) and the underlying `*.jamdesk.app` subdomain. A token signed for one is rejected on the other. `host` binding is exact and case-insensitive but not alias-aware. Sign tokens for the host you link to, or sign two variants if you link to both.
 </Accordion>
 
 <Accordion title="I'm stuck in a redirect loop between my login page and the docs site">
-  Jamdesk's callback route refuses to redirect back into itself: a `redirect` value pointing at `/_jd/auth/callback` (or the unlock-style page underneath it) is rewritten to `/` instead of being honored. If you're still seeing a loop, check that your login flow isn't itself redirecting to the docs `loginUrl` in a cycle (for example, a login page that immediately bounces back to `/docs-login` when it can't find a docs session). The docs side of the loop is guarded; the loop is almost always in the login flow.
+  Jamdesk's callback route refuses to redirect back into itself: a `redirect` value pointing at `/_jd/auth/callback` (or the unlock-style page underneath it) is rewritten to `/`. If the loop continues, check that your login flow isn't redirecting to the docs `loginUrl` in a cycle (for example, a login page that immediately bounces back to `/docs-login` when it can't find a docs session). The docs side is guarded. The loop is almost always in the login flow.
 </Accordion>
 
 <Accordion title="Both auth.password and auth.jwt are enabled">
-  This is a `config_error` and blocks the build. Pick one; see [Migrating from password protection](#migrating-from-password-protection) for the safe order of operations if you're switching.
+  This is a `config_error`. It blocks the build. Pick one. See [Migrating from password protection](#migrating-from-password-protection) for the safe order when switching.
 </Accordion>
 
 ## Security note
 
-`apiPlaygroundInputs`, including any Authorization value you put in it, is readable by JavaScript running on your docs site via the session-info endpoint that powers the playground pre-fill. Pre-fill is convenient, but it is not a place for high-privilege secrets.
+JavaScript on your docs site can read `apiPlaygroundInputs`, including any Authorization value in it. The session-info endpoint behind the playground pre-fill exposes it. Never put high-privilege secrets there.
 
-Send per-user, least-privilege credentials scoped to what that visitor is allowed to do, never an org-wide admin key. Treat anything you put in `apiPlaygroundInputs` as visible to the person browsing the docs, because it is.
+Send per-user, least-privilege credentials scoped to what that visitor is allowed to do, never an org-wide admin key. Anything in `apiPlaygroundInputs` is visible to the person browsing the docs.
 
 ## Migrating from password protection
 
-Switching from a shared password to JWT authentication requires no downtime, and the site stays gated throughout. Do it in this order:
+Switching from a shared password to JWT authentication needs no downtime. The site stays gated throughout. Follow this order:
 
 <Steps>
   <Step title="Generate the JWT signing key">
-    Do this first, while password protection is still active. Generating a key doesn't change what's gated; the password stays in force the whole time.
+    Do this while password protection is still active. Generating a key doesn't change what's gated. The password stays in force.
   </Step>
   <Step title="Flip docs.json and rebuild">
     ```json docs.json
@@ -327,10 +327,10 @@ Switching from a shared password to JWT authentication requires no downtime, and
     }
     ```
 
-    Commit and push. The moment this build publishes, the gate flips atomically from password to JWT, with no window where the site is unprotected. Any existing password-unlocked sessions end at the flip; visitors authenticate through your login flow from then on.
+    Commit and push. The gate flips atomically from password to JWT when this build publishes. The site is never unprotected. Existing password-unlocked sessions end at the flip. Visitors then sign in through your login flow.
   </Step>
   <Step title="Clear the password">
-    Once you've confirmed the JWT flow works end-to-end, go back to **Project Settings** and clear the stored password. It's inert at this point (password mode is off in `docs.json`), but clearing it removes the stored hash entirely.
+    Confirm the JWT flow works end to end. Then clear the stored password in **Project Settings**. It's inert at this point (password mode is off in `docs.json`). Clearing it removes the stored hash.
   </Step>
 </Steps>
 

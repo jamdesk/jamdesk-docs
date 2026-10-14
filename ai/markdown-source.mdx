@@ -3,7 +3,7 @@ title: Markdown Source
 description: Access raw Markdown source for any documentation page by appending .md to the URL. Structured text for AI tools, scripts, and content pipelines.
 ---
 
-AI tools process Markdown more efficiently than rendered HTML. Jamdesk makes the raw Markdown source of every page available by appending `.md` to any URL. No authentication required.
+AI tools process Markdown more efficiently than rendered HTML. Append `.md` to any page URL to get its raw Markdown source. No authentication required.
 
 ## `.md` URL Extension
 
@@ -40,7 +40,7 @@ The response is the exact source file from your repository, including frontmatte
 
 ### Custom domains
 
-Raw content works on custom domains too. Use the same URL your readers see, with `.md` appended:
+Append `.md` to the custom domain URL your readers see:
 
 ```bash
 # Docs served at root
@@ -52,7 +52,7 @@ curl https://docs.example.com/docs/getting-started.md
 
 ### Site root and language roots
 
-The site root and a bare language root export the page their HTML versions show: the first page in your navigation, or in that language's navigation. There is no redirect — the Markdown comes back on the first request.
+The site root and a bare language root export the page their HTML versions show: the first page in your navigation, or in that language's navigation. There is no redirect. The Markdown comes back on the first request.
 
 ```bash
 # All three return the first navigation page's Markdown
@@ -61,21 +61,21 @@ curl -H "Accept: text/markdown" https://acme.jamdesk.app/
 curl https://acme.jamdesk.app/fr.md
 ```
 
-A project with a real `index.mdx` page keeps serving that page at `/index.md` and at the root. If the first navigation page's file is missing, the root returns `404` like any other missing page.
+A project with a real `index.mdx` page keeps serving that page at `/index.md` and at the root. The root returns `404` when the first navigation page's file is missing, like any other missing page.
 
 ## Content Format
 
-The raw content is Markdown extended with component tags like `<Note>`, `<Steps>`, and `<Tabs>`. Standard Markdown parsers will treat component tags as raw HTML. See [Markdown basics](/content/mdx-basics) for the full syntax reference.
+The raw content is Markdown extended with component tags like `<Note>`, `<Steps>`, and `<Tabs>`. Standard Markdown parsers treat component tags as raw HTML. See [Markdown basics](/content/mdx-basics) for the full syntax reference.
 
 ## What an endpoint page exports
 
-An `openapi:` page has almost no body of its own — the endpoint is rendered from your spec — so its Markdown export is flattened from the spec instead. An agent that fetches it gets the method and path, the parameters with their descriptions, the request and response schemas, and an `## Authentication` section naming the security schemes the operation requires: the scheme type, the `apiKey` header name, the bearer format, and any OAuth 2 scopes.
+An `openapi:` page has almost no body of its own. Jamdesk renders the endpoint from your spec. Its Markdown export is flattened from the spec instead. An agent that fetches it gets the method and path, the parameters with their descriptions, the request and response schemas, and an `## Authentication` section naming the security schemes the operation requires: the scheme type, the `apiKey` header name, the bearer format, and any OAuth 2 scopes.
 
-Alternatives are labelled "Any one of", schemes that must all be sent are listed together, and an operation that explicitly opts out with `security: []` says so rather than going silent. That's everything needed to build a working request without opening the spec.
+Alternatives are labeled "Any one of". Schemes that must all be sent are listed together. An operation that opts out with `security: []` says so. That's everything an agent needs to build a working request without opening the spec.
 
 ## OpenAPI specs on API reference pages
 
-When you fetch the Markdown for an API reference page (one whose frontmatter declares an `api:` or `openapi:` spec), Jamdesk appends a short footer that points AI agents at every OpenAPI specification in your project, bundled as a single download:
+The Markdown for an API reference page (one whose frontmatter declares an `api:` or `openapi:` spec) ends with a short footer. It points AI agents at every OpenAPI specification in your project, bundled as one download:
 
 ```markdown
 ---
@@ -83,7 +83,7 @@ When you fetch the Markdown for an API reference page (one whose frontmatter dec
 📦 **OpenAPI specs:** Every OpenAPI specification referenced by this documentation is available as a single download — https://acme.jamdesk.app/api-specs.zip
 ```
 
-It's the same `api-specs.zip` offered by the [Download API spec](/ai/ai-actions#download-api-spec) action, assembled fresh on each request. The point is reach: an agent reading one endpoint page learns it can grab the full machine-readable contract in a single request, instead of scraping every endpoint. The footer appears only on API reference pages of projects that have at least one spec; regular guides are untouched.
+It's the same `api-specs.zip` as the [Download API spec](/ai/ai-actions#download-api-spec) action, built fresh on each request. An agent reading one endpoint page learns it can fetch the full machine-readable contract in one request. It doesn't have to scrape every endpoint. The footer appears only on API reference pages of projects with at least one spec.
 
 ## Response Details
 
@@ -99,7 +99,7 @@ It's the same `api-specs.zip` offered by the [Download API spec](/ai/ai-actions#
 | `X-Frame-Options` | `DENY` | Prevents embedding in iframes |
 | `Content-Security-Policy` | `default-src 'none'` | Blocks script execution |
 
-Requesting a page's canonical URL (no `.md`) with the header `Accept: text/markdown` returns the same Markdown, but with `Cache-Control: private, no-store`. It shares a cache key with the HTML page, so that response is never cached.
+Requesting a page's canonical URL (no `.md`) with the header `Accept: text/markdown` returns the same Markdown with `Cache-Control: private, no-store`. That response shares a cache key with the HTML page. It is never cached.
 
 ### Error responses
 
@@ -111,7 +111,7 @@ Requesting a page's canonical URL (no `.md`) with the header `Accept: text/markd
 
 ## Use with AI Tools
 
-Markdown source URLs pair well with the [MCP server](/ai/mcp-server). Use `searchDocs` to find pages by keyword, then fetch raw source for the matched page:
+Use `searchDocs` on the [MCP server](/ai/mcp-server) to find pages by keyword. Then fetch the raw source for the matched page:
 
 ```bash
 # 1. Search for a topic via MCP
@@ -123,7 +123,7 @@ curl -X POST https://acme.jamdesk.app/_mcp \
 curl https://acme.jamdesk.app/guides/authentication.md
 ```
 
-This gives AI tools both search and full-source access to your documentation. Both URLs also work on a live custom domain — `https://docs.acme.com/_mcp` and `https://docs.acme.com/guides/authentication.md`.
+This gives AI tools search and full-source access to your documentation. The URLs also work on a live custom domain: `https://docs.acme.com/_mcp` and `https://docs.acme.com/guides/authentication.md`.
 
 ## What's Next?
 

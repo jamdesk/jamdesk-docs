@@ -9,7 +9,7 @@ The Docs Search API gives you programmatic access to your documentation content 
 
 <Columns cols={2}>
   <Card title="Support Chatbots" icon="comment-dots">
-    Connect Intercom Fin, Zendesk AI, or a custom chatbot to your docs so it answers questions with accurate, cited content.
+    Connect Intercom Fin, Zendesk AI, or a custom chatbot to your docs. The bot answers questions with cited content.
   </Card>
   <Card title="Slack Bots" icon="slack">
     Build a `/docs` Slack command that searches your documentation and posts the top results to any channel.
@@ -26,7 +26,7 @@ The Docs Search API gives you programmatic access to your documentation content 
 
 <Steps>
   <Step title="Generate an API key">
-    Go to **Project Settings → API Keys** in the [Jamdesk dashboard](https://dashboard.jamdesk.com). Click **Generate Key**, give it a name, and copy the key. It starts with `jd_live_` followed by 32 hex characters (40 chars total) and is only shown once.
+    Go to **Project Settings → API Keys** in the [Jamdesk dashboard](https://dashboard.jamdesk.com). Click **Generate Key**, give it a name, and copy the key. It starts with `jd_live_` followed by 32 hex characters (40 chars total). It is only shown once.
   </Step>
   <Step title="Make your first search request">
     Send a `POST` request to `/_api/search` on your docs subdomain:
@@ -71,7 +71,7 @@ Authorization: Bearer jd_live_c83003a54ae0a83123454c3f7ec82f0a
 ```
 
 <Info>
-  The Search API works on sites with password or JWT authentication. It checks your API key, not a visitor's login, so you don't need to add `/_api/search` to `auth.jwt.public`. Results can include pages that are behind the login, so call the API from your server and never put the key in browser code. Results follow the same rules as site search: group-restricted pages are never returned, and hidden pages or pages with `search: false` are left out unless you've made them searchable.
+  The Search API works on sites with password or JWT authentication. It checks your API key, not a visitor's login. You don't need to add `/_api/search` to `auth.jwt.public`. Results can include pages behind the login. Call the API from your server and never put the key in browser code. Results follow the same rules as site search: group-restricted pages are never returned. Hidden pages and pages with `search: false` are left out unless you've made them searchable.
 </Info>
 
 ### Generating API Keys
@@ -87,14 +87,14 @@ Authorization: Bearer jd_live_c83003a54ae0a83123454c3f7ec82f0a
     Click **Generate Key**, enter a descriptive name (e.g. "Intercom chatbot"), and click **Create**.
   </Step>
   <Step title="Copy the key">
-    Copy the key immediately. It starts with `jd_live_` followed by 32 hex characters and is shown **only once**. Store it in your secrets manager or environment variables.
+    Copy the key immediately. It starts with `jd_live_` followed by 32 hex characters. It is shown **only once**. Store it in your secrets manager or environment variables.
   </Step>
 </Steps>
 
 ### Key Management
 
 <Info>
-API keys are scoped to a single project. A key for `acme.jamdesk.app` cannot query a different project's documentation.
+API keys are scoped to one project. A key for `acme.jamdesk.app` cannot query a different project's documentation.
 </Info>
 
 | Rule | Detail |
@@ -106,7 +106,7 @@ API keys are scoped to a single project. A key for `acme.jamdesk.app` cannot que
 
 ### Revoking Keys
 
-To revoke a key, go to **Project Settings → API Keys**, find the key by name, and click **Revoke**. Revoked keys stop working immediately. Generate a new key to replace it.
+Go to **Project Settings → API Keys**, find the key by name, and click **Revoke**. Revoked keys stop working immediately. Generate a new key to replace it.
 
 ## Rate Limits
 
@@ -120,12 +120,12 @@ Requests are rate-limited per API key.
 When you exceed the limit, the API returns `429 Too Many Requests` with a `Retry-After: 60` header and `{"error": "Rate limit exceeded"}` in the body.
 
 <Warning>
-If you need higher rate limits for a production integration, [contact us](mailto:support@jamdesk.com) to discuss Enterprise options.
+[Contact us](mailto:support@jamdesk.com) about Enterprise options for higher rate limits on a production integration.
 </Warning>
 
 ## Query Limits
 
-Each request accepts a `limit` parameter controlling how many results to return. The maximum is **20**, the default is **5**, and the minimum is **1**. There is no pagination; all matching results come back in a single response. If you need more context, try a more specific query rather than increasing the limit.
+Each request accepts a `limit` parameter controlling how many results to return. The maximum is **20**, the default is **5**, and the minimum is **1**. There is no pagination. All matching results come back in one response. For more context, try a more specific query instead of a higher limit.
 
 A query with no matches returns HTTP 200 with an empty results array:
 
@@ -135,7 +135,7 @@ A query with no matches returns HTTP 200 with an empty results array:
 
 ## Filtering by language
 
-If your docs site supports multiple languages, the API filters results to a single language per request. Pass `language` in the request body with a BCP-47 code (e.g. `en`, `es`, `fr`, `pt-BR`, `zh-Hans`).
+On a multi-language site, the API filters results to one language per request. Pass `language` in the request body with a BCP-47 code (e.g. `en`, `es`, `fr`, `pt-BR`, `zh-Hans`).
 
 ```bash
 curl -X POST https://your-project.jamdesk.app/_api/search \
@@ -151,15 +151,15 @@ curl -X POST https://your-project.jamdesk.app/_api/search \
 | **Validation** | Malformed values return `400` with `{"error": "Invalid language code"}`. |
 | **3-segment tags** | Not currently supported. Codes like `zh-Hant-HK` and `sr-Latn-RS` return `400`. [Contact support](mailto:support@jamdesk.com) if you need them. |
 | **Multi-language projects** | The filter is strict: only chunks tagged with the requested language are returned. A request for `de` against a project that only has English and French returns an empty result set, not a `400`. |
-| **Single-language projects** | The filter is ignored; you always get the full result set. Sending `language` is harmless, not an error. |
+| **Single-language projects** | The filter is ignored. You always get the full result set. Sending `language` does not cause an error. |
 | **Echoed in response** | Every successful response includes a `language` field with the value the server resolved (request value, or `en` default). |
 
 <Info>
-A project is multi-language when its `docs.json` has a `navigation.languages` array with two or more entries. To check whether your site is multi-language, open the **Settings → Languages** tab in the dashboard, or open `docs.json` directly.
+A project is multi-language when its `docs.json` has a `navigation.languages` array with two or more entries. Check the **Settings → Languages** tab in the dashboard, or `docs.json`, to see whether your site is multi-language.
 </Info>
 
 <Warning>
-The default `en` applies even on projects that don't have an English version. If your multi-language project is e.g. French and Spanish only, calling the endpoint without a `language` field will filter for `en` and return an empty result set. Always pass an explicit `language` from non-English-only sites.
+The default `en` applies even on projects that don't have an English version. A French-and-Spanish project called without a `language` field filters for `en` and returns an empty result set. Always pass an explicit `language` from sites without English.
 </Warning>
 
 ## Error Handling
@@ -171,14 +171,14 @@ All error responses include a machine-readable `error` field you can branch on p
 | **400** | `Missing or empty "query" field` | Request body is missing or has no `query` | Add a non-empty `query` string |
 | **400** | `Invalid language code` | The `language` field is not a string or doesn't match the BCP-47 pattern (`null` is fine; empty/whitespace strings and 3-segment tags are not) | Use a valid 1- or 2-segment code like `en`, `es`, `fr`, or `pt-BR` |
 | **401** | `invalid_key_format` | `Authorization` header is missing or the key doesn't match `jd_live_<32 hex>` | Check the header format; it must be `Bearer jd_live_...` |
-| **401** | `invalid_key` | Key is not recognised or has been revoked | Generate a new key in the dashboard |
+| **401** | `invalid_key` | Key is not recognized or has been revoked | Generate a new key in the dashboard |
 | **403** | `wrong_project` | Key is valid but was generated for a different project | Use a key that matches the project slug in the URL |
 | **429** | `Rate limit exceeded` | Exceeded 60 requests per minute | Wait the number of seconds in the `Retry-After` header |
 | **502** | `Search temporarily unavailable` | Vector search backend is down | Retry after a short backoff |
 | **503** | `lookup_failed` or `redis_unavailable` | Key verification backend is unreachable | Retry after a short backoff |
 
 <Info>
-401 and 403 are permanent failures. Retrying with the same key won't help. 429, 502, and 503 are transient, so retry with exponential backoff.
+401 and 403 are permanent failures. Retrying with the same key won't help. 429, 502, and 503 are transient. Retry them with exponential backoff.
 </Info>
 
 ## CORS
@@ -208,7 +208,7 @@ The full OpenAPI 3.1 spec is available as YAML. Import it into your codegen tool
 
 ## Postman Collection
 
-We publish an official Postman workspace with the full OpenAPI spec and a ready-to-fork collection so you can test requests in the Postman UI without writing any code.
+We publish an official Postman workspace with the full OpenAPI spec and a ready-to-fork collection. Test requests in the Postman UI without writing code.
 
 <Columns cols={2}>
   <Card title="Jamdesk Docs API workspace" icon="rocket" href="https://www.postman.com/jamdesk/jamdesk-docs-api">
@@ -220,9 +220,9 @@ We publish an official Postman workspace with the full OpenAPI spec and a ready-
 </Columns>
 
 <Warning>
-After forking the collection, you **must** update two collection variables before any request will work:
+Update two collection variables in the forked collection. No request works until you do:
 
-- **`baseUrl`**: set to your own Jamdesk docs site. For most customers this is `https://your-project.jamdesk.app` (replace `your-project` with your project slug). Custom-domain customers use their own host. Customers serving docs under a sub-path include the full path (e.g. `https://example.com/docs`).
+- **`baseUrl`**: set to your own Jamdesk docs site. This is usually `https://your-project.jamdesk.app` (replace `your-project` with your project slug). On a custom domain, use your own host. For docs under a sub-path, include the full path (e.g. `https://example.com/docs`).
 - **`apiKey`**: replace the placeholder with a real key generated in **Dashboard → Project Settings → API Keys**.
 </Warning>
 

@@ -3,7 +3,7 @@ title: Reverse Proxy
 description: "Serve your documentation at /docs using nginx, Apache, Caddy, Traefik, or HAProxy. Includes tested configuration snippets for each reverse proxy."
 ---
 
-If you already run nginx, Apache, Caddy, Traefik, or HAProxy, add a location/route block that forwards `/docs` traffic to your Jamdesk subdomain.
+Add a location/route block to nginx, Apache, Caddy, Traefik, or HAProxy that forwards `/docs` traffic to your Jamdesk subdomain.
 
 ## Prerequisites
 
@@ -11,7 +11,7 @@ If you already run nginx, Apache, Caddy, Traefik, or HAProxy, add a location/rou
 - Your Jamdesk subdomain (found in dashboard settings)
 
 <Note>
-If you use a custom subpath instead of the default `/docs`, replace `/docs` in every location/route block below (nginx, Apache, Caddy, Traefik, HAProxy) with your subpath. Update the configuration again after any rename in the dashboard.
+Using a custom subpath instead of the default `/docs`? Replace `/docs` with your subpath in every location/route block below. Update the configuration again after you rename the subpath in the dashboard.
 </Note>
 
 ## nginx
@@ -57,14 +57,14 @@ server {
 ```
 
 <Note>
-Replace `YOUR_SLUG` with your actual Jamdesk subdomain.
+Replace `YOUR_SLUG` with your Jamdesk subdomain.
 </Note>
 
 <Warning>
-**Path handling matters.** The `proxy_pass` URL has no trailing path, so nginx preserves the original request path. A request to `/docs/page` proxies to `jamdesk.app/docs/page`. If you add a trailing slash (`proxy_pass https://...jamdesk.app/`), the `/docs` prefix gets stripped. Keep it exactly as shown above.
+**Path handling matters.** The `proxy_pass` URL has no trailing path. nginx keeps the original request path. A request to `/docs/page` proxies to `jamdesk.app/docs/page`. A trailing slash (`proxy_pass https://...jamdesk.app/`) strips the `/docs` prefix. Keep it exactly as shown above.
 </Warning>
 
-After updating your configuration, reload nginx:
+Reload nginx:
 
 ```bash
 sudo nginx -t && sudo systemctl reload nginx
@@ -105,7 +105,7 @@ Use `mod_proxy` to forward `/docs` requests to Jamdesk:
 </VirtualHost>
 ```
 
-Ensure the required modules are enabled:
+Enable the required modules:
 
 ```bash
 sudo a2enmod proxy proxy_http ssl headers
@@ -114,7 +114,7 @@ sudo systemctl reload apache2
 
 ## Caddy
 
-[Caddy](https://caddyserver.com/) provides simple reverse proxy configuration with automatic HTTPS:
+[Caddy](https://caddyserver.com/) sets up HTTPS on its own. Add these `handle` blocks:
 
 ```caddy Caddyfile
 yoursite.com {
@@ -157,7 +157,7 @@ sudo systemctl reload caddy
 
 ## Traefik
 
-For [Traefik](https://traefik.io/) users, configure a router and service:
+Configure a [Traefik](https://traefik.io/) router and service:
 
 ```yaml traefik.yml
 http:
@@ -186,7 +186,7 @@ http:
 
 ## HAProxy
 
-For [HAProxy](https://www.haproxy.org/), add backend and ACL rules:
+Add [HAProxy](https://www.haproxy.org/) backend and ACL rules:
 
 ```haproxy haproxy.cfg
 frontend https
@@ -211,9 +211,9 @@ backend jamdesk_docs
 
 ## Forward Your Root Files Too
 
-`robots.txt`, `sitemap.xml`, `llms.txt`, and `llms-full.txt` are served from the domain root, not from under `/docs` — a proxy that only forwards `/docs`, `/_next`, and `/_jd` leaves these served by your own site (or not served at all), which breaks AI-agent discovery and costs you SEO regardless of anything else on this page.
+`robots.txt`, `sitemap.xml`, `llms.txt`, and `llms-full.txt` live at the domain root, not under `/docs`. A proxy that forwards only `/docs`, `/_next`, and `/_jd` leaves these to your own site, or leaves them missing. That breaks AI-agent discovery and costs you SEO.
 
-Add the same location/route pattern you used for `/docs` above, for each of these four paths. For nginx:
+Add the location/route pattern you used for `/docs` for each of these four paths. For nginx:
 
 ```nginx nginx.conf
     location = /robots.txt {
@@ -245,7 +245,7 @@ Add the same location/route pattern you used for `/docs` above, for each of thes
     }
 ```
 
-The same four blocks — same headers, same upstream — apply to Apache, Caddy, Traefik, and HAProxy: copy whichever `/docs` block you're using above and repeat it once per path.
+For Apache, Caddy, Traefik, or HAProxy, copy your `/docs` block and repeat it once per path. Keep the same headers and upstream.
 
 <Warning>
 Only forward these if Jamdesk owns your domain root. If your main site already serves its own `robots.txt` or `sitemap.xml`, merge the two instead of overwriting one with the other.
@@ -253,7 +253,7 @@ Only forward these if Jamdesk owns your domain root. If your main site already s
 
 ## Required Headers
 
-Regardless of which proxy you use, ensure these headers are set:
+Set these headers on any proxy:
 
 | Header | Value | Purpose |
 |--------|-------|---------|
@@ -261,21 +261,21 @@ Regardless of which proxy you use, ensure these headers are set:
 | `X-Forwarded-Host` | Your domain | Tells Jamdesk which domain to use in URLs |
 | `X-Forwarded-Proto` | `https` | Ensures secure URL generation |
 | `X-Jamdesk-Forwarded-Host` | Your domain | Required for domain verification |
-| `?jd_proxy=1` query marker | Appended to the upstream URL | Alternative to the header, for tools that can only rewrite a URL and can't set request headers — see [Custom domain only](/deploy/custom-domain-only) |
+| `?jd_proxy=1` query marker | Appended to the upstream URL | Alternative to the header, for tools that can only rewrite a URL and can't set request headers. See [Custom domain only](/deploy/custom-domain-only) |
 
 <Warning>
-The `X-Jamdesk-Forwarded-Host` header (or the `?jd_proxy=1` marker) is **required**, and going without either fails quietly.
+The `X-Jamdesk-Forwarded-Host` header (or the `?jd_proxy=1` marker) is **required**. Leaving out both fails quietly.
 
-Requests still succeed — nothing errors, which is exactly what makes it easy to miss. What breaks is subtler:
+Requests still succeed and nothing errors. Here is what breaks:
 
-- **If you haven't registered a custom domain in the dashboard**, your documentation pages are served with `<meta name="robots" content="noindex">`, and canonical, Open Graph, and sitemap URLs all point at `YOUR_SLUG.jamdesk.app` instead of your domain. Search engines will never index your documentation.
-- **If you have registered a custom domain**, Jamdesk falls back to the domain on file, so your URLs stay correct — but it still can't tell proxy traffic apart from direct traffic to your `*.jamdesk.app` subdomain, and the [Custom domain only](/deploy/custom-domain-only) preflight check will fail.
+- **No custom domain registered in the dashboard**: Jamdesk serves your pages with `<meta name="robots" content="noindex">`. Canonical, Open Graph, and sitemap URLs point at `YOUR_SLUG.jamdesk.app` instead of your domain. Search engines will never index your documentation.
+- **Custom domain registered**: Jamdesk falls back to the domain on file, and your URLs stay correct. Jamdesk still can't tell proxy traffic apart from direct traffic to your `*.jamdesk.app` subdomain. The [Custom domain only](/deploy/custom-domain-only) preflight check will fail.
 
-A **403** is the opposite problem: the header *is* present, but names a domain that isn't registered and active for this project.
+A **403** means the header *is* present but names a domain that isn't registered and active for this project.
 </Warning>
 
 <Tip>
-The proxy configuration is a **one-time setup**. If you later change your custom domain or configuration in the Jamdesk dashboard, the proxy doesn't need to be updated - all routing decisions are made server-side based on your dashboard settings.
+The proxy configuration is a **one-time setup**. Changing your custom domain or configuration in the Jamdesk dashboard needs no proxy update. Jamdesk makes routing decisions server-side from your dashboard settings.
 </Tip>
 
 ## Troubleshooting
@@ -289,26 +289,26 @@ Enable SSL/TLS for the upstream connection. For nginx, add `proxy_ssl_server_nam
 </Accordion>
 
 <Accordion title="Assets loading from wrong domain">
-Ensure the `X-Forwarded-Host` header is set correctly. This tells Jamdesk which domain to use for asset URLs and internal links.
+Check the `X-Forwarded-Host` header. Jamdesk uses it to build asset URLs and internal links.
 </Accordion>
 
 <Accordion title="Redirect loops">
-Check that your proxy isn't following redirects. The proxy should forward the response as-is without additional redirect handling.
+Check that your proxy isn't following redirects. It should forward the response as-is.
 </Accordion>
 
 <Accordion title="403 Domain not authorized error">
-If you see "Domain is not authorized to serve this content":
+Seeing "Domain is not authorized to serve this content"? Work through these checks:
 
 1. Verify your domain is registered in the Jamdesk dashboard
 2. Complete DNS verification (TXT record) for your domain
-3. Ensure the `X-Jamdesk-Forwarded-Host` header is set in your proxy configuration
+3. Set the `X-Jamdesk-Forwarded-Host` header in your proxy configuration
 4. Check that your domain maps to the correct project
 
 The domain must be verified before the proxy can serve documentation.
 </Accordion>
 
 <Accordion title="The Custom domain only preflight check keeps failing">
-Preflight fetches `/_jd/preflight` on your live domain and checks what actually reached Jamdesk. If it reports your proxy "doesn't identify itself," a request reached Jamdesk but without the header or the marker — recheck the `X-Jamdesk-Forwarded-Host` line in every location/route block above. See [Custom domain only](/deploy/custom-domain-only) for what each preflight message means.
+Preflight fetches `/_jd/preflight` on your live domain and checks what reached Jamdesk. "Doesn't identify itself" means a request reached Jamdesk without the header or the marker. Recheck the `X-Jamdesk-Forwarded-Host` line in every location/route block above. See [Custom domain only](/deploy/custom-domain-only) for what each preflight message means.
 </Accordion>
 
 ## What's Next?

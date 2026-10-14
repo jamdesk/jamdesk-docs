@@ -3,11 +3,11 @@ title: Cloudflare Workers
 description: "Proxy /docs requests through a Cloudflare Worker to your Jamdesk documentation site. Covers Worker setup, route patterns, and caching configuration."
 ---
 
-A [Cloudflare Worker](https://workers.cloudflare.com/) intercepts requests at `/docs` on your domain, rewrites them to your Jamdesk subdomain, and returns the response, all at the edge with no origin server required. You can scaffold the Worker automatically with `npx jamdesk deploy-proxy cloudflare` or set it up manually below.
+A [Cloudflare Worker](https://workers.cloudflare.com/) intercepts requests at `/docs` on your domain, rewrites them to your Jamdesk subdomain, and returns the response. It runs at the edge with no origin server. Scaffold the Worker with `npx jamdesk deploy-proxy cloudflare`, or set it up manually below.
 
 ## How It Works
 
-The Worker forwards requests to your Jamdesk subdomain and passes along your domain in the `X-Jamdesk-Forwarded-Host` header, which Jamdesk uses to verify the domain and apply its settings. It's a **one-time setup** — if you later change your domain or configuration in the dashboard, the Worker doesn't need updating.
+The Worker forwards requests to your Jamdesk subdomain. It passes your domain in the `X-Jamdesk-Forwarded-Host` header. Jamdesk reads that header to verify the domain and apply its settings. It's a **one-time setup**. Later changes to your domain or configuration in the dashboard don't require a Worker update.
 
 ## Prerequisites
 
@@ -15,17 +15,17 @@ The Worker forwards requests to your Jamdesk subdomain and passes along your dom
 - [Wrangler CLI](https://developers.cloudflare.com/workers/wrangler/install-and-update/) v3.0+ installed
 - Your Jamdesk subdomain (found in dashboard settings)
 - Your custom domain added to your project in the Jamdesk dashboard (the Worker returns a 403 until the domain is registered and verified)
-- A **proxied** (orange cloud) DNS record on the hostname serving your docs. Workers only run on proxied records, so a domain that hosts nothing else still needs one — add a placeholder `AAAA` record pointing at `100::` and set it to proxied.
+- A **proxied** (orange cloud) DNS record on the hostname serving your docs. Workers only run on proxied records. A domain that hosts nothing else still needs one: add a placeholder `AAAA` record pointing at `100::` and set it to proxied.
 
 ## Quick Setup with CLI
 
-The fastest way to set up your Cloudflare Worker:
+Set up the Worker with one command:
 
 ```bash
 npx jamdesk deploy-proxy cloudflare
 ```
 
-This interactive command will:
+This interactive command:
 1. Check that wrangler 3.0+ is installed
 2. Verify your Cloudflare account and show available domains
 3. Resolve your Jamdesk subdomain from the project linked in `docs.json`
@@ -33,24 +33,24 @@ This interactive command will:
 5. Generate all required files
 6. Optionally deploy to Cloudflare
 
-If you have access to multiple Cloudflare accounts (common for agencies or teams), the CLI prompts you to choose one before zone selection. Pick the account that owns the domain you're deploying to — Workers routes can only be created for domains in the selected account.
+With access to multiple Cloudflare accounts (common for agencies or teams), the CLI prompts you to choose one before zone selection. Pick the account that owns the domain you're deploying to. Workers routes can only be created for domains in the selected account.
 
 ### Non-interactive setup
 
-To run without prompts — in CI, or from a script — pass the answers as flags:
+Pass the answers as flags to run without prompts, in CI or from a script:
 
 ```bash
 jamdesk deploy-proxy cloudflare --slug myproject --domain example.com --yes
 ```
 
-`--yes` generates the Worker files and stops. It never deploys: the zone is assumed from your domain rather than confirmed against your Cloudflare account, so pushing that config live stays an explicit step. Finish with:
+`--yes` generates the Worker files and stops. It never deploys. The zone is assumed from your domain, not confirmed against your Cloudflare account. Pushing that config live stays an explicit step. Finish with:
 
 ```bash
 cd cloudflare-worker
 npx wrangler deploy
 ```
 
-With `--yes` the CLI can't prompt, so it needs to know your subdomain. It reads it from the project linked in `docs.json`; if that link is missing (run `jamdesk deploy` once to add it) pass `--slug` explicitly, or the command stops rather than guess.
+`--yes` can't prompt for your subdomain. The CLI reads it from the project linked in `docs.json`. If that link is missing, pass `--slug` (or run `jamdesk deploy` once to add the link). Otherwise the command stops rather than guess.
 
 If the output directory already exists, `--yes` stops rather than replace it. Add `--force` to overwrite, or `--output-dir` to write somewhere else.
 
@@ -62,9 +62,9 @@ If the output directory already exists, `--yes` stops rather than replace it. Ad
 | `--output-dir` | Output directory (default: cloudflare-worker/) |
 | `--skip-deploy` | Skip the "deploy now?" prompt in an interactive run (`--yes` never deploys) |
 | `--force` | Overwrite the output directory if it already exists |
-| `--yes` | Answer every prompt with its default (CI mode). Never deploys, and never overwrites an existing directory — combine with `--force` for that |
+| `--yes` | Answer every prompt with its default (CI mode). Never deploys. Never overwrites an existing directory unless combined with `--force` |
 
-If you prefer manual setup, continue with the steps below.
+Or follow the manual steps below.
 
 ---
 
@@ -189,15 +189,15 @@ export default {
 ```
 
 <Note>
-Replace `YOUR_SLUG` with your actual Jamdesk subdomain (e.g., `acme` if your docs are at `acme.jamdesk.app`).
+Replace `YOUR_SLUG` with your Jamdesk subdomain (e.g., `acme` if your docs are at `acme.jamdesk.app`).
 </Note>
 
 <Note>
-If you use a custom subpath from the dashboard instead of the default `/docs`, replace `"/docs"` with your subpath in `PROXY_PATHS` and in the exact-match check inside `shouldProxy()`. The CLI's `--path` flag does this for you when it generates the file, but only against an **unmodified** template; regenerating overwrites any custom entries you've added to `PROXY_PATHS` by hand. If you've customized this Worker, edit the `/docs` entries in place instead.
+If you use a custom subpath from the dashboard instead of the default `/docs`, replace `"/docs"` with your subpath in `PROXY_PATHS` and in the exact-match check inside `shouldProxy()`. The CLI's `--path` flag does this when it generates the file, but only against an **unmodified** template. Regenerating overwrites any custom entries you've added to `PROXY_PATHS` by hand. Edit the `/docs` entries in place if you've customized this Worker.
 </Note>
 
 <Warning>
-The `X-Jamdesk-Forwarded-Host` header is **required**, and a missing header fails quietly — requests still succeed, but pages serve `noindex` with canonical links pointing at `YOUR_SLUG.jamdesk.app` instead of your domain, so search engines never index your docs. A **403** is the opposite problem: the header *is* present, but names a domain that isn't registered and active for this project.
+The `X-Jamdesk-Forwarded-Host` header is **required**. A missing header fails quietly. Requests still succeed, but pages serve `noindex` with canonical links pointing at `YOUR_SLUG.jamdesk.app` instead of your domain. Search engines never index your docs. A **403** is the opposite problem: the header *is* present, but names a domain that isn't registered and active for this project.
 </Warning>
 
 ### Step 3: Configure wrangler.toml
@@ -220,11 +220,11 @@ routes = [
 ```
 
 <Note>
-If your Cloudflare login has access to more than one account, add `account_id = "<your account id>"` as well — otherwise `wrangler deploy` stops rather than guess which account to deploy into. `npx wrangler whoami` lists your account IDs.
+If your Cloudflare login has access to more than one account, add `account_id = "<your account id>"` as well. Without it, `wrangler deploy` stops rather than guess which account to deploy into. `npx wrangler whoami` lists your account IDs.
 </Note>
 
 <Tip>
-If your site also serves traffic on `www.yoursite.com`, add a second route so the Worker handles both:
+Add a second route if your site also serves traffic on `www.yoursite.com`:
 
 ```toml
 routes = [
@@ -244,28 +244,28 @@ npx wrangler deploy
 
 ### Step 5: Verify
 
-Visit `https://yoursite.com/docs` to confirm your documentation is being served correctly.
+Visit `https://yoursite.com/docs` and confirm your documentation loads.
 
 ## Troubleshooting
 
 <Accordion title="New subpath 404s after renaming in the dashboard">
-If you renamed your subpath in the dashboard (say, `/docs` → `/help`) but your Worker's `PROXY_PATHS` still only lists `/docs`, requests to `/help/*` never reach Jamdesk: they fall through to `fetch(request)` and 404 at your own origin. `/docs/*` keeps working in the meantime (Jamdesk serves both prefixes), which is exactly why this is easy to miss.
+If you renamed your subpath in the dashboard (say, `/docs` → `/help`) but your Worker's `PROXY_PATHS` still only lists `/docs`, requests to `/help/*` never reach Jamdesk. They fall through to `fetch(request)` and 404 at your own origin. `/docs/*` keeps working in the meantime (Jamdesk serves both prefixes). That makes the problem easy to miss.
 
-**Fix:** add your new subpath to `PROXY_PATHS`. Re-run `jamdesk deploy-proxy cloudflare --path <subpath>` if the Worker is still an unmodified template, or edit the array by hand if you've customized it.
+**Fix:** add your new subpath to `PROXY_PATHS`. Re-run `jamdesk deploy-proxy cloudflare --path <subpath>` if the Worker is still an unmodified template. Edit the array by hand if you've customized it.
 </Accordion>
 
 <Accordion title="“You are logged in with an API Token. Unset the CLOUDFLARE_API_TOKEN…”">
-Wrangler prefers `CLOUDFLARE_API_TOKEN` over its OAuth login, and it can't start an OAuth login while that token is set. This command needs OAuth to list the zones in your account, so it stops with the token's location instead of failing inside wrangler.
+Wrangler prefers `CLOUDFLARE_API_TOKEN` over its OAuth login. It can't start an OAuth login while that token is set. This command needs OAuth to list the zones in your account. It stops and shows the token's location instead of failing inside wrangler.
 
-Wrangler also reads `.env` from the directory you run in, so the token can be set for wrangler without being in your shell — `echo $CLOUDFLARE_API_TOKEN` printing nothing doesn't rule it out. Check for a `.env` in the current directory too.
+Wrangler also reads `.env` from the directory you run in. The token can be set for wrangler without being in your shell. An empty `echo $CLOUDFLARE_API_TOKEN` doesn't rule it out. Check for a `.env` in the current directory too.
 
-**Fix:** either grant the token `account:read` and `zone:read` and re-run, or run without it:
+**Fix:** grant the token `account:read` and `zone:read`, then re-run. Or run without the token:
 
 ```bash
 env -u CLOUDFLARE_API_TOKEN jamdesk deploy-proxy cloudflare
 ```
 
-If the token comes from a `.env`, `env -u` won't help — run the command from a directory that has no such `.env`, or move the file aside for the run.
+`env -u` won't help when the token comes from a `.env`. Run the command from a directory without that `.env`, or move the file aside for the run.
 </Accordion>
 
 <Accordion title="No domains found in this account">
@@ -279,8 +279,8 @@ The CLI shows your available domains before zone selection. If you see "No domai
 If you have multiple Cloudflare accounts:
 1. Run `jamdesk deploy-proxy cloudflare`
 2. When prompted to select an account, choose the one with your domain
-3. If you need a completely different login, select **"Switch to different login"**
-4. The CLI will log you out and prompt you to log in with the correct credentials
+3. Select **"Switch to different login"** for a completely different login
+4. The CLI logs you out and prompts you to log in with the correct credentials
 </Accordion>
 
 <Accordion title="Zone not found during deployment">
@@ -292,14 +292,14 @@ Fix: Re-run the CLI and select the correct zone from the list, or switch to the 
 </Accordion>
 
 <Accordion title="404 errors on documentation pages">
-Ensure your route pattern uses a catch-all: `yoursite.com/*` (not just `yoursite.com/docs*`). The Worker's internal `shouldProxy()` function handles path filtering.
+Use a catch-all route pattern: `yoursite.com/*` (not only `yoursite.com/docs*`). The Worker's internal `shouldProxy()` function filters paths.
 </Accordion>
 
 <Accordion title="Assets not loading correctly">
 Two common causes:
 
-1. **Worker not running.** Ensure your DNS record is set to **Proxied** (orange cloud) in Cloudflare. Workers only run on proxied records.
-2. **Missing `X-Forwarded-Host` header.** The Worker must set this header so Jamdesk generates correct asset URLs.
+1. **Worker not running:** set your DNS record to **Proxied** (orange cloud) in Cloudflare. Workers only run on proxied records.
+2. **Missing `X-Forwarded-Host` header:** the Worker must set this header. Jamdesk needs it to generate correct asset URLs.
 </Accordion>
 
 <Accordion title="403 Domain not authorized error">
@@ -307,35 +307,33 @@ If you see "Domain is not authorized to serve this content":
 
 1. Verify your domain is registered in the Jamdesk dashboard
 2. Complete DNS verification (TXT record) for your domain
-3. Ensure the `X-Jamdesk-Forwarded-Host` header is set in your Worker code
+3. Set the `X-Jamdesk-Forwarded-Host` header in your Worker code
 4. Check that your domain maps to the correct project
 
 The domain must be verified before the Worker can serve documentation.
 </Accordion>
 
 <Accordion title="Worker not triggering on root (apex) domain">
-Workers only run on **proxied** (orange cloud) DNS records. If your A record is set to "DNS only" (gray cloud), requests go straight to the origin and skip the Worker entirely.
+Workers only run on **proxied** (orange cloud) DNS records. If your A record is set to "DNS only" (gray cloud), requests go straight to the origin and skip the Worker.
 
-**Fix:** Toggle the A record to proxied (orange cloud) in Cloudflare DNS. Same applies to subdomains: any record with a Worker route must be proxied.
+**Fix:** Toggle the A record to proxied (orange cloud) in Cloudflare DNS. Any record with a Worker route must be proxied, subdomains included.
 </Accordion>
 
 <Accordion title="Domain verification stuck on Pending">
-Jamdesk verifies ownership by reading your DNS record values directly. Cloudflare's proxy (orange cloud) masks these values, so verification can't complete.
+Jamdesk verifies ownership by reading your DNS record values directly. Cloudflare's proxy (orange cloud) masks these values. Verification can't complete while it's on.
 
 **Fix:**
 1. Set the DNS record to **DNS only** (gray cloud)
 2. Wait for verification to complete (status changes to **active** in the dashboard)
 3. Switch back to **Proxied** (orange cloud) so the Worker runs
-
-Short version: **gray cloud** to verify → **orange cloud** to serve.
 </Accordion>
 
 <Accordion title="How caching works">
-Jamdesk serves documentation HTML with `Cache-Control: no-store`, so Cloudflare doesn't cache pages at the edge (`cf-cache-status: BYPASS`). Every request renders the current version, and published changes appear immediately with no cache delay.
+Jamdesk serves documentation HTML with `Cache-Control: no-store`. Cloudflare doesn't cache pages at the edge (`cf-cache-status: BYPASS`). Every request renders the current version. Published changes appear with no cache delay.
 
-Static assets under `/_next/` and `/_jd/` (JavaScript, CSS, fonts, images) are served with long-lived `immutable` cache headers, so Cloudflare caches them at the edge. Their filenames are content-hashed, so each build produces new URLs and updated assets are picked up automatically. No purge required.
+Static assets under `/_next/` and `/_jd/` (JavaScript, CSS, fonts, images) have long-lived `immutable` cache headers. Cloudflare caches them at the edge. Their filenames are content-hashed. Each build produces new URLs. No purge is required.
 
-`cacheEverything: true` lets Cloudflare cache those static assets on the proxied route; it doesn't override the `no-store` on HTML. To clear the edge cache manually, use Cloudflare's **Purge Cache** (Caching → Configuration → Purge Everything).
+`cacheEverything: true` lets Cloudflare cache those static assets on the proxied route. It doesn't override the `no-store` on HTML. Clear the edge cache manually with Cloudflare's **Purge Cache** (Caching → Configuration → Purge Everything).
 </Accordion>
 
 <Accordion title="Wrangler version too old">

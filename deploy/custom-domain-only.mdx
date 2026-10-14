@@ -5,9 +5,9 @@ description: >-
   serve your docs exclusively through your own domain.
 ---
 
-Your documentation is hosted at `YOUR_SLUG.jamdesk.app`. When you connect a custom domain, that subdomain keeps answering — but every page it serves includes a `<link rel="canonical">` tag pointing at your domain, so search engines index your domain, never the subdomain. For most projects that's all you need.
+Your documentation is hosted at `YOUR_SLUG.jamdesk.app`. The subdomain keeps answering after you connect a custom domain. Every page it serves includes a `<link rel="canonical">` tag pointing at your domain. Search engines index your domain, never the subdomain.
 
-**Custom domain only** goes one step further: it turns the subdomain off for direct visitors. A plain hit on `YOUR_SLUG.jamdesk.app` returns a 404, and your docs are reachable only through your own domain.
+**Custom domain only** turns the subdomain off for direct visitors. A plain hit on `YOUR_SLUG.jamdesk.app` returns a 404. Your docs are reachable only through your own domain.
 
 ```mermaid
 flowchart LR
@@ -17,20 +17,20 @@ flowchart LR
 ```
 
 <Warning>
-This hides your subdomain — it is not a password. Anyone visiting through your domain still sees your docs. To control *who* can read them, use [password protection](/setup/password-protection); the two work together.
+This hides your subdomain. It is not a password. Anyone visiting through your domain still sees your docs. Control *who* can read them with [password protection](/setup/password-protection). You can turn on both.
 </Warning>
 
 ## Turning It On
 
 <Steps>
   <Step title="Verify your custom domain">
-    Add and verify your domain in the dashboard — see [Custom Domains](/deploy/custom-domains). The toggle requires a domain with status **Active**.
+    Add and verify your domain in the dashboard. See [Custom Domains](/deploy/custom-domains). The toggle requires a domain with status **Active**.
   </Step>
   <Step title="Check your proxy (reverse-proxy setups only)">
-    If your domain is a plain CNAME pointed at Jamdesk (like `docs.acme.com`), skip this step — there's nothing to configure. If you serve docs at `yoursite.com/docs` through a proxy, the proxy must identify itself on every request it forwards — see [Proxy setups](#proxy-setups) below.
+    If your domain is a plain CNAME pointed at Jamdesk (like `docs.acme.com`), skip this step. If you serve docs at `yoursite.com/docs` through a proxy, the proxy must identify itself on every request it forwards. See [Proxy setups](#proxy-setups) below.
   </Step>
   <Step title="Flip the toggle">
-    In the dashboard, open your project's **Settings**, expand the **Custom Domain** card, and turn on **Custom domain only**. Jamdesk checks your live domain first and won't enable the toggle until your setup passes — if the check fails, the message tells you exactly what to fix.
+    Open your project's **Settings** in the dashboard. Expand the **Custom Domain** card and turn on **Custom domain only**. Jamdesk checks your live domain first. The toggle stays off until your setup passes. If the check fails, the message tells you what to fix.
 
     <Frame>
       <img src="/images/dashboard/custom-domain-only-toggle.webp" alt="The Custom domain only toggle in the Custom Domain card, switched on" />
@@ -42,14 +42,12 @@ Changes reach every edge server within a minute.
 
 ## Proxy Setups
 
-A request to `YOUR_SLUG.jamdesk.app` is only served if it identifies itself as coming through your proxy — with either the `X-Jamdesk-Forwarded-Host` header or the `?jd_proxy=1` query marker. Each setup guide already includes the right one:
+Jamdesk serves a request to `YOUR_SLUG.jamdesk.app` only if it identifies itself as coming through your proxy. It needs the `X-Jamdesk-Forwarded-Host` header or the `?jd_proxy=1` query marker. These setup guides include the right one:
 
-- **[Vercel](/deploy/vercel)** — `vercel.json` rewrites carry `?jd_proxy=1`; Edge Middleware sets the header
-- **[Cloudflare Workers](/deploy/cloudflare)** — the Worker sets the header
-- **[AWS CloudFront](/deploy/aws)** — the origin custom header
-- **[Reverse proxy](/deploy/reverse-proxy)** — nginx, Apache, Caddy, and HAProxy set the header
-
-If you followed one of those guides, you're already set.
+- **[Vercel](/deploy/vercel)**: `vercel.json` rewrites carry `?jd_proxy=1`. Edge Middleware sets the header.
+- **[Cloudflare Workers](/deploy/cloudflare)**: the Worker sets the header.
+- **[AWS CloudFront](/deploy/aws)**: the origin custom header.
+- **[Reverse proxy](/deploy/reverse-proxy)**: nginx, Apache, Caddy, and HAProxy set the header.
 
 Using [MCP](/ai/mcp-server) or the [chat widget](/ai/chat) through a reverse proxy? Forward `/api/mcp/:path*` and `/api/chat/:path*` the same way as `/docs`. On Vercel:
 
@@ -62,14 +60,14 @@ Using [MCP](/ai/mcp-server) or the [chat widget](/ai/chat) through a reverse pro
 }
 ```
 
-If your custom domain is CNAME'd to Jamdesk, MCP and chat on your domain keep working with no changes — point MCP clients at `https://docs.acme.com/_mcp` and you're done.
+MCP and chat need no changes on a domain CNAME'd to Jamdesk. Point MCP clients at `https://docs.acme.com/_mcp`.
 
 ## Good to Know
 
-- **Everything 404s on the bare subdomain** — pages, `sitemap.xml`, `robots.txt`, `llms.txt`, and Markdown exports. Browsers see a simple Jamdesk not-found page.
-- **Images stay reachable.** Images, video, and social-preview (OG) images are exempt — the dashboard's site preview loads them directly from the subdomain.
-- **You can't lock yourself out.** If your domain's DNS ever breaks, Jamdesk stops enforcing the block and the subdomain serves again until the domain recovers. If you break your own proxy config instead (say, by removing the marker from a rewrite), turn the toggle off while you fix it.
-- **The [Search API](/jamdesk-api/docs-search-api) is unaffected** — it's authenticated by API key.
+- **Everything 404s on the bare subdomain**: pages, `sitemap.xml`, `robots.txt`, `llms.txt`, and Markdown exports. Browsers see a Jamdesk not-found page.
+- **Images stay reachable.** Images, video, and social-preview (OG) images are exempt. The dashboard's site preview loads them directly from the subdomain.
+- **You can't lock yourself out.** If your domain's DNS breaks, Jamdesk stops enforcing the block. The subdomain serves again until the domain recovers. If you break your own proxy config (say, by removing the marker from a rewrite), turn the toggle off while you fix it.
+- **The [Search API](/jamdesk-api/docs-search-api) is unaffected.** It authenticates by API key.
 
 ## What's Next?
 

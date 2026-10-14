@@ -15,36 +15,36 @@ Serve your docs from your own domain instead of the default `*.jamdesk.app` subd
     Add the DNS records shown in the dashboard to your DNS provider. The records depend on your domain type (see below).
   </Step>
   <Step title="Verify and wait">
-    Jamdesk verifies ownership and provisions an SSL certificate automatically.
+    Jamdesk verifies ownership and provisions an SSL certificate.
   </Step>
 </Steps>
 
 ## Hosting Options
 
-When adding a domain, choose your hosting mode:
+Choose a hosting mode when you add a domain.
 
 ### Standard Domain
 
-Your documentation is served directly from Jamdesk at your custom domain:
+Jamdesk serves your documentation directly at your custom domain:
 
 ```text
 docs.example.com → acme.jamdesk.app
 ```
 
-DNS points to Jamdesk, and SSL certificates are handled automatically.
+DNS points to Jamdesk. Jamdesk issues and renews the SSL certificate.
 
 ### Host at /docs (Proxy-Based, Customizable Subpath)
 
-Your documentation is served at a subpath on your existing website:
+Your documentation lives at a subpath on your existing website:
 
 ```text
 example.com/docs → acme.jamdesk.app/docs
 ```
 
-`/docs` is the default; you can choose any single-segment subpath instead (`/help`, `/guide`, and so on) from the same toggle. You configure a proxy (Cloudflare, Vercel, nginx, etc.) to forward requests for your chosen subpath to Jamdesk. See [Subpath Hosting](/deploy/subpath-hosting) for setup guides and the rules for choosing a subpath.
+`/docs` is the default. Pick any one-segment subpath instead (`/help`, `/guide`, and so on) from the same toggle. Configure a proxy (Cloudflare, Vercel, nginx, etc.) to forward requests for that subpath to Jamdesk. See [Subpath Hosting](/deploy/subpath-hosting) for setup guides and the rules for choosing a subpath.
 
 <Note>
-Toggling "Host at a subpath" on or off, or changing the subpath, triggers an automatic rebuild since the URL structure changes.
+Toggling "Host at a subpath" or changing the subpath triggers a rebuild. The URL structure changes.
 </Note>
 
 ## DNS Configuration
@@ -58,7 +58,7 @@ The records you need depend on whether you're using a subdomain or an apex (root
 | CNAME | `docs` | `cname.jamdesk.com` |
 | TXT | `_jamdesk.docs` | *(shown in dashboard)* |
 
-The "Name" field is just the subdomain portion. For `docs.example.com`, enter `docs`.
+The "Name" field is the subdomain portion. For `docs.example.com`, enter `docs`.
 
 ### Apex Domains (e.g., example.com)
 
@@ -67,15 +67,15 @@ The "Name" field is just the subdomain portion. For `docs.example.com`, enter `d
 | A | `@` | `76.76.21.21` |
 | TXT | `_jamdesk` | *(shown in dashboard)* |
 
-Apex domains use an A record instead of CNAME because DNS standards (RFC 1034) prohibit CNAME records at the zone apex.
+Apex domains use an A record instead of CNAME. DNS standards (RFC 1034) prohibit CNAME records at the zone apex.
 
 <Note>
-DNS changes can take up to 48 hours to propagate, though most complete within minutes. Check status at [whatsmydns.net](https://www.whatsmydns.net/).
+DNS changes can take up to 48 hours to propagate. Most complete within minutes. Check status at [whatsmydns.net](https://www.whatsmydns.net/).
 </Note>
 
 ## Verification
 
-After adding DNS records, Jamdesk automatically:
+Jamdesk runs these steps once you add the DNS records:
 
 1. Detects your DNS records (CNAME or A record, plus TXT)
 2. Verifies domain ownership via the TXT record
@@ -88,42 +88,36 @@ Check verification status in **Settings** → **Domain**. Status shows as:
 - **Needs Attention** - Configuration mismatch or conflict (check email notification)
 - **Error** - Configuration issue (see details in dashboard)
 
-Click **Refresh** in the dashboard to manually check verification status.
+Click **Refresh** in the dashboard to check verification status now.
 
 ## SSL Certificates
 
-SSL certificates are provisioned automatically and renewed before expiration. HTTPS is required, so HTTP requests redirect to HTTPS.
-
-You do not need to configure certificates manually.
+Jamdesk provisions SSL certificates and renews them before expiration. HTTP requests redirect to HTTPS.
 
 ## Root Domains
 
-Root (apex) domains like `example.com` are fully supported. The dashboard automatically shows the correct records: an A record pointing to `76.76.21.21` instead of a CNAME, since DNS standards prohibit CNAME records at the zone apex.
-
-If you prefer a subdomain like `docs.example.com`, that works too.
+Root (apex) domains like `example.com` work. The dashboard shows an A record pointing to `76.76.21.21` instead of a CNAME. DNS standards prohibit CNAME records at the zone apex.
 
 ## Multiple Domains
 
-Each project supports one custom domain. For multiple domains pointing to the same docs:
+Each project has one custom domain. To point more domains at the same docs:
 
 1. Set up your primary domain in Jamdesk
 2. Configure additional domains to redirect to the primary at the DNS/CDN level
 
 ## Removing a Domain
 
-To disconnect a custom domain:
-
 1. Go to **Settings** → **Domain**
 2. Click **Remove Domain**
 3. Your docs remain accessible at the `*.jamdesk.app` subdomain
 
 <Warning>
-Removing a domain that had "Host at a subpath" enabled will trigger a rebuild to update URL paths. Any custom subpath is cleared along with the domain, so if you reconnect a domain later, docs start back at the default `/docs`.
+Removing a domain with "Host at a subpath" enabled triggers a rebuild to update URL paths. Jamdesk also clears any custom subpath. A domain you reconnect later starts back at the default `/docs`.
 </Warning>
 
 ## Cloudflare Users
 
-If using Cloudflare as your DNS provider:
+Follow these steps if Cloudflare is your DNS provider:
 
 1. Set proxy status to **DNS only** (gray cloud icon) during domain verification
 2. Let Vercel handle SSL: disable Cloudflare's "Always Use HTTPS" for the docs subdomain
@@ -160,10 +154,9 @@ For detailed diagnostics, see [DNS Troubleshooting](/help/troubleshooting/dns-is
 
 ## Does the jamdesk.app subdomain compete with my domain in search?
 
-No. Once your custom domain is active, pages served directly from your
-`[slug].jamdesk.app` subdomain include a canonical link pointing at your
-domain, so search engines treat your domain as the single source of truth
-and consolidate all ranking signals there.
+No. Pages served from your `[slug].jamdesk.app` subdomain include a canonical
+link pointing at your active custom domain. Search engines credit your domain
+with the ranking signals.
 
 ## What's Next?
 

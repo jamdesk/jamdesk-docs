@@ -3,7 +3,7 @@ title: Connect Bitbucket
 description: "Connect a Bitbucket Cloud repository to Jamdesk. Create a starter docs repo or link an existing one, and every push to your branch deploys your docs."
 ---
 
-Jamdesk builds from Bitbucket Cloud the same way it builds from GitHub: you authorize Jamdesk once, and every push to the branch you choose publishes a new version of your site. This page is for teams whose documentation lives in Bitbucket, or who want to keep their docs next to code that is already there.
+Jamdesk builds from Bitbucket Cloud the same way it builds from GitHub. Authorize Jamdesk once. Every push to the branch you choose then publishes a new version of your site.
 
 <Note>
 Keeping your docs on GitHub? See [Connect GitHub](/setup/connecting-github) instead. A project connects to one git provider at a time.
@@ -12,28 +12,28 @@ Keeping your docs on GitHub? See [Connect GitHub](/setup/connecting-github) inst
 ## Before You Start
 
 - **A Bitbucket Cloud account.** Bitbucket Data Center and Bitbucket Server are not supported.
-- **Admin permission on the repository.** Jamdesk installs a push webhook on the repository, and Bitbucket only lets repository admins create webhooks.
+- **Admin permission on the repository.** Jamdesk installs a push webhook on the repository. Bitbucket only lets repository admins create webhooks.
 - **A project with no repository connected.** To move a project from GitHub to Bitbucket, disconnect GitHub first under **Settings** → **Git Repository**.
 - **Popups allowed for the dashboard.** The Bitbucket sign-in opens in a popup window.
 
 ## What Jamdesk Asks For
 
-Jamdesk connects through a Bitbucket OAuth consumer. When you sign in, Bitbucket lists the permissions being requested:
+Jamdesk connects through a Bitbucket OAuth consumer. Bitbucket lists the requested permissions at sign-in:
 
 | Permission | Why Jamdesk needs it |
 |------------|----------------------|
-| Account: Read | Records which Bitbucket account connected the project, so pushes from that account are recognized |
-| Repositories: Read | Clones your repository to build it, and lists your repositories when you change repository |
+| Account: Read | Records which Bitbucket account connected the project. Jamdesk recognizes pushes from that account |
+| Repositories: Read | Clones your repository to build it. Lists your repositories when you change repository |
 | Repositories: Write | Creates the starter docs repository and pushes the starter content into it |
-| Webhooks: Read and write | Installs the push webhook that triggers builds, and removes it when the connection changes |
+| Webhooks: Read and write | Installs the push webhook that triggers builds. Removes it when the connection changes |
 
-Jamdesk stores the resulting refresh token encrypted with Google Cloud KMS and renews access on its own. You do not need an app password or a personal access token.
+Jamdesk stores the refresh token encrypted with Google Cloud KMS. It renews access on its own. You do not need an app password or a personal access token.
 
 ## Choose Bitbucket for a Project
 
-Open the project in the dashboard. While no repository is connected, the project page shows a **Connect your docs repository** card with two options. Click **Bitbucket**.
+Open the project in the dashboard. The project page shows a **Connect your docs repository** card with two options while no repository is connected. Click **Bitbucket**.
 
-From there you can either let Jamdesk create a starter repository or connect one you already have.
+Let Jamdesk create a starter repository, or connect one you already have.
 
 ### Create a Starter Docs Repo
 
@@ -59,7 +59,7 @@ When the card reads **Starter docs created and connected!**, your site is on its
 
 <Steps>
   <Step title="Enter the repository">
-    Type the repository as `workspace/repository-slug`, for example `acme/developer-docs`. Both parts come from the repository URL on bitbucket.org.
+    Type the repository as `workspace/repository-slug`, for example `acme/developer-docs`. Take the workspace and slug from the repository URL on bitbucket.org.
   </Step>
 
   <Step title="Choose the branch">
@@ -76,9 +76,9 @@ When the card reads **Starter docs created and connected!**, your site is on its
   </Step>
 </Steps>
 
-The repository needs a valid `docs.json` on the branch you entered. If Jamdesk finds none, add one and connect again. If it finds more than one, keep a single `docs.json` per repository. A repository with a `mint.json` is a Mintlify project: run [`jamdesk migrate`](/cli/overview) on it, push, and connect again.
+The repository needs a valid `docs.json` on the branch you entered. If Jamdesk finds none, add one and connect again. If it finds more than one, keep one `docs.json` per repository. A repository with a `mint.json` is a Mintlify project: run [`jamdesk migrate`](/cli/overview) on it, push, and connect again.
 
-Once connected, the project card shows the repository, the branch, and a **Connected** badge.
+The connected project card shows the repository, the branch, and a **Connected** badge.
 
 ## Automatic Builds on Push
 
@@ -90,18 +90,18 @@ git commit -m "Update API documentation"
 git push origin main
 ```
 
-Bitbucket delivers a push event to Jamdesk's webhook, and Jamdesk builds that commit once. A duplicate delivery of the same commit does not start a second build, and deleting a branch never triggers a build.
+Bitbucket delivers a push event to Jamdesk's webhook. Jamdesk builds that commit once. A duplicate delivery of the same commit does not start a second build. Deleting a branch never triggers a build.
 
-Bitbucket does not retry a webhook delivery that fails. To cover that, Jamdesk also checks the tip of your branch every five minutes and builds any commit it has not built yet. A push whose webhook was lost still deploys within a few minutes.
+Bitbucket does not retry a webhook delivery that fails. Jamdesk also checks the tip of your branch every five minutes. It builds any commit it has not built yet. A push whose webhook was lost still deploys within a few minutes.
 
 Manual builds from the dashboard work the same as for GitHub projects. See [Triggering Builds](/builds/triggering).
 
 ### Which Pushes Trigger a Build
 
-Jamdesk builds pushes made by the Bitbucket account that connected the project, or that last re-authorized it. A push from any other account appears in the build list as a failed build with an authorization error, and nothing is deployed.
+Jamdesk builds pushes made by the Bitbucket account that connected the project, or that last re-authorized it. A push from any other account appears in the build list as a failed build with an authorization error. Nothing is deployed.
 
 <Note>
-Bitbucket projects do not yet support linking a personal account in **User Settings** or authorizing extra accounts in **Settings** → **Automation accounts**. If several people push to the deploy branch, connect the project with the account that merges to that branch, or have that account do the pushing.
+Bitbucket projects don't yet let you link a personal account in **User Settings** or authorize extra accounts in **Settings** → **Automation accounts**. If several people push to the deploy branch, connect the project with the account that merges to that branch, or have that account do the pushing.
 </Note>
 
 ## Change the Repository or Branch
@@ -118,11 +118,11 @@ Changing repositories affects your live documentation as soon as the build finis
 
 Bitbucket revokes Jamdesk's access when the connecting user removes it in Bitbucket, or when the refresh token goes unused for several months. The project card then shows a **Needs reauth** badge and the message **Bitbucket connection needs attention**.
 
-Click **Re-authorize** and sign in again. Builds resume, and the next five-minute check picks up the latest commit on your branch.
+Click **Re-authorize** and sign in again. Builds resume. The next five-minute check picks up the latest commit on your branch.
 
 ## How Bitbucket Differs From GitHub
 
-Bitbucket projects use a single OAuth authorization, where GitHub projects use a GitHub App plus an optional personal account link. Most of the platform works the same. The differences:
+Bitbucket projects use one OAuth authorization. GitHub projects use a GitHub App plus an optional personal account link. Most of the platform works the same. The differences:
 
 | Feature | GitHub | Bitbucket Cloud |
 |---------|--------|-----------------|

@@ -3,16 +3,16 @@ title: Visibility
 description: Show different content to human readers and AI agents on the same page. Agent-only context, instructions, and definitions that stay out of the rendered docs.
 ---
 
-Use the `<Visibility>` component to carve out content for a specific audience. Blocks marked `for="humans"` appear in the rendered HTML docs; blocks marked `for="agents"` appear in the raw Markdown export and `llms-full.txt` that AI agents consume.
+Use the `<Visibility>` component to carve out content for a specific audience. Blocks marked `for="humans"` appear in the rendered HTML docs. Blocks marked `for="agents"` appear in the raw Markdown export and `llms-full.txt` that AI agents consume.
 
-The same MDX file serves both audiences, so you don't need to duplicate content or maintain a separate fork for AI agents.
+One MDX file holds the content for humans and AI agents. You don't need a duplicate copy or a separate fork for agents.
 
 ## When to use it
 
-Agents (ChatGPT, Claude, Perplexity, Cursor) often need context that would clutter the rendered page: exhaustive definitions, disambiguation notes, or instructions phrased in a way that reads better to an LLM than a human. `<Visibility>` lets you write both on one page.
+Agents (ChatGPT, Claude, Perplexity, Cursor) often need context that would clutter the rendered page: exhaustive definitions, disambiguation notes, or instructions phrased in a way that reads better to an LLM than a human. Put that context in a `<Visibility for="agents">` block on the same page.
 
 <Note>
-  Agents consume your docs through two surfaces: the **`.md` URL** (append `.md` to any page), and **`llms-full.txt`** (a single concatenated file). `<Visibility for="agents">` content appears on both.
+  Agents consume your docs through two surfaces: the **`.md` URL** (append `.md` to any page), and **`llms-full.txt`** (one concatenated file). `<Visibility for="agents">` content appears in each.
 </Note>
 
 ## Quick Start
@@ -69,7 +69,7 @@ Include your API key in the `Authorization: Bearer <key>` header.
 Push to your connected branch to trigger a build.
 ```
 
-Reassuring to a human reading the docs, useless to an agent generating code. Keep it out of the `.md` export.
+The tip helps a human reader. An agent generating code has no use for it. Keep it out of the `.md` export.
 
 ### Glossary expansion for agents
 
@@ -85,7 +85,7 @@ Edit `docs.json` to change navigation, theming, or redirects.
 
 ### Self-closing form
 
-Use a self-closing tag when you want to *remove* a block from the other audience without replacing it with anything:
+Use a self-closing tag to *remove* a block from the other audience without replacing it:
 
 ```mdx
 <Visibility for="agents" />
@@ -102,7 +102,7 @@ Jamdesk picks an audience from the **URL shape and `Accept` header**, never from
 | Canonical URL with `Accept: text/markdown`      | `agents` |
 | `llms-full.txt` (built into every site)         | `agents` |
 
-Any agent that sets `Accept: text/markdown` gets the agent content automatically. No URL surgery required.
+Any agent that sets `Accept: text/markdown` gets the agent content. It doesn't need to change the URL.
 
 ## Rules & gotchas
 
@@ -111,11 +111,11 @@ Any agent that sets `Accept: text/markdown` gets the agent content automatically
 </Warning>
 
 <Warning>
-  **JSX expressions are not supported.** Wrapping `<Visibility>` inside a JS expression like `{cond && <Visibility for="agents">...</Visibility>}` will cause a build error. Use the component at the block level, not inside an expression.
+  **JSX expressions are not supported.** Wrapping `<Visibility>` inside a JS expression like `{cond && <Visibility for="agents">...</Visibility>}` causes a build error. Use the component at the block level, not inside an expression.
 </Warning>
 
 <Warning>
-  **Don't nest `<Visibility>` blocks.** Nesting works for the HTML render surface but is not reliably supported in the `.md` export or `llms-full.txt` (the text-level filter used there is not nesting-safe and will produce mangled output). Keep blocks flat.
+  **Don't nest `<Visibility>` blocks.** Nesting works in the rendered HTML. It is not reliable in the `.md` export or `llms-full.txt`. The text-level filter there is not nesting-safe and mangles the output. Keep blocks flat.
 </Warning>
 
 <Note>
@@ -124,9 +124,9 @@ Any agent that sets `Accept: text/markdown` gets the agent content automatically
 
 ## When NOT to use it
 
-- **To hide sensitive information.** `<Visibility for="humans">` only hides content from the *rendered HTML*. The raw MDX is still available via `.md` URL and in `llms-full.txt`. If you don't want it visible to anyone, don't put it in your docs repo.
+- **To hide sensitive information.** `<Visibility for="humans">` only hides content from the *rendered HTML*. The raw MDX is still available via `.md` URL and in `llms-full.txt`. Keep anything private out of the docs repo.
 - **To A/B test content for different users.** There are only two audiences: humans and agents. Jamdesk doesn't detect which specific human is viewing. Use feature flags or route redirects for user-segmented content.
-- **To paper over missing documentation.** Agent-only content should be *supplementary*, not a substitute for clear human-facing docs. If you find yourself writing the real explanation for agents and a stub for humans, flip it.
+- **To paper over missing documentation.** Agent-only content should be *supplementary*, not a substitute for clear human-facing docs. Never give humans a stub while agents get the full explanation.
 
 ## What's Next?
 
@@ -138,7 +138,7 @@ Any agent that sets `Accept: text/markdown` gets the agent content automatically
     AI-discovery manifest. Agents start here.
   </Card>
   <Card title="Writing with AI" icon="robot" href="/ai/writing-with-ai">
-    How to author docs that work well for both audiences.
+    Author docs for humans and AI agents.
   </Card>
   <Card title="Components Overview" icon="shapes" href="/components/overview">
     All built-in MDX components.
