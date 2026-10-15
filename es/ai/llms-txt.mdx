@@ -101,6 +101,22 @@ curl https://jamdesk.com/docs/fr/llms-full.txt
 Un idioma obtiene sus propios archivos en cuanto tiene al menos una página. Los sitios con
 un solo idioma conservan únicamente los archivos raíz.
 
+## Sitios protegidos con inicio de sesión
+
+En un sitio protegido con [contraseña](/es/setup/password-protection) o con [autenticación JWT](/es/setup/jwt-authentication), `llms.txt` y `llms-full.txt` envían a los visitantes a la página de inicio de sesión, y las URL `.md` devuelven `401`. Una clave de API del proyecto abre los tres accesos para las herramientas que no pueden iniciar sesión. Crea una en **Project Settings > API Keys** y envíala como `Authorization: Bearer <key>`:
+
+```bash
+curl https://docs.example.com/llms.txt \
+  -H "Authorization: Bearer jd_live_..."
+
+curl https://docs.example.com/using/scope.md \
+  -H "Authorization: Bearer jd_live_..."
+```
+
+Con una clave, las URL `.md` devuelven las páginas que aparecen en la búsqueda. Las páginas restringidas por grupo, las páginas ocultas y las páginas con `search: false` devuelven `404`. Una clave que no es válida para el sitio recibe un error JSON `401` con `invalid_api_key`. Sin clave, nada cambia.
+
+La clave nunca abre las páginas HTML ni el chat de IA, que siguen requiriendo un inicio de sesión. Las solicitudes con clave comparten con el [servidor MCP](/es/ai/mcp-server#límites-de-frecuencia) un límite de 120 por minuto por clave. Al superarlo, la respuesta es un `429` con `Retry-After: 60`.
+
 ## Directiva de agente en cada página
 
 Cada página también incluye una nota invisible y silenciosa para lectores de pantalla, dirigida a los agentes de IA,

@@ -13,7 +13,7 @@ The [Model Context Protocol](https://modelcontextprotocol.io) is an open standar
 | Tool | Purpose |
 |------|---------|
 | `searchDocs` | Search documentation by keyword, returns ranked results |
-| `getPage` | Retrieve full content of a specific page |
+| `getPage` | Retrieve a page as full Markdown |
 
 ## Your Endpoint URL
 
@@ -107,13 +107,13 @@ Search your documentation and get ranked results.
 
 ### getPage
 
-Retrieve the full content of a specific documentation page.
+Retrieve a documentation page as Markdown. Tables, lists and code blocks come back intact, not as short excerpts. Pass the `url` that `searchDocs` returned, or the bare page path. Pages longer than 80,000 characters are cut at that length, with a pointer to the page's `.md` URL for the rest.
 
 **Parameters:**
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `slug` | string | Yes | Page path without `/docs` prefix (e.g., `api/authentication`) |
+| `slug` | string | Yes | The `url` from a `searchDocs` result, or the page path without the `/docs` prefix (e.g., `api/authentication`) |
 
 **Example request:**
 
@@ -173,6 +173,8 @@ claude mcp add --transport http my-docs https://docs.example.com/_mcp \
 
 A key lets an MCP client search and read the site's searchable pages, the same set the site search covers. Group-restricted pages are never available through MCP, with or without a key. Hidden pages and pages with `search: false` are left out unless you've made them searchable. Treat the key like a password. Revoke it in the dashboard if it leaks.
 
+The same key also opens `.md` page URLs, `llms.txt` and `llms-full.txt`. See [llms.txt](/ai/llms-txt#login-protected-sites) and [Markdown Source](/ai/markdown-source). The key never opens HTML pages or the AI chat. Those still need a login.
+
 Without a key, the server answers with `401` and a JSON body that says how to add one. A key from another project is rejected. The error codes are:
 
 | Status | `error` | Meaning |
@@ -194,7 +196,11 @@ The index rebuilds with every deploy.
 
 ## Rate Limits
 
-The MCP endpoint has a rate limit of **60 requests per minute** per IP address. This is enough for normal AI assistant use. Requests over the limit get a 429 response.
+Requests without an API key are limited to about **60 per minute** per IP address. That's enough for normal AI assistant use.
+
+On a login-protected site, requests authenticated with a key share a limit of **120 per minute** per key. MCP calls, `.md` page requests and `llms.txt` or `llms-full.txt` requests all count toward it. The [Search API](/jamdesk-api/docs-search-api#rate-limits) keeps its own limit of 60 per minute per key.
+
+Requests over a limit get a `429` response with `Retry-After: 60`.
 
 ## Troubleshooting
 

@@ -101,6 +101,22 @@ curl https://jamdesk.com/docs/fr/llms-full.txt
 A language gets its own files once it has at least one page. Single-language
 sites keep only the root files.
 
+## Login-protected sites
+
+On a site behind [password protection](/setup/password-protection) or [JWT authentication](/setup/jwt-authentication), `llms.txt` and `llms-full.txt` send visitors to the login page, and `.md` URLs return `401`. A project API key opens all three for tools that can't sign in. Create one in **Project Settings > API Keys** and send it as `Authorization: Bearer <key>`:
+
+```bash
+curl https://docs.example.com/llms.txt \
+  -H "Authorization: Bearer jd_live_..."
+
+curl https://docs.example.com/using/scope.md \
+  -H "Authorization: Bearer jd_live_..."
+```
+
+With a key, `.md` URLs return the pages that appear in search. Group-restricted pages, hidden pages and pages with `search: false` return `404`. A key that isn't valid for the site gets a `401` JSON error with `invalid_api_key`. Without a key, nothing changes.
+
+The key never opens HTML pages or the AI chat. Those still need a login. Requests with a key share a limit of 120 per minute per key with the [MCP server](/ai/mcp-server#rate-limits). Over the limit, you get a `429` with `Retry-After: 60`.
+
 ## Agent directive on every page
 
 Every page carries an invisible, screen-reader-silent note that points AI

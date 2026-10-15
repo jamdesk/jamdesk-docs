@@ -13,7 +13,7 @@ Le [Model Context Protocol](https://modelcontextprotocol.io) est une norme ouver
 | Outil | Objectif |
 |------|---------|
 | `searchDocs` | Recherche dans la documentation par mot-clé, renvoie des résultats classés |
-| `getPage` | Récupère le contenu complet d'une page spécifique |
+| `getPage` | Récupère une page en Markdown complet |
 
 ## URL de votre endpoint
 
@@ -107,13 +107,13 @@ Recherchez dans votre documentation et obtenez des résultats classés.
 
 ### getPage
 
-Récupère le contenu complet d'une page de documentation spécifique.
+Récupère une page de documentation en Markdown. Les tableaux, les listes et les blocs de code restent intacts, au lieu de courts extraits. Passez l'`url` renvoyée par `searchDocs`, ou le chemin simple de la page. Les pages de plus de 80 000 caractères sont coupées à cette longueur, avec un renvoi vers l'URL `.md` de la page pour la suite.
 
 **Paramètres :**
 
 | Paramètre | Type | Requis | Description |
 |-----------|------|----------|-------------|
-| `slug` | string | Oui | Chemin de la page sans le préfixe `/docs` (par ex. `api/authentication`) |
+| `slug` | string | Oui | L'`url` d'un résultat `searchDocs`, ou le chemin de la page sans le préfixe `/docs` (par ex. `api/authentication`) |
 
 **Exemple de requête :**
 
@@ -173,6 +173,8 @@ claude mcp add --transport http my-docs https://docs.example.com/_mcp \
 
 Avec la clé, un client MCP peut rechercher et lire les pages indexables du site, le même ensemble que couvre la recherche du site. Les pages réservées à des groupes ne sont jamais disponibles via MCP, avec ou sans clé. Les pages masquées et les pages avec `search: false` sont omises, sauf si vous les avez rendues recherchables. Traitez la clé comme un mot de passe et révoquez-la dans le dashboard en cas de fuite.
 
+La même clé ouvre aussi les URL de pages `.md`, `llms.txt` et `llms-full.txt`. Consultez [llms.txt](/fr/ai/llms-txt#sites-protégés-par-connexion) et [Source Markdown](/fr/ai/markdown-source). La clé n'ouvre jamais les pages HTML ni le chat IA, qui exigent toujours une connexion.
+
 Sans clé, le serveur répond par un `401` avec un corps JSON qui explique comment en ajouter une. Une clé d'un autre projet est rejetée. Les codes d'erreur sont :
 
 | Statut | `error` | Signification |
@@ -194,7 +196,11 @@ L'index est reconstruit à chaque déploiement.
 
 ## Limites de débit
 
-L'endpoint MCP applique une limite de débit de **60 requêtes par minute** par adresse IP. Cela suffit pour un usage normal par un assistant IA. Si vous dépassez la limite, vous recevrez une réponse 429.
+Les requêtes sans clé API sont limitées à environ **60 par minute** et par adresse IP. Cela suffit pour un usage normal par un assistant IA.
+
+Sur un site protégé par connexion, les requêtes authentifiées par une clé partagent une limite de **120 par minute** et par clé. Les appels MCP, les requêtes de pages `.md` et celles de `llms.txt` ou `llms-full.txt` comptent toutes. L'[API de recherche](/fr/jamdesk-api/docs-search-api#rate-limits) garde sa propre limite de 60 par minute et par clé.
+
+Au-delà d'une limite, la réponse est un `429` avec `Retry-After: 60`.
 
 ## Dépannage
 

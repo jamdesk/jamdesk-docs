@@ -13,7 +13,7 @@ El [Model Context Protocol](https://modelcontextprotocol.io) es un estándar abi
 | Herramienta | Propósito |
 |------|---------|
 | `searchDocs` | Busca en la documentación por palabra clave y devuelve resultados clasificados |
-| `getPage` | Recupera el contenido completo de una página específica |
+| `getPage` | Recupera una página como Markdown completo |
 
 ## Tu URL de endpoint
 
@@ -107,13 +107,13 @@ Busca en tu documentación y obtén resultados clasificados.
 
 ### getPage
 
-Recupera el contenido completo de una página de documentación específica.
+Recupera una página de documentación como Markdown. Las tablas, las listas y los bloques de código llegan intactos, en lugar de extractos cortos. Pasa la `url` que devolvió `searchDocs`, o la ruta simple de la página. Las páginas de más de 80 000 caracteres se cortan en esa longitud, con un enlace a la URL `.md` de la página para el resto.
 
 **Parámetros:**
 
 | Parámetro | Tipo | Obligatorio | Descripción |
 |-----------|------|----------|-------------|
-| `slug` | string | Sí | Ruta de la página sin el prefijo `/docs` (p. ej., `api/authentication`) |
+| `slug` | string | Sí | La `url` de un resultado de `searchDocs`, o la ruta de la página sin el prefijo `/docs` (p. ej., `api/authentication`) |
 
 **Solicitud de ejemplo:**
 
@@ -173,6 +173,8 @@ claude mcp add --transport http my-docs https://docs.example.com/_mcp \
 
 Con la clave, un cliente MCP puede buscar y leer las páginas con búsqueda habilitada del sitio, el mismo conjunto que cubre la búsqueda del sitio. Las páginas restringidas por grupo nunca están disponibles a través de MCP, con o sin clave. Las páginas ocultas y las páginas con `search: false` se omiten a menos que las hayas hecho buscables. Trata la clave como una contraseña y revócala en el dashboard si se filtra.
 
+La misma clave también abre las URL de páginas `.md`, `llms.txt` y `llms-full.txt`. Consulta [llms.txt](/es/ai/llms-txt#sitios-protegidos-con-inicio-de-sesión) y [Fuente Markdown](/es/ai/markdown-source). La clave nunca abre las páginas HTML ni el chat de IA, que siguen requiriendo un inicio de sesión.
+
 Sin clave, el servidor responde con `401` y un cuerpo JSON que explica cómo añadir una. Una clave de otro proyecto se rechaza. Los códigos de error son:
 
 | Estado | `error` | Significado |
@@ -194,7 +196,11 @@ El índice se reconstruye con cada despliegue.
 
 ## Límites de frecuencia
 
-El endpoint de MCP tiene un límite de frecuencia de **60 solicitudes por minuto** por dirección IP. Esto es suficiente para el uso normal de un asistente de IA. Si superas el límite, recibirás una respuesta 429.
+Las solicitudes sin clave de API están limitadas a unas **60 por minuto** por dirección IP. Es suficiente para el uso normal de un asistente de IA.
+
+En un sitio protegido con inicio de sesión, las solicitudes autenticadas con una clave comparten un límite de **120 por minuto** por clave. Cuentan las llamadas MCP, las solicitudes de páginas `.md` y las de `llms.txt` o `llms-full.txt`. La [API de búsqueda](/es/jamdesk-api/docs-search-api#rate-limits) mantiene su propio límite de 60 por minuto por clave.
+
+Al superar un límite, la respuesta es un `429` con `Retry-After: 60`.
 
 ## Solución de problemas
 

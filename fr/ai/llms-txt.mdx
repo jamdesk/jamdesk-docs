@@ -101,6 +101,22 @@ curl https://jamdesk.com/docs/fr/llms-full.txt
 Une langue obtient ses propres fichiers dès qu'elle compte au moins une page. Les sites
 avec une seule langue ne conservent que les fichiers racine.
 
+## Sites protégés par connexion
+
+Sur un site protégé par [mot de passe](/fr/setup/password-protection) ou par [authentification JWT](/fr/setup/jwt-authentication), `llms.txt` et `llms-full.txt` renvoient les visiteurs vers la page de connexion, et les URL `.md` répondent `401`. Une clé API du projet ouvre ces trois accès pour les outils qui ne peuvent pas se connecter. Créez-en une dans **Project Settings > API Keys** et envoyez-la dans `Authorization: Bearer <key>` :
+
+```bash
+curl https://docs.example.com/llms.txt \
+  -H "Authorization: Bearer jd_live_..."
+
+curl https://docs.example.com/using/scope.md \
+  -H "Authorization: Bearer jd_live_..."
+```
+
+Avec une clé, les URL `.md` renvoient les pages qui apparaissent dans la recherche. Les pages réservées à des groupes, les pages masquées et les pages avec `search: false` répondent `404`. Une clé qui n'est pas valide pour le site reçoit une erreur JSON `401` avec `invalid_api_key`. Sans clé, rien ne change.
+
+La clé n'ouvre jamais les pages HTML ni le chat IA, qui exigent toujours une connexion. Les requêtes avec clé partagent avec le [serveur MCP](/fr/ai/mcp-server#limites-de-débit) une limite de 120 par minute et par clé. Au-delà, la réponse est un `429` avec `Retry-After: 60`.
+
 ## Directive d'agent sur chaque page
 
 Chaque page comporte également une note invisible, silencieuse pour les lecteurs d'écran, destinée aux agents d'IA
