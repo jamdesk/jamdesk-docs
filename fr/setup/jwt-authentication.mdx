@@ -262,7 +262,7 @@ Effectuez la rotation à un moment calme si possible, et prévenez la personne r
 
 Si vous voulez simplement terminer la session de tout le monde, par exemple après la perte d'un ordinateur portable, utilisez plutôt **Revoke sessions**. Cela conserve la clé, donc rien ne change dans votre backend ; chaque visiteur doit simplement se reconnecter.
 
-**Clear signing key** supprime la clé publique de Jamdesk. `auth.jwt` reste activé dans `docs.json`, donc le site est verrouillé : les visiteurs voient une page indiquant que le site est privé au lieu de votre page de connexion, et aucun token ne fonctionne tant que vous n'avez pas généré une nouvelle clé. C'est aussi le cas si vous activez `auth.jwt` avant de générer une clé. Les clés API du projet fonctionnent toujours pour l'API de recherche et MCP. Ne l'utilisez que lorsque vous faites passer le site à un autre mode d'accès ou que vous le retirez.
+**Clear signing key** supprime la clé publique de Jamdesk. `auth.jwt` reste activé dans `docs.json`, donc le site est verrouillé : les visiteurs voient une page indiquant que le site est privé au lieu de votre page de connexion, et aucun token ne fonctionne tant que vous n'avez pas généré une nouvelle clé. C'est aussi le cas si vous activez `auth.jwt` avant de générer une clé. Les clés API du projet fonctionnent toujours pour l'API de recherche, le serveur MCP, les URL `.md` et les fichiers llms. Ne l'utilisez que lorsque vous faites passer le site à un autre mode d'accès ou que vous le retirez.
 
 ## Déconnexion
 
@@ -274,12 +274,17 @@ Se déconnecter des docs ne déconnecte pas le visiteur de votre produit. Si vot
 
 | Fonctionnalité | Comportement |
 |---|---|
-| `llms.txt` / `llms-full.txt` / sitemap | Protégé comme le reste du site : inaccessible sans session valide, comme n'importe quelle autre page. |
+| `llms.txt` / `llms-full.txt` / sitemap | Protégé comme le reste du site : inaccessible sans session valide, comme n'importe quelle autre page. `llms.txt` et `llms-full.txt` s'ouvrent aussi avec une clé API du projet. Voir [llms.txt](/fr/ai/llms-txt#sites-protégés-par-connexion). |
 | Pages restreintes par groupe | Exclues de tous les artefacts ci-dessus, ainsi que de la recherche et du chat IA, quels que soient les groupes de la session de la requête (voir [Accès basé sur les groupes](#accès-basé-sur-les-groupes)). |
 | API de recherche (`/_api/search`) | Non protégée. Elle s'authentifie avec votre clé API `jd_live_` au lieu du cookie de connexion, donc gardez la clé sur votre serveur. Les pages réservées à des groupes n'apparaissent jamais dans les résultats. |
 | Serveur MCP (`/_mcp`) | Envoyez une clé API du projet sous la forme `Authorization: Bearer <key>`. Sans clé, le serveur répond par un 401 au format JSON au lieu de la redirection vers la connexion. Voir [Serveur MCP](/fr/ai/mcp-server#sites-protégés-par-connexion). |
+| URL de pages `.md` | Renvoient `401` sans connexion. Avec une clé API du projet, elles renvoient les pages qui apparaissent dans la recherche. Voir [llms.txt](/fr/ai/llms-txt#sites-protégés-par-connexion). |
 | Chat IA | Disponible pour les visiteurs connectés. Si la session expire, le chat demande au visiteur de recharger la page et de se reconnecter. |
 | `robots.txt` | Toujours public. Les moteurs de recherche peuvent voir qu'un site de docs existe et est protégé ; ils ne peuvent pas voir son contenu. |
+
+## Outils d'IA et clés API
+
+Les outils qui ne peuvent pas se connecter, comme un client MCP ou un script qui récupère `llms.txt`, peuvent utiliser une clé API du projet à la place d'un cookie de session. La clé fonctionne pour le [serveur MCP](/fr/ai/mcp-server#sites-protégés-par-connexion), les URL de pages `.md` et les [fichiers llms](/fr/ai/llms-txt#sites-protégés-par-connexion). Elle n'ouvre jamais les pages HTML ni le chat IA.
 
 ## Dépannage
 

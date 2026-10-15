@@ -262,7 +262,7 @@ Rota la clave en un momento tranquilo si puedes, y avisa a quien sea responsable
 
 Si solo quieres terminar la sesión de todos, por ejemplo después de perder un portátil, usa **Revoke sessions** en su lugar. Esto conserva la clave, así que nada cambia en tu backend; cada visitante solo tiene que iniciar sesión de nuevo.
 
-**Clear signing key** elimina la clave pública de Jamdesk. `auth.jwt` sigue activado en `docs.json`, así que el sitio queda bloqueado: los visitantes ven una página que dice que el sitio es privado en lugar de tu página de inicio de sesión, y ningún token funciona hasta que generes una nueva clave. Lo mismo ocurre si activas `auth.jwt` antes de generar una clave. Las claves de API del proyecto siguen funcionando para la API de búsqueda y MCP. Elimínala solo cuando estés moviendo el sitio a otro modo de acceso o retirándolo.
+**Clear signing key** elimina la clave pública de Jamdesk. `auth.jwt` sigue activado en `docs.json`, así que el sitio queda bloqueado: los visitantes ven una página que dice que el sitio es privado en lugar de tu página de inicio de sesión, y ningún token funciona hasta que generes una nueva clave. Lo mismo ocurre si activas `auth.jwt` antes de generar una clave. Las claves de API del proyecto siguen funcionando para la API de búsqueda, el servidor MCP, las URL `.md` y los archivos llms. Elimínala solo cuando estés moviendo el sitio a otro modo de acceso o retirándolo.
 
 ## Cierre de sesión
 
@@ -274,12 +274,17 @@ Cerrar sesión en los docs no cierra la sesión del visitante en tu producto. Si
 
 | Función | Comportamiento |
 |---|---|
-| `llms.txt` / `llms-full.txt` / sitemap | Protegido junto con el resto del sitio: inalcanzable sin una sesión válida, igual que cualquier otra página. |
+| `llms.txt` / `llms-full.txt` / sitemap | Protegido junto con el resto del sitio: inalcanzable sin una sesión válida, igual que cualquier otra página. `llms.txt` y `llms-full.txt` también se abren con una clave de API del proyecto. Consulta [llms.txt](/es/ai/llms-txt#sitios-protegidos-con-inicio-de-sesión). |
 | Páginas restringidas por grupo | Excluidas de todos los artefactos anteriores, además de la búsqueda y el chat de IA, sin importar los grupos de la sesión solicitante (ver [Acceso basado en grupos](#acceso-basado-en-grupos)). |
 | API de búsqueda (`/_api/search`) | Sin restricción. Se autentica con tu clave de API `jd_live_` en lugar de la cookie de inicio de sesión, así que mantén la clave en tu servidor. Las páginas restringidas por grupo nunca aparecen en los resultados. |
 | Servidor MCP (`/_mcp`) | Envía una clave de API del proyecto como `Authorization: Bearer <key>`. Sin ella, el servidor responde con un 401 en JSON en lugar de la redirección al inicio de sesión. Consulta [Servidor MCP](/es/ai/mcp-server#sitios-protegidos-con-inicio-de-sesión). |
+| URL de páginas `.md` | Devuelven `401` sin inicio de sesión. Con una clave de API del proyecto, devuelven las páginas que aparecen en la búsqueda. Consulta [llms.txt](/es/ai/llms-txt#sitios-protegidos-con-inicio-de-sesión). |
 | Chat de IA | Disponible para visitantes con sesión iniciada. Si la sesión caduca, el chat le pide al visitante que recargue la página e inicie sesión de nuevo. |
 | `robots.txt` | Siempre público. Los motores de búsqueda pueden ver que existe un sitio de docs y que está protegido; no pueden ver su contenido. |
+
+## Herramientas de IA y claves de API
+
+Las herramientas que no pueden iniciar sesión, como un cliente MCP o un script que descarga `llms.txt`, pueden usar una clave de API del proyecto en lugar de una cookie de sesión. La clave funciona para el [servidor MCP](/es/ai/mcp-server#sitios-protegidos-con-inicio-de-sesión), las URL de páginas `.md` y los [archivos llms](/es/ai/llms-txt#sitios-protegidos-con-inicio-de-sesión). Nunca abre las páginas HTML ni el chat de IA.
 
 ## Solución de problemas
 
