@@ -1,9 +1,9 @@
 ---
 title: 身份验证
-description: "登录、管理会话并了解 Jamdesk CLI 如何进行身份验证，涵盖令牌存储、会话刷新、团队账户和 CI/CD 环境。"
+description: "登录 Jamdesk、检查会话，并了解 Jamdesk CLI 如何进行身份验证。涵盖令牌存储、会话刷新、团队账户和 CI/CD 环境。"
 ---
 
-CLI 使用基于浏览器的身份验证来连接您的 Jamdesk 账户。部署前需要先登录。
+CLI 通过浏览器登录您的 Jamdesk 账户。部署前请先登录。
 
 ## 登录
 
@@ -11,15 +11,15 @@ CLI 使用基于浏览器的身份验证来连接您的 Jamdesk 账户。部署�
 jamdesk login
 ```
 
-此命令会在浏览器中打开 Jamdesk 仪表板进行身份验证。其工作流程如下：
+此命令会在浏览器中打开 Jamdesk 控制台。流程如下：
 
-1. CLI 在 `127.0.0.1:9876` 上启动本地 HTTP 服务器（如果 9876 端口繁忙，则回退到操作系统分配的端口）
-2. 浏览器打开 `dashboard.jamdesk.com/cli-auth`
-3. 您使用任意仪表板登录方式进行身份验证（电子邮件/密码、Google、GitHub）
-4. 仪表板将您的凭据发送回 CLI 的本地服务器
+1. CLI 在 `127.0.0.1:9876` 上启动本地 HTTP 服务器（如果 9876 端口被占用，则回退到操作系统分配的端口）
+2. 您的浏览器打开 `dashboard.jamdesk.com/cli-auth`
+3. 您使用任一控制台登录方式进行身份验证（邮箱/密码、Google、GitHub）
+4. 控制台将您的凭据发送回 CLI 的本地服务器
 5. 凭据存储在 `~/.jamdeskrc` 中
 
-回调时会验证状态参数，以防止跨站请求伪造。登录流程会在 2 分钟后超时。
+CLI 在回调时会验证 state 参数，以防止跨站请求伪造。登录流程在 2 分钟后超时。
 
 ```bash Expected output
 $ jamdesk login
@@ -31,7 +31,7 @@ $ jamdesk login
 ✔ Logged in as you@example.com
 ```
 
-**无头环境和 SSH 环境**：即使无法打开浏览器，终端也始终会打印 URL。将其复制并粘贴到任意浏览器中。
+**无头环境和 SSH 环境**：即使无法打开浏览器，CLI 也始终会将 URL 打印到终端中。将该 URL 粘贴到任意浏览器中即可。
 
 ## 登出
 
@@ -39,7 +39,7 @@ $ jamdesk login
 jamdesk logout
 ```
 
-清除 `~/.jamdeskrc` 中存储的凭据。如果您未登录，则不会执行任何操作。
+清除 `~/.jamdeskrc` 中存储的凭据。如果您未登录，则不执行任何操作。
 
 ```bash Expected output
 $ jamdesk logout
@@ -52,9 +52,9 @@ $ jamdesk logout
 jamdesk whoami
 ```
 
-显示您的已验证电子邮件地址，并通过刷新令牌验证会话。这是实时检查，而不是读取本地缓存。
+显示您已登录的邮箱。它会刷新令牌以验证会话，从不读取本地缓存。
 
-共有三种可能的状态：
+可能的状态：
 
 <CodeGroup>
 ```bash Logged in
@@ -76,7 +76,7 @@ $ jamdesk whoami
 
 ## 会话工作原理
 
-凭据以 JSON 格式存储在 `~/.jamdeskrc` 中，并具有 `0600` 权限（仅所有者可读写）：
+凭据以 JSON 格式存储在 `~/.jamdeskrc` 中，权限为 `0600`（仅所有者可读写）：
 
 ```json ~/.jamdeskrc
 {
@@ -89,46 +89,46 @@ $ jamdesk whoami
 }
 ```
 
-CLI 使用**刷新令牌 + ID 令牌**架构：
+CLI 使用 **刷新令牌 + ID 令牌** 架构：
 
-- **ID 令牌**约 1 小时后过期，用于 API 调用
-- CLI 会使用存储的刷新令牌**自动刷新** ID 令牌，并在过期前 5 分钟进行刷新
-- 刷新令牌的有效期较长，但可能会被撤销（例如密码更改、账户删除）
-- 如果刷新令牌永久失效（`TOKEN_EXPIRED`、`USER_NOT_FOUND`、`INVALID_REFRESH_TOKEN`），系统会自动清除存储的身份验证信息
+- **ID 令牌** 约 1 小时后过期，用于 API 调用
+- CLI 会在到期前 5 分钟使用存储的刷新令牌 **自动刷新** ID 令牌
+- 刷新令牌有效期较长，但可以被撤销（修改密码、删除账户）
+- 当刷新令牌被永久判定为无效时（`TOKEN_EXPIRED`、`USER_NOT_FOUND`、`INVALID_REFRESH_TOKEN`），CLI 会清除已存储的身份验证信息
 
-您无需手动管理令牌。CLI 会在每个需要身份验证的命令中透明地处理刷新操作。
+CLI 会在每个需要身份验证的命令执行时刷新令牌。您无需手动刷新。
 
 ## 故障排除
 
 <AccordionGroup>
   <Accordion title="登录在 2 分钟后超时">
-    CLI 的本地回调服务器可能被防火墙阻止。复制打印出的 URL，并在浏览器中手动打开。
+    防火墙可能阻止了 CLI 的本地回调服务器。请复制打印出的 URL，并在浏览器中打开。
 
-    如果端口 9876 已被其他进程占用，CLI 会自动选择其他端口。请检查终端输出中的 URL。
+    当 9876 端口被其他进程占用时，CLI 会选择其他端口。请检查终端输出中的 URL。
   </Accordion>
 
-  <Accordion title='"每个命令都显示“会话已过期”"'>
-    您的刷新令牌已不再有效。密码更改或长时间不活动后可能会发生这种情况。
+  <Accordion title='每条命令都提示"Session expired"'>
+    您的刷新令牌已失效。这通常发生在修改密码或长时间未活动之后。
 
-    运行 `jamdesk login` 以获取新会话。
+    运行 `jamdesk login` 以获取新的会话。
   </Accordion>
 
-  <Accordion title="浏览器未打开">
-    这在无头环境（SSH、Docker、CI）中是预期行为。从终端复制 URL，并在能够访问您计算机回调端口的任意浏览器中打开。
+  <Accordion title="浏览器没有打开">
+    无头环境（SSH、Docker、CI）无法打开浏览器。请从终端复制 URL，并在任意能够访问您机器回调端口的浏览器中打开。
   </Accordion>
 
-  <Accordion title='"登录后立即显示“未登录”"'>
-    检查 `~/.jamdeskrc` 是否存在并包含 `auth` 键：
+  <Accordion title='登录后立即提示"Not logged in"'>
+    请检查 `~/.jamdeskrc` 是否存在，并包含 `auth` 键：
 
     ```bash
     cat ~/.jamdeskrc
     ```
 
-    文件权限应为 `0600`。如果文件缺失，您的主目录可能存在权限问题；使用 `ls -la ~` 检查。
+    文件权限应为 `0600`。文件缺失可能意味着您的主目录存在权限问题。可以使用 `ls -la ~` 进行检查。
   </Accordion>
 </AccordionGroup>
 
-如需了解更多 CLI 故障排除信息，请参阅[帮助中心 CLI 指南](/cn/help/troubleshooting/cli-issues)。
+更多 CLI 故障排除信息，请参阅[帮助中心 CLI 指南](/cn/help/troubleshooting/cli-issues)。
 
 ## 接下来？
 

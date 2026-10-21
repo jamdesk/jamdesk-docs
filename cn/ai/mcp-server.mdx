@@ -1,49 +1,49 @@
 ---
 title: MCP 服务器
 sidebarTitle: MCP 服务器
-description: 每个 Jamdesk 站点都内置 MCP 服务器，Claude 和 Cursor 等 AI 助手可直接搜索和阅读文档。
+description: 每个 Jamdesk 站点都内置 MCP 服务器。Claude、Cursor 等 AI 助手可直接搜索和读取您的文档。
 ---
 
-每个 Jamdesk 站点都内置 MCP（Model Context Protocol）服务器。`llms.txt` 为 AI 工具提供文档的静态快照，而 MCP 可让它们以交互方式搜索和查询文档，适用于 AI 代理需要查找具体答案、而不是阅读全部内容的场景。
+每个 Jamdesk 站点都内置了 MCP（Model Context Protocol，模型上下文协议）服务器。`llms.txt` 为 AI 工具提供文档的静态快照，而 MCP 允许它们搜索和查询文档，从而无需通读全部内容即可找到具体答案。
 
 ## 什么是 MCP？
 
-[Model Context Protocol](https://modelcontextprotocol.io) 是一项开放标准，可让 AI 工具访问外部数据源。你的 Jamdesk 文档通过 MCP 提供两种工具：
+[Model Context Protocol](https://modelcontextprotocol.io) 是一种用于将 AI 工具连接到外部数据源的开放标准。您的 Jamdesk 文档提供两个 MCP 工具：
 
 | 工具 | 用途 |
 |------|---------|
-| `searchDocs` | 按关键词搜索文档，并返回排序后的结果 |
-| `getPage` | 获取指定页面的完整内容 |
+| `searchDocs` | 按关键词搜索文档，返回排序后的结果 |
+| `getPage` | 以完整 Markdown 格式获取页面 |
 
 ## 端点 URL
 
-你的 MCP 端点是在文档 URL 后追加 `/_mcp`。如果你已启用[自定义域名](/cn/deploy/custom-domains)，请使用该域名：
+您的 MCP 端点是文档 URL 加上 `/_mcp`。如果您已启用[自定义域名](/cn/deploy/custom-domains)，请使用该域名：
 
 | 设置 | 端点 |
 |-------|----------|
-| 使用自定义域名 `docs.acme.com` | `https://docs.acme.com/_mcp` |
-| 未设置自定义域名 | `https://my-project.jamdesk.app/_mcp` |
+| 自定义域名 `docs.acme.com` | `https://docs.acme.com/_mcp` |
+| 无自定义域名 | `https://my-project.jamdesk.app/_mcp` |
 
 <Note>
-  只要已连接自定义域名，就优先使用该域名对应的端点。这样 AI 工具看到的每个 URL 都会保留你的品牌；即使之后通过[仅使用自定义域名](/cn/deploy/custom-domain-only)隐藏 `.jamdesk.app` 子域名，该端点仍可正常使用。
+  连接了自定义域名时，请使用该域名的端点。这样 AI 工具看到的每个 URL 都会保留您的品牌标识。如果您之后通过[仅自定义域名](/cn/deploy/custom-domain-only)隐藏 `.jamdesk.app` 子域名，该端点也仍可正常使用。
 </Note>
 
 ## 快速设置
 
 <Tabs>
   <Tab title="Claude Code">
-    将文档添加为 MCP 服务器：
+    将您的文档添加为 MCP 服务器：
 
     ```bash
     claude mcp add --transport http my-docs https://docs.acme.com/_mcp
     ```
 
-    将 `docs.acme.com` 替换为你的文档域名；如果尚未连接自定义域名，则替换为 `my-project.jamdesk.app`。
+    将 `docs.acme.com` 替换为您的文档域名。如果尚未连接自定义域名，请使用 `my-project.jamdesk.app`。
 
-    之后，当你向 Claude 询问项目相关问题时，它就能直接搜索和阅读你的文档。
+    当您询问项目相关问题时，Claude 现在可以搜索并读取您的文档。
   </Tab>
   <Tab title="Cursor">
-    将以下内容添加到项目的 `.cursor/mcp.json`：
+    添加到项目的 `.cursor/mcp.json`：
 
     ```json
     {
@@ -55,7 +55,7 @@ description: 每个 Jamdesk 站点都内置 MCP 服务器，Claude 和 Cursor �
     }
     ```
 
-    打开项目时，Cursor 会自动连接到你的文档。
+    打开项目时，Cursor 会连接到您的文档。
   </Tab>
 </Tabs>
 
@@ -63,14 +63,14 @@ description: 每个 Jamdesk 站点都内置 MCP 服务器，Claude 和 Cursor �
 
 ### searchDocs
 
-搜索文档并获取排序后的结果。
+搜索您的文档并获取排序后的结果。
 
 **参数：**
 
 | 参数 | 类型 | 必填 | 说明 |
 |-----------|------|----------|-------------|
-| `query` | string | 是 | 搜索词（例如："authentication"、"getting started"） |
-| `limit` | number | 否 | 结果数量上限（默认值：10，最大值：50） |
+| `query` | string | 是 | 搜索词（例如 "authentication"、"getting started"） |
+| `limit` | number | 否 | 最大结果数（默认：10，最大：50） |
 | `type` | string | 否 | 按内容类型筛选：`all`、`api`、`guide`、`quickstart`、`help`、`component` |
 
 **请求示例：**
@@ -107,13 +107,16 @@ description: 每个 Jamdesk 站点都内置 MCP 服务器，Claude 和 Cursor �
 
 ### getPage
 
-获取指定文档页面的完整内容。
+以 Markdown 格式获取文档页面。表格、列表和代码块会完整返回，而非简短摘录。将 `searchDocs` 返回的 `url` 作为 `url` 传入，或将页面路径作为 `slug` 传入。超过 80,000 个字符的页面会在该长度处被截断，并附带指向该页面 `.md` URL 的链接以获取其余内容。
 
 **参数：**
 
 | 参数 | 类型 | 必填 | 说明 |
 |-----------|------|----------|-------------|
-| `slug` | string | 是 | 不含 `/docs` 前缀的页面路径（例如：`api/authentication`） |
+| `url` | string | `url` 或 `slug` 二选一 | `searchDocs` 结果中的 `url`（例如 `/docs/api/authentication`）。完整页面 URL 和 `.md` 链接同样有效。 |
+| `slug` | string | `url` 或 `slug` 二选一 | 不含 `/docs` 前缀的页面路径（例如 `api/authentication`） |
+
+只需发送其中一个。如果同时发送两者，将使用 `slug`。
 
 **请求示例：**
 
@@ -125,7 +128,7 @@ description: 每个 Jamdesk 站点都内置 MCP 服务器，Claude 和 Cursor �
   "params": {
     "name": "getPage",
     "arguments": {
-      "slug": "api/authentication"
+      "url": "/docs/api/authentication"
     }
   }
 }
@@ -148,7 +151,7 @@ description: 每个 Jamdesk 站点都内置 MCP 服务器，Claude 和 Cursor �
 
 ## 测试端点
 
-你可以使用 curl 直接测试 MCP 端点：
+使用 curl 测试您的 MCP 端点：
 
 ```bash
 # List available tools
@@ -164,60 +167,68 @@ curl -X POST https://docs.acme.com/_mcp \
 
 ## 受登录保护的网站
 
-如果你的网站使用密码或 JWT 身份验证，MCP 服务器需要项目 API 密钥。请在 **Project Settings > API Keys** 中创建密钥，并将其作为请求头发送：
+如果您的站点使用密码或 JWT 身份验证，MCP 服务器需要项目 API 密钥。请在 **Project Settings > API Keys** 中创建密钥，并将其作为请求头发送：
 
 ```bash
 claude mcp add --transport http my-docs https://docs.example.com/_mcp \
   --header "Authorization: Bearer jd_live_..."
 ```
 
-使用密钥后，MCP 客户端可以搜索和阅读网站上可搜索的页面，也就是网站搜索涵盖的同一批页面。无论是否提供密钥，MCP 都不会提供受分组限制的页面。隐藏页面和设置了 `search: false` 的页面也不会包含在结果中，除非你已将它们设为可搜索。请像保护密码一样保护密钥；如果密钥泄露，请在仪表板中撤销。
+密钥允许 MCP 客户端搜索和读取站点中可搜索的页面，即站点搜索所覆盖的同一批页面。受分组限制的页面无论是否有密钥都无法通过 MCP 访问。隐藏页面和设置了 `search: false` 的页面不会被包含，除非您已将其设为可搜索。请像对待密码一样保管该密钥；如果泄露，请在控制面板中撤销。
 
-未提供密钥时，服务器会返回 `401`，并在 JSON 响应正文中说明如何添加密钥。其他项目的密钥会被拒绝。错误代码如下：
+同一密钥也可用于打开 `.md` 页面 URL、`llms.txt` 和 `llms-full.txt`。参见 [llms.txt](/cn/ai/llms-txt#受登录保护的站点) 和 [Markdown 源文件](/cn/ai/markdown-source)。该密钥无法打开 HTML 页面或 AI 聊天，这些仍需登录。
 
-| 状态 | `error` | 含义 |
+不提供密钥时，服务器会返回 `401` 以及一个说明如何添加密钥的 JSON 响应体。来自其他项目的密钥会被拒绝。错误代码如下：
+
+| 状态码 | `error` | 含义 |
 |--------|---------|---------|
 | 401 | `auth_required` | 未发送密钥。 |
-| 401 | `invalid_api_key` | 此密钥对该站点无效。 |
-| 503 | `auth_unavailable` | 无法验证该密钥。请等待 `Retry-After` 请求头中指定的秒数后重试。 |
+| 401 | `invalid_api_key` | 该密钥对此站点无效。 |
+| 503 | `auth_unavailable` | 无法验证该密钥。请在 `Retry-After` 响应头指定的秒数后重试。 |
 
 ## 工作原理
 
 MCP 端点使用与文档一同构建的搜索索引：
 
-- **BM25 排序** - 按相关性对结果排序
-- **模糊匹配** - 处理拼写错误（容许 1 个字符的差异）
-- **字段加权** - 标题和章节标题的权重高于正文内容
-- **类型筛选** - 按内容类型筛选结果（API、指南等）
+- **BM25 排序：**按相关性对结果排序
+- **模糊匹配：**容忍 1 个字符的拼写错误
+- **字段加权：**标题和章节标题比正文权重更高
+- **类型筛选：**按内容类型（API、指南等）筛选结果
 
-每次部署时都会重新构建索引。
+每次部署时都会重建索引。
 
 ## 速率限制
 
-MCP 端点对每个 IP 地址的速率限制为每分钟 **60 个请求**。这足以满足 AI 助手的常规使用需求。超出限制时，你会收到 429 响应。
+未使用 API 密钥的请求，每个 IP 地址限制约为**每分钟 60 次**。这对于一个人的 AI 助手来说已经足够。同一共享 IP 后的所有用户（例如办公网络或您自己的后端）共用这一配额。
+
+携带项目 API 密钥的请求不受按 IP 的限制，而是按密钥享有**每分钟 120 次**的配额，适用于任何站点。请按照[需要登录的站点](#受登录保护的网站)的方式，将密钥添加到您的 MCP 客户端配置中。
+
+在需要登录的站点上，使用密钥发出的 `.md` 页面请求，以及 `llms.txt` 或 `llms-full.txt` 请求，也会计入该密钥的配额。[Search API](/cn/jamdesk-api/docs-search-api#速率限制) 拥有独立的限制，即每个密钥每分钟 60 次。
+
+超出限制的请求会收到 `429` 响应，并附带 `Retry-After: 60`。
 
 ## 故障排除
 
 <Accordion title="MCP 服务器无法连接">
-  请确认端点 URL 正确且可访问：
+  验证端点 URL 是否正确且可访问：
 
   ```bash
   curl https://docs.acme.com/_mcp
   ```
 
-  你应该会看到包含服务器信息的 JSON 响应。如果没有，请确认你的文档至少已构建过一次。
+  您应当看到包含服务器信息的 JSON 响应。如果没有，请检查您的文档是否至少构建过一次。
 </Accordion>
 
-<Accordion title="搜索未返回结果">
-  搜索索引会在构建时生成。如果你最近添加了内容，请在 Jamdesk 仪表板中触发重新构建，以更新索引。
+<Accordion title="搜索无结果">
+  Jamdesk 在构建时生成搜索索引。请从 Jamdesk 控制面板触发重新构建，以索引新内容。
 </Accordion>
 
-<Accordion title="getPage 返回 null">
-  请确认 slug 与页面路径完全一致（不含 `.mdx` 扩展名）。例如，如果页面路径为 `api/authentication.mdx`，slug 应使用 `api/authentication`。
+<Accordion title="getPage 返回 Page not found">
+  请传入 `searchDocs` 结果中的 `url`，以避免 slug 不匹配。如果您传入 `slug`，请确保它与页面路径完全一致，且不含 `.mdx` 扩展名。位于 `api/authentication.mdx` 的页面，其 slug 为 `api/authentication`。
 </Accordion>
 
-<Accordion title="受保护的网站返回 401 auth_required">
-  该网站使用密码或 JWT 身份验证，因此请求需要项目 API 密钥。请添加 `Authorization: Bearer` 请求头，并使用在 **Project Settings > API Keys** 中创建的密钥。请参阅[受登录保护的网站](#受登录保护的网站)。
+<Accordion title="受保护站点返回 401 auth_required">
+  该站点使用密码或 JWT 身份验证，请求需要项目 API 密钥。请在请求中添加 `Authorization: Bearer` 请求头，并使用来自 **Project Settings > API Keys** 的密钥。参见[需要登录的站点](#受登录保护的网站)。
 </Accordion>
 
 ## 接下来

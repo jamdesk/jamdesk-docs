@@ -1,9 +1,9 @@
 ---
-title: Build- & Bereitstellungszyklus
-description: "Die Build-Pipeline vom Git-Push bis zur Live-Site: Repository klonen, prüfen, zu R2 hochladen, ISR-Revalidierung, Monitoring und Rollback-Strategien."
+title: Build- und Deploy-Zyklus
+description: "Die vollständige Build-Pipeline von git push bis zur Live-Seite: Klonen, Validieren, Upload nach R2, ISR-Revalidierung, Monitoring und Rollback-Strategien."
 ---
 
-Jamdesk verwaltet den gesamten Build- und Bereitstellungszyklus automatisch. Pushen Sie zu GitHub, und Ihre Dokumentation ist innerhalb weniger Minuten live.
+Push zu GitHub. Jamdesk baut und veröffentlicht deine Dokumentation innerhalb weniger Minuten.
 
 Die Screenshots zeigen die Benutzeroberfläche auf Englisch.
 
@@ -27,91 +27,87 @@ flowchart TD
 
 ## Build-Auslöser
 
-| Auslöser | Funktionsweise | Anwendungsfall |
+| Auslöser | So funktioniert es | Anwendungsfall |
 |---------|--------------|----------|
-| **Git Push** | Webhook wird bei einem Push in den verbundenen Branch ausgelöst | Normale Entwicklung |
-| **Dashboard** | Klicken Sie in den Projekteinstellungen auf „Rebuild“ | Aktualisierung nach Konfigurationsänderungen erzwingen |
+| **Git Push** | Webhook wird beim Push auf den verbundenen Branch ausgelöst | Normale Entwicklung |
+| **Dashboard** | Klicke in den Projekteinstellungen auf „Rebuild“ | Erzwungene Aktualisierung nach Konfigurationsänderungen |
 
 <Note>
-Builds werden entprellt. Mehrere Commits innerhalb von 10 Sekunden werden zu einem einzelnen Build zusammengefasst.
+Builds werden entprellt. Commits, die innerhalb von 10 Sekunden aufeinander folgen, landen in einem einzigen Build.
 </Note>
 
 ## Was während eines Builds passiert
 
-Jamdesk klont Ihr Repository, validiert `docs.json` und die MDX-Syntax, kompiliert optimiertes HTML mit Suchindex und stellt es anschließend auf Cloudflare R2 bereit. Die meisten Websites werden in 30–90 Sekunden erstellt.
+Jamdesk klont dein Repository und validiert `docs.json` sowie die MDX-Syntax. Es kompiliert die Seiten zu HTML mit einem Suchindex. Das Ergebnis wird nach Cloudflare R2 deployt. Die meisten Seiten werden in 30–90 Sekunden gebaut.
 
-Eine vollständige Aufschlüsselung der Pipeline mit Architekturdiagramm finden Sie unter [So funktioniert Jamdesk](/de/how-jamdesk-works).
+Die vollständige Pipeline und das Architekturdiagramm findest du unter [So funktioniert Jamdesk](/de/how-jamdesk-works).
 
 ## Bereitstellungsstatus
 
-Prüfen Sie den Build-Status im Dashboard:
+Das Dashboard zeigt für jeden Build einen dieser Status an:
 
 | Status | Bedeutung |
 |--------|---------|
-| **Building** | Build wird ausgeführt |
-| **Deployed** | Unter Ihrer Domain live |
-| **Failed** | Build-Fehler – prüfen Sie die Logs |
+| **Building** | Build läuft |
+| **Deployed** | Live unter deiner Domain |
+| **Failed** | Build-Fehler – Logs prüfen |
 | **Queued** | Wartet auf den vorherigen Build |
 
-Im Abschnitt „Build History“ werden die letzten Bereitstellungen samt Status angezeigt. Dort können Sie auch manuelle Builds auslösen:
+Der Abschnitt Build History listet die letzten Deployments mit ihrem Status auf. Von dort aus kannst du einen manuellen Rebuild auslösen:
 
-<SizedImage src="/images/dashboard/build-history.webp" alt="Build History mit letzten Bereitstellungen, Successful-Status-Badges, Commit-Informationen und Rebuild-Schaltfläche" />
+<SizedImage src="/images/dashboard/build-history.webp" alt="Build History showing recent deployments with Successful status badges, commit info, and Rebuild button" />
 
 ## Manueller Build
 
-Lösen Sie einen Build aus, ohne Änderungen zu pushen:
+Löse einen Rebuild aus, ohne Änderungen zu pushen:
 
-1. Öffnen Sie Ihr Projekt im Dashboard.
-2. Öffnen Sie **Settings**.
-3. Klicken Sie auf **Rebuild**.
+1. Öffne dein Projekt im Dashboard
+2. Öffne **Settings**
+3. Klicke auf **Rebuild**
 
-Verwenden Sie diese Funktion, wenn Sie:
-- einen hängenden Build beheben
-- nach Plattformaktualisierungen eine Aktualisierung durchführen
+Verwende dies, wenn:
+- ein hängender Build behoben werden soll
+- nach Plattform-Updates aktualisiert werden soll
 
 ## Build-Logs
 
-Rufen Sie detaillierte Build-Logs zur Fehlerbehebung auf:
+1. Gehe in deinem Projekt zu **Deployments**
+2. Klicke auf ein Deployment
+3. Lies das vollständige Build-Log
 
-1. Öffnen Sie **Deployments** in Ihrem Projekt.
-2. Klicken Sie auf eine bestimmte Bereitstellung.
-3. Sehen Sie sich das vollständige Build-Log an.
-
-Häufige Probleme werden in den Logs angezeigt:
+Häufige Fehler im Log:
 - Ungültige MDX-Syntax
 - Fehlende Bilder oder Assets
-- Fehlerhafte interne Links
+- Defekte interne Links
 - Konfigurationsfehler
 
 ## Rollbacks
 
-Kehren Sie zu einer vorherigen Version zurück:
+1. Gehe zu **Deployments**
+2. Suche das Deployment, das du wiederherstellen möchtest
+3. Klicke auf **Rollback**
 
-1. Öffnen Sie **Deployments**.
-2. Suchen Sie die Bereitstellung, die Sie wiederherstellen möchten.
-3. Klicken Sie auf **Rollback**.
-
-Die vorherige Version ist sofort wieder live, während ein neuer Build startet.
+Die vorherige Version geht sofort live. Gleichzeitig startet ein neuer Build.
 
 ## Branch-Bereitstellungen
 
 <Note>
-Branch-Bereitstellungen sind in Pro-Tarifen verfügbar.
+Branch-Deployments sind in den Pro-Tarifen verfügbar.
 </Note>
 
-Zeigen Sie Änderungen vor dem Zusammenführen in der Vorschau an:
+Änderungen vor dem Merge in der Vorschau prüfen:
 
-1. Pushen Sie in einen Feature-Branch.
-2. Jamdesk erstellt eine Vorschau unter `branch-name.your-project.jamdesk.app`.
-3. Prüfen Sie die Änderungen und führen Sie sie zusammen, sobald alles bereit ist.
+1. Push auf einen Feature-Branch
+2. Jamdesk erstellt eine Vorschau unter `branch-name.your-project.jamdesk.app`
+3. Prüfen und mergen, sobald es bereit ist
 
 ## Wie geht es weiter?
 
 <Columns cols={2}>
-  <Card title="Bereitstellungsübersicht" icon="cloud-arrow-up" href="/de/deploy/overview">
-    Wählen Sie zwischen Hosting auf einer Subdomain, einer benutzerdefinierten Domain oder einem Unterpfad.
+  <Card title="Deployment-Übersicht" icon="cloud-arrow-up" href="/de/deploy/overview">
+    Wähle zwischen Subdomain, eigener Domain oder Subpath-Hosting
   </Card>
-  <Card title="Unterpfad-Hosting" icon="route" href="/de/deploy/subpath-hosting">
-    Hosten Sie Dokumentation unter example.com/docs.
+  <Card title="Subpath-Hosting" icon="route" href="/de/deploy/subpath-hosting">
+    Dokumentation unter example.com/docs hosten
   </Card>
 </Columns>

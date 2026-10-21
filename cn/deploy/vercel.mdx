@@ -1,29 +1,29 @@
 ---
 title: Vercel
 description: >-
-  了解如何通过 vercel.json 重写或 Edge Middleware，将 Jamdesk 文档部署到 Vercel 域名的 /docs 路径。
+  了解在 Vercel 部署的域名 /docs 路径下提供 Jamdesk 文档的两种方式：vercel.json 重写或 Edge Middleware。
 ---
 
-如果您的网站部署在 Vercel 上，可以通过自己的域名在 `/docs` 提供 Jamdesk 文档。有两种设置方式，最终结果相同：
+在你 Vercel 部署的域名上的 `/docs` 路径下提供 Jamdesk 文档。选择以下两种设置之一，效果相同。
 
-- **[选项 A：vercel.json 重写](#选项-averceljson-重写)** — 无需编写代码，适用于任何框架。大多数项目应从这里开始。
-- **[选项 B：Edge Middleware](#选项-bedge-middleware)** — 适用于已经运行 Edge Middleware，并希望将 Jamdesk 放在同一文件中的网站。
+- **[方案 A：vercel.json 重写](#选项-averceljson-重写)**：无需代码，适用于任何框架。从这里开始。
+- **[方案 B：Edge Middleware](#选项-bedge-middleware)**：适用于已经在使用 Edge Middleware、希望将 Jamdesk 配置放在同一文件中的站点。
 
 ## 前提条件
 
-- 一个部署在 Vercel 上的项目
-- 您的 Jamdesk 子域名（可在仪表板设置中找到），并已启用 **Host at a subpath**
+- 已部署在 Vercel 上的项目
+- 你的 Jamdesk 子域名（可在仪表板设置中找到），并已启用 **Host at a subpath**
 - 已在仪表板中注册并验证的自定义域名
 
 ## 选项 A：vercel.json 重写
 
 <Note>
-如果您使用的是自定义子路径而不是默认的 `/docs`，请将以下代码片段中的每个 `/docs` 替换为您的子路径，包括每条规则的 `source` 和 `destination`。在仪表板中重命名后重新部署；系统不会为您重新生成此文件。
+使用自定义子路径而非默认的 `/docs`？请将下方代码片段中每条规则的 `source` 和 `destination` 里的 `/docs` 替换为你的子路径。在仪表板中重命名子路径后重新部署。此文件不会为你自动生成。
 </Note>
 
-重写可以更改请求的去向，但无法添加请求标头，因此每个目标地址都会携带一个公开标记 `?jd_proxy=1`，用于告知 Jamdesk 请求经过了您的代理。Jamdesk 会在渲染前移除该标记，访问者不会看到它。
+重写可以改变请求的去向，但无法添加请求头。因此每个目标地址都带有一个公开标记 `?jd_proxy=1`，它告诉 Jamdesk 该请求经过了你的代理。Jamdesk 在渲染前会将其移除，访问者不会看到它。
 
-在项目根目录中创建或编辑 `vercel.json`，将 `YOUR_SLUG` 替换为您的 Jamdesk 子域名：
+在项目根目录创建或编辑 `vercel.json`，将 `YOUR_SLUG` 替换为你的 Jamdesk 子域名：
 
 ```json vercel.json
 {
@@ -36,9 +36,9 @@ description: >-
 }
 ```
 
-`/_next/:path*` 不需要标记，因为它是 Jamdesk 永远不会进行访问控制的静态资源路径。如果您的网站不是 Next.js 应用，则不会有自己的 `/_next/` 文件，因此该重写仍然正确：该路径下的每个请求都会直接转交给 Jamdesk。
+`/_next/:path*` 不需要标记。它是 Jamdesk 从不拦截的静态资源路径。非 Next.js 站点本身没有 `/_next/` 文件，该路径下的所有请求都会转发给 Jamdesk。
 
-对于 Next.js 项目，同样的四条规则也适用于 `next.config.js`：
+对于 Next.js 项目，同样的四条规则也可写在 `next.config.js` 中：
 
 ```javascript next.config.js
 /** @type {import('next').NextConfig} */
@@ -58,7 +58,7 @@ export default nextConfig;
 
 ### 同时转发根目录文件
 
-`robots.txt`、`sitemap.xml`、`llms.txt` 和 `llms-full.txt` 位于域名根目录，不在 `/docs` 下；没有这些文件，搜索引擎和 AI 代理就无法发现您的文档。如果 Jamdesk 管理您的域名根目录，请再添加四条规则：
+`robots.txt`、`sitemap.xml`、`llms.txt` 和 `llms-full.txt` 位于域名根目录，不在 `/docs` 下。搜索引擎和 AI 代理需要它们来发现你的文档。如果域名根目录由 Jamdesk 托管，请再添加四条规则：
 
 ```json vercel.json
 {
@@ -72,23 +72,23 @@ export default nextConfig;
 ```
 
 <Warning>
-如果您的营销网站已经在根目录提供自己的 `robots.txt` 或 `sitemap.xml`，请将两者合并，而不是用其中一个覆盖另一个。
+如果你的营销站点已在根目录提供自己的 `robots.txt` 或 `sitemap.xml`，请合并两者，而不是用其中一个覆盖另一个。
 </Warning>
 
 ### 部署并验证
 
-使用 `vercel --prod` 部署（或推送到已连接的 Git 仓库），然后打开 `https://yoursite.com/docs` 并查看页面源代码。检查以下两项：
+使用 `vercel --prod` 部署（或推送到已连接的 Git 仓库）。打开 `https://yoursite.com/docs` 并查看页面源代码，检查两点：
 
-1. `<link rel="canonical">` 指向 **您的**域名，而不是 `YOUR_SLUG.jamdesk.app`
-2. 不存在 `<meta name="robots" content="noindex">`
+1. `<link rel="canonical">` 指向**你的**域名，而非 `YOUR_SLUG.jamdesk.app`
+2. **不存在** `<meta name="robots" content="noindex">`
 
-如果其中任何一项不正确，说明某条重写缺少 `?jd_proxy=1` 标记 — 请参阅[标记为何重要](#为什么需要标记)。
+如果其中任一项不正确，说明某条重写缺少 `?jd_proxy=1` 标记。参见[为什么标记很重要](#为什么需要标记)。
 
 ## 选项 B：Edge Middleware
 
-如果您已经在运行 Edge Middleware，可以在那里设置 `X-Jamdesk-Forwarded-Host` 请求标头，而不是使用标记。这两个信号是等效的；仅当您希望将路由逻辑保留在已经维护的代码中时，才选择此选项。
+在 Edge Middleware 中设置 `X-Jamdesk-Forwarded-Host` 请求头，代替使用标记。两种信号效果等同。若希望将路由逻辑保留在你已维护的代码中，请选择此方案。
 
-在项目根目录中创建 `middleware.ts` 文件，将 `YOUR_SLUG` 替换为您的 Jamdesk 子域名：
+在项目根目录创建 `middleware.ts` 文件，将 `YOUR_SLUG` 替换为你的 Jamdesk 子域名：
 
 ```typescript middleware.ts
 import { NextResponse } from 'next/server';
@@ -115,18 +115,18 @@ export const config = {
 ```
 
 <Note>
-使用自定义子路径时，请将上述 matcher 中的 `/docs` 和 `/docs/:path*` 替换为您配置的子路径。
+若使用自定义子路径，请将上方 matcher 中的 `/docs` 和 `/docs/:path*` 替换为你配置的子路径。
 </Note>
 
 <Warning>
-**不要将 `/_next/:path*` 添加到 matcher 中。** Middleware 会在 Vercel 检查文件系统之前运行，因此匹配 `/_next/` 会将您自己网站的 JavaScript 和 CSS 发送到 Jamdesk，导致样式失效。下一步会通过安全的方式路由 `/_next/`。
+**不要将 `/_next/:path*` 添加到 matcher 中。** Middleware 在 Vercel 的文件系统检查*之前*运行。匹配 `/_next/` 会将你自己站点的 JavaScript 和 CSS 发送给 Jamdesk，从而破坏样式。下一步会以安全的方式路由 `/_next/`。
 </Warning>
 
-文件必须命名为 `middleware.ts`，并导出名为 `middleware` 的函数。Next.js 16 建议将其重命名为 `proxy.ts`，但 Vercel 生产环境目前不会调用 `proxy.ts`；重命名会使其在不提示的情况下失效。
+将文件命名为 `middleware.ts`，并导出一个名为 `middleware` 的函数。Next.js 16 建议将其重命名为 `proxy.ts`，但 Vercel 生产环境目前不会调用 `proxy.ts`，重命名会静默地使其失效。
 
 ### 在 vercel.json 中路由资源和根目录文件
 
-Jamdesk 页面会从 `/_next/` 加载其构建文件，而 `robots.txt` 等根目录文件位于上述 matcher 之外。请使用重写路由这两类请求 — 重写会在文件系统检查之后运行，因此您自己的构建输出始终优先，只有您的网站无法提供的请求才会转交给 Jamdesk：
+Jamdesk 页面从 `/_next/` 加载其代码包。`robots.txt` 等根目录文件位于上方 matcher 之外。请用重写规则路由这两类文件。重写在文件系统检查*之后*运行，因此你自己的构建产物优先，只有你的站点无法提供的请求才会转发给 Jamdesk：
 
 ```json vercel.json
 {
@@ -140,73 +140,76 @@ Jamdesk 页面会从 `/_next/` 加载其构建文件，而 `robots.txt` 等根�
 }
 ```
 
-根目录文件会携带 `?jd_proxy=1`，因为 Middleware 不会在这些文件上运行，而重写无法设置标头。只有在 Jamdesk 管理您的域名根目录时，才添加这些文件；如果您的网站提供自己的 `robots.txt` 或 `sitemap.xml`，请进行合并。
+根目录文件的目标地址带有 `?jd_proxy=1`。Middleware 不会对它们运行，且重写无法设置请求头。仅当 Jamdesk 托管你的域名根目录时才需添加这些规则。如果你的站点提供自己的 `robots.txt` 或 `sitemap.xml`，请改为合并。
 
 ### 部署并验证
 
-使用 `vercel --prod` 部署（或推送到已连接的 Git 仓库），然后打开 `https://yoursite.com/docs` 并查看页面源代码。检查以下两项：
+使用 `vercel --prod` 部署（或推送到已连接的 Git 仓库）。打开 `https://yoursite.com/docs` 并查看页面源代码，检查两点：
 
-1. `<link rel="canonical">` 指向 **您的**域名，而不是 `YOUR_SLUG.jamdesk.app`
-2. 不存在 `<meta name="robots" content="noindex">`
+1. `<link rel="canonical">` 指向**你的**域名，而非 `YOUR_SLUG.jamdesk.app`
+2. **不存在** `<meta name="robots" content="noindex">`
 
-如果其中任何一项不正确，说明 `X-Jamdesk-Forwarded-Host` 标头没有到达 Jamdesk — 请确认 matcher 中包含 `/docs`。
+如果其中任一项不正确，说明 `X-Jamdesk-Forwarded-Host` 请求头未能到达 Jamdesk。请确认 `/docs` 已在 matcher 中。
 
 ## 为什么需要标记
 
-Jamdesk 需要一个信号，用于确认请求是通过您的代理到达的，而不是直接访问您的 `*.jamdesk.app` 子域名。`?jd_proxy=1` 标记和 `X-Jamdesk-Forwarded-Host` 标头都能传递该信号，Jamdesk 将二者视为等效。任一信号都会确认您注册的域名，将规范链接、Open Graph 和 sitemap 链接指向该域名，并允许[仅限自定义域名](/cn/deploy/custom-domain-only)区分代理流量和直接访问。
+Jamdesk 需要一个信号，以区分请求是经过你的代理到达的，还是直接访问你的 `*.jamdesk.app` 子域名。`?jd_proxy=1` 标记和 `X-Jamdesk-Forwarded-Host` 请求头承载了这一信号。Jamdesk 将两者视为等效。任一信号都会完成三件事：
 
-缺少信号时不会明确报错 — 页面仍会渲染，但如果未注册自定义域名，会带有 `noindex` 和指向子域名的规范链接；如果已注册自定义域名，则仅限自定义域名检查会失败。**403** 则表示相反的问题：信号存在，但其中指定的域名尚未为此项目注册并激活。
+- 确认你已注册的域名
+- 将 canonical、Open Graph 和站点地图链接指向该域名
+- 让[仅自定义域名](/cn/deploy/custom-domain-only)功能区分代理流量与直接访问
+
+信号缺失时会悄然失败：页面仍能正常渲染。若未注册自定义域名，页面会带有 `noindex` 和子域名 canonical；若已注册自定义域名，"仅自定义域名"检查将失败。**403** 表示信号存在，但所指定的域名对该项目未注册或未激活。
 
 ## 故障排除
 
-<Accordion title="添加 Middleware 后，我网站的 CSS 和 JavaScript 失效了">
-您的 matcher 几乎肯定包含 `/_next/:path*`。Middleware 会在文件系统检查之前运行，因此这会将您自己应用的资源路由到 Jamdesk。从 matcher 中移除 `/_next/`，改为通过 `vercel.json` 路由 — 请参阅选项 B。
+<Accordion title="添加 middleware 后，我站点的 CSS 和 JavaScript 失效了">
+你的 matcher 很可能包含了 `/_next/:path*`。Middleware 在文件系统检查之前运行，会将你自己应用的资源路由到 Jamdesk。请从 matcher 中移除 `/_next/`，改为通过 `vercel.json` 路由。参见方案 B。
 </Accordion>
 
-<Accordion title="Google 没有将文档页面编入索引">
-在 `https://yoursite.com/docs` 查看页面源代码。如果看到 `<meta name="robots" content="noindex">`，说明标记和标头都没有到达 Jamdesk。对于选项 A，请确认每个重写目标地址都以 `?jd_proxy=1` 结尾（`/_next/:path*` 除外）。对于选项 B，请确认 Middleware matcher 中包含 `/docs` — 仅使用 `vercel.json` 重写无法设置标头。
+<Accordion title="Google 未收录文档页面">
+在 `https://yoursite.com/docs` 查看页面源代码。若存在 `<meta name="robots" content="noindex">` 标签，说明标记和请求头都未到达 Jamdesk。在方案 A 中，确认每条重写的目标地址都以 `?jd_proxy=1` 结尾（`/_next/:path*` 除外）。在方案 B 中，确认 `/docs` 已在 middleware matcher 中。仅靠 `vercel.json` 重写无法设置请求头。
 </Accordion>
 
-<Accordion title="403 域名未授权错误">
-标记或标头已到达 Jamdesk，但其中指定的域名不是 Jamdesk 为此项目提供服务的域名：
+<Accordion title="403 Domain not authorized 错误">
+标记或请求头已到达 Jamdesk，但所指定的域名不会为该项目提供服务：
 
-1. 确认您的域名已在 Jamdesk 仪表板中注册
+1. 确认你的域名已在 Jamdesk 仪表板中注册
 2. 完成 DNS 验证（TXT 记录）
-3. 检查域名是否映射到正确的项目，并标记为已激活
-4. 对于选项 B，请确认 Middleware 将标头设置为访问者看到的域名，而不是预览 URL
-
+3. 检查该域名是否映射到正确的项目，且已标记为激活
+4. 在方案 B 中，确认 middleware 设置的请求头是访问者使用的域名，而非预览 URL
 </Accordion>
 
 <Accordion title="嵌套页面出现 404">
-确认您的重写（或 matcher）同时覆盖 `/docs` 和 `/docs/:path*`。缺少通配符会导致嵌套页面失败。
+请确认你的重写（或 matcher）同时覆盖了 `/docs` 和 `/docs/:path*`。缺少通配符时，嵌套页面会失败。
 </Accordion>
 
-<Accordion title="资源未加载（样式失效、字体缺失）">
-确认 `/_jd/:path*` 和 `/_next/:path*` 都已路由。`/_jd/` 提供 Jamdesk 的字体、图像和品牌资源；`/_next/` 提供文档构建文件。缺少任何一个都会导致布局失效。
+<Accordion title="资源未加载（样式错乱、字体缺失）">
+请同时路由 `/_jd/:path*` 和 `/_next/:path*`。`/_jd/` 提供 Jamdesk 字体、图片和品牌资源；`/_next/` 提供文档代码包。缺少任一项都会破坏布局。
 </Accordion>
 
 <Accordion title="Middleware 完全没有运行">
-检查文件是否在项目根目录中命名为 `middleware.ts`（而不是 `proxy.ts`），并且是否导出了名为 `middleware` 的函数。Next.js 16 的弃用警告建议使用 `proxy.ts`，但 Vercel 生产环境不会调用它。
+请检查文件是否位于项目根目录，且命名为 `middleware.ts`（而非 `proxy.ts`），并导出名为 `middleware` 的函数。Next.js 16 的弃用警告推荐使用 `proxy.ts`，但 Vercel 生产环境不会调用它。
 </Accordion>
 
 <Accordion title="无限重定向循环">
-检查目标 URL 使用的是 `https://`，并且指向 `jamdesk.app`，而不是返回您自己的域名。
+请检查目标 URL 是否使用 `https://` 并指向 `jamdesk.app`，而不是指回你自己的域名。
 </Accordion>
 
-<Accordion title="仅限自定义域名检查持续失败">
-该检查会在您的线上域名上获取 `/_jd/preflight`，并检查实际到达 Jamdesk 的内容。如果报告您的代理“未标识自身”，说明某条重写在缺少标记或标头的情况下到达了 Jamdesk — 请重新检查每个重写目标地址（选项 A）或 Middleware 标头（选项 B）。请参阅[仅限自定义域名](/cn/deploy/custom-domain-only)。
+<Accordion title="“仅自定义域名”检查一直失败">
+该检查会在你的正式域名上请求 `/_jd/preflight`，并检查到达 Jamdesk 的内容。“未标识自身”意味着某条重写到达 Jamdesk 时缺少标记或请求头。请重新检查每条重写的目标地址（方案 A）或你的 middleware 请求头（方案 B）。参见[仅自定义域名](/cn/deploy/custom-domain-only)。
 </Accordion>
 
 ## 接下来呢？
 
 <Columns cols={3}>
-  <Card title="仅限自定义域名" icon="eye-slash" href="/cn/deploy/custom-domain-only">
-    停止子域名直接响应请求
+  <Card title="仅自定义域名" icon="eye-slash" href="/cn/deploy/custom-domain-only">
+    阻止你的子域名直接响应
   </Card>
   <Card title="自定义域名" icon="globe" href="/cn/deploy/custom-domains">
     验证 DNS 并排查问题
   </Card>
   <Card title="子路径托管" icon="folder-tree" href="/cn/deploy/subpath-hosting">
-    在 /docs 提供文档
+    在 /docs 下提供文档
   </Card>
 </Columns>

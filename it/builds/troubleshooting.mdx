@@ -1,95 +1,95 @@
 ---
-title: Risoluzione problemi build
-description: "Risolvi gli errori di build comuni associando i messaggi alle cause e alle soluzioni: configurazione, dipendenze mancanti, sintassi MDX e icone."
+title: Risoluzione problemi di build
+description: "Risolvi i guasti comuni di build abbinando i messaggi di errore a cause e soluzioni. Copre errori di configurazione, dipendenze mancanti, sintassi MDX e problemi di icone."
 ---
 
-Quando una build non riesce, il log indica cosa si è interrotto e dove. Trova qui sotto il messaggio di errore e passa alla soluzione.
+Il log di build mostra cosa si è rotto e dove. Trova il tuo messaggio di errore qui sotto.
 
 ## Visualizzare i dettagli dell'errore
 
 1. Apri la scheda **Deployments** del tuo progetto
-2. Fai clic sulla build non riuscita
-3. Leggi il messaggio di errore e scorri il log della build
+2. Clicca sulla build non riuscita
+3. Leggi il messaggio di errore e scorri il log di build
 
-Il log indica il file e la riga esatti che hanno interrotto la build.
+Il log indica il file e la riga esatta che hanno interrotto la build.
 
 ## Errori comuni
 
 ### Errori di configurazione
 
-`Invalid docs.json` significa che il file di configurazione non può essere analizzato. La causa è quasi sempre banale: una virgola di troppo, una parentesi non chiusa o una virgoletta mancante.
+`Invalid docs.json` significa che il file di configurazione non può essere analizzato. La causa più comune è una virgola fuori posto, una parentesi non chiusa o un apice mancante.
 
 <Steps>
   <Step title="Controlla la sintassi JSON">
-    Cerca virgole, parentesi o virgolette mancanti.
+    Cerca virgole, parentesi o apici mancanti.
   </Step>
-  <Step title="Convalida localmente">
-    Esegui `jamdesk validate` per visualizzare gli errori esatti.
+  <Step title="Valida in locale">
+    Esegui `jamdesk validate` per vedere gli errori esatti.
   </Step>
-  <Step title="Correggi e invia">
-    Correggi gli errori ed esegui il push per avviare una nuova build.
+  <Step title="Correggi e pubblica">
+    Correggili e fai push per avviare una nuova build.
   </Step>
 </Steps>
 
 ### Pagine mancanti
 
-Un errore `Page not found` si verifica quando la navigazione rimanda a un file inesistente. Verifica che il nome del file corrisponda al percorso in `docs.json`, che l'uso delle maiuscole e minuscole sia identico e che tu abbia omesso l'estensione `.mdx`.
+`Page not found` significa che la tua navigazione punta a un file che non esiste. Controlla il nome del file rispetto al percorso in `docs.json`. Le maiuscole devono corrispondere esattamente. Ometti l'estensione `.mdx`.
 
 ### Errori di sintassi MDX
 
-`MDX compilation failed` indica la presenza di MDX o JSX non valido in una pagina. Di solito si tratta di un tag non chiuso (un `<Card>` senza il relativo `</Card>`), di un carattere non sottoposto a escape come un `{` letterale quando intendevi usare `\{`, oppure di una sintassi non valida per le proprietà.
+`MDX compilation failed` indica MDX o JSX malformato in una pagina. Di solito si tratta di un tag non chiuso (un `<Card>` senza il corrispondente `</Card>`), di un carattere non escapato come una `{` letterale dove intendevi `\{`, oppure di una sintassi di prop non valida.
 
 ### Timeout della build
 
-`Build exceeded time limit` significa esattamente questo: la build ha superato il tempo consentito. La causa più comune sono immagini grandi e non ottimizzate. Comprimi le immagini, suddividi le pagine diventate troppo grandi ed elimina quelle che non pubblichi più.
+`Build exceeded time limit` significa che la build ha superato il tempo massimo consentito. La causa più comune sono immagini grandi e non ottimizzate. Comprimile, dividi le pagine molto grandi e rimuovi quelle che non pubblichi più.
 
 ## Avvisi della build
 
-Gli avvisi non fanno mai fallire una build: il sito viene pubblicato comunque. Segnalano problemi che vale la pena correggere e compaiono in tre punti: nell'email degli avvisi della build, nella voce della build nella scheda **Deployments** e nel terminale quando esegui `jamdesk validate` o `jamdesk dev`.
+Gli avvisi non fanno mai fallire una build. Il tuo sito viene comunque pubblicato. Gli avvisi compaiono nell'email degli avvisi di build, nella voce della build nella scheda **Deployments** e nel terminale quando esegui `jamdesk validate` o `jamdesk dev`.
 
 ### Immagini mancanti
 
-`Image not found` avvisa che una pagina fa riferimento a un'immagine non presente nel progetto.
+`Image not found` avvisa che una pagina fa riferimento a un'immagine che il tuo progetto non contiene.
 
-Jamdesk verifica ogni riferimento a un'immagine (Markdown `![alt](/images/photo.webp)` e l'attributo `src` nei tag `<img>` e `<Image>`) confrontandolo con i file nel repository. Quando il file di destinazione manca, l'avviso indica la pagina, il numero di riga e il percorso che non è stato possibile risolvere, così un'immagine non funzionante non viene mai pubblicata come 404 silenzioso.
+Jamdesk verifica ogni riferimento a un'immagine (Markdown `![alt](/images/photo.webp)` più il `src` nei tag `<img>` e `<Image>`) rispetto ai file del tuo repository. L'avviso indica la pagina, il numero di riga e il percorso che non è stato possibile risolvere.
 
-Per risolvere il problema, carica l'immagine oppure modifica il percorso indicando un file esistente. I percorsi distinguono tra maiuscole e minuscole e vengono risolti a partire dalla radice del progetto (con `/` iniziale) oppure in relazione alla pagina. Inoltre, un riferimento a `photo.png` continua a funzionare anche dopo che [l'ottimizzazione delle immagini](/it/builds/image-optimization) lo converte in WebP.
+Carica l'immagine oppure indica un percorso verso un file esistente. I percorsi sono sensibili alle maiuscole. Un percorso che inizia con `/` si risolve dalla radice del progetto. Ogni altro percorso si risolve in relazione alla pagina. Un riferimento a `photo.png` continua a funzionare dopo che [l'ottimizzazione delle immagini](/it/builds/image-optimization) la converte in WebP.
 
-I riferimenti a URL esterni, URI `data:` e la sintassi delle immagini mostrata nei blocchi di codice vengono ignorati, quindi gli esempi nella tua documentazione non generano falsi avvisi.
+Jamdesk ignora gli URL esterni, gli URI `data:` e la sintassi delle immagini all'interno dei blocchi di codice.
 
 ## Passaggi di debug
 
-<Accordion title="Passaggio 1: Controlla il log della build">
-  Il log indica il file e la riga esatti all'origine dell'errore. Inizia da lì.
+<Accordion title="Passo 1: Controlla il log di build">
+  Il log indica il file e la riga esatta alla base dell'errore. Inizia da lì.
 </Accordion>
 
-<Accordion title="Passaggio 2: Esegui un test locale">
-  Esegui `jamdesk dev` per riprodurre l'errore sul tuo computer.
+<Accordion title="Passo 2: Testa in locale">
+  Esegui `jamdesk dev` per riprodurre il problema in locale.
 </Accordion>
 
-<Accordion title="Passaggio 3: Convalida la configurazione">
-  Esegui `jamdesk validate` per controllare il tuo `docs.json`, quindi `jamdesk broken-links` per individuare i link interni non funzionanti.
+<Accordion title="Passo 3: Valida la configurazione">
+  Esegui `jamdesk validate` per controllare `docs.json`. Esegui `jamdesk broken-links` per trovare i link interni non funzionanti.
 </Accordion>
 
-<Accordion title="Passaggio 4: Controlla le modifiche recenti">
-  Esamina il tuo ultimo commit. Hai aggiunto una pagina o modificato la configurazione?
+<Accordion title="Passo 4: Controlla le modifiche recenti">
+  Osserva il tuo ultimo commit. Hai aggiunto una pagina o modificato la configurazione?
 </Accordion>
 
 ## Il problema persiste?
 
-Se nessuna delle soluzioni precedenti risolve il problema:
+Se nessuna delle soluzioni sopra funziona:
 
-1. Copia il log completo della build
-2. Prendi nota dell'ID del progetto (si trova nell'URL)
+1. Copia l'intero log di build
+2. Annota il tuo ID progetto (si trova nell'URL)
 3. [Contatta il supporto](/it/help/support/contact)
 
 ## Articoli correlati
 
 <Columns cols={2}>
-  <Card title="Riferimento degli errori" icon="book" href="/it/help/troubleshooting/error-reference">
-    Spiegazione di tutti i codici di errore
+  <Card title="Riferimento errori" icon="book" href="/it/help/troubleshooting/error-reference">
+    Tutti i codici di errore spiegati
   </Card>
   <Card title="Monitoraggio delle build" icon="chart-line" href="/it/builds/monitoring">
-    Monitora l'avanzamento della build
+    Tieni traccia dell'avanzamento delle build
   </Card>
 </Columns>

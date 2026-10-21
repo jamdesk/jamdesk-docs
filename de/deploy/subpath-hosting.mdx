@@ -1,19 +1,19 @@
 ---
-title: Hosting unter Pfad
-description: "Hosten Sie Ihre Dokumentation unter yoursite.com/docs oder einem benutzerdefinierten Pfad Ihrer Domain mit Vercel, CloudFront, Cloudflare und Reverse Proxies."
+title: Subpfad-Hosting
+description: "Hosten Sie Ihre Dokumentation unter yoursite.com/docs oder einem eigenen Subpfad Ihrer Domain, mit Setups für Vercel, CloudFront, Cloudflare und Reverse-Proxys."
 ---
 
-Hosten Sie Ihre Dokumentation unter einem Pfad Ihrer Domain statt unter einer separaten Subdomain: standardmäßig `yoursite.com/docs` oder einem benutzerdefinierten Segment wie `yoursite.com/help`. Eine Übersicht aller Optionen zum Bereitstellen finden Sie unter [Übersicht zur Bereitstellung](/de/deploy/overview).
+Hosten Sie Ihre Dokumentation unter einem Subpfad Ihrer Domain statt unter einer eigenen Subdomain. Der Standard ist `yoursite.com/docs`, oder Sie wählen ein eigenes Segment wie `yoursite.com/help`. Alle Bereitstellungsoptionen finden Sie unter [Deployment-Übersicht](/de/deploy/overview).
 
 Die Screenshots zeigen die Benutzeroberfläche auf Englisch.
 
 ## Warum einen Pfad verwenden?
 
-Im Vergleich zu einer Subdomain wie `docs.yoursite.com` bleiben Leser bei einem Pfad auf Ihrer primären Domain. Außerdem tragen Ihre Dokumentationsseiten zur Suchautorität dieser Domain bei, statt Ranking-Signale auf zwei Hosts aufzuteilen.
+Ein Subpfad hält Leser auf Ihrer primären Domain. Ihre Dokumentationsseiten stärken so die Suchautorität dieser Domain. Eine Subdomain wie `docs.yoursite.com` verteilt Ranking-Signale dagegen auf zwei Hosts.
 
 ## So funktioniert es
 
-Ihr Webserver oder CDN leitet Anfragen von `/docs/*` an Ihre Jamdesk-Website weiter und behält dabei die ursprüngliche URL im Browser bei:
+Ihr Webserver oder CDN leitet Anfragen von `/docs/*` an Ihre Jamdesk-Site weiter. Der Browser behält die ursprüngliche URL bei:
 
 ```mermaid
 sequenceDiagram
@@ -27,26 +27,24 @@ sequenceDiagram
     Proxy-->>User: Served with yoursite.com/docs URLs
 ```
 
-Der Proxy übergibt den Header `X-Jamdesk-Forwarded-Host` mit Ihrer Domain. Jamdesk verwendet ihn, um:
+Der Proxy übergibt den Header `X-Jamdesk-Forwarded-Host` mit Ihrer Domain. Jamdesk verwendet diesen, um:
 
-1. **Ihre Domain zu überprüfen**, damit sie zum Bereitstellen der Inhalte autorisiert ist
-2. **Ihre Konfiguration anzuwenden**, die im Dashboard hinterlegt ist
+1. **Ihre Domain zu prüfen**, ob sie zur Auslieferung der Inhalte berechtigt ist
+2. **Ihre Konfiguration aus dem Dashboard anzuwenden**
 
-Dadurch muss Ihre Proxy-Konfiguration nur einmal eingerichtet werden: Wenn Sie Einstellungen im Dashboard ändern, muss der Proxy nicht aktualisiert werden.
+Die Proxy-Konfiguration ist eine einmalige Einrichtung. Änderungen im Dashboard erfordern keine Anpassung am Proxy.
 
 ## Einrichtung nach Anbieter
 
-Wählen Sie Ihren Hosting-Anbieter aus, um zu beginnen:
-
 <Columns cols={2}>
   <Card title="Cloudflare" icon="cloud" href="/de/deploy/cloudflare">
-    Verwenden Sie Cloudflare Workers, um `/docs`-Datenverkehr weiterzuleiten
+    Verwenden Sie Cloudflare Workers, um /docs-Traffic zu proxyen
   </Card>
   <Card title="AWS" icon="aws" href="/de/deploy/aws">
-    Konfigurieren Sie CloudFront mit Route 53
+    CloudFront mit Route 53 konfigurieren
   </Card>
   <Card title="Vercel" icon="triangle" href="/de/deploy/vercel">
-    Fügen Sie Rewrites zu vercel.json hinzu
+    Rewrites in vercel.json hinzufügen
   </Card>
   <Card title="Reverse Proxy" icon="server" href="/de/deploy/reverse-proxy">
     nginx, Apache oder andere Proxy-Server
@@ -55,60 +53,60 @@ Wählen Sie Ihren Hosting-Anbieter aus, um zu beginnen:
 
 ## Voraussetzungen
 
-Bevor Sie Ihren Proxy konfigurieren:
+Führen Sie diese Schritte aus, bevor Sie Ihren Proxy konfigurieren:
 
-1. **Fügen Sie Ihre Domain hinzu** in Ihrem [Jamdesk-Dashboard](https://dashboard.jamdesk.com) unter Settings → Custom Domain
+1. **Fügen Sie Ihre Domain hinzu** im [Jamdesk-Dashboard](https://dashboard.jamdesk.com) unter Settings → Custom Domain
 2. **Aktivieren Sie „Host at a subpath“**
-3. **Wählen Sie Ihren Pfad** (optional; siehe unten [Subpath auswählen](#subpath-auswählen)) und klicken Sie auf **Save**
+3. **Wählen Sie Ihren Subpfad** (optional; siehe unten [Ihren Subpfad wählen](#subpath-auswählen)) und klicken Sie auf **Save**
 
-Ihre Jamdesk-Subdomain (z. B. `acme.jamdesk.app`) wird im Dashboard angezeigt. Sie benötigen sie für Ihre Proxy-Konfiguration.
+Das Dashboard zeigt Ihre Jamdesk-Subdomain (z. B. `acme.jamdesk.app`). Ihre Proxy-Konfiguration benötigt diese.
 
 <Note>
-Das Speichern einer Änderung am Hosting unter einem Pfad (Aktivieren oder Deaktivieren oder Ändern des Pfads) löst einen vollständigen Neuaufbau Ihrer Dokumentation aus. Dies ist erforderlich, weil sich die URL-Struktur ändert (beispielsweise zwischen `/introduction` und `/docs/introduction`).
+Das Speichern einer Änderung am Subpfad-Hosting löst einen vollständigen Neuaufbau Ihrer Dokumentation aus. Das gilt auch für das Ein- und Ausschalten sowie das Ändern des Subpfads. Die URL-Struktur ändert sich dabei (zum Beispiel zwischen `/introduction` und `/docs/introduction`).
 </Note>
 
 ## Subpath auswählen
 
-Standardmäßig wird Ihre Dokumentation unter `/docs` bereitgestellt. Wenn Sie etwas anderes wie `/help` oder `/support` verwenden möchten, geben Sie es in das Pfadfeld neben dem Umschalter ein. Wenn das Feld leer ist, zeigt der Umschalter `Host at a subpath (e.g. /docs)` an. Sobald Sie einen Wert eingeben, wird die Anzeige live auf den Pfad aktualisiert, den Sie aktivieren möchten (`Host at /help` usw.).
+Ihre Dokumentation wird standardmäßig unter `/docs` ausgeliefert. Geben Sie in das Subpfad-Feld neben dem Schalter einen anderen Wert ein, etwa `/help` oder `/support`. Ist das Feld leer, zeigt der Schalter `Host at a subpath (e.g. /docs)`. Sobald Sie einen Wert eingeben, ändert sich die Beschriftung auf den Pfad, den Sie aktivieren möchten (`Host at /help` usw.).
 
 <Frame>
-  <img src="/images/dashboard/custom-domain-subpath-field.webp" alt="Die Karte Custom Domain mit docs.example.com, das eingegebene Pfadfeld mit help und dem aktivierten Umschalter Host at /help" />
+  <img src="/images/dashboard/custom-domain-subpath-field.webp" alt="The Custom Domain card with docs.example.com entered, the subpath field set to help, and the Host at /help toggle switched on" />
 </Frame>
 
-Das Feld akzeptiert ein einzelnes Segment in Kleinbuchstaben: nur Buchstaben, Ziffern und Bindestriche innerhalb des Segments, keine führenden oder abschließenden Bindestriche, maximal 63 Zeichen. Einige wenige Segmente sind reserviert und werden sofort abgelehnt, darunter `api`, `jd`, gängige Admin-Pfade wie `wp-admin` sowie alle Sprachcodes, die Ihre Dokumentation verwenden könnte (`fr`, `es`, `de` und ähnliche). Durch die Reservierung können diese Pfade niemals mit einer Route kollidieren, die Jamdesk bereits bereitstellt.
+Das Feld akzeptiert ein einzelnes Segment in Kleinbuchstaben: nur Buchstaben, Ziffern und Bindestriche innerhalb des Werts, kein führender oder abschließender Bindestrich, maximal 63 Zeichen. Jamdesk lehnt reservierte Segmente ab, darunter `api`, `jd`, gängige Admin-Pfade wie `wp-admin` sowie Sprachcodes, die Ihre Dokumentation verwenden könnte (`fr`, `es`, `de` und ähnliche). Ihr Subpfad kann daher nie mit einer Route kollidieren, die Jamdesk bereits ausliefert.
 
-Lassen Sie das Feld leer, um den Standardwert `/docs` beizubehalten.
+Lassen Sie das Feld leer, um den Standard `/docs` beizubehalten.
 
 ## Subpath umbenennen oder entfernen
 
-Sie können Ihren Pfad ändern oder ihn leeren, um zum Standard zurückzukehren, ohne bereits indexierte oder mit Lesezeichen gespeicherte Links zu beschädigen:
+Das Ändern oder Leeren Ihres Subpfads unterbricht bereits indexierte oder gespeicherte Links nicht:
 
-- **`/docs` bleibt immer verfügbar.** Auch nachdem Sie zu einem benutzerdefinierten Pfad wie `/help` gewechselt haben, reagieren die ursprünglichen `/docs/*`-Pfade weiterhin auf Ihrer `[slug].jamdesk.app`-Subdomain und über jeden Proxy, der noch auf diese Pfade verweist. Kanonische Links wechseln sofort zu Ihrem neuen Pfad, sodass Suchmaschinen ihn dort neu indexieren. Bereits auf `/docs` verweisende Links funktionieren weiterhin. Sie können daher Ihre eigene Proxy-Konfiguration in Ihrem eigenen Tempo statt unter Zeitdruck aktualisieren.
-- **Beim Umbenennen eines benutzerdefinierten Pfads wird der alte Pfad einmal weitergeleitet.** Wenn Sie `/help` in `/guide` umbenennen, werden Anfragen an `/help/*` per 308-Weiterleitung an den entsprechenden Pfad `/guide/*` geleitet. Diese Historie reicht eine Ebene tief: Wenn Sie anschließend `/guide` in `/support` umbenennen, leitet `/guide/*` nun an `/support/*` weiter. `/help/*` (das Segment von vor zwei Umbenennungen) wird jedoch nicht mehr erfasst, sodass diese Links nicht mehr aufgelöst werden und auf einer „Nicht gefunden“-Seite landen, manchmal nach einer Weiterleitung an einen ungewöhnlich aussehenden kombinierten Pfad. Verketten Sie keine Umbenennungen, wenn Sie darauf angewiesen sind, dass alte Links weitergeleitet werden. Aktualisieren Sie externe Links stattdessen auf den aktuellen Pfad.
-- **Die Rückkehr zu `/docs`** funktioniert genauso: Ihr vorheriger benutzerdefinierter Pfad (eine Ebene Historie) wird an `/docs/*` weitergeleitet.
+- **`/docs` hört nie auf, auszuliefern.** Die ursprünglichen `/docs/*`-Pfade antworten weiterhin, nachdem Sie auf einen eigenen Subpfad wie `/help` umgestellt haben. Sie antworten auf Ihrer Subdomain `[slug].jamdesk.app` und über jeden Proxy, der noch darauf zeigt. Kanonische Links wechseln sofort auf Ihren neuen Subpfad. Suchmaschinen indexieren dort neu. Aktualisieren Sie Ihre Proxy-Konfiguration in Ihrem eigenen Tempo.
+- **Das Umbenennen eines eigenen Subpfads leitet den alten für eine Umbenennung weiter.** Benennen Sie `/help` in `/guide` um, werden Anfragen an `/help/*` per 308-Weiterleitung auf den passenden Pfad `/guide/*` geleitet. Diese Historie reicht eine Ebene tief. Benennen Sie erneut von `/guide` in `/support` um, leitet `/guide/*` auf `/support/*` weiter. Jamdesk verfolgt `/help/*` (das Segment von vor zwei Umbenennungen) nicht mehr. Diese Links landen auf einer „Nicht gefunden“-Seite, teils nach einer Weiterleitung auf einen seltsam wirkenden kombinierten Pfad. Verketten Sie keine Umbenennungen, wenn Sie sich darauf verlassen, dass die Weiterleitung alte Links weiterträgt. Aktualisieren Sie externe Links stattdessen auf den aktuellen Subpfad.
+- **Ein Zurücksetzen auf `/docs`** leitet Ihren vorherigen eigenen Subpfad (eine Ebene Historie) auf `/docs/*` weiter.
 
 <Warning>
-Das bedeutet **nicht**, dass `/docs` an den von Ihnen gewählten Pfad weiterleitet. Das ist nicht nötig, da `/docs` dauerhaft direkt verfügbar bleibt. Die Weiterleitung über eine Ebene gilt nur für einen *benutzerdefinierten* Pfad, den Sie verlassen.
+`/docs` leitet **nicht** auf den von Ihnen gewählten Subpfad weiter. `/docs` wird weiterhin direkt und dauerhaft ausgeliefert. Die Weiterleitung über eine Ebene gilt nur für einen *eigenen* Subpfad, von dem Sie wegziehen.
 </Warning>
 
-Nachdem Sie Ihren Proxy konfiguriert haben, testen Sie ihn, indem Sie `https://yoursite.com/docs` (oder Ihren konfigurierten Pfad) aufrufen. Ihre Dokumentation sollte mit allen korrekt funktionierenden Assets und Links geladen werden.
+Testen Sie Ihren Proxy, indem Sie `https://yoursite.com/docs` (oder Ihren konfigurierten Subpfad) aufrufen. Prüfen Sie, ob Assets und Links laden.
 
 ## Muss ich die jamdesk.app-Subdomain verbergen?
 
-Nein. Ihre `[slug].jamdesk.app`-Subdomain bleibt erreichbar (sie ist der Upstream-Ursprung, an den Ihr Proxy weiterleitet), konkurriert jedoch nicht mit Ihrer Website in den Suchergebnissen:
+Nein. Ihre Subdomain `[slug].jamdesk.app` bleibt erreichbar. Sie ist der Upstream-Ursprung, an den Ihr Proxy weiterleitet. Sie konkurriert nicht mit Ihrer Site in den Suchergebnissen:
 
-- **Wenn Ihre Domain registriert ist**, enthält jede direkt von der Subdomain bereitgestellte Seite einen kanonischen Link, der auf dieselbe Seite auf Ihrer Domain verweist. Dadurch führen Suchmaschinen alle Ranking-Signale dort zusammen.
-- **Bevor eine Domain registriert ist**, werden Seiten der Subdomain im Pfadmodus mit `noindex` gekennzeichnet und gelangen daher überhaupt nicht in den Index.
+- **Domain registriert**: Seiten, die über die Subdomain ausgeliefert werden, enthalten einen kanonischen Link auf dieselbe Seite auf Ihrer Domain. Suchmaschinen rechnen die Ranking-Signale Ihrer Domain zu.
+- **Noch keine Domain registriert**: Seiten der Subdomain im Subpfad-Modus werden mit `noindex` markiert. Sie gelangen nie in den Index.
 
-Wenn die Inhalte auf der Subdomain selbst nicht zugänglich sein sollen (nicht nur aus dem Index entfernt), aktivieren Sie den [Passwortschutz](/de/setup/password-protection). Die Subdomain zeigt dann einen Entsperrbildschirm statt Ihrer Dokumentation an.
+Um die Inhalte auch auf der Subdomain zu blockieren (nicht nur aus dem Index zu nehmen), aktivieren Sie den [Passwortschutz](/de/setup/password-protection). Die Subdomain zeigt dann einen Entsperrbildschirm statt Ihrer Dokumentation.
 
 ## Nächste Schritte?
 
 <Columns cols={2}>
-  <Card title="Übersicht zur Bereitstellung" icon="cloud-arrow-up" href="/de/deploy/overview">
-    Hosting unter Subdomain, benutzerdefinierter Domain und Pfad vergleichen
+  <Card title="Deployment-Übersicht" icon="cloud-arrow-up" href="/de/deploy/overview">
+    Subdomain-, Custom-Domain- und Subpfad-Hosting vergleichen
   </Card>
-  <Card title="Benutzerdefinierte Domains" icon="globe" href="/de/deploy/custom-domains">
-    DNS überprüfen und Probleme bei der Domaineinrichtung beheben
+  <Card title="Custom Domains" icon="globe" href="/de/deploy/custom-domains">
+    DNS prüfen und Probleme bei der Domain-Einrichtung beheben
   </Card>
 </Columns>

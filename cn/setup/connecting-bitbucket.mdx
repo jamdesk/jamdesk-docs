@@ -1,65 +1,65 @@
 ---
 title: 连接 Bitbucket
-description: "将 Bitbucket Cloud 仓库连接到 Jamdesk，创建或关联文档仓库，并通过推送自动部署文档。"
+description: "将 Bitbucket Cloud 代码仓库连接到 Jamdesk。创建入门文档仓库或关联现有仓库，之后每次推送到分支都会部署你的文档。"
 ---
 
-Jamdesk 从 Bitbucket Cloud 构建的方式与从 GitHub 构建相同：你只需授权 Jamdesk 一次，每次向所选分支推送时，系统都会发布网站的新版本。本页适用于文档存储在 Bitbucket 中的团队，也适用于希望将文档与现有代码放在一起管理的团队。
+Jamdesk 从 Bitbucket Cloud 构建的方式与从 GitHub 构建相同。授权 Jamdesk 一次即可。之后每次推送到你选择的分支，都会发布一个新版本的站点。
 
 <Note>
-文档存储在 GitHub 中？请改为参阅[连接 GitHub](/cn/setup/connecting-github)。一个项目一次只能连接一个 Git 提供商。
+文档保存在 GitHub 上？请改为参阅[连接 GitHub](/cn/setup/connecting-github)。一个项目一次只能连接一个 Git 提供商。
 </Note>
 
 ## 开始前
 
 - **Bitbucket Cloud 账户。** 不支持 Bitbucket Data Center 和 Bitbucket Server。
-- **仓库的管理员权限。** Jamdesk 会在仓库上安装推送 Webhook，而 Bitbucket 只允许仓库管理员创建 Webhook。
-- **尚未连接仓库的项目。** 要将项目从 GitHub 迁移到 Bitbucket，请先在 **Settings** → **Git Repository** 下断开 GitHub。
-- **允许仪表板弹出窗口。** Bitbucket 登录页面会在弹出窗口中打开。
+- **代码仓库的管理员权限。** Jamdesk 会在代码仓库上安装推送 webhook。Bitbucket 只允许仓库管理员创建 webhook。
+- **未连接代码仓库的项目。** 要将项目从 GitHub 迁移到 Bitbucket，请先在 **Settings** → **Git Repository** 下断开 GitHub。
+- **允许仪表板的弹出窗口。** Bitbucket 登录会在弹出窗口中打开。
 
 ## Jamdesk 请求的权限
 
-Jamdesk 通过 Bitbucket OAuth consumer 进行连接。登录时，Bitbucket 会列出所请求的权限：
+Jamdesk 通过 Bitbucket OAuth 应用程序进行连接。Bitbucket 会在登录时列出所请求的权限：
 
-| 权限 | Jamdesk 的用途 |
-|------------|----------------------|
-| Account: Read | 记录连接项目的 Bitbucket 账户，以便识别来自该账户的推送 |
-| Repositories: Read | 克隆仓库以构建项目，并在更换仓库时列出你的仓库 |
-| Repositories: Write | 创建文档起始仓库，并将起始内容推送到其中 |
-| Webhooks: Read and write | 安装用于触发构建的推送 Webhook，并在连接变更时将其移除 |
+| 权限 | Jamdesk 需要它的原因 |
+|------|----------------------|
+| Account: Read | 记录连接项目的 Bitbucket 账户。Jamdesk 据此识别来自该账户的推送 |
+| Repositories: Read | 克隆你的代码仓库以进行构建。在更换代码仓库时列出你的仓库 |
+| Repositories: Write | 创建入门文档仓库并将入门内容推送到其中 |
+| Webhooks: Read and write | 安装触发构建的推送 webhook。连接变更时将其移除 |
 
-Jamdesk 会使用 Google Cloud KMS 加密存储生成的刷新令牌，并自动续期访问权限。你不需要应用密码或个人访问令牌。
+Jamdesk 使用 Google Cloud KMS 加密存储刷新令牌，并自行续期访问权限。你无需应用密码或个人访问令牌。
 
 ## 为项目选择 Bitbucket
 
-在仪表板中打开项目。在尚未连接仓库时，项目页面会显示一个 **Connect your docs repository** 卡片，其中有两个选项。点击 **Bitbucket**。
+在仪表板中打开项目。在未连接代码仓库时，项目页面会显示一张 **Connect your docs repository** 卡片，提供两个选项。点击 **Bitbucket**。
 
-接下来，你可以让 Jamdesk 创建文档起始仓库，也可以连接已有仓库。
+让 Jamdesk 创建入门仓库，或连接你已有的仓库。
 
 ### 创建文档起始仓库
 
 <Steps>
   <Step title="输入工作区">
-    输入工作区 slug，即 Bitbucket URL 中 `bitbucket.org/` 后面的部分。例如，对于 `https://bitbucket.org/acme/`，请输入 `acme`。
+    输入工作区标识（slug），即 Bitbucket URL 中 `bitbucket.org/` 之后的部分。对于 `https://bitbucket.org/acme/`，输入 `acme`。
   </Step>
 
   <Step title="使用 Bitbucket 登录">
-    点击 **Sign in with Bitbucket**。弹出窗口会在 bitbucket.org 上打开。查看权限并授予访问权限。
+    点击 **Sign in with Bitbucket**。bitbucket.org 上会打开一个弹出窗口。查看权限并授予访问。
   </Step>
 
-  <Step title="等待仓库创建">
-    Jamdesk 会在该工作区中创建仓库，名称使用项目名称并添加 `-docs` 后缀。名为 **Acme Docs** 的项目会获得 `acme-docs`。如果该名称已被占用，Jamdesk 会改用 `-documentation`。
-    
-    仓库会从 `main` 分支开始，其中已包含文档起始内容。Jamdesk 会安装 Webhook 并运行首次构建。
+  <Step title="等待代码仓库">
+    Jamdesk 会在该工作区中创建一个代码仓库，以你的项目名加 `-docs` 后缀命名。名为 **Acme Docs** 的项目会得到 `acme-docs`。如果该名称已被占用，Jamdesk 会改用 `-documentation`。
+
+    代码仓库从 `main` 分支开始，并已包含入门文档。Jamdesk 会安装 webhook 并运行第一次构建。
   </Step>
 </Steps>
 
-当卡片显示 **Starter docs created and connected!** 时，网站就开始部署了。克隆新仓库并开始编辑。
+当卡片显示 **Starter docs created and connected!** 时，你的站点即将上线。克隆新仓库并开始编辑。
 
 ### 连接现有仓库
 
 <Steps>
-  <Step title="输入仓库">
-    按照 `workspace/repository-slug` 格式输入仓库，例如 `acme/developer-docs`。这两部分都来自 bitbucket.org 上的仓库 URL。
+  <Step title="输入代码仓库">
+    以 `workspace/repository-slug` 的格式输入代码仓库，例如 `acme/developer-docs`。工作区和标识请从 bitbucket.org 上的仓库 URL 中获取。
   </Step>
 
   <Step title="选择分支">
@@ -67,22 +67,22 @@ Jamdesk 会使用 Google Cloud KMS 加密存储生成的刷新令牌，并自动
   </Step>
 
   <Step title="连接 Bitbucket">
-    点击 **Connect Bitbucket**，并在弹出窗口中授予访问权限。然后，Jamdesk 会：
+    点击 **Connect Bitbucket**，并在弹出窗口中授予访问。之后 Jamdesk 会：
 
-    1. 确认你的账户拥有该仓库的管理员权限
-    2. 在仓库根目录或子文件夹中查找 `docs.json`，最多深入三层
-    3. 安装推送 Webhook
-    4. 注册 `yourproject.jamdesk.app` 地址并开始首次构建
+    1. 确认你的账户对该代码仓库具有管理员权限
+    2. 在代码仓库根目录或子文件夹中查找 `docs.json`，最深三层
+    3. 安装推送 webhook
+    4. 注册你的 `yourproject.jamdesk.app` 地址并开始第一次构建
   </Step>
 </Steps>
 
-仓库中必须包含位于你输入的分支上的有效 `docs.json`。如果 Jamdesk 找不到该文件，请添加后重新连接。如果找到多个文件，请确保每个仓库只保留一个 `docs.json`。包含 `mint.json` 的仓库属于 Mintlify 项目：在其中运行 [`jamdesk migrate`](/cn/cli/overview)，推送更改，然后重新连接。
+代码仓库需要在你输入的分支上有有效的 `docs.json`。如果 Jamdesk 找不到，请添加后重新连接。如果找到多个，每个代码仓库只保留一个 `docs.json`。如果代码仓库包含 `mint.json`，则它是 Mintlify 项目：对其运行 [`jamdesk migrate`](/cn/cli/overview)，推送，然后重新连接。
 
-连接后，项目卡片会显示仓库、分支以及 **Connected** 徽章。
+已连接的项目卡片会显示代码仓库、分支以及 **Connected** 徽章。
 
 ## 推送时自动构建
 
-每次向已连接的分支推送都会触发构建：
+每次推送到已连接的分支都会触发构建：
 
 ```bash
 git add .
@@ -90,83 +90,83 @@ git commit -m "Update API documentation"
 git push origin main
 ```
 
-Bitbucket 会向 Jamdesk 的 Webhook 发送推送事件，Jamdesk 会构建该提交一次。同一提交的重复发送不会启动第二次构建，删除分支也不会触发构建。
+Bitbucket 会将推送事件发送到 Jamdesk 的 webhook。Jamdesk 只会对该提交构建一次。同一提交的重复投递不会启动第二次构建。删除分支绝不会触发构建。
 
-Bitbucket 不会重试失败的 Webhook 发送。为弥补这一点，Jamdesk 还会每五分钟检查一次分支的最新提交，并构建尚未构建的提交。即使推送的 Webhook 丢失，也会在几分钟内完成部署。
+Bitbucket 不会重试失败的 webhook 投递。Jamdesk 还会每五分钟检查一次分支的最新提交，并构建任何尚未构建的提交。即使 webhook 丢失，推送也会在几分钟内部署。
 
-从仪表板手动构建的方式与 GitHub 项目相同。请参阅[触发构建](/cn/builds/triggering)。
+仪表板中的手动构建与 GitHub 项目的工作方式相同。参见[触发构建](/cn/builds/triggering)。
 
 ### 哪些推送会触发构建
 
-Jamdesk 会构建由连接项目的 Bitbucket 账户，或最近重新授权该项目的账户发起的推送。其他账户发起的推送会在构建列表中显示为授权错误导致的失败构建，并且不会部署任何内容。
+Jamdesk 只会构建由连接项目的 Bitbucket 账户，或最近一次重新授权它的账户所做的推送。来自任何其他账户的推送会在构建列表中显示为失败的构建，并带有授权错误。不会部署任何内容。
 
 <Note>
-Bitbucket 项目目前不支持在 **User Settings** 中关联个人账户，也不支持在 **Settings** → **Automation accounts** 中授权其他账户。如果有多人向部署分支推送，请使用负责合并到该分支的账户连接项目，或让该账户执行推送。
+Bitbucket 项目目前不支持在 **User Settings** 中关联个人账户，也不支持在 **Settings** → **Automation accounts** 中授权额外账户。如果多人推送到部署分支，请使用合并到该分支的账户连接项目，或让该账户负责推送。
 </Note>
 
 ## 更换仓库或分支
 
-点击项目卡片上的 **Change repository**。Jamdesk 会列出你的 Bitbucket 账户可以访问的仓库。选择仓库和分支，然后确认。
+点击项目卡片上的 **Change repository**。Jamdesk 会列出你的 Bitbucket 账户可访问的代码仓库。选择代码仓库和分支，然后确认。
 
-Jamdesk 会在新仓库上安装 Webhook，从旧仓库中移除 Webhook，并开始构建。
+Jamdesk 会在新代码仓库上安装 webhook，从旧代码仓库移除它，并开始构建。
 
 <Warning>
-更换仓库会在构建完成后立即影响线上文档。新仓库必须包含有效的 `docs.json`。
+更换代码仓库会在构建完成后立即影响你的线上文档。新代码仓库必须包含有效的 `docs.json`。
 </Warning>
 
 ## 重新授权已过期的连接
 
-当连接用户在 Bitbucket 中移除 Jamdesk 的访问权限，或刷新令牌数月未使用时，Bitbucket 会撤销 Jamdesk 的访问权限。此时项目卡片会显示 **Needs reauth** 徽章以及 **Bitbucket connection needs attention** 消息。
+当连接用户在 Bitbucket 中移除 Jamdesk 的访问权限，或刷新令牌数月未使用时，Bitbucket 会撤销 Jamdesk 的访问。此时项目卡片会显示 **Needs reauth** 徽章，以及消息 **Bitbucket connection needs attention**。
 
-点击 **Re-authorize** 并重新登录。构建会恢复，下一次五分钟检查会获取分支上的最新提交。
+点击 **Re-authorize** 并重新登录。构建将恢复。下一次五分钟检查会获取分支上的最新提交。
 
 ## Bitbucket 与 GitHub 的区别
 
-Bitbucket 项目使用单一 OAuth 授权，而 GitHub 项目使用 GitHub App，并可选择关联个人账户。平台的大部分功能运行方式相同，区别如下：
+Bitbucket 项目使用一次 OAuth 授权。GitHub 项目使用 GitHub App，外加可选的个人账户关联。平台的大部分功能相同。区别如下：
 
 | 功能 | GitHub | Bitbucket Cloud |
-|---------|--------|-----------------|
-| 推送时构建 | Webhook | Webhook，外加针对丢失发送的五分钟检查 |
-| 文档起始仓库 | 是 | 是 |
-| 自定义域名、子路径托管、手动构建、CLI 部署 | 是 | 是 |
-| 提交的构建状态 | 显示在 GitHub 的提交中 | 仅在仪表板中显示 |
+|------|--------|-----------------|
+| 推送时构建 | Webhook | Webhook，外加每五分钟检查一次丢失的投递 |
+| 入门文档仓库 | 支持 | 支持 |
+| 自定义域名、子路径托管、手动构建、CLI 部署 | 支持 | 支持 |
+| 提交上的构建状态 | 在 GitHub 的提交上显示 | 仅仪表板 |
 | 用于构建归属的个人账户关联 | User Settings | 不可用。构建归属于连接账户 |
-| Automation accounts 允许列表 | Settings → Automation accounts | 尚不支持 |
-| [Web Editor](/cn/development/web-editor) | 是 | 尚不支持 |
-| [Fix with AI](/cn/builds/fix-with-ai) | 是 | 尚不支持 |
-| [AI Translation](/cn/setup/ai-translation) | 是 | 尚不支持 |
+| 自动化账户白名单 | Settings → Automation accounts | 尚不支持 |
+| [Web 编辑器](/cn/development/web-editor) | 支持 | 尚不支持 |
+| [使用 AI 修复](/cn/builds/fix-with-ai) | 支持 | 尚不支持 |
+| [AI 翻译](/cn/setup/ai-translation) | 支持 | 尚不支持 |
 
-删除项目会从仓库中移除 Webhook，并撤销 Jamdesk 的访问权限。
+删除项目会从你的代码仓库中移除 webhook，并撤销 Jamdesk 的访问。
 
 ## 故障排除
 
 ### “你的 Bitbucket 账户没有此仓库的管理员权限”
 
-Jamdesk 需要管理员访问权限才能安装 Webhook。请工作区管理员向你授予仓库管理员权限，或让管理员连接项目。
+Jamdesk 需要管理员权限才能安装 webhook。请让工作区管理员授予你该代码仓库的管理员权限，或让管理员连接该项目。
 
 ### “我们无法在此仓库中找到 docs.json”
 
-Jamdesk 已在你输入的分支中检查根目录以及最多三层子文件夹。添加 `docs.json`，将其推送到该分支，然后重新连接。请参阅 [docs.json 参考](/cn/config/docs-json-reference)。
+Jamdesk 在你输入的分支上查找了根目录及向下三层文件夹。请添加 `docs.json`，将其推送到该分支，然后重新连接。参见 [docs.json 参考](/cn/config/docs-json-reference)。
 
 ### “找到多个 docs.json 文件”
 
-每个仓库只保留一个 `docs.json`。删除或重命名其他文件，然后重新连接。
+每个代码仓库只保留一个 `docs.json`。删除或重命名其他文件，然后重新连接。
 
 ### “此仓库似乎是 Mintlify 项目”
 
-该仓库包含 `mint.json`。运行 `jamdesk migrate` 进行转换，推送结果，然后重新连接。
+该代码仓库包含 `mint.json`。运行 `jamdesk migrate` 进行转换，推送结果，然后重新连接。
 
 ### 弹出窗口被阻止
 
-在浏览器中允许仪表板弹出窗口，然后再次点击 **Sign in with Bitbucket** 或 **Connect Bitbucket**。
+在浏览器中允许仪表板的弹出窗口，然后再次点击 **Sign in with Bitbucket** 或 **Connect Bitbucket**。
 
 ### 构建未触发
 
-- 在 Bitbucket 中，打开 **Repository settings** → **Webhooks**，确认 Jamdesk Webhook 存在且处于激活状态
-- 确认你推送到了已配置的分支
-- 等待五分钟。定期检查会构建 Webhook 遗漏的提交
+- 在 Bitbucket 中打开 **Repository settings** → **Webhooks**，确认 Jamdesk webhook 存在且处于活动状态
+- 确认你推送的是已配置的分支
+- 等待五分钟。定期检查会构建 webhook 遗漏的任何提交
 - 如果项目卡片显示 **Needs reauth**，请重新授权连接
-- 如果推送来自其他 Bitbucket 账户，请参阅[哪些推送会触发构建](#哪些推送会触发构建)
+- 如果推送来自其他 Bitbucket 账户，参见[哪些推送会触发构建](#哪些推送会触发构建)
 
 ## 下一步
 
@@ -175,12 +175,12 @@ Jamdesk 已在你输入的分支中检查根目录以及最多三层子文件夹
     设置新的 Jamdesk 项目
   </Card>
   <Card title="自定义域名" icon="globe" href="/cn/deploy/custom-domains">
-    使用自己的域名提供文档
+    从你自己的域名提供文档服务
   </Card>
   <Card title="触发构建" icon="play" href="/cn/builds/triggering">
-    启动构建的所有方式
+    构建可以启动的所有方式
   </Card>
   <Card title="目录结构" icon="folder-tree" href="/cn/setup/directory-structure">
-    以可扩展的方式整理文档
+    为规模化组织你的文档
   </Card>
 </Columns>

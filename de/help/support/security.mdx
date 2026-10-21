@@ -1,6 +1,6 @@
 ---
 title: Sicherheit
-description: Jamdesk schützt Dokumentation und Kontodaten mit Verschlüsselung, Zugriffskontrollen, isolierten Builds, DSGVO-Konformität und verantwortungsvoller Meldung.
+description: Sicherheitspraktiken von Jamdesk – Verschlüsselung, Zugriffskontrollen, Build-Isolation, DSGVO-Konformität und verantwortungsvolle Offenlegung.
 ---
 
 So schützt Jamdesk Ihre Dokumentation und Kontodaten.
@@ -9,48 +9,48 @@ So schützt Jamdesk Ihre Dokumentation und Kontodaten.
 
 ### Hosting
 
-Jamdesk läuft bei Cloud-Anbietern, die SOC 2-konform sind. Builds, Anwendungsdaten und kompilierte Dokumentation werden jeweils in verwalteten, gehärteten Diensten dieser Anbieter gespeichert. Der Datenverkehr wird über ein globales CDN mit integriertem DDoS-Schutz ausgeliefert.
+Jamdesk läuft bei SOC-2-konformen Cloud-Anbietern. Builds, Anwendungsdaten und kompilierte Dokumentation liegen in verwalteten, gehärteten Diensten dieser Anbieter. Ein globales CDN mit integriertem DDoS-Schutz übernimmt die Auslieferung des Traffics.
 
 ### Verschlüsselung
 
-| Datenstatus | Schutz |
+| Datenzustand | Schutz |
 |------------|------------|
-| Bei der Übertragung | TLS 1.3 zwischen Ihnen, unserem Edge und unseren Ursprungsservern |
-| Im Ruhezustand | AES-256 für alle von uns gespeicherten Daten, einschließlich Datenbankeinträgen, Objektspeicher und Protokollen |
+| Während der Übertragung | TLS 1.3 zwischen Ihnen, unserem Edge und unseren Origin-Servern |
+| Im Ruhezustand | AES-256 für alles, was wir speichern, einschließlich Datenbankeinträgen, Objektspeicher und Logs |
 | Backups | Mit denselben Schlüsseln verschlüsselt und über mehrere Regionen repliziert |
 
 ## Zugriffskontrollen
 
 ### Anmeldung
 
-Sie können sich mit E-Mail-Adresse und Passwort oder per Single Sign-on über Google oder GitHub beim Dashboard anmelden. Passwörter werden niemals im Klartext gespeichert; unser Authentifizierungsanbieter speichert ausschließlich Einweg-Hashes.
+Sie können sich mit E-Mail und Passwort oder per Single Sign-on über Google oder GitHub am Dashboard anmelden. Unser Authentifizierungsanbieter speichert nur Einweg-Passwort-Hashes, niemals Klartext.
 
-Wenn Sie sich mit Google oder GitHub anmelden, gilt jede MFA, die Sie für dieses Konto eingerichtet haben (TOTP, Sicherheitsschlüssel, Passkeys), auch für Ihre Jamdesk-Anmeldung. Für den bestmöglichen Schutz empfehlen wir, MFA für Ihr Google- oder GitHub-Konto zu aktivieren und SSO zu verwenden.
+MFA in Ihrem Google- oder GitHub-Konto (TOTP, Sicherheitsschlüssel, Passkeys) gilt auch für die Jamdesk-Anmeldung über dieses Konto. Für den stärksten Schutz aktivieren Sie MFA dort und melden sich per SSO an.
 
 ### Teamzugriff
 
-Die rollenbasierte Zugriffskontrolle (Owner, Admin, Member) wird sowohl durch unsere Datenbanksicherheitsregeln als auch bei jedem Backend-Aufruf durchgesetzt. Sitzungen laufen nach einer bestimmten Zeit der Inaktivität automatisch ab. Änderungen an Abrechnung, Mitgliedern, benutzerdefinierten Domains oder API-Schlüsseln werden in einem Audit-Protokoll pro Projekt festgehalten.
+Rollenbasierter Zugriff (Owner, Admin, Member) wird in unseren Datenbank-Sicherheitsregeln und bei jedem Backend-Aufruf durchgesetzt. Sitzungen laufen nach Inaktivitätsphasen ab. Änderungen an Abrechnung, Mitgliedern, eigenen Domains oder API-Schlüsseln werden in einem projektbezogenen Audit-Log festgehalten.
 
 ### GitHub-Integration
 
-Jamdesk verbindet sich über eine GitHub App mit den erforderlichen Berechtigungen mit Ihren Repositories:
+Jamdesk verbindet sich über eine GitHub App mit Ihren Repositories, mit diesen Berechtigungen:
 
 - Lese- und Schreibzugriff auf Repository-Inhalte
-- Zustellung von Webhooks zum Auslösen von Builds
+- Webhook-Zustellung für Build-Auslöser
 
-Jamdesk schreibt nur dann in Ihr Repository, wenn Sie es dazu auffordern: wenn Sie Änderungen im Dashboard-Editor speichern, Vorschläge von Fix with AI annehmen oder die Übersetzung aktivieren, wodurch übersetzte Seiten committet werden. Builds lesen nur. Sie können Jamdesks Zugriff jederzeit in Ihren GitHub-[Applications settings](https://github.com/settings/installations) widerrufen.
+Jamdesk schreibt nur dann in Ihr Repository, wenn Sie es ausdrücklich veranlassen: beim Speichern von Änderungen im Dashboard-Editor, beim Annehmen von Fix-with-AI-Vorschlägen oder beim Aktivieren der Übersetzung (dann werden übersetzte Seiten committet). Builds lesen nur. Sie können den Zugriff von Jamdesk jederzeit in Ihren [GitHub-Anwendungseinstellungen](https://github.com/settings/installations) widerrufen.
 
 ### Token und Geheimnisse
 
-Jedes Secret, das Sie uns anvertrauen, wird im Ruhezustand verschlüsselt. Dazu gehören:
+Wir verschlüsseln jedes Geheimnis im Ruhezustand, darunter:
 
-- GitHub App-Verbindungen, für die wir nur Ihre numerische Installations-ID speichern. Kurzlebige Installationstokens (eine Stunde gültig) werden bei Bedarf erstellt und niemals gespeichert.
-- GitHub OAuth-Tokens, die während des Starter-Repo-Ablaufs verwendet werden. Sie werden einmalig ausgetauscht, zum Klonen der Vorlage verwendet und anschließend verworfen.
-- Zugangsdaten für Integrationen von Drittanbietern, etwa URLs für eingehende Slack-Webhooks, Verifizierungstokens für benutzerdefinierte Domains und Analytics-API-Schlüssel.
+- GitHub-App-Verbindungen, bei denen wir nur Ihre numerische Installations-ID speichern. Kurzlebige Installations-Token (eine Stunde gültig) werden bei Bedarf erzeugt und niemals persistiert.
+- GitHub-OAuth-Token aus dem Starter-Repo-Ablauf. Wir tauschen jedes Token einmal ein, nutzen es zum Klonen der Vorlage und verwerfen es danach.
+- Zugangsdaten für Drittintegrationen wie Slack-Incoming-Webhook-URLs, Verifizierungs-Token für eigene Domains und API-Schlüssel für Analysen.
 
-Das Dashboard gibt diese Werte nach dem Speichern niemals an den Browser zurück; nur die serverseitige Build-Pipeline kann sie lesen.
+Das Dashboard gibt diese Werte nach dem Speichern nie wieder an den Browser zurück. Nur die serverseitige Build-Pipeline kann sie lesen.
 
-Programmatische API-Schlüssel werden als Einweg-Hashes gespeichert. Der Klartext wird Ihnen bei der Erstellung genau einmal angezeigt. Wenn Sie ihn verlieren, ersetzen Sie den Schlüssel.
+Programmatische API-Schlüssel werden als Einweg-Hashes gespeichert. Der Klartext wird Ihnen genau einmal bei der Erstellung angezeigt. Wenn Sie ihn verlieren, rotieren Sie den Schlüssel.
 
 ## Datenverarbeitung
 
@@ -58,82 +58,82 @@ Programmatische API-Schlüssel werden als Einweg-Hashes gespeichert. Der Klartex
 
 - Ihre `docs.json`-Konfiguration und hochgeladene Branding-Assets
 - Kompilierte Dokumentation (HTML, CSS, JS)
-- Build-Protokolle, die 30 Tage aufbewahrt werden
-- Seitenaufruf-Ereignisse für Ihre Dokumentationswebsite (Pfad, Referrer, Land, Browser, Gerätetyp, eine Sitzungs-ID pro Tab und die IP-Adresse des Besuchers); sie werden nach 90 Tagen gelöscht
-- Fragen im KI-Chat (die ersten 200 Zeichen, ohne Antwort); sie werden nach 30 Tagen gelöscht
-- Verschlüsselte Secrets für alle von Ihnen konfigurierten Integrationen von Drittanbietern
+- Build-Logs, 30 Tage aufbewahrt
+- Seitenaufruf-Ereignisse für Ihre Dokumentationsseite (Pfad, Referrer, Land, Browser, Gerätetyp und eine sitzungsbezogene Tab-ID), nach 90 Tagen gelöscht. Seitenaufrufe seit dem 14. Oktober 2026 enthalten keine IP-Adresse
+- KI-Chatfragen (die ersten 200 Zeichen, ohne Antwort), nach 30 Tagen gelöscht
+- Verschlüsselte Geheimnisse für jede von Ihnen konfigurierte Drittintegration
 
 ### Was wir nicht speichern
 
-- Ihren Quellcode. Wir klonen das Repository während des Builds und verwerfen den Arbeitsverzeichnisbaum, sobald der Build-Container zerstört wird.
-- Langfristig gültige GitHub-Zugangsdaten. Siehe oben unter **Tokens und Secrets**.
-- Benutzerpasswörter in einer umkehrbaren Form.
-- Zahlungskartennummern. Stripe verarbeitet alle Kartendaten; wir speichern nur die Kunden-ID und Abonnementmetadaten.
+- Ihren Quellcode. Wir klonen das Repository zur Build-Zeit. Der Arbeitsbaum wird mit dem Build-Container verworfen.
+- Langlebige GitHub-Zugangsdaten. Siehe **Token und Geheimnisse** oben.
+- Benutzerpasswörter in irgendeiner umkehrbaren Form.
+- Kartennummern. Stripe verwahrt alle Kartendaten. Wir speichern nur die Kunden-ID und Abonnement-Metadaten.
 
 ### Interner Zugriff
 
-Der Zugriff auf Produktionsdaten ist auf wenige Mitarbeitende beschränkt, die ihn für den Betrieb des Dienstes oder die Bearbeitung von Supportanfragen benötigen. Zugriffe werden protokolliert.
+Der Zugriff auf Produktionsdaten ist auf eine kleine Zahl von Mitarbeitenden beschränkt, die ihn zum Betrieb des Dienstes oder zur Bearbeitung von Support-Anfragen benötigen. Zugriffe werden protokolliert.
 
 ## Build-Isolierung
 
 Jeder Dokumentations-Build läuft in einem eigenen Container:
 
-- Kein Zugriff auf die Daten anderer Kunden
-- Eine frische Umgebung für jeden Build; Secrets werden erst unmittelbar bei Bedarf bereitgestellt
-- Der Container wird nach erfolgreichem oder fehlgeschlagenem Build zerstört
+- Kein Zugriff auf Daten anderer Kunden
+- Frische Umgebung für jeden Build, Geheimnisse werden erst bei Bedarf eingeschleust
+- Der Container wird nach Abschluss oder Fehlschlag des Builds zerstört
 
 ## Compliance
 
 ### DSGVO
 
-Jamdesk erfüllt die Anforderungen der DSGVO:
+**Ist Jamdesk DSGVO-konform? Ja.** Jamdesk erfüllt die DSGVO-Anforderungen mit:
 
-- Ein [Auftragsverarbeitungsvertrag](https://jamdesk.com/dpa), der automatisch gilt. Eine gegengezeichnete Kopie ist auf Anfrage unter `privacy@jamdesk.com` erhältlich.
-- Eine öffentliche Liste der Unterauftragsverarbeiter unter [jamdesk.com/subprocessors](https://jamdesk.com/subprocessors)
-- Löschanfragen werden innerhalb von 30 Tagen erfüllt.
-- Datenübertragbarkeit wird durch den Export unterstützt.
+- Einer [Auftragsverarbeitungsvereinbarung](https://jamdesk.com/dpa), die automatisch gilt; eine gegengezeichnete Kopie ist auf Anfrage unter `privacy@jamdesk.com` erhältlich
+- Einer öffentlichen Liste der Unterauftragsverarbeiter unter [jamdesk.com/subprocessors](https://jamdesk.com/subprocessors)
+- Umsetzung des Rechts auf Löschung innerhalb von 30 Tagen
+- Datenportabilität durch Export
 
 ### Datenschutz
 
-Unsere integrierte Analytics-Funktion:
+Unsere integrierten Analysen:
 
-- Verwendet keine Cookies. Eine zufällige Sitzungs-ID wird im Sitzungsspeicher des Browsers abgelegt und beim Schließen des Tabs gelöscht.
-- Gibt keine Daten an Werbenetzwerke weiter.
-- Speichert IP-Adressen von Besuchern zusammen mit Seitenaufruf-Ereignissen; diese werden nach 90 Tagen gelöscht.
+- Verwenden keine Cookies. Eine zufällige Sitzungs-ID wird im Sitzungsspeicher des Browsers abgelegt, bis der Tab geschlossen wird
+- Teilen keine Daten mit Werbenetzwerken
+- Erfassen keine IP-Adressen von Besuchern
 
-Weitere Informationen finden Sie in unserer [Datenschutzerklärung](https://jamdesk.com/privacy).
+Details finden Sie in unserer [Datenschutzerklärung](https://jamdesk.com/privacy).
 
 ## Reaktion auf Vorfälle
 
-Wenn ein Sicherheitsvorfall Ihr Konto oder Ihre Daten betrifft, gehen wir in drei Schritten vor:
+Unsere Reaktion auf einen Sicherheitsvorfall, der Ihr Konto oder Ihre Daten betrifft:
 
-1. Wir untersuchen den Vorfall und begrenzen seine Auswirkungen.
-2. Wir benachrichtigen betroffene Kunden innerhalb von 72 Stunden, entsprechend unseren Verpflichtungen gemäß der DSGVO.
-3. Sobald die Ursache bestätigt ist, stellen wir einen schriftlichen Bericht zum Vorfall bereit.
+1. Untersuchung und Eindämmung des Problems.
+2. Benachrichtigung der betroffenen Kunden innerhalb von 72 Stunden, gemäß unseren DSGVO-Pflichten.
+3. Bereitstellung eines schriftlichen Berichts nach dem Vorfall, sobald die Ursache feststeht.
 
 ## Melden von Sicherheitslücken
 
-Eine Sicherheitslücke gefunden? Melden Sie sie verantwortungsvoll:
+Melden Sie Sicherheitsprobleme verantwortungsvoll:
 
-- Schreiben Sie an `security@jamdesk.com`.
-- Beschreiben Sie das Problem, die Schritte zur Reproduktion und die möglichen Auswirkungen.
-- Wir bestätigen den Eingang innerhalb von 48 Stunden.
+- Senden Sie eine E-Mail an `security@jamdesk.com`
+- Fügen Sie eine Beschreibung, Schritte zur Reproduktion und eine Einschätzung der Auswirkungen bei
+- Wir bestätigen den Eingang innerhalb von 48 Stunden
 
-Derzeit bieten wir kein bezahltes Bug-Bounty-Programm an. Wir nennen jedoch gern die Forschenden, die Sicherheitslücken in gutem Glauben melden.
+Wir betreiben kein bezahltes Bug-Bounty-Programm. Forschende, die in gutem Glauben melden, werden namentlich genannt.
 
 ## Fragen?
 
 <Card title="Support kontaktieren" icon="shield" href="/de/help/support/contact">
-  Bei Fragen zur Sicherheit
+  Sicherheitsfragen
 </Card>
 
 ## Verwandte Artikel
 
 <Columns cols={2}>
   <Card title="Support kontaktieren" icon="headset" href="/de/help/support/contact">
-    Kontaktieren Sie das Jamdesk-Team
+    Das Jamdesk-Team erreichen
   </Card>
-  <Card title="Häufige Fragen" icon="circle-question" href="/de/help/faq">
+  <Card title="FAQ" icon="circle-question" href="/de/help/faq">
     Häufige Fragen und Antworten
   </Card>
 </Columns>

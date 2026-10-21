@@ -1,11 +1,11 @@
 ---
 title: Cookie-Einwilligung
-description: Analytics-Skripte mit integrations.cookies erst nach Cookie-Einwilligung laden und ein Osano- oder Termly-Einwilligungsbanner auf Ihrer Doku-Website einbinden.
+description: Analyse-Skripte mit integrations.cookies an die Cookie-Einwilligung koppeln und einen Osano- oder Termly-Banner auf Ihrer Doku-Seite laden.
 ---
 
-Jamdesk kann alle Analytics- und Tracking-Skripte (Google Analytics, Google Tag Manager, Plausible, Crisp-Chat, benutzerdefiniertes JavaScript und die integrierten Analytics von Jamdesk) zurückhalten, bis ein Besucher Cookies zustimmt. Die Einwilligung wird aus dem `localStorage` des Browsers gelesen. Dadurch funktioniert sie mit jeder Consent-Management-Plattform (CMP), die die Einwilligung dort speichert, einschließlich Osano und Termly.
+Jamdesk kann alle Analyse- und Tracking-Skripte (Google Analytics, Google Tag Manager, Plausible, Crisp-Chat, eigenes JavaScript sowie die integrierte Analyse von Jamdesk) zurückhalten, bis ein Besucher der Cookie-Nutzung zustimmt. Jamdesk liest die Einwilligung aus dem `localStorage` des Browsers. Jede Consent-Management-Plattform (CMP), die die Einwilligung dort speichert, funktioniert, einschließlich Osano und Termly.
 
-Dies unterstützt Sie bei der Einhaltung von Datenschutzbestimmungen wie DSGVO, CCPA und der ePrivacy-Richtlinie, da vor der Zustimmung des Besuchers kein Tracking ausgeführt wird.
+Vor der Zustimmung des Besuchers läuft kein Tracking. So helfen Sie, Datenschutzvorschriften wie DSGVO, CCPA und die ePrivacy-Richtlinie einzuhalten.
 
 ## Funktionsweise
 
@@ -22,25 +22,25 @@ Legen Sie in `docs.json` einen `localStorage`-Schlüssel und den Wert fest, der 
 }
 ```
 
-Wenn `integrations.cookies` festgelegt ist, wird kein Analytics-Skript geladen, bis `localStorage["jamdesk_consent"]` `"granted"` entspricht. Sobald Ihr Einwilligungsbanner die Zustimmung speichert, werden die Skripte ohne erforderlichen Seitenneuladevorgang geladen. Wenn ein Besucher seine Einwilligung widerruft, werden Skripte ab dem nächsten vollständigen Seitenaufruf nicht mehr geladen. Bereits auf der aktuellen Seite ausgeführte Skripte laufen weiter, bis der Besucher die Seite verlässt oder neu lädt.
+Mit gesetztem `integrations.cookies` lädt kein Analyse-Skript, bis `localStorage["jamdesk_consent"]` gleich `"granted"` ist. Skripte werden geladen, sobald Ihr Einwilligungs-Banner die Zustimmung speichert, ohne Neuladen der Seite. Ein widerrufener Consent wirkt beim nächsten vollständigen Seitenaufruf des Besuchers. Skripte, die auf der aktuellen Seite bereits laufen, laufen weiter, bis der Besucher wegnavigiert oder neu lädt.
 
 <Info>
-Sowohl `key` als auch `value` sind erforderlich. Fehlt einer der Werte oder ist er leer, ist die Einwilligungsprüfung deaktiviert und Skripte werden normal geladen.
+`key` und `value` sind erforderlich. Ein fehlender oder leerer `key` oder `value` deaktiviert die Einwilligungssteuerung. Skripte werden dann normal geladen.
 </Info>
 
 <Warning>
-Die Einwilligungsprüfung gilt auch für die integrierten Analytics von Jamdesk: Besucher, die niemals zustimmen, werden nicht gezählt. Rechnen Sie daher nach der Aktivierung mit niedrigeren Seitenaufrufzahlen im Dashboard Ihres Projekts.
+Die Steuerung gilt auch für die integrierte Analyse von Jamdesk. Besucher, die nie zustimmen, werden nicht gezählt. Nach der Aktivierung sollten Sie in Ihrem Projekt-Dashboard niedrigere Seitenaufrufzahlen erwarten.
 </Warning>
 
 ## Einwilligungsbanner verbinden
 
-Die meisten CMPs (einschließlich Osano und Termly) stellen kein einfaches, stabiles `localStorage`-Flag bereit, auf das Sie Jamdesk direkt verweisen können. Stattdessen speichern sie die Einwilligung in Cookies oder in Werten, die sich je nach Besucher ändern. Fügen Sie stattdessen einen kurzen **Bridge-Code** im Bereich für benutzerdefinierten Code Ihrer CMP ein, der `jamdesk_consent` schreibt, sobald ein Besucher zustimmt. Da der Code als Teil der CMP ausgeführt wird – und nicht als benutzerdefiniertes JavaScript von Jamdesk, das selbst der Einwilligungsprüfung unterliegt –, wird er immer ausgeführt.
+Die meisten CMPs (einschließlich Osano und Termly) stellen kein stabiles `localStorage`-Flag bereit, das Jamdesk auslesen kann. Sie speichern die Einwilligung in Cookies oder in Werten, die sich pro Besucher unterscheiden. Fügen Sie stattdessen einen kurzen **Brückenausschnitt** im eigenen Custom-Code-Bereich Ihres CMP ein. Er schreibt `jamdesk_consent`, wenn ein Besucher zustimmt. Der Ausschnitt läuft als Teil des CMP und wird daher immer ausgeführt. Eigenes JavaScript in Jamdesk kann diese Aufgabe nicht übernehmen, weil es selbst gesteuert wird.
 
-Der Code schreibt bei erteilter Einwilligung `granted` und entfernt den Schlüssel, wenn die Einwilligung widerrufen wird. Dadurch wird die Einwilligungsprüfung beim nächsten Seitenaufruf erneut angewendet.
+Der Ausschnitt schreibt bei Zustimmung `granted`. Bei Widerruf entfernt er den Schlüssel. Die Steuerung greift dann beim nächsten Seitenaufruf erneut.
 
 ## Osano
 
-Fügen Sie Ihr Osano-Skript in `docs.json` ein:
+Fügen Sie Ihr Osano-Skript in `docs.json` hinzu:
 
 ```json docs.json
 {
@@ -54,7 +54,7 @@ Fügen Sie Ihr Osano-Skript in `docs.json` ein:
 
 Die Skript-URL stammt aus Ihrem Osano-Dashboard. Sie beginnt immer mit `https://cmp.osano.com/` und endet mit `/osano.js`.
 
-Fügen Sie anschließend diesen Bridge-Code in Osano ein (Consent Manager → Ihre Konfiguration → custom JavaScript), damit die Einwilligung an Jamdesk übergeben wird:
+Fügen Sie dann diese Brücke in Osano hinzu (Consent Manager → Ihre Konfiguration → benutzerdefiniertes JavaScript):
 
 ```js
 function jdOsanoBridge(consent) {
@@ -77,7 +77,7 @@ if (window.Osano && window.Osano.cm) {
 
 ## Termly
 
-Fügen Sie Ihr Termly-Skript in `docs.json` ein:
+Fügen Sie Ihr Termly-Skript in `docs.json` hinzu:
 
 ```json docs.json
 {
@@ -89,9 +89,9 @@ Fügen Sie Ihr Termly-Skript in `docs.json` ein:
 }
 ```
 
-Die URL stammt aus den Embed-Anweisungen von Termly für Ihre Website (dem Resource-Blocker-Skript). Die Abfrage `?autoBlock=on` aktiviert die automatische Skriptblockierung von Termly und ist optional.
+Die URL stammt aus den Einbettungsanweisungen von Termly für Ihre Website (das Resource-Blocker-Skript). Die Abfrage `?autoBlock=on` ist optional. Sie aktiviert das automatische Blockieren von Skripten durch Termly.
 
-Fügen Sie anschließend diesen Bridge-Code in Termly ein (your website → custom HTML/JavaScript), damit die Einwilligung an Jamdesk übergeben wird:
+Fügen Sie dann diese Brücke in Termly hinzu (Ihre Website → benutzerdefiniertes HTML/JavaScript):
 
 ```js
 function jdTermlyBridge() {
@@ -112,22 +112,22 @@ function jdTermlyBridge() {
 })();
 ```
 
-Sowohl Osano als auch Termly werden zuerst im `<head>` der Seite und vor allen anderen Skripten geladen. Dadurch funktioniert ihre automatische Blockierung.
+Osano und Termly werden im `<head>` der Seite vor allen anderen Skripten geladen. Ihr automatisches Blockieren hängt davon ab.
 
 <Warning>
-Wenn Ihre CMP im strikten oder automatischen Blockierungsmodus ausgeführt wird, nehmen Sie `*.jamdesk.app` und Ihre benutzerdefinierte Doku-Domain in die verwalteten Regeln auf (Osano: classification/allowlist; Termly: Domain Rules oder Custom Blocking Map). Andernfalls blockiert die CMP möglicherweise die eigenen Assets Ihrer Doku-Website, wodurch die Seite nicht mehr funktioniert.
+Wenn Ihr CMP im Strict- oder Auto-Blocking-Modus läuft, setzen Sie `*.jamdesk.app` und Ihre eigene Doku-Domain in dessen verwalteten Regeln auf die Positivliste (Osano: Klassifizierung/Positivliste; Termly: Domain Rules oder Custom Blocking Map). Andernfalls blockiert das CMP möglicherweise die eigenen Assets Ihrer Doku-Seite und bricht die Seite.
 </Warning>
 
 ## Einrichtung testen
 
-Die Einwilligungsprüfung wird nur auf Ihrer live veröffentlichten Website ausgeführt, nicht in `jamdesk dev` (die lokale Vorschau ignoriert die Einwilligungskonfiguration). So testen Sie die Einrichtung:
+Die Steuerung greift nur auf Ihrer live veröffentlichten Seite. Die lokale Vorschau `jamdesk dev` ignoriert die Einwilligungskonfiguration. So testen Sie:
 
-1. Öffnen Sie Ihre live geschaltete Doku-Website mit einem leeren `localStorage`. Analytics sollte nicht geladen werden. Prüfen Sie dazu den Tab „Network“ des Browsers: Es dürfen keine Anfragen an Google, Plausible oder `/api/ev` vorhanden sein.
-2. Führen Sie in der Browserkonsole `localStorage.setItem("jamdesk_consent", "granted")` aus. Die Skripte sollten innerhalb von etwa einer Sekunde ohne Neuladen geladen werden.
+1. Öffnen Sie Ihre Live-Doku-Seite mit leerem `localStorage`. Die Analyse sollte nicht laden (prüfen Sie den Netzwerk-Tab des Browsers: keine Anfragen an Google, Plausible oder `/api/ev`).
+2. Führen Sie in der Browser-Konsole `localStorage.setItem("jamdesk_consent", "granted")` aus. Die Skripte sollten innerhalb von etwa einer Sekunde ohne Neuladen geladen werden.
 
 ## Jamdesk Analytics vollständig deaktivieren
 
-Um die integrierten (cookielosen) Analytics von Jamdesk unabhängig von der Einwilligung für alle Besucher zu deaktivieren:
+Schalten Sie die integrierte (cookielose) Analyse von Jamdesk für alle Besucher unabhängig von der Einwilligung ab:
 
 ```json docs.json
 {
@@ -139,15 +139,15 @@ Um die integrierten (cookielosen) Analytics von Jamdesk unabhängig von der Einw
 
 <Columns cols={2}>
   <Card title="Google Tag Manager" icon="tags" href="/de/integrations/google-tag-manager">
-    Tags und den GTM-Einwilligungsmodus verwalten
+    Tags laden und den GTM-Consent-Modus setzen
   </Card>
   <Card title="Google Analytics" icon="chart-simple" href="/de/integrations/google-analytics">
-    GA4 direkt hinzufügen
+    GA4 direkt einbinden
   </Card>
   <Card title="Plausible Analytics" icon="chart-pie" href="/de/integrations/plausible-analytics">
-    Datenschutzorientiert und häufig von der Einwilligung ausgenommen
+    Datenschutzorientiert, oft einwilligungsfrei
   </Card>
-  <Card title="Benutzerdefiniertes JavaScript" icon="code" href="/de/customization/custom-javascript">
-    Auch benutzerdefinierte Skripte unterliegen der Einwilligungsprüfung
+  <Card title="Eigenes JavaScript" icon="code" href="/de/customization/custom-javascript">
+    Eigene Skripte unterliegen ebenfalls der Einwilligungssteuerung
   </Card>
 </Columns>

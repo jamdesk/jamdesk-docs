@@ -1,28 +1,28 @@
 ---
 title: Vercel
 description: >-
-  Erfahren Sie, wie Sie Ihre Jamdesk-Dokumentation unter /docs auf Ihrer
-  Vercel-Domain bereitstellen: mit vercel.json-Rewrites oder Edge Middleware.
+  Zwei Wege, Ihre Jamdesk-Dokumentation unter /docs auf Ihrer Vercel-Domain
+  auszuliefern: vercel.json-Rewrites oder Edge Middleware.
 ---
 
-Wenn Ihre Website auf Vercel bereitgestellt wird, können Sie Ihre Jamdesk-Dokumentation unter `/docs` auf Ihrer eigenen Domain bereitstellen. Dafür gibt es zwei Möglichkeiten, die beide dasselbe Ergebnis liefern:
+Liefern Sie Ihre Jamdesk-Dokumentation unter `/docs` auf Ihrer Vercel-Domain aus. Wählen Sie eine von zwei Einrichtungen. Beide führen zum gleichen Ergebnis.
 
-- **[Option A: vercel.json-Rewrites](#option-a-verceljson-rewrites)** — kein Code erforderlich, funktioniert mit jedem Framework. Die meisten Projekte sollten hiermit beginnen.
-- **[Option B: Edge Middleware](#option-b-edge-middleware)** — für Websites, die bereits Edge Middleware verwenden und Jamdesk in derselben Datei integrieren möchten.
+- **[Option A: vercel.json-Rewrites](#option-a-verceljson-rewrites)**: ohne Code, für jedes Framework. Starten Sie hier.
+- **[Option B: Edge Middleware](#option-b-edge-middleware)**: für Websites, die bereits Edge Middleware nutzen und Jamdesk in derselben Datei haben möchten.
 
 ## Voraussetzungen
 
 - Ein auf Vercel bereitgestelltes Projekt
-- Ihre Jamdesk-Subdomain (in den Dashboard-Einstellungen zu finden), mit aktivierter Option **Host at a subpath**
-- Ihre benutzerdefinierte Domain, die im Dashboard registriert und verifiziert wurde
+- Ihre Jamdesk-Subdomain (in den Dashboard-Einstellungen zu finden), mit aktivierter Option **Auf Unterpfad hosten**
+- Ihre eigene Domain, registriert und verifiziert im Dashboard
 
 ## Option A: vercel.json-Rewrites
 
 <Note>
-Wenn Sie anstelle des Standardpfads `/docs` einen benutzerdefinierten Subpfad verwenden, ersetzen Sie jedes `/docs` in den folgenden Snippets durch Ihren Subpfad – sowohl in `source` als auch in `destination` jeder Regel. Stellen Sie das Projekt nach jeder Umbenennung im Dashboard erneut bereit; diese Datei wird nicht automatisch für Sie neu generiert.
+Verwenden Sie einen eigenen Unterpfad statt des Standards `/docs`? Ersetzen Sie in den folgenden Snippets jedes `/docs` durch Ihren Unterpfad, sowohl im `source` als auch im `destination` jeder Regel. Stellen Sie nach dem Umbenennen des Unterpfads im Dashboard neu bereit. Diese Datei wird nicht automatisch für Sie neu erzeugt.
 </Note>
 
-Ein Rewrite kann ändern, wohin eine Anfrage weitergeleitet wird, aber keinen Anfrage-Header hinzufügen. Daher enthält jedes Ziel stattdessen einen öffentlichen Marker, `?jd_proxy=1`, der Jamdesk mitteilt, dass die Anfrage über Ihren Proxy eingegangen ist. Jamdesk entfernt ihn vor dem Rendern; Ihre Besucher sehen ihn nie.
+Ein Rewrite kann ändern, wohin eine Anfrage geht. Er kann jedoch keinen Request-Header hinzufügen. Stattdessen trägt jedes Ziel eine öffentliche Markierung, `?jd_proxy=1`. Die Markierung teilt Jamdesk mit, dass die Anfrage über Ihren Proxy kam. Jamdesk entfernt sie vor dem Rendern. Ihre Besucher sehen sie nie.
 
 Erstellen oder bearbeiten Sie `vercel.json` im Stammverzeichnis Ihres Projekts und ersetzen Sie `YOUR_SLUG` durch Ihre Jamdesk-Subdomain:
 
@@ -37,9 +37,9 @@ Erstellen oder bearbeiten Sie `vercel.json` im Stammverzeichnis Ihres Projekts u
 }
 ```
 
-`/_next/:path*` benötigt keinen Marker – es handelt sich um einen Pfad für statische Assets, den Jamdesk niemals schützt. Wenn Ihre Website keine Next.js-App ist, enthält sie keine eigenen `/_next/`-Dateien. Das Rewrite ist daher weiterhin korrekt: Jede Anfrage unter diesem Pfad wird einfach an Jamdesk weitergeleitet.
+`/_next/:path*` benötigt keine Markierung. Es ist ein statischer Asset-Pfad, den Jamdesk nie einschränkt. Eine Website, die keine Next.js-App ist, hat keine eigenen `/_next/`-Dateien. Jede Anfrage unter diesem Pfad fällt an Jamdesk.
 
-Dieselben vier Regeln funktionieren bei Next.js-Projekten auch in `next.config.js`:
+Dieselben vier Regeln funktionieren in Next.js-Projekten auch in `next.config.js`:
 
 ```javascript next.config.js
 /** @type {import('next').NextConfig} */
@@ -59,7 +59,7 @@ export default nextConfig;
 
 ### Leiten Sie auch Ihre Dateien im Stammverzeichnis weiter
 
-`robots.txt`, `sitemap.xml`, `llms.txt` und `llms-full.txt` befinden sich im Stammverzeichnis der Domain außerhalb von `/docs`. Ohne diese Dateien können Suchmaschinen und KI-Agenten Ihre Dokumentation nicht entdecken. Wenn Jamdesk das Stammverzeichnis Ihrer Domain verwaltet, fügen Sie vier weitere Regeln hinzu:
+`robots.txt`, `sitemap.xml`, `llms.txt` und `llms-full.txt` liegen im Domain-Root, außerhalb von `/docs`. Suchmaschinen und KI-Agenten benötigen sie, um Ihre Dokumentation zu finden. Wenn Jamdesk den Domain-Root Ihrer Domain besitzt, fügen Sie vier weitere Regeln hinzu:
 
 ```json vercel.json
 {
@@ -73,23 +73,23 @@ export default nextConfig;
 ```
 
 <Warning>
-Wenn Ihre Marketing-Website bereits eine eigene `robots.txt` oder `sitemap.xml` im Stammverzeichnis bereitstellt, führen Sie beide Dateien zusammen, anstatt die eine mit der anderen zu überschreiben.
+Wenn Ihre Marketing-Website bereits eigene `robots.txt`- oder `sitemap.xml`-Dateien im Root ausliefert, führen Sie beide zusammen, statt die eine mit der anderen zu überschreiben.
 </Warning>
 
 ### Bereitstellen und überprüfen
 
-Stellen Sie das Projekt mit `vercel --prod` bereit (oder pushen Sie es in Ihr verbundenes Git-Repository). Öffnen Sie anschließend `https://yoursite.com/docs` und sehen Sie sich den Seitenquelltext an. Überprüfen Sie zwei Punkte:
+Stellen Sie mit `vercel --prod` bereit (oder pushen Sie in Ihr verbundenes Git-Repository). Öffnen Sie `https://yoursite.com/docs` und zeigen Sie den Seitenquelltext an. Prüfen Sie zwei Dinge:
 
 1. `<link rel="canonical">` verweist auf **Ihre** Domain, nicht auf `YOUR_SLUG.jamdesk.app`
-2. Es gibt kein `<meta name="robots" content="noindex">`
+2. Es gibt **kein** `<meta name="robots" content="noindex">`
 
-Wenn einer der Punkte nicht stimmt, fehlt einem Rewrite der Marker `?jd_proxy=1` – siehe [Warum der Marker wichtig ist](#warum-der-marker-wichtig-ist).
+Ist eines davon falsch, fehlt einem Rewrite seine Markierung `?jd_proxy=1`. Siehe [Warum die Markierung wichtig ist](#warum-der-marker-wichtig-ist).
 
 ## Option B: Edge Middleware
 
-Wenn Sie bereits Edge Middleware verwenden, setzen Sie dort den Anfrage-Header `X-Jamdesk-Forwarded-Host`, anstatt den Marker zu verwenden. Die beiden Signale sind gleichwertig. Wählen Sie diese Option nur, wenn Sie die Routing-Logik lieber in bereits von Ihnen gepflegtem Code behalten möchten.
+Setzen Sie den Request-Header `X-Jamdesk-Forwarded-Host` in Ihrer Edge Middleware, anstatt die Markierung zu verwenden. Beide Signale sind gleichwertig. Wählen Sie diese Option, wenn Sie die Routing-Logik im Code behalten möchten, den Sie ohnehin pflegen.
 
-Erstellen Sie eine Datei `middleware.ts` im Stammverzeichnis Ihres Projekts und ersetzen Sie `YOUR_SLUG` durch Ihre Jamdesk-Subdomain:
+Erstellen Sie eine Datei `middleware.ts` im Stammverzeichnis Ihres Projekts. Ersetzen Sie `YOUR_SLUG` durch Ihre Jamdesk-Subdomain:
 
 ```typescript middleware.ts
 import { NextResponse } from 'next/server';
@@ -116,18 +116,18 @@ export const config = {
 ```
 
 <Note>
-Bei einem benutzerdefinierten Subpfad ersetzen Sie `/docs` und `/docs/:path*` im obigen Matcher durch Ihren konfigurierten Subpfad.
+Bei einem eigenen Unterpfad ersetzen Sie im obigen Matcher `/docs` und `/docs/:path*` durch Ihren konfigurierten Unterpfad.
 </Note>
 
 <Warning>
-**Fügen Sie `/_next/:path*` nicht zum Matcher hinzu.** Middleware wird *vor* der Dateisystemprüfung von Vercel ausgeführt. Wenn `/_next/` abgeglichen wird, werden JavaScript- und CSS-Dateien Ihrer eigenen Website an Jamdesk gesendet, wodurch Ihre Styles beschädigt werden. Der nächste Schritt leitet `/_next/` auf sichere Weise weiter.
+**Fügen Sie `/_next/:path*` nicht zum Matcher hinzu.** Middleware läuft *vor* der Dateisystemprüfung von Vercel. Ein Treffer auf `/_next/` sendet das JavaScript und CSS Ihrer eigenen Website an Jamdesk und zerstört Ihre Styles. Der nächste Schritt leitet `/_next/` auf die sichere Weise weiter.
 </Warning>
 
-Die Datei muss `middleware.ts` heißen und eine Funktion namens `middleware` exportieren. Next.js 16 schlägt vor, sie in `proxy.ts` umzubenennen. Die Vercel-Produktion ruft `proxy.ts` jedoch noch nicht auf – eine Umbenennung deaktiviert die Middleware daher stillschweigend.
+Benennen Sie die Datei `middleware.ts` und exportieren Sie eine Funktion namens `middleware`. Next.js 16 schlägt vor, sie in `proxy.ts` umzubenennen. Die Produktion von Vercel ruft `proxy.ts` noch nicht auf. Die Umbenennung deaktiviert sie stillschweigend.
 
 ### Assets und Dateien im Stammverzeichnis in vercel.json weiterleiten
 
-Die Seiten von Jamdesk laden ihre Bundles aus `/_next/`, während Dateien im Stammverzeichnis wie `robots.txt` außerhalb des obigen Matchers liegen. Leiten Sie beide mit Rewrites weiter. Rewrites werden *nach* der Dateisystemprüfung ausgeführt, sodass Ihre eigenen Build-Ausgaben immer Vorrang haben und nur Anfragen, die Ihre Website nicht bedienen kann, an Jamdesk weitergeleitet werden:
+Die Seiten von Jamdesk laden ihre Bundles aus `/_next/`. Root-Dateien wie `robots.txt` liegen außerhalb des obigen Matchers. Leiten Sie beides mit Rewrites weiter. Rewrites laufen *nach* der Dateisystemprüfung. Ihr eigenes Build-Output hat Vorrang, und nur Anfragen, die Ihre Website nicht ausliefern kann, fallen an Jamdesk:
 
 ```json vercel.json
 {
@@ -141,72 +141,76 @@ Die Seiten von Jamdesk laden ihre Bundles aus `/_next/`, während Dateien im Sta
 }
 ```
 
-Die Dateien im Stammverzeichnis enthalten `?jd_proxy=1`, weil die Middleware für sie nicht ausgeführt wird und ein Rewrite den Header nicht setzen kann. Fügen Sie sie nur hinzu, wenn Jamdesk das Stammverzeichnis Ihrer Domain verwaltet. Wenn Ihre Website eine eigene `robots.txt` oder `sitemap.xml` bereitstellt, führen Sie die Dateien stattdessen zusammen.
+Die Root-Dateien tragen `?jd_proxy=1`. Die Middleware läuft bei ihnen nicht, und ein Rewrite kann den Header nicht setzen. Fügen Sie sie nur hinzu, wenn Jamdesk den Domain-Root Ihrer Domain besitzt. Wenn Ihre Website eigene `robots.txt`- oder `sitemap.xml`-Dateien ausliefert, führen Sie stattdessen zusammen.
 
 ### Bereitstellen und überprüfen
 
-Stellen Sie das Projekt mit `vercel --prod` bereit (oder pushen Sie es in Ihr verbundenes Git-Repository). Öffnen Sie anschließend `https://yoursite.com/docs` und sehen Sie sich den Seitenquelltext an. Überprüfen Sie zwei Punkte:
+Stellen Sie mit `vercel --prod` bereit (oder pushen Sie in Ihr verbundenes Git-Repository). Öffnen Sie `https://yoursite.com/docs` und zeigen Sie den Seitenquelltext an. Prüfen Sie zwei Dinge:
 
 1. `<link rel="canonical">` verweist auf **Ihre** Domain, nicht auf `YOUR_SLUG.jamdesk.app`
-2. Es gibt kein `<meta name="robots" content="noindex">`
+2. Es gibt **kein** `<meta name="robots" content="noindex">`
 
-Wenn einer der Punkte nicht stimmt, erreicht der Header `X-Jamdesk-Forwarded-Host` Jamdesk nicht. Überprüfen Sie, dass `/docs` im Matcher enthalten ist.
+Ist eines davon falsch, erreicht der Header `X-Jamdesk-Forwarded-Host` Jamdesk nicht. Bestätigen Sie, dass `/docs` im Matcher steht.
 
 ## Warum der Marker wichtig ist
 
-Jamdesk benötigt ein Signal, dass eine Anfrage über Ihren Proxy eingegangen ist und nicht direkt auf Ihrer `*.jamdesk.app`-Subdomain aufgerufen wurde. Der Marker `?jd_proxy=1` und der Header `X-Jamdesk-Forwarded-Host` übermitteln dieses Signal. Jamdesk behandelt beide als gleichwertig. Jedes der beiden Signale bestätigt Ihre registrierte Domain, verweist bei Canonical-, Open-Graph- und Sitemap-Links auf diese Domain und ermöglicht es [Nur benutzerdefinierte Domain](/de/deploy/custom-domain-only), Proxy-Anfragen von direkten Aufrufen zu unterscheiden.
+Jamdesk benötigt ein Signal, dass eine Anfrage über Ihren Proxy kam und nicht als direkter Aufruf Ihrer `*.jamdesk.app`-Subdomain. Die Markierung `?jd_proxy=1` und der Header `X-Jamdesk-Forwarded-Host` tragen dieses Signal. Jamdesk behandelt beide als gleichwertig. Jedes der beiden erfüllt drei Aufgaben:
 
-Ein fehlendes Signal führt nicht zu einem offensichtlichen Fehler. Die Seiten werden weiterhin gerendert, jedoch mit `noindex` und Canonicals auf die Subdomain, wenn keine benutzerdefinierte Domain registriert ist, oder mit einem fehlschlagenden Check für „Nur benutzerdefinierte Domain“, wenn eine registriert ist. Ein **403** weist auf das umgekehrte Problem hin: Das Signal ist vorhanden, benennt jedoch eine Domain, die für dieses Projekt nicht registriert und aktiv ist.
+- Bestätigt Ihre registrierte Domain
+- Richtet Canonical-, Open-Graph- und Sitemap-Links auf sie aus
+- Ermöglicht es [Nur eigene Domain](/de/deploy/custom-domain-only), Proxy-Traffic von direkten Aufrufen zu unterscheiden
+
+Ein fehlendes Signal schlägt stillschweigend fehl. Die Seiten werden trotzdem gerendert. Ohne registrierte eigene Domain tragen sie `noindex` und Subdomain-Canonicals. Mit registrierter eigener Domain schlägt die Prüfung „Nur eigene Domain“ fehl. Ein **403** bedeutet, dass das Signal vorhanden ist, aber eine Domain nennt, die für dieses Projekt nicht registriert und aktiv ist.
 
 ## Fehlerbehebung
 
 <Accordion title="CSS und JavaScript meiner Website funktionieren nach dem Hinzufügen der Middleware nicht mehr">
-Ihr Matcher enthält mit hoher Wahrscheinlichkeit `/_next/:path*`. Middleware wird vor der Dateisystemprüfung ausgeführt, sodass dadurch die Assets Ihrer eigenen Anwendung an Jamdesk weitergeleitet werden. Entfernen Sie `/_next/` aus dem Matcher und leiten Sie den Pfad stattdessen über `vercel.json` weiter – siehe Option B.
+Ihr Matcher enthält wahrscheinlich `/_next/:path*`. Middleware läuft vor der Dateisystemprüfung. Sie leitet die Assets Ihrer eigenen Anwendung an Jamdesk weiter. Entfernen Sie `/_next/` aus dem Matcher und leiten Sie es stattdessen über `vercel.json` weiter. Siehe Option B.
 </Accordion>
 
-<Accordion title="Dokumentationsseiten werden von Google nicht indexiert">
-Sehen Sie sich den Seitenquelltext unter `https://yoursite.com/docs` an. Wenn Sie `<meta name="robots" content="noindex">` sehen, erreichen weder der Marker noch der Header Jamdesk. Überprüfen Sie bei Option A, dass jedes Rewrite-Ziel mit `?jd_proxy=1` endet (außer `/_next/:path*`). Überprüfen Sie bei Option B, dass `/docs` im Middleware-Matcher enthalten ist – ein Rewrite allein in `vercel.json` kann den Header nicht setzen.
+<Accordion title="Google indexiert die Dokumentationsseiten nicht">
+Zeigen Sie den Seitenquelltext unter `https://yoursite.com/docs` an. Ein Tag `<meta name="robots" content="noindex">` bedeutet, dass weder die Markierung noch der Header Jamdesk erreicht. Bei Option A prüfen Sie, dass jedes Rewrite-Ziel mit `?jd_proxy=1` endet (außer `/_next/:path*`). Bei Option B prüfen Sie, dass `/docs` im Middleware-Matcher steht. Ein `vercel.json`-Rewrite allein kann den Header nicht setzen.
 </Accordion>
 
-<Accordion title="Fehler 403: Domain nicht autorisiert">
-Der Marker oder Header erreicht Jamdesk, benennt jedoch eine Domain, die Jamdesk für dieses Projekt nicht bereitstellt:
+<Accordion title="Fehler 403 Domain not authorized">
+Die Markierung oder der Header erreicht Jamdesk, nennt aber eine Domain, die Jamdesk für dieses Projekt nicht ausliefert:
 
-1. Überprüfen Sie, ob Ihre Domain im Jamdesk-Dashboard registriert ist
+1. Prüfen Sie, ob Ihre Domain im Jamdesk-Dashboard registriert ist
 2. Schließen Sie die DNS-Verifizierung ab (TXT-Eintrag)
-3. Überprüfen Sie, ob die Domain dem richtigen Projekt zugeordnet und als aktiv markiert ist
-4. Überprüfen Sie bei Option B, dass die Middleware den Header auf Ihre für Besucher sichtbare Domain und nicht auf eine Vorschau-URL setzt
+3. Prüfen Sie, ob die Domain dem richtigen Projekt zugeordnet und als aktiv markiert ist
+4. Bei Option B prüfen Sie, ob die Middleware den Header auf Ihre für Besucher sichtbare Domain setzt, nicht auf eine Preview-URL
 </Accordion>
 
-<Accordion title="404 bei verschachtelten Seiten">
-Überprüfen Sie, ob Ihre Rewrites (oder der Matcher) sowohl `/docs` als auch `/docs/:path*` abdecken. Fehlt der Platzhalter, schlagen verschachtelte Seiten fehl.
+<Accordion title="404 auf verschachtelten Seiten">
+Prüfen Sie, ob Ihre Rewrites (oder der Matcher) `/docs` und `/docs/:path*` abdecken. Ohne den Platzhalter schlagen verschachtelte Seiten fehl.
 </Accordion>
 
-<Accordion title="Assets werden nicht geladen (beschädigte Styles, fehlende Schriftarten)">
-Stellen Sie sicher, dass `/_jd/:path*` und `/_next/:path*` weitergeleitet werden. `/_jd/` stellt Jamdesk-Schriftarten, Bilder und Branding bereit, `/_next/` die Dokumentations-Bundles. Fehlt einer der beiden Pfade, wird das Layout beschädigt.
+<Accordion title="Assets werden nicht geladen (fehlerhafte Styles, fehlende Schriften)">
+Leiten Sie `/_jd/:path*` und `/_next/:path*` weiter. `/_jd/` liefert Jamdesk-Schriften, Bilder und Branding. `/_next/` liefert die Dokumentations-Bundles. Fehlt eines davon, bricht das Layout.
 </Accordion>
 
-<Accordion title="Die Middleware wird überhaupt nicht ausgeführt">
-Überprüfen Sie, dass die Datei im Stammverzeichnis Ihres Projekts `middleware.ts` heißt (nicht `proxy.ts`) und eine Funktion namens `middleware` exportiert. Die Veraltungswarnung von Next.js 16 empfiehlt `proxy.ts`, aber die Vercel-Produktion ruft diese Datei nicht auf.
+<Accordion title="Middleware läuft überhaupt nicht">
+Prüfen Sie, dass die Datei im Stammverzeichnis Ihres Projekts `middleware.ts` heißt (nicht `proxy.ts`) und eine Funktion namens `middleware` exportiert. Die Deprecation-Warnung von Next.js 16 empfiehlt `proxy.ts`. Die Produktion von Vercel ruft sie nicht auf.
 </Accordion>
 
-<Accordion title="Endlosschleifen bei Weiterleitungen">
-Überprüfen Sie, dass die Ziel-URL `https://` verwendet und auf `jamdesk.app` verweist, nicht zurück auf Ihre eigene Domain.
+<Accordion title="Endlose Redirect-Schleifen">
+Prüfen Sie, dass die Ziel-URL `https://` verwendet und auf `jamdesk.app` zeigt, nicht zurück auf Ihre eigene Domain.
 </Accordion>
 
-<Accordion title="Der Check für „Nur benutzerdefinierte Domain“ schlägt weiterhin fehl">
-Der Check ruft `/_jd/preflight` auf Ihrer Live-Domain ab und überprüft, was Jamdesk tatsächlich erreicht hat. Wenn gemeldet wird, dass Ihr Proxy sich „nicht identifiziert“, hat ein Rewrite Jamdesk ohne Marker oder Header erreicht. Überprüfen Sie erneut alle Rewrite-Ziele (Option A) oder die Header Ihrer Middleware (Option B). Siehe [Nur benutzerdefinierte Domain](/de/deploy/custom-domain-only).
+<Accordion title="Die Prüfung Nur eigene Domain schlägt immer wieder fehl">
+Die Prüfung ruft `/_jd/preflight` auf Ihrer Live-Domain ab und untersucht, was Jamdesk erreicht hat. „Identifiziert sich nicht“ bedeutet, dass ein Rewrite Jamdesk ohne die Markierung oder den Header erreicht hat. Prüfen Sie jedes Rewrite-Ziel (Option A) bzw. Ihre Middleware-Header (Option B) erneut. Siehe [Nur eigene Domain](/de/deploy/custom-domain-only).
 </Accordion>
 
 ## Wie geht es weiter?
 
 <Columns cols={3}>
-  <Card title="Nur benutzerdefinierte Domain" icon="eye-slash" href="/de/deploy/custom-domain-only">
+  <Card title="Nur eigene Domain" icon="eye-slash" href="/de/deploy/custom-domain-only">
     Verhindern, dass Ihre Subdomain direkt antwortet
   </Card>
-  <Card title="Benutzerdefinierte Domains" icon="globe" href="/de/deploy/custom-domains">
+  <Card title="Eigene Domains" icon="globe" href="/de/deploy/custom-domains">
     DNS verifizieren und Fehler beheben
   </Card>
-  <Card title="Hosting unter einem Subpfad" icon="folder-tree" href="/de/deploy/subpath-hosting">
-    Dokumentation unter /docs bereitstellen
+  <Card title="Unterpfad-Hosting" icon="folder-tree" href="/de/deploy/subpath-hosting">
+    Dokumentation unter /docs ausliefern
   </Card>
 </Columns>

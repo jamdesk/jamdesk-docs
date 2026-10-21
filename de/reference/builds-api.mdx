@@ -1,19 +1,19 @@
 ---
-title: Builds API / Trigger
-description: Lösen Sie Dokumentations-Builds programmgesteuert aus – ohne Commits zu übertragen. Ideal für CI-Pipelines und geplante Aktualisierungen.
+title: Builds-API / Auslöser
+description: Dokumentations-Neuaufbauten programmatisch auslösen, ohne Commits zu pushen. Nützlich für CI-Pipelines und geplante Aktualisierungen.
 ---
 
-Verwenden Sie die Builds API, um Dokumentations-Builds auszulösen, ohne neue Commits zu übertragen. Dies ist nützlich für CI-Pipelines, geplante Builds oder Inhalte, die außerhalb Ihres Dokumentationsverzeichnisses generiert werden.
+Verwenden Sie die Builds-API, um Dokumentations-Neuaufbauten auszulösen, ohne neue Commits zu pushen. Das ist nützlich für CI-Pipelines, geplante Neuaufbauten oder Inhalte, die außerhalb Ihres Dokumentationsverzeichnisses generiert werden.
 
 ## Authentifizierung
 
-Alle Anfragen verwenden einen API-Schlüssel des Projekts:
+Alle Anfragen verwenden einen Projekt-API-Schlüssel:
 
 ```http
 Authorization: Bearer YOUR_API_KEY
 ```
 
-Sie finden Ihren API-Schlüssel unter **Settings** → **API** für das Projekt.
+Ihren API-Schlüssel finden Sie unter **Settings** → **API** für das Projekt.
 
 ## Einen Build auslösen
 
@@ -47,7 +47,7 @@ console.log(build.buildId, build.status);
 
 ### Antwort
 
-Erfolgreiche Anfragen geben `200 OK` mit Build-Metadaten zurück, die Sie zur Fortschrittsverfolgung verwenden können.
+Erfolgreiche Anfragen geben `200 OK` mit Build-Metadaten zurück, mit denen Sie den Fortschritt verfolgen können.
 
 ```json
 {
@@ -67,13 +67,13 @@ Erfolgreiche Anfragen geben `200 OK` mit Build-Metadaten zurück, die Sie zur Fo
 ```
 
 <Note>
-Wenn Sie eine `429`-Antwort erhalten, versuchen Sie es mit einem exponentiellen Backoff erneut. Wenden Sie sich an den Support, wenn Sie höhere Limits benötigen.
+Wenn Sie eine `429`-Antwort erhalten, versuchen Sie es mit exponentiellem Backoff erneut. Kontaktieren Sie den Support, wenn Sie höhere Limits benötigen.
 </Note>
 
 ### Antwortfelder
 
 <ResponseField name="buildId" type="string">
-  Eindeutiger Build-Bezeichner. Verwenden Sie ihn, um im Dashboard auf den Build zu verweisen.
+  Eindeutige Build-ID. Verwenden Sie diese, um den Build im Dashboard zu referenzieren.
 </ResponseField>
 
 <ResponseField name="status" type="string">
@@ -81,7 +81,7 @@ Wenn Sie eine `429`-Antwort erhalten, versuchen Sie es mit einem exponentiellen 
 </ResponseField>
 
 <ResponseField name="createdAt" type="string">
-  ISO-8601-Zeitstempel der Erstellung des Builds.
+  ISO-8601-Zeitstempel der Build-Erstellung.
 </ResponseField>
 
 <ResponseField name="commit.sha" type="string">
@@ -89,7 +89,7 @@ Wenn Sie eine `429`-Antwort erhalten, versuchen Sie es mit einem exponentiellen 
 </ResponseField>
 
 <ResponseField name="commit.message" type="string">
-  Commit-Nachricht aus dem Quellrepository.
+  Commit-Nachricht aus dem Quell-Repository.
 </ResponseField>
 
 <ResponseField name="commit.author" type="string">
@@ -97,7 +97,7 @@ Wenn Sie eine `429`-Antwort erhalten, versuchen Sie es mit einem exponentiellen 
 </ResponseField>
 
 <ResponseField name="project.id" type="string">
-  Projektbezeichner, der dem Projekt in Ihrem Dashboard entspricht.
+  Projektkennung, die Ihrem Dashboard-Projekt entspricht.
 </ResponseField>
 
 <ResponseField name="project.name" type="string">
@@ -108,12 +108,12 @@ Wenn Sie eine `429`-Antwort erhalten, versuchen Sie es mit einem exponentiellen 
 
 Der Build-Status ist im Dashboard unter **Deployments** sichtbar. Jeder Build durchläuft diese Phasen:
 
-1. **queued** -- Der Build wartet in der Warteschlange.
-2. **building** -- Der Build-Dienst kompiliert Ihre Dokumentation.
-3. **deployed** -- Der Build wurde abgeschlossen und Ihre Website ist live.
-4. **failed** -- Ein Fehler ist aufgetreten. Prüfen Sie die Build-Protokolle auf weitere Informationen.
+1. **queued**: Der Build wartet in der Warteschlange.
+2. **building**: Der Build-Dienst kompiliert Ihre Dokumentation.
+3. **deployed**: Der Build ist abgeschlossen und Ihre Website ist live.
+4. **failed**: Etwas ist schiefgelaufen. Prüfen Sie die Build-Logs für Details.
 
-Wenn Ihr Repository mit GitHub verbunden ist, werden Statusprüfungen für Commits automatisch aktualisiert. Sobald der Build bereitgestellt wird, erscheint ein grünes Häkchen am Commit; bei einem fehlgeschlagenen Build ein rotes X. Sie müssen die API nicht regelmäßig nach Statusaktualisierungen abfragen.
+Wenn Ihr Repository mit GitHub verbunden ist, aktualisieren sich die Commit-Statusprüfungen automatisch. Ein grünes Häkchen erscheint am Commit, wenn der Build bereitgestellt wird. Ein rotes X erscheint, wenn der Build fehlschlägt. Sie müssen die API nicht abfragen, um Status-Updates zu erhalten.
 
 ## Format von Fehlerantworten
 
@@ -130,32 +130,32 @@ Fehlerantworten folgen einer einheitlichen Struktur:
 ```
 
 <ResponseField name="error.code" type="string">
-  Maschinenlesbarer Fehlercode. In der folgenden Tabelle finden Sie mögliche Werte.
+  Maschinenlesbarer Fehlercode. Mögliche Werte finden Sie in der folgenden Tabelle.
 </ResponseField>
 
 <ResponseField name="error.message" type="string">
-  Für Menschen lesbare Beschreibung des aufgetretenen Fehlers.
+  Menschenlesbare Beschreibung des Fehlers.
 </ResponseField>
 
 <ResponseField name="error.status" type="number">
-  HTTP-Statuscode, der dem Antwortstatus entspricht.
+  HTTP-Statuscode der Antwort.
 </ResponseField>
 
 ### Fehlercodes
 
-| Status | Code | Nachricht | Lösung |
-|--------|------|-----------|--------|
-| **401** | `unauthorized` | Ungültiger API-Schlüssel | Generieren Sie den Schlüssel unter **Settings** → **API** neu |
-| **403** | `forbidden` | Nicht autorisierter Projektzugriff | Bestätigen Sie, dass die Projekt-ID zum Projekt des API-Schlüssels passt |
-| **404** | `project_not_found` | Projekt nicht gefunden | Überprüfen Sie die Projekt-ID im Dashboard |
-| **429** | `rate_limited` | Zu viele Anfragen | Warten Sie länger und versuchen Sie es mit einem exponentiellen Backoff erneut |
-| **500** | `internal_error` | Interner Serverfehler | Versuchen Sie es nach einigen Sekunden erneut. Wenden Sie sich an den Support, falls der Fehler bestehen bleibt |
+| Status | Code | Message | Fix |
+|--------|------|---------|-----|
+| **401** | `unauthorized` | Invalid API key | Schlüssel unter **Settings** → **API** neu generieren |
+| **403** | `forbidden` | Unauthorized project access | Prüfen, ob die Projekt-ID zum Projekt des API-Schlüssels passt |
+| **404** | `project_not_found` | Project not found | Projekt-ID im Dashboard überprüfen |
+| **429** | `rate_limited` | Too many requests | Zurückhalten und mit exponentiellem Backoff erneut versuchen |
+| **500** | `internal_error` | Internal server error | Nach einigen Sekunden erneut versuchen. Support kontaktieren, falls das Problem bestehen bleibt |
 
 ## Verwandte Artikel
 
 <Columns cols={2}>
   <Card title="Builds auslösen" icon="hammer" href="/de/builds/triggering">
-    Manuelle und automatische Build-Trigger
+    Manuelle und automatische Build-Auslöser
   </Card>
   <Card title="Builds überwachen" icon="chart-line" href="/de/builds/monitoring">
     Build-Status und Warteschlange verfolgen

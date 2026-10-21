@@ -1,7 +1,7 @@
 ---
-title: Deploy CLI
+title: CLI Deploy
 description: >-
-  Scopri come il comando CLI deploy di Jamdesk impacchetta, carica e compila la
+  Scopri come il comando CLI jamdesk deploy impacchetta, carica e compila la
   documentazione, inclusi flag, fasi di build e codici di errore.
 ---
 
@@ -18,10 +18,10 @@ jamdesk deploy       # From your project directory
 
 | Flag | Descrizione |
 |------|-------------|
-| `--detach` | Accoda la build e termina immediatamente (stampa un link al dashboard) |
-| `--full-rebuild` | Forza una ricostruzione completa, ignorando la cache della build |
-| `--project <id>` | Esegue il deploy su un progetto specifico tramite ID (salta la selezione interattiva) |
-| `--allow-empty` | Consente il deploy senza pagine di contenuto `.mdx`. Per impostazione predefinita, la CLI rifiuta il deploy di un progetto vuoto, così una directory di lavoro errata non può pubblicare accidentalmente un sito vuoto (gli snippet non contano come pagine di contenuto) |
+| `--detach` | Accoda la build ed esce immediatamente (stampa un link alla dashboard) |
+| `--full-rebuild` | Forza una build completa, ignorando la cache di build |
+| `--project <id>` | Esegue il deploy su un ID progetto specifico (salta la selezione interattiva) |
+| `--allow-empty` | Consente il deploy con zero pagine di contenuto `.mdx`. Per impostazione predefinita la CLI rifiuta il deploy di un progetto vuoto. Questo impedisce che una directory di lavoro errata pubblichi un sito vuoto. Gli snippet non contano come pagine di contenuto |
 
 `jamdesk push` è un alias di `jamdesk deploy`.
 
@@ -29,114 +29,114 @@ jamdesk deploy       # From your project directory
 
 <Steps>
   <Step title="Autenticazione">
-    Verifica che la sessione sia valida. Se il token è scaduto, ti verrà richiesto di eseguire `jamdesk login`.
+    Verifica la sessione. Un token scaduto ti chiede di eseguire `jamdesk login`.
   </Step>
-  <Step title="Caricamento della configurazione">
-    Legge e convalida `docs.json` dalla directory corrente.
+  <Step title="Caricamento configurazione">
+    Legge e valida `docs.json` dalla directory corrente.
   </Step>
   <Step title="Risoluzione del progetto">
-    Legge `projectId` da `docs.json`. Se manca (primo deploy), la CLI ti chiede di selezionare uno dei tuoi progetti. La scelta viene salvata nuovamente in `docs.json`, così il deploy successivo salta la richiesta.
+    Legge `projectId` da `docs.json`. Al primo deploy manca. La CLI ti chiede quindi di scegliere un progetto. La CLI salva la tua scelta in `docs.json`. Il deploy successivo salta la richiesta.
 
-    Usa `--project <id>` per sostituire questo valore.
+    Usa `--project <id>` per sovrascriverlo.
   </Step>
-  <Step title="Pacchettizzazione dei file">
-    Crea un tarball compresso della documentazione, rispettando `.gitignore`. Se alcuni file sembrano contenere segreti, la CLI stampa un avviso (ma non blocca il caricamento).
+  <Step title="Impacchettamento dei file">
+    Crea un tarball compresso della documentazione. I file presenti in `.gitignore` vengono esclusi. La CLI avvisa dei file che sembrano segreti. L'avviso non blocca il caricamento.
   </Step>
   <Step title="Caricamento">
-    Invia il tarball a Jamdesk tramite un URL presigned. La dimensione massima del caricamento è di 100 MB.
+    Invia il tarball a Jamdesk tramite un URL pre-firmato. La dimensione massima del caricamento è 100 MB.
   </Step>
   <Step title="Build">
-    Accoda una build e ne verifica lo stato, stampando ogni fase al completamento. Premi Ctrl+C per interrompere il controllo; la build continua in background.
+    Accoda una build e interroga lo stato. Ogni fase viene stampata al completamento. Premi Ctrl+C per interrompere l'interrogazione. La build continua in background.
   </Step>
   <Step title="Completato">
-    Stampa l'URL pubblico quando la build termina.
+    Stampa l'URL live al termine della build.
   </Step>
 </Steps>
 
 ## Fasi della build
 
-Durante il controllo dello stato, vedrai completarsi ogni fase in sequenza:
+La CLI stampa ogni fase in ordine mentre interroga lo stato:
 
 | Fase | Descrizione |
-|-------|-------------|
-| Estrazione dei file | Estrazione del tarball caricato |
-| Convalida della configurazione | Controllo dello schema e dei contenuti di `docs.json` |
+|------|-------------|
+| Estrazione dei file | Decompressione del tarball caricato |
+| Validazione della configurazione | Verifica dello schema e del contenuto di `docs.json` |
 | Preparazione dei contenuti | Elaborazione dei file MDX e degli asset |
 | Build della documentazione | Compilazione delle pagine e generazione degli artefatti statici |
-| Caricamento su CDN | Invio dell'output della build alla rete edge |
-| Aggiornamento della cache | Eliminazione dei contenuti obsoleti dal CDN |
+| Caricamento sulla CDN | Invio dell'output compilato alla rete edge |
+| Aggiornamento della cache | Eliminazione dei contenuti obsoleti dalla CDN |
 
 ## Esclusioni dei file
 
-I seguenti elementi vengono sempre esclusi dai caricamenti, indipendentemente dal contenuto di `.gitignore`:
+Questi elementi sono sempre esclusi dai caricamenti, indipendentemente dal contenuto di `.gitignore`:
 
 `.git`, `node_modules`, `.next`, `.env`, `.env.*`, `*.pem`, `*.key`, `credentials.json`, `.gcloud`, `.DS_Store`, `Thumbs.db`
 
-Anche tutto ciò che è incluso nel tuo `.gitignore` viene escluso.
+Anche tutto ciò che è presente nel tuo `.gitignore` viene escluso.
 
 ### Avvisi sui file segreti
 
-La CLI mostra un avviso (ma non blocca l'operazione) quando rileva file che sembrano contenere segreti:
+La CLI avvisa (senza bloccare) quando rileva file che sembrano segreti:
 
 - File `.env` e `.env.*`
 - File `*.pem` e `*.key`
 - `credentials.json`
 - `service_account*.json`
-- File che iniziano con `secret`
+- File il cui nome inizia con `secret`
 
-Aggiungili a `.gitignore` per nascondere l'avviso ed escluderli dai caricamenti.
+Aggiungili a `.gitignore` per eliminare l'avviso ed escluderli dai caricamenti.
 
 ## Riferimento degli errori
 
 | Errore | Codice | Causa | Soluzione |
-|-------|------|-------|-----|
-| Accesso non effettuato | `AUTH_REQUIRED` | Nessuna credenziale salvata | `jamdesk login` |
-| Sessione scaduta | `AUTH_EXPIRED` | Aggiornamento del token non riuscito | `jamdesk login` |
-| Accesso negato | `FORBIDDEN` | Non sei membro di questo progetto | Controlla l'appartenenza al progetto nel dashboard |
+|--------|--------|-------|-----------|
+| Non autenticato | `AUTH_REQUIRED` | Nessuna credenziale salvata | `jamdesk login` |
+| Sessione scaduta | `AUTH_EXPIRED` | Rinnovo del token non riuscito | `jamdesk login` |
+| Accesso negato | `FORBIDDEN` | Non sei membro di questo progetto | Verifica l'appartenenza al progetto nella dashboard |
 | Progetto non trovato | `NOT_FOUND` | ID progetto non valido | Verifica l'ID o rimuovi `projectId` da docs.json |
-| Build in corso | `BUILD_IN_PROGRESS` | È in esecuzione un'altra build | Attendi o controlla il dashboard |
-| Caricamento troppo grande | `TOO_LARGE` | Il server ha rifiutato il caricamento (limite di 100 MB) | Escludi i file grandi tramite `.gitignore` |
-| Progetto troppo grande | `PROJECT_TOO_LARGE` | Il tarball supera i 100 MB durante la pacchettizzazione | Escludi i file grandi tramite `.gitignore` |
-| Nessun progetto | `NO_PROJECTS` | Non ci sono progetti nel tuo account | Crea prima un progetto nel dashboard |
-| Nessun file | `EMPTY_PROJECT` | Tutti i file sono stati esclusi | Controlla `.gitignore` |
-| Nessuna pagina di contenuto | `NO_CONTENT` | Non sono state trovate pagine di contenuto `.mdx` (gli snippet non contano) | Esegui il comando dalla directory della documentazione oppure passa `--allow-empty` se la pubblicazione vuota è intenzionale |
-| Configurazione non valida | `CONFIG_NOT_FOUND` | `docs.json` mancante o non valido | Esegui il comando dalla root del progetto e controlla la configurazione |
-| Caricamento non riuscito | `UPLOAD_FAILED` | Problema di rete durante il caricamento | Controlla la connessione Internet e riprova |
-| Build non riuscita | `BUILD_FAILED` | Errore del servizio di build | Controlla i log della build nel dashboard |
+| Build in corso | `BUILD_IN_PROGRESS` | È in esecuzione un'altra build | Attendi o controlla la dashboard |
+| Caricamento troppo grande | `TOO_LARGE` | Il server ha rifiutato il caricamento (limite 100 MB) | Escludi i file grandi tramite `.gitignore` |
+| Progetto troppo grande | `PROJECT_TOO_LARGE` | Il tarball supera 100 MB durante l'impacchettamento | Escludi i file grandi tramite `.gitignore` |
+| Nessun progetto | `NO_PROJECTS` | Nessun progetto nel tuo account | Crea prima un progetto nella dashboard |
+| Nessun file | `EMPTY_PROJECT` | Tutti i file sono esclusi | Controlla `.gitignore` |
+| Nessuna pagina di contenuto | `NO_CONTENT` | Non sono state trovate pagine di contenuto `.mdx` (gli snippet non contano) | Esegui dalla directory della documentazione, oppure usa `--allow-empty` se la pubblicazione vuota è intenzionale |
+| Configurazione non valida | `CONFIG_NOT_FOUND` | `docs.json` mancante o non valido | Esegui dalla radice del progetto, verifica la configurazione |
+| Caricamento non riuscito | `UPLOAD_FAILED` | Problema di rete durante il caricamento | Verifica la connessione e riprova |
+| Build non riuscita | `BUILD_FAILED` | Errore del servizio di build | Controlla i log di build nella dashboard |
 
 ## Risoluzione dei problemi
 
 <AccordionGroup>
   <Accordion title='"Una build è già in corso"'>
-    È possibile eseguire una sola build alla volta per progetto. Attendi il completamento della build corrente; controlla lo stato nel dashboard, in **Deployments**.
+    Ogni progetto esegue una sola build alla volta. Attendi il completamento della build corrente. Controlla lo stato nella dashboard, in **Deployments**.
   </Accordion>
 
   <Accordion title='"docs.json non trovato o non valido"'>
-    Assicurati di eseguire il comando dalla directory che contiene `docs.json`. Esegui `jamdesk validate` per verificare la presenza di errori di configurazione.
+    Esegui il comando dalla directory che contiene `docs.json`. Esegui `jamdesk validate` per verificare la presenza di errori di configurazione.
   </Accordion>
 
   <Accordion title='"Caricamento troppo grande"'>
-    Il limite di 100 MB si applica al tarball compresso di tutti i file non esclusi. Controlla quali file vengono inclusi. Immagini, video o file di dati di grandi dimensioni sono cause comuni; aggiungili a `.gitignore` per escluderli.
+    Il limite di 100 MB si applica al tarball compresso di tutti i file non esclusi. Immagini, video o file di dati di grandi dimensioni sono cause comuni. Aggiungili a `.gitignore` per escluderli.
   </Accordion>
 
-  <Accordion title="Il deploy si blocca durante il controllo dello stato">
-    Premi Ctrl+C per uscire; la build continua a essere eseguita in background. Controlla lo stato nel dashboard. Se il problema si verifica regolarmente, la rete potrebbe interrompere le richieste di controllo dello stato.
+  <Accordion title="Il deploy si blocca durante l'interrogazione">
+    Premi Ctrl+C per uscire. La build continua in background. Controlla lo stato nella dashboard. Un blocco che si ripresenta può indicare che la rete interrompe le richieste di interrogazione.
   </Accordion>
 
   <Accordion title='"Nessun progetto trovato"'>
-    Devi avere almeno un progetto nel tuo account Jamdesk. Creane uno su [dashboard.jamdesk.com](https://dashboard.jamdesk.com).
+    Nel tuo account Jamdesk serve almeno un progetto. Creane uno su [dashboard.jamdesk.com](https://dashboard.jamdesk.com).
   </Accordion>
 </AccordionGroup>
 
-Per ulteriori informazioni sulla risoluzione dei problemi della CLI, consulta la [guida CLI del Centro assistenza](/it/help/troubleshooting/cli-issues).
+Per ulteriore risoluzione dei problemi della CLI, consulta la [guida CLI del Centro assistenza](/it/help/troubleshooting/cli-issues).
 
 ## Prossimi passi
 
 <Columns cols={2}>
   <Card title="Flusso di deploy" icon="rotate" href="/it/development/deployment">
-    Auto-deploy da GitHub e stato del deploy
+    Deploy automatico da GitHub e stato del deployment
   </Card>
   <Card title="Autenticazione" icon="key" href="/it/cli/authentication">
-    Flusso di accesso, sessioni e risoluzione dei problemi
+    Flusso di login, sessioni e risoluzione dei problemi
   </Card>
 </Columns>

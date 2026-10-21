@@ -1,9 +1,9 @@
 ---
 title: Benutzerdefinierte Domains
-description: Dokumentation über die eigene Domain statt über *.jamdesk.app bereitstellen – DNS, SSL und Verifizierung für Subdomains und Apex-Domains.
+description: Stellen Sie Ihre Dokumentation über Ihre eigene Domain statt über die Standard-Subdomain *.jamdesk.app bereit. DNS-Einrichtung für Subdomains und Apex-Domains, SSL und Verifizierung.
 ---
 
-Stellen Sie Ihre Dokumentation über die eigene Domain statt über die standardmäßige `*.jamdesk.app`-Subdomain bereit.
+Stellen Sie Ihre Dokumentation über Ihre eigene Domain statt über die Standard-Subdomain `*.jamdesk.app` bereit.
 
 ## Übersicht zur Einrichtung
 
@@ -12,44 +12,44 @@ Stellen Sie Ihre Dokumentation über die eigene Domain statt über die standardm
     Gehen Sie zu **Settings** → **Domain** in Ihrem Projekt und geben Sie Ihre Domain ein (z. B. `docs.example.com` oder `example.com`).
   </Step>
   <Step title="DNS konfigurieren">
-    Fügen Sie die im Dashboard angezeigten DNS-Einträge bei Ihrem DNS-Anbieter hinzu. Die Einträge hängen von Ihrem Domain-Typ ab (siehe unten).
+    Fügen Sie die im Dashboard angezeigten DNS-Einträge bei Ihrem DNS-Anbieter hinzu. Welche Einträge nötig sind, hängt vom Domaintyp ab (siehe unten).
   </Step>
   <Step title="Verifizieren und warten">
-    Jamdesk verifiziert den Besitz und stellt automatisch ein SSL-Zertifikat bereit.
+    Jamdesk prüft die Inhaberschaft und stellt ein SSL-Zertifikat bereit.
   </Step>
 </Steps>
 
 ## Hosting-Optionen
 
-Wählen Sie beim Hinzufügen einer Domain Ihren Hosting-Modus:
+Wählen Sie einen Hosting-Modus, wenn Sie eine Domain hinzufügen.
 
 ### Standarddomain
 
-Ihre Dokumentation wird von Jamdesk direkt über Ihre benutzerdefinierte Domain bereitgestellt:
+Jamdesk stellt Ihre Dokumentation direkt unter Ihrer benutzerdefinierten Domain bereit:
 
 ```text
 docs.example.com → acme.jamdesk.app
 ```
 
-Der DNS verweist auf Jamdesk, und SSL-Zertifikate werden automatisch verwaltet.
+Der DNS-Eintrag zeigt auf Jamdesk. Jamdesk stellt das SSL-Zertifikat aus und erneuert es.
 
 ### Hosting unter /docs (Proxy-basiertes, anpassbares Unterverzeichnis)
 
-Ihre Dokumentation wird in einem Unterverzeichnis Ihrer bestehenden Website bereitgestellt:
+Ihre Dokumentation liegt unter einem Unterpfad Ihrer bestehenden Website:
 
 ```text
 example.com/docs → acme.jamdesk.app/docs
 ```
 
-`/docs` ist die Standardeinstellung. Sie können über denselben Umschalter stattdessen ein beliebiges Unterverzeichnis mit nur einem Segment auswählen (`/help`, `/guide` usw.). Sie konfigurieren einen Proxy (Cloudflare, Vercel, nginx usw.), der Anfragen für das gewählte Unterverzeichnis an Jamdesk weiterleitet. Weitere Informationen finden Sie unter [Hosting in Unterverzeichnissen](/de/deploy/subpath-hosting), einschließlich Einrichtungsanleitungen und Regeln für die Auswahl eines Unterverzeichnisses.
+`/docs` ist der Standardwert. Über denselben Schalter können Sie stattdessen einen beliebigen einstufigen Unterpfad wählen (`/help`, `/guide` usw.). Konfigurieren Sie einen Proxy (Cloudflare, Vercel, nginx usw.), der Anfragen für diesen Unterpfad an Jamdesk weiterleitet. Einrichtungsanleitungen und die Regeln zur Wahl eines Unterpfads finden Sie unter [Unterpfad-Hosting](/de/deploy/subpath-hosting).
 
 <Note>
-Das Ein- oder Ausschalten von „Host at a subpath“ oder das Ändern des Unterverzeichnisses löst einen automatischen Build aus, da sich die URL-Struktur ändert.
+Das Umschalten von „Host at a subpath“ oder das Ändern des Unterpfads löst einen neuen Build aus. Die URL-Struktur ändert sich.
 </Note>
 
 ## DNS-Konfiguration
 
-Die benötigten Einträge hängen davon ab, ob Sie eine Subdomain oder eine Apex-Domain (Root-Domain) verwenden.
+Welche Einträge Sie benötigen, hängt davon ab, ob Sie eine Subdomain oder eine Apex-Domain (Root-Domain) verwenden.
 
 ### Subdomains (z. B. docs.example.com)
 
@@ -58,7 +58,7 @@ Die benötigten Einträge hängen davon ab, ob Sie eine Subdomain oder eine Apex
 | CNAME | `docs` | `cname.jamdesk.com` |
 | TXT | `_jamdesk.docs` | *(im Dashboard angezeigt)* |
 
-Das Feld „Name“ enthält lediglich den Subdomain-Teil. Für `docs.example.com` geben Sie `docs` ein.
+Das Feld „Name“ enthält den Subdomain-Teil. Für `docs.example.com` tragen Sie `docs` ein.
 
 ### Apex-Domains (z. B. example.com)
 
@@ -67,81 +67,75 @@ Das Feld „Name“ enthält lediglich den Subdomain-Teil. Für `docs.example.co
 | A | `@` | `76.76.21.21` |
 | TXT | `_jamdesk` | *(im Dashboard angezeigt)* |
 
-Apex-Domains verwenden statt CNAME einen A-Eintrag, da DNS-Standards (RFC 1034) CNAME-Einträge am Zonen-Apex verbieten.
+Apex-Domains verwenden einen A-Eintrag statt eines CNAME. Die DNS-Standards (RFC 1034) verbieten CNAME-Einträge an der Zonenspitze.
 
 <Note>
-DNS-Änderungen können bis zu 48 Stunden benötigen, bis sie propagiert sind. Die meisten Änderungen sind jedoch innerhalb weniger Minuten abgeschlossen. Prüfen Sie den Status unter [whatsmydns.net](https://www.whatsmydns.net/).
+DNS-Änderungen können bis zu 48 Stunden brauchen, bis sie weltweit wirksam sind. Meistens dauert es nur wenige Minuten. Den Status prüfen Sie unter [whatsmydns.net](https://www.whatsmydns.net/).
 </Note>
 
 ## Verifizierung
 
-Nach dem Hinzufügen der DNS-Einträge führt Jamdesk automatisch folgende Schritte aus:
+Sobald Sie die DNS-Einträge hinzugefügt haben, führt Jamdesk diese Schritte aus:
 
-1. Erkennt Ihre DNS-Einträge (CNAME- oder A-Eintrag sowie TXT)
-2. Verifiziert den Domainbesitz über den TXT-Eintrag
-3. Stellt über Let's Encrypt ein SSL-Zertifikat bereit
-4. Leitet den Datenverkehr an Ihre Dokumentation weiter
+1. Erkennt Ihre DNS-Einträge (CNAME oder A-Eintrag sowie TXT)
+2. Verifiziert die Domain-Inhaberschaft über den TXT-Eintrag
+3. Stellt ein SSL-Zertifikat über Let's Encrypt bereit
+4. Leitet den Datenverkehr zu Ihrer Dokumentation
 
-Prüfen Sie den Verifizierungsstatus unter **Settings** → **Domain**. Der Status wird wie folgt angezeigt:
-- **Pending** – Warten auf die DNS-Propagation
-- **Active** – Domain verifiziert und stellt Datenverkehr bereit
+Den Verifizierungsstatus sehen Sie unter **Settings** → **Domain**. Mögliche Status:
+- **Pending** – Warten auf die DNS-Verbreitung
+- **Active** – Domain verifiziert und aktiv
 - **Needs Attention** – Konfigurationsabweichung oder Konflikt (prüfen Sie die E-Mail-Benachrichtigung)
-- **Error** – Konfigurationsproblem (siehe Details im Dashboard)
+- **Error** – Konfigurationsproblem (Details im Dashboard)
 
-Klicken Sie im Dashboard auf **Refresh**, um den Verifizierungsstatus manuell zu prüfen.
+Klicken Sie im Dashboard auf **Refresh**, um den Verifizierungsstatus sofort zu prüfen.
 
 ## SSL-Zertifikate
 
-SSL-Zertifikate werden automatisch bereitgestellt und vor ihrem Ablauf erneuert. HTTPS ist erforderlich, daher werden HTTP-Anfragen an HTTPS weitergeleitet.
-
-Sie müssen Zertifikate nicht manuell konfigurieren.
+Jamdesk stellt SSL-Zertifikate bereit und erneuert sie vor Ablauf. HTTP-Anfragen werden auf HTTPS umgeleitet.
 
 ## Root-Domains
 
-Root-Domains (Apex-Domains) wie `example.com` werden vollständig unterstützt. Das Dashboard zeigt automatisch die richtigen Einträge an: einen A-Eintrag, der auf `76.76.21.21` verweist, statt eines CNAME-Eintrags, da DNS-Standards CNAME-Einträge am Zonen-Apex verbieten.
-
-Wenn Sie eine Subdomain wie `docs.example.com` bevorzugen, funktioniert auch das.
+Root-Domains (Apex-Domains) wie `example.com` werden unterstützt. Das Dashboard zeigt dann einen A-Eintrag mit dem Ziel `76.76.21.21` statt eines CNAME an. Die DNS-Standards verbieten CNAME-Einträge an der Zonenspitze.
 
 ## Mehrere Domains
 
-Jedes Projekt unterstützt eine benutzerdefinierte Domain. Für mehrere Domains, die auf dieselbe Dokumentation verweisen:
+Jedes Projekt hat genau eine benutzerdefinierte Domain. Um weitere Domains auf dieselbe Dokumentation zu leiten:
 
 1. Richten Sie Ihre primäre Domain in Jamdesk ein
-2. Konfigurieren Sie zusätzliche Domains so, dass sie auf DNS-/CDN-Ebene zur primären Domain weiterleiten
+2. Konfigurieren Sie zusätzliche Domains so, dass sie auf DNS- bzw. CDN-Ebene auf die primäre Domain weiterleiten
 
 ## Domain entfernen
 
-So trennen Sie eine benutzerdefinierte Domain:
-
 1. Gehen Sie zu **Settings** → **Domain**
 2. Klicken Sie auf **Remove Domain**
-3. Ihre Dokumentation bleibt unter der `*.jamdesk.app`-Subdomain erreichbar
+3. Ihre Dokumentation bleibt unter der Subdomain `*.jamdesk.app` erreichbar
 
 <Warning>
-Das Entfernen einer Domain, für die „Host at a subpath“ aktiviert war, löst einen Build aus, um die URL-Pfade zu aktualisieren. Ein benutzerdefiniertes Unterverzeichnis wird zusammen mit der Domain gelöscht. Wenn Sie später erneut eine Domain verbinden, beginnt die Dokumentation wieder unter dem standardmäßigen `/docs`.
+Das Entfernen einer Domain bei aktiviertem „Host at a subpath“ löst einen Build aus, der die URL-Pfade aktualisiert. Jamdesk entfernt außerdem jeden benutzerdefinierten Unterpfad. Eine Domain, die Sie später wieder verbinden, startet mit dem Standardwert `/docs`.
 </Warning>
 
 ## Cloudflare-Nutzer
 
-Wenn Sie Cloudflare als DNS-Anbieter verwenden:
+Gehen Sie so vor, wenn Cloudflare Ihr DNS-Anbieter ist:
 
-1. Setzen Sie den Proxy-Status während der Domainverifizierung auf **DNS only** (graues Cloud-Symbol)
-2. Überlassen Sie Vercel die SSL-Verwaltung: Deaktivieren Sie „Always Use HTTPS“ von Cloudflare für die Dokumentations-Subdomain
-3. Nach Abschluss der Verifizierung können Sie das Proxying wieder aktivieren (orangefarbene Cloud)
+1. Setzen Sie den Proxy-Status während der Domain-Verifizierung auf **DNS only** (graue Wolke)
+2. Überlassen Sie SSL Vercel: Deaktivieren Sie in Cloudflare „Always Use HTTPS“ für die Dokumentations-Subdomain
+3. Nach Abschluss der Verifizierung können Sie das Proxying wieder aktivieren (orange Wolke)
 
 <Note>
-**Verwenden Sie einen Cloudflare Worker?** Der DNS-Eintrag muss per Proxy weitergeleitet werden (orangefarbene Cloud), damit der Worker ausgeführt wird. Verwenden Sie nur während der Verifizierung die graue Cloud und wechseln Sie danach zurück. Weitere Informationen finden Sie unter [Einrichtung von Cloudflare Workers](/de/deploy/cloudflare).
+**Sie verwenden einen Cloudflare Worker?** Der DNS-Eintrag muss proxied sein (orange Wolke), damit der Worker ausgeführt wird. Verwenden Sie die graue Wolke nur während der Verifizierung und schalten Sie danach zurück. Details finden Sie unter [Cloudflare-Workers-Einrichtung](/de/deploy/cloudflare).
 </Note>
 
 ## Fehlerbehebung
 
 | Problem | Lösung |
 |-------|----------|
-| Domain bleibt bei „Pending“ hängen | Prüfen Sie die DNS-Einträge mit `dig` (CNAME für Subdomains, A für Apex-Domains) |
-| Fehler bei SSL-Zertifikaten | Stellen Sie sicher, dass keine CAA-Einträge Let's Encrypt blockieren |
-| Weiterleitungsschleifen | Wenn Sie Cloudflare verwenden, setzen Sie während der Verifizierung die graue Cloud (siehe [Cloudflare-Nutzer](#cloudflare-nutzer) oben) |
-| CNAME wird nicht aufgelöst | Überprüfen Sie den Eintrag beim DNS-Anbieter und warten Sie auf die Propagation |
-| Domain wird bereits verwendet | Die Domain ist aufgrund einer vorherigen Einrichtung in Vercel registriert; die Verifizierung wird normalerweise automatisch abgeschlossen |
+| Domain bleibt auf „Pending“ hängen | Prüfen Sie die DNS-Einträge mit `dig` (CNAME für Subdomains, A für Apex-Domains) |
+| SSL-Zertifikatsfehler | Stellen Sie sicher, dass keine CAA-Einträge Let's Encrypt blockieren |
+| Weiterleitungsschleifen | Bei Cloudflare während der Verifizierung auf graue Wolke stellen (siehe [Cloudflare-Nutzer](#cloudflare-nutzer) oben) |
+| CNAME wird nicht aufgelöst | Eintrag beim DNS-Anbieter prüfen und auf die Verbreitung warten |
+| Domain bereits in Verwendung | Die Domain ist aus einer früheren Einrichtung bei Vercel registriert; die Verifizierung gelingt meist automatisch |
 
 ### DNS mit dig überprüfen
 
@@ -156,14 +150,11 @@ dig A example.com
 dig TXT _jamdesk.example.com
 ```
 
-Ausführliche Diagnosen finden Sie unter [Fehlerbehebung bei DNS-Problemen](/de/help/troubleshooting/dns-issues).
+Ausführliche Diagnosen finden Sie unter [DNS-Fehlerbehebung](/de/help/troubleshooting/dns-issues).
 
 ## Konkurriert die jamdesk.app-Subdomain in der Suche mit meiner Domain?
 
-Nein. Sobald Ihre benutzerdefinierte Domain aktiv ist, enthalten Seiten, die direkt über Ihre
-`[slug].jamdesk.app`-Subdomain bereitgestellt werden, einen Canonical-Link zu Ihrer
-Domain. Dadurch behandeln Suchmaschinen Ihre Domain als einzige maßgebliche Quelle
-und bündeln dort alle Ranking-Signale.
+Nein. Seiten, die über Ihre Subdomain `[slug].jamdesk.app` ausgeliefert werden, enthalten einen Canonical-Link auf Ihre aktive benutzerdefinierte Domain. Suchmaschinen rechnen die Ranking-Signale Ihrer Domain zu.
 
 ## Wie geht es weiter?
 
@@ -171,10 +162,10 @@ und bündeln dort alle Ranking-Signale.
   <Card title="Subdomains" icon="sitemap" href="/de/deploy/subdomains">
     Subdomain-spezifische Einstellungen konfigurieren
   </Card>
-  <Card title="Hosting in Unterverzeichnissen" icon="route" href="/de/deploy/subpath-hosting">
-    Dokumentation unter example.com/docs bereitstellen
+  <Card title="Unterpfad-Hosting" icon="route" href="/de/deploy/subpath-hosting">
+    Dokumentation unter example.com/docs hosten
   </Card>
-  <Card title="Fehlerbehebung bei DNS-Problemen" icon="server" href="/de/help/troubleshooting/dns-issues">
+  <Card title="DNS-Fehlerbehebung" icon="server" href="/de/help/troubleshooting/dns-issues">
     DNS-Konfigurationsprobleme diagnostizieren
   </Card>
 </Columns>

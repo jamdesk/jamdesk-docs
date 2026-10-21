@@ -1,6 +1,6 @@
 ---
 title: Domini personalizzati
-description: Servi la documentazione dal tuo dominio invece del sottodominio predefinito *.jamdesk.app. Configura DNS, SSL e verifica per sottodomini e domini apex.
+description: Servi la documentazione dal tuo dominio invece del sottodominio predefinito *.jamdesk.app. Configurazione DNS per sottodomini e domini apex, SSL e verifica.
 ---
 
 Servi la documentazione dal tuo dominio invece del sottodominio predefinito `*.jamdesk.app`.
@@ -8,129 +8,123 @@ Servi la documentazione dal tuo dominio invece del sottodominio predefinito `*.j
 ## Panoramica della configurazione
 
 <Steps>
-  <Step title="Aggiungi il dominio nel dashboard">
-    Vai a **Settings** → **Domain** del progetto e inserisci il tuo dominio (ad esempio `docs.example.com` o `example.com`).
+  <Step title="Aggiungi il dominio nella dashboard">
+    Vai su **Settings** → **Domain** del tuo progetto e inserisci il dominio (ad esempio `docs.example.com` o `example.com`).
   </Step>
   <Step title="Configura il DNS">
-    Aggiungi al tuo provider DNS i record DNS mostrati nel dashboard. I record dipendono dal tipo di dominio (vedi sotto).
+    Aggiungi al tuo provider DNS i record mostrati nella dashboard. I record dipendono dal tipo di dominio (vedi sotto).
   </Step>
   <Step title="Verifica e attendi">
-    Jamdesk verifica la proprietà e configura automaticamente un certificato SSL.
+    Jamdesk verifica la proprietà e predispone un certificato SSL.
   </Step>
 </Steps>
 
 ## Opzioni di hosting
 
-Quando aggiungi un dominio, scegli la modalità di hosting:
+Scegli una modalità di hosting quando aggiungi un dominio.
 
 ### Dominio standard
 
-La documentazione viene servita direttamente da Jamdesk sul tuo dominio personalizzato:
+Jamdesk serve la documentazione direttamente sul tuo dominio personalizzato:
 
 ```text
 docs.example.com → acme.jamdesk.app
 ```
 
-Il DNS punta a Jamdesk e i certificati SSL vengono gestiti automaticamente.
+Il DNS punta a Jamdesk. Jamdesk emette e rinnova il certificato SSL.
 
 ### Hosting su /docs (proxy, sottopercorso personalizzabile)
 
-La documentazione viene servita su un sottopercorso del tuo sito esistente:
+La documentazione si trova in un sottopercorso del tuo sito web esistente:
 
 ```text
 example.com/docs → acme.jamdesk.app/docs
 ```
 
-`/docs` è il valore predefinito; puoi scegliere invece qualsiasi sottopercorso a un solo segmento (`/help`, `/guide` e così via) dallo stesso selettore. Configura un proxy (Cloudflare, Vercel, nginx e così via) per inoltrare a Jamdesk le richieste relative al sottopercorso scelto. Consulta [Hosting su sottopercorso](/it/deploy/subpath-hosting) per le guide alla configurazione e le regole per scegliere un sottopercorso.
+`/docs` è il valore predefinito. Puoi scegliere qualsiasi sottopercorso di un solo segmento (`/help`, `/guide` e così via) dallo stesso selettore. Configura un proxy (Cloudflare, Vercel, nginx, ecc.) per inoltrare a Jamdesk le richieste per quel sottopercorso. Consulta [Hosting in un sottopercorso](/it/deploy/subpath-hosting) per le guide di configurazione e le regole per scegliere un sottopercorso.
 
 <Note>
-Attivare o disattivare "Host at a subpath", oppure modificare il sottopercorso, attiva una build automatica perché la struttura degli URL cambia.
+Attivare o disattivare "Host at a subpath" o cambiare il sottopercorso avvia una nuova build. La struttura degli URL cambia.
 </Note>
 
 ## Configurazione DNS
 
-I record necessari dipendono dal fatto che utilizzi un sottodominio o un dominio apex (radice).
+I record necessari dipendono dal fatto che tu stia usando un sottodominio o un dominio apex (radice).
 
 ### Sottodomini (ad esempio docs.example.com)
 
-| Type | Name | Value |
+| Tipo | Nome | Valore |
 |------|------|-------|
 | CNAME | `docs` | `cname.jamdesk.com` |
-| TXT | `_jamdesk.docs` | *(shown in dashboard)* |
+| TXT | `_jamdesk.docs` | *(mostrato nella dashboard)* |
 
-Il campo "Name" contiene solo la parte relativa al sottodominio. Per `docs.example.com`, inserisci `docs`.
+Il campo "Name" è la parte del sottodominio. Per `docs.example.com`, inserisci `docs`.
 
 ### Domini apex (ad esempio example.com)
 
-| Type | Name | Value |
+| Tipo | Nome | Valore |
 |------|------|-------|
 | A | `@` | `76.76.21.21` |
-| TXT | `_jamdesk` | *(shown in dashboard)* |
+| TXT | `_jamdesk` | *(mostrato nella dashboard)* |
 
-I domini apex utilizzano un record A invece di CNAME perché gli standard DNS (RFC 1034) vietano i record CNAME all'apice della zona.
+I domini apex usano un record A al posto del CNAME. Gli standard DNS (RFC 1034) vietano i record CNAME sull'apice della zona.
 
 <Note>
-La propagazione delle modifiche DNS può richiedere fino a 48 ore, anche se nella maggior parte dei casi si completa in pochi minuti. Controlla lo stato su [whatsmydns.net](https://www.whatsmydns.net/).
+Le modifiche al DNS possono richiedere fino a 48 ore per propagarsi. La maggior parte si completa in pochi minuti. Controlla lo stato su [whatsmydns.net](https://www.whatsmydns.net/).
 </Note>
 
 ## Verifica
 
-Dopo aver aggiunto i record DNS, Jamdesk esegue automaticamente queste operazioni:
+Jamdesk esegue questi passaggi dopo che hai aggiunto i record DNS:
 
-1. Rileva i record DNS (record CNAME o A, più TXT)
+1. Rileva i tuoi record DNS (CNAME o record A, più TXT)
 2. Verifica la proprietà del dominio tramite il record TXT
-3. Configura un certificato SSL tramite Let's Encrypt
-4. Instrada il traffico verso la documentazione
+3. Predispone un certificato SSL tramite Let's Encrypt
+4. Instrada il traffico verso la tua documentazione
 
 Controlla lo stato della verifica in **Settings** → **Domain**. Lo stato può essere:
 - **Pending** - In attesa della propagazione DNS
-- **Active** - Dominio verificato e traffico attivo
-- **Needs Attention** - Configurazione non corrispondente o conflitto (controlla la notifica email)
-- **Error** - Problema di configurazione (consulta i dettagli nel dashboard)
+- **Active** - Dominio verificato e attivo
+- **Needs Attention** - Configurazione non corrispondente o conflitto (controlla la notifica via email)
+- **Error** - Problema di configurazione (vedi i dettagli nella dashboard)
 
-Fai clic su **Refresh** nel dashboard per controllare manualmente lo stato della verifica.
+Fai clic su **Refresh** nella dashboard per controllare subito lo stato della verifica.
 
 ## Certificati SSL
 
-I certificati SSL vengono configurati automaticamente e rinnovati prima della scadenza. HTTPS è obbligatorio, quindi le richieste HTTP vengono reindirizzate a HTTPS.
-
-Non è necessario configurare manualmente i certificati.
+Jamdesk predispone i certificati SSL e li rinnova prima della scadenza. Le richieste HTTP vengono reindirizzate a HTTPS.
 
 ## Domini radice
 
-I domini radice (apex), come `example.com`, sono pienamente supportati. Il dashboard mostra automaticamente i record corretti: un record A che punta a `76.76.21.21` invece di un CNAME, poiché gli standard DNS vietano i record CNAME all'apice della zona.
-
-Se preferisci un sottodominio come `docs.example.com`, puoi utilizzare anche quello.
+I domini radice (apex) come `example.com` funzionano. La dashboard mostra un record A che punta a `76.76.21.21` invece di un CNAME. Gli standard DNS vietano i record CNAME sull'apice della zona.
 
 ## Più domini
 
-Ogni progetto supporta un dominio personalizzato. Per più domini che puntano alla stessa documentazione:
+Ogni progetto ha un solo dominio personalizzato. Per far puntare altri domini alla stessa documentazione:
 
 1. Configura il dominio principale in Jamdesk
-2. Configura i domini aggiuntivi in modo che reindirizzino al dominio principale a livello DNS/CDN
+2. Configura i domini aggiuntivi per reindirizzare al principale a livello DNS/CDN
 
 ## Rimozione di un dominio
 
-Per scollegare un dominio personalizzato:
-
-1. Vai a **Settings** → **Domain**
+1. Vai su **Settings** → **Domain**
 2. Fai clic su **Remove Domain**
-3. La documentazione rimane accessibile al sottodominio `*.jamdesk.app`
+3. La documentazione resta accessibile al sottodominio `*.jamdesk.app`
 
 <Warning>
-La rimozione di un dominio per cui era attivo "Host at a subpath" attiva una build per aggiornare i percorsi degli URL. Qualsiasi sottopercorso personalizzato viene eliminato insieme al dominio; se in seguito ricolleghi un dominio, la documentazione riparte dal valore predefinito `/docs`.
+Rimuovere un dominio con "Host at a subpath" attivo avvia una nuova build per aggiornare i percorsi degli URL. Jamdesk cancella anche qualsiasi sottopercorso personalizzato. Un dominio che ricolleghi in seguito ripartirà dal valore predefinito `/docs`.
 </Warning>
 
 ## Utenti Cloudflare
 
-Se utilizzi Cloudflare come provider DNS:
+Segui questi passaggi se Cloudflare è il tuo provider DNS:
 
-1. Imposta lo stato del proxy su **DNS only** (icona della nuvola grigia) durante la verifica del dominio
-2. Lascia che Vercel gestisca SSL: disabilita "Always Use HTTPS" di Cloudflare per il sottodominio della documentazione
-3. Al termine della verifica, puoi riattivare il proxy (nuvola arancione)
+1. Imposta lo stato del proxy su **DNS only** (icona nuvola grigia) durante la verifica del dominio
+2. Lascia che sia Vercel a gestire SSL: disattiva "Always Use HTTPS" di Cloudflare per il sottodominio della documentazione
+3. Dopo il completamento della verifica, puoi riattivare il proxy (nuvola arancione)
 
 <Note>
-**Utilizzi un Worker Cloudflare?** Il record DNS deve essere sottoposto a proxy (nuvola arancione) per consentire l'esecuzione del Worker. Usa la nuvola grigia solo durante la verifica, quindi ripristina la nuvola arancione. Consulta [Configurazione dei Cloudflare Workers](/it/deploy/cloudflare) per i dettagli.
+**Usi un Cloudflare Worker?** Il record DNS deve essere proxato (nuvola arancione) perché il Worker venga eseguito. Usa la nuvola grigia solo durante la verifica, poi ripristina l'arancione. Consulta [configurazione dei Cloudflare Workers](/it/deploy/cloudflare) per i dettagli.
 </Note>
 
 ## Risoluzione dei problemi
@@ -139,9 +133,9 @@ Se utilizzi Cloudflare come provider DNS:
 |-------|----------|
 | Dominio bloccato su "Pending" | Controlla i record DNS con `dig` (CNAME per i sottodomini, A per i domini apex) |
 | Errori del certificato SSL | Assicurati che nessun record CAA blocchi Let's Encrypt |
-| Cicli di reindirizzamento | Se utilizzi Cloudflare, imposta la nuvola grigia durante la verifica (vedi [Utenti Cloudflare](#utenti-cloudflare) sopra) |
+| Loop di reindirizzamento | Se usi Cloudflare, imposta la nuvola grigia durante la verifica (vedi [Utenti Cloudflare](#utenti-cloudflare) sopra) |
 | CNAME non risolto | Verifica il record presso il provider DNS e attendi la propagazione |
-| Dominio già in uso | Il dominio è registrato in Vercel da una configurazione precedente; la verifica di solito viene completata automaticamente |
+| Dominio già in uso | Il dominio è registrato in Vercel da una configurazione precedente; la verifica di solito si completa automaticamente |
 
 ### Verifica il DNS con dig
 
@@ -156,25 +150,22 @@ dig A example.com
 dig TXT _jamdesk.example.com
 ```
 
-Per una diagnostica dettagliata, consulta [Risoluzione dei problemi DNS](/it/help/troubleshooting/dns-issues).
+Per diagnosi dettagliate, consulta [Risoluzione problemi DNS](/it/help/troubleshooting/dns-issues).
 
 ## Il sottodominio jamdesk.app compete con il mio dominio nei risultati di ricerca?
 
-No. Quando il tuo dominio personalizzato è attivo, le pagine servite direttamente dal sottodominio
-`[slug].jamdesk.app` includono un link canonico che punta al tuo
-dominio, quindi i motori di ricerca considerano il tuo dominio come unica fonte autorevole
-e consolidano lì tutti i segnali di ranking.
+No. Le pagine servite dal tuo sottodominio `[slug].jamdesk.app` includono un link canonico che punta al tuo dominio personalizzato attivo. I motori di ricerca attribuiscono al tuo dominio i segnali di ranking.
 
 ## Quali sono i prossimi passaggi?
 
 <Columns cols={2}>
   <Card title="Sottodomini" icon="sitemap" href="/it/deploy/subdomains">
-    Configura impostazioni specifiche per i sottodomini
+    Configura le impostazioni specifiche dei sottodomini
   </Card>
-  <Card title="Hosting su sottopercorso" icon="route" href="/it/deploy/subpath-hosting">
+  <Card title="Hosting in un sottopercorso" icon="route" href="/it/deploy/subpath-hosting">
     Ospita la documentazione su example.com/docs
   </Card>
-  <Card title="Risoluzione dei problemi DNS" icon="server" href="/it/help/troubleshooting/dns-issues">
+  <Card title="Risoluzione problemi DNS" icon="server" href="/it/help/troubleshooting/dns-issues">
     Diagnostica i problemi di configurazione DNS
   </Card>
 </Columns>

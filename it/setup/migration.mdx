@@ -1,6 +1,8 @@
 ---
 title: Guida alla migrazione
-description: Passi da un'altra piattaforma di documentazione? Jamdesk automatizza la transizione oppure puoi migrare manualmente per avere il pieno controllo.
+description: >-
+  Migra un progetto Mintlify con `jamdesk migrate`, che converte mint.json in
+  docs.json e riscrive i tuoi file MDX sul posto.
 ---
 <Visibility for="agents">
 
@@ -10,22 +12,20 @@ description: Passi da un'altra piattaforma di documentazione? Jamdesk automatizz
 
 
 
-I progetti Mintlify offrono un percorso con un solo comando: `jamdesk migrate` legge `mint.json`, scrive `docs.json` e riscrive l'MDX direttamente nei file. Provieni da GitBook, Docusaurus, ReadMe, Confluence o da un'altra piattaforma? La scheda "Altre piattaforme" illustra i passaggi manuali. Sono brevi se riesci a esportare i contenuti in Markdown.
+Migra un progetto Mintlify con un solo comando: `jamdesk migrate` legge `mint.json`, scrive `docs.json` e riscrive il tuo MDX sul posto. Per GitBook, Docusaurus, ReadMe, Confluence o un'altra piattaforma, segui i passaggi manuali nella scheda "Altre piattaforme".
 
 <YouTube id="DvIHWeBliK0" />
 
 <Info>
-**Esporta prima in Markdown, se possibile.** Jamdesk è basato su MDX, quindi tutto ciò che è già in Markdown può essere integrato rinominandolo con estensione `.mdx` e aggiungendo alcune righe di frontmatter.
+**Esporta prima come Markdown, se possibile.** Jamdesk è basato su MDX. Un file Markdown richiede solo la rinomina in `.mdx` e poche righe di frontmatter.
 </Info>
 
 ## Scegli il percorso
 
 <Tabs>
   <Tab title="Da Mintlify">
-    La CLI esegue automaticamente la maggior parte del lavoro.
-
     <Card title="Guida da Mintlify a Jamdesk" icon="book-open" href="https://jamdesk.com/blog/migrating-from-mintlify-to-jamdesk">
-      Leggi la guida alla migrazione con contesto, esempi e suggerimenti.
+      Guida alla migrazione con contesto, esempi e suggerimenti.
     </Card>
 
     ### Migrazione automatica
@@ -41,24 +41,24 @@ I progetti Mintlify offrono un percorso con un solo comando: `jamdesk migrate` l
         jamdesk migrate
         ```
 
-        Dalla radice del progetto, questo comando esegue in un unico passaggio le seguenti operazioni:
+        Eseguilo dalla radice del progetto. Il comando fa quanto segue:
 
         - Legge `mint.json` e scrive `docs.json`
-        - Rinomina i componenti deprecati nei file MDX (ad esempio `CardGroup` → `Columns`)
-        - Sposta i file MDX di snippet orfani in `/snippets/` e riscrive ogni import relativo al percorso padre (`../foo/bar.mdx`) trasformandolo in un import relativo alla radice (`/snippets/foo/bar.mdx`)
-        - Estrae i componenti inline che usano gli hook React in `/snippets/<name>.tsx` con la direttiva `'use client'`, quindi riscrive l'MDX originale per importare da `/snippets/`
-        - Corregge automaticamente i problemi meccanici di sintassi MDX che causerebbero un errore nella build
+        - Rinomina i componenti deprecati nei file MDX (ad es. `CardGroup` → `Columns`)
+        - Sposta i file snippet MDX orfani in `/snippets/` e riscrive ogni import relativo al genitore (`../foo/bar.mdx`) in uno relativo alla radice (`/snippets/foo/bar.mdx`)
+        - Estrae i componenti inline che usano React hook in `/snippets/<name>.tsx` con la direttiva `'use client'` e riscrive l'MDX originale per importare da `/snippets/`
+        - Corregge automaticamente i problemi di sintassi MDX meccanici che causerebbero il crash della build
 
-        Il comando è idempotente: eseguilo di nuovo dopo le modifiche e rileverà solo ciò che è nuovo. Tutto ciò che non può gestire automaticamente in modo sicuro viene stampato come avviso, con il file, l'import e l'azione da eseguire.
+        Il comando è idempotente. Eseguilo di nuovo dopo le modifiche per applicare solo le novità. Tutto ciò che non può essere corretto in sicurezza viene stampato come avviso con il file, l'import e l'azione da compiere.
       </Step>
-      <Step title="Esamina e modifica">
-        Controlla i file `docs.json` e MDX generati. Verifica la struttura della navigazione e gli eventuali avvisi stampati dalla CLI.
+      <Step title="Rivedi e adatta">
+        Controlla il `docs.json` e i file MDX generati. Verifica la struttura di navigazione e correggi gli avvisi stampati dalla CLI.
       </Step>
     </Steps>
 
     ### Mappatura della configurazione
 
-    La CLI converte automaticamente `mint.json` in `docs.json`. Queste sono le differenze principali per consentirti di verificare l'output.
+    La CLI converte `mint.json` in `docs.json`. Usa queste differenze per verificare l'output.
 
     **Mintlify (`mint.json`):**
     ```json
@@ -105,16 +105,16 @@ I progetti Mintlify offrono un percorso con un solo comando: `jamdesk migrate` l
     | `<CodeGroup>` | `<CodeGroup>` | Stessa sintassi |
     | `<Tip>`, `<Note>`, `<Warning>` | `<Tip>`, `<Note>`, `<Warning>` | Stessa sintassi |
     | `<ResponseField>` | `<ParamField>` | Nome diverso |
-    | `<Snippet>` | Importa da `/snippets/` | Approccio diverso |
+    | `<Snippet>` | Import da `/snippets/` | Approccio diverso |
 
     ### Problemi comuni
 
     <AccordionGroup>
       <Accordion title="CardGroup diventa Columns">
-        `jamdesk migrate` rinomina `CardGroup` in `Columns` in tutti i file MDX. La prop `cols` viene mantenuta invariata. Controlla i file modificati dopo aver eseguito la migrazione.
+        `jamdesk migrate` rinomina `CardGroup` in `Columns` in ogni file MDX. La prop `cols` viene mantenuta invariata. Controlla i file che hai modificato dopo aver eseguito la migrazione.
       </Accordion>
       <Accordion title="ResponseField diventa ParamField">
-        Rinomina `<ResponseField>` in `<ParamField>`. Le prop restano invariate.
+        Rinomina `<ResponseField>` in `<ParamField>`. Le prop restano le stesse.
 
         ```mdx
         {/* Before */}
@@ -129,15 +129,15 @@ I progetti Mintlify offrono un percorso con un solo comando: `jamdesk migrate` l
         ```
       </Accordion>
       <Accordion title="Gli snippet vengono spostati e ricollegati automaticamente">
-        Jamdesk risolve solo gli import `/snippets/*` relativi alla radice. I progetti Mintlify spesso conservano i file MDX degli snippet in qualsiasi punto dell'albero e li importano con percorsi relativi al padre (`import X from '../shared/x.mdx'`).
+        Jamdesk risolve solo gli import `/snippets/*` relativi alla radice. I progetti Mintlify spesso conservano i file snippet MDX in qualsiasi punto dell'albero e li importano con percorsi relativi al genitore (`import X from '../shared/x.mdx'`).
 
-        `jamdesk migrate` esegue qui tre operazioni in un unico passaggio:
+        `jamdesk migrate` risolve questo problema:
 
-        - Rileva i file MDX importati come snippet ma situati fuori da `/snippets/` e li sposta in `/snippets/`, mantenendo il percorso relativo (in questo modo gli snippet con prefisso di locale come `de/foo.mdx` non entrano in conflitto).
-        - Riscrive ogni import di snippet relativo al padre in ogni file MDX nel nuovo percorso relativo alla radice.
-        - Estrae qualsiasi componente inline che usa gli hook React in un file `'use client'` in `/snippets/<name>.tsx` e sostituisce l'export inline con un import da `/snippets/`.
+        - Sposta in `/snippets/` i file MDX importati come snippet ma che si trovano al di fuori di `/snippets/`. Mantiene il loro percorso relativo, così gli snippet con prefisso di locale come `de/foo.mdx` non entrano in conflitto.
+        - Riscrive ogni import di snippet relativo al genitore in ogni file MDX con il nuovo percorso relativo alla radice.
+        - Estrae qualsiasi componente inline che usa React hook in un file `'use client'` in `/snippets/<name>.tsx` e sostituisce l'export inline con un import da `/snippets/`.
 
-        Se hai usato l'elemento JSX `<Snippet file="my-snippet.mdx" />` di Mintlify, sostituiscilo con un import MDX. Questo elemento non viene riscritto automaticamente:
+        Sostituisci l'elemento JSX `<Snippet file="my-snippet.mdx" />` di Mintlify con un import MDX. La CLI non lo riscrive:
 
         ```mdx
         {/* Before (Mintlify) */}
@@ -149,32 +149,30 @@ I progetti Mintlify offrono un percorso con un solo comando: `jamdesk migrate` l
         <MySnippet />
         ```
 
-        Il relocator è prudente. Se il progetto non dispone di una navigazione risolta o gli spostamenti previsti superano `max(5, 25%)` di tutti i file MDX, interrompe l'operazione senza modificare nulla e ne spiega il motivo. Eseguilo di nuovo dopo aver risolto la causa dell'interruzione.
+        Il relocator si interrompe senza toccare nulla se il progetto non ha una navigazione risolta o se gli spostamenti pianificati superano `max(5, 25%)` di tutti i file MDX. Stampa il motivo. Correggilo e riesegui.
       </Accordion>
       <Accordion title="topbarLinks corrisponde a navbar.links">
-        `topbarLinks` e `topbarCtaButton` di Mintlify vengono entrambi mappati su `navbar.links` in `docs.json`. Il campo `name` diventa `label` e `url` diventa `href`.
+        `topbarLinks` e `topbarCtaButton` di Mintlify corrispondono a `navbar.links` in `docs.json`. Il campo `name` diventa `label`. Il campo `url` diventa `href`.
       </Accordion>
     </AccordionGroup>
   </Tab>
 
   <Tab title="Da altre piattaforme">
-    Per GitBook, ReadMe, Docusaurus, Confluence, Notion o altri strumenti di documentazione.
-
     <Card title="Convertitore da HTML a MDX" icon="file-code" href="https://jamdesk.com/utilities/html-to-mdx" horizontal>
-      Stai esportando da una piattaforma che fornisce HTML, come Confluence o Notion? Incolla il contenuto nel convertitore gratuito da HTML a MDX per ottenere MDX pulito da inserire direttamente nel progetto.
+      Incolla l'HTML esportato da Confluence, Notion o un'altra piattaforma nel convertitore gratuito. Ottieni MDX per il tuo progetto.
     </Card>
 
     <Tip>
-      Hai bisogno di aiuto per la migrazione? [Contattaci](mailto:contact@jamdesk.com) e ti aiuteremo a configurare tutto.
+      Per assistenza nella migrazione, [contattaci](mailto:contact@jamdesk.com).
     </Tip>
 
     ### Da GitBook
 
-    GitBook archivia i contenuti come Markdown, con un file `SUMMARY.md` per la navigazione.
+    GitBook memorizza i contenuti come Markdown con un file `SUMMARY.md` per la navigazione.
 
     <Steps>
-      <Step title="Esporta i contenuti">
-        Esporta lo spazio GitBook come Markdown. Se usi la sincronizzazione Git di GitBook, i contenuti sono già in un repository Git come file `.md`.
+      <Step title="Esporta i tuoi contenuti">
+        Esporta il tuo spazio GitBook come Markdown. Con la sincronizzazione Git di GitBook, i tuoi contenuti sono già in un repo Git come file `.md`.
       </Step>
       <Step title="Converti i file in MDX">
         Rinomina i file `.md` in `.mdx` e aggiungi il frontmatter a ogni file:
@@ -189,7 +187,7 @@ I progetti Mintlify offrono un percorso con un solo comando: `jamdesk migrate` l
         ```
       </Step>
       <Step title="Mappa la navigazione da SUMMARY.md">
-        GitBook usa `SUMMARY.md` per definire la barra laterale. Converti questa struttura nei gruppi di navigazione di `docs.json`.
+        Converti la barra laterale di `SUMMARY.md` nei gruppi di navigazione di `docs.json`.
 
         **GitBook (`SUMMARY.md`):**
         ```markdown
@@ -222,9 +220,9 @@ I progetti Mintlify offrono un percorso con un solo comando: `jamdesk migrate` l
         ```
       </Step>
       <Step title="Sposta le immagini">
-        Sposta tutte le immagini in una directory `/images` e aggiorna i riferimenti nei file MDX in modo che usino percorsi assoluti, ad esempio `/images/screenshot.png`.
+        Sposta tutte le immagini in una directory `/images` e aggiorna i riferimenti nei file MDX per usare percorsi assoluti (ad es. `/images/screenshot.png`).
       </Step>
-      <Step title="Esegui il test localmente">
+      <Step title="Testa in locale">
         ```bash
         jamdesk dev
         ```
@@ -233,14 +231,14 @@ I progetti Mintlify offrono un percorso con un solo comando: `jamdesk migrate` l
 
     ### Da Docusaurus
 
-    I progetti Docusaurus usano già MDX, quindi la maggior parte dei contenuti viene trasferita direttamente.
+    I progetti Docusaurus usano già MDX. La maggior parte dei contenuti si trasferisce direttamente.
 
     <Steps>
-      <Step title="Copia i file MDX">
-        Copia il contenuto della directory `docs/` di Docusaurus nella radice del progetto Jamdesk. Mantieni la struttura delle directory esistente.
+      <Step title="Copia i tuoi file MDX">
+        Copia il contenuto della directory `docs/` di Docusaurus nella radice del tuo progetto Jamdesk. Mantieni la struttura di directory esistente.
       </Step>
       <Step title="Pulisci il frontmatter">
-        Rimuovi i campi del frontmatter specifici di Docusaurus. Mantieni `title` e `description`, eliminando gli altri.
+        Rimuovi i campi di frontmatter specifici di Docusaurus. Mantieni `title` e `description`, elimina il resto.
 
         ```yaml
         ---
@@ -256,7 +254,7 @@ I progetti Mintlify offrono un percorso con un solo comando: `jamdesk migrate` l
         ---
         ```
       </Step>
-      <Step title="Mappa sidebars.js in docs.json">
+      <Step title="Mappa sidebars.js su docs.json">
         Converti la struttura delle categorie di `sidebars.js` nei gruppi di navigazione di `docs.json`.
 
         **Docusaurus (`sidebars.js`):**
@@ -287,15 +285,15 @@ I progetti Mintlify offrono un percorso con un solo comando: `jamdesk migrate` l
         ```
       </Step>
       <Step title="Sostituisci i componenti Docusaurus">
-        Sostituisci i componenti specifici di Docusaurus con gli equivalenti Jamdesk.
+        Sostituisci i componenti specifici di Docusaurus con gli equivalenti di Jamdesk.
 
         | Docusaurus | Jamdesk | Esempio |
         |---|---|---|
-        | `:::note` / `:::tip` / `:::warning` | `<Note>` / `<Tip>` / `<Warning>` | Vedi [i componenti callout](/it/components/overview) |
-        | `import Tabs from '@theme/Tabs'` | `<Tabs>` (disponibile globalmente) | Non è necessario alcun import |
+        | `:::note` / `:::tip` / `:::warning` | `<Note>` / `<Tip>` / `<Warning>` | Vedi [componenti callout](/it/components/overview) |
+        | `import Tabs from '@theme/Tabs'` | `<Tabs>` (disponibile globalmente) | Nessun import necessario |
         | `import TabItem from '@theme/TabItem'` | `<Tab>` (disponibile globalmente) | Usa `title` invece di `label` |
       </Step>
-      <Step title="Esegui il test localmente">
+      <Step title="Testa in locale">
         ```bash
         jamdesk dev
         ```
@@ -304,11 +302,11 @@ I progetti Mintlify offrono un percorso con un solo comando: `jamdesk migrate` l
 
     ### Da altri strumenti
 
-    Per Confluence, Notion, ReadMe o qualsiasi altra piattaforma, il processo è lo stesso: converti i contenuti in Markdown, quindi configura la struttura del progetto Jamdesk.
+    Per Confluence, Notion, ReadMe o un'altra piattaforma, porta i contenuti in Markdown. Poi imposta la struttura del progetto Jamdesk.
 
     <Steps>
       <Step title="Esporta come Markdown">
-        La maggior parte delle piattaforme offre un'opzione di esportazione in Markdown o HTML. Usa Markdown, se disponibile. Per l'HTML, converti in Markdown usando uno strumento come [Pandoc](https://pandoc.org/).
+        La maggior parte delle piattaforme offre un'opzione di esportazione in Markdown o HTML. Usa Markdown se disponibile. Converti l'HTML in Markdown con uno strumento come [Pandoc](https://pandoc.org/).
 
         ```bash
         # Convert HTML to Markdown with Pandoc
@@ -316,15 +314,15 @@ I progetti Mintlify offrono un percorso con un solo comando: `jamdesk migrate` l
         ```
       </Step>
       <Step title="Crea docs.json">
-        Inizia con una configurazione minima e amplia la navigazione man mano che aggiungi pagine.
+        Parti da una configurazione minima. Aggiungi alla navigazione man mano che aggiungi pagine.
       </Step>
       <Step title="Converti i file in MDX">
         Rinomina i file `.md` in `.mdx` e aggiungi il frontmatter (`title`, `description`) a ogni file.
       </Step>
-      <Step title="Sposta gli asset">
-        Sposta le immagini e gli altri asset in una directory `/images`. Aggiorna i riferimenti ai file in modo che usino percorsi assoluti.
+      <Step title="Sposta le risorse">
+        Sposta immagini e altre risorse in una directory `/images`. Aggiorna i riferimenti ai file per usare percorsi assoluti.
       </Step>
-      <Step title="Esegui il test localmente">
+      <Step title="Testa in locale">
         ```bash
         jamdesk dev
         ```
@@ -336,19 +334,19 @@ I progetti Mintlify offrono un percorso con un solo comando: `jamdesk migrate` l
 ## Checklist post-migrazione
 
 <Check>Tutte le pagine vengono visualizzate senza errori</Check>
-<Check>La struttura della navigazione corrisponde a quella del sito originale</Check>
+<Check>La struttura di navigazione corrisponde al tuo sito originale</Check>
 <Check>I link interni funzionano correttamente</Check>
-<Check>Le immagini e gli asset vengono visualizzati correttamente</Check>
-<Check>I blocchi di codice usano l'evidenziazione della sintassi corretta</Check>
-<Check>La ricerca indicizza i contenuti</Check>
+<Check>Immagini e risorse vengono visualizzate correttamente</Check>
+<Check>I blocchi di codice hanno l'evidenziazione della sintassi corretta</Check>
+<Check>La ricerca indicizza i tuoi contenuti</Check>
 
 ## Quali sono i prossimi passaggi?
 
 <Columns cols={2}>
   <Card title="Struttura delle directory" icon="folder-tree" href="/it/setup/directory-structure">
-    Scopri come organizzare la documentazione
+    Scopri come organizzare la tua documentazione
   </Card>
   <Card title="Riferimento docs.json" icon="gear" href="/it/config/docs-json-reference">
-    Configura le impostazioni del sito
+    Configura le impostazioni del tuo sito
   </Card>
 </Columns>

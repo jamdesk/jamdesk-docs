@@ -1,15 +1,14 @@
 ---
 title: Solo dominio personalizzato
 description: >-
-  Attiva Solo dominio personalizzato in Jamdesk per bloccare l'accesso diretto
-  al sottodominio e pubblicare la documentazione solo dal tuo dominio.
+  Attiva Solo dominio personalizzato in Jamdesk per bloccare l'accesso diretto al sottodominio e servire la documentazione solo dal tuo dominio.
 ---
 
-La documentazione è ospitata su `YOUR_SLUG.jamdesk.app`. Quando colleghi un dominio personalizzato, il sottodominio continua a rispondere, ma ogni pagina che pubblica include un tag `<link rel="canonical">` che punta al tuo dominio, così i motori di ricerca indicizzano il tuo dominio, mai il sottodominio. Per la maggior parte dei progetti è tutto ciò che serve.
+La tua documentazione è ospitata su `YOUR_SLUG.jamdesk.app`. Il sottodominio continua a rispondere anche dopo che hai collegato un dominio personalizzato. Ogni pagina che serve include un tag `<link rel="canonical">` che punta al tuo dominio. I motori di ricerca indicizzano il tuo dominio, mai il sottodominio.
 
 Gli screenshot mostrano l'interfaccia in inglese.
 
-**Custom domain only** fa un ulteriore passo avanti: disattiva il sottodominio per i visitatori diretti. Una semplice richiesta a `YOUR_SLUG.jamdesk.app` restituisce un 404 e la documentazione è raggiungibile solo dal tuo dominio.
+**Solo dominio personalizzato** disattiva il sottodominio per i visitatori diretti. Una visita diretta a `YOUR_SLUG.jamdesk.app` restituisce un 404. La documentazione è accessibile solo tramite il tuo dominio.
 
 ```mermaid
 flowchart LR
@@ -19,23 +18,23 @@ flowchart LR
 ```
 
 <Warning>
-Questa opzione nasconde il sottodominio, ma non è una password. Chiunque acceda dal tuo dominio continuerà a vedere la documentazione. Per controllare *chi* può leggerla, usa la [protezione con password](/it/setup/password-protection); le due opzioni funzionano insieme.
+Questo nasconde il tuo sottodominio. Non è una password. Chiunque acceda tramite il tuo dominio può comunque consultare la documentazione. Per controllare *chi* può leggerla, usa la [protezione con password](/it/setup/password-protection). Puoi attivare entrambe le opzioni.
 </Warning>
 
 ## Attivazione
 
 <Steps>
-  <Step title="Verifica il dominio personalizzato">
-    Aggiungi e verifica il dominio nel dashboard — consulta [Custom Domains](/it/deploy/custom-domains). Il toggle richiede un dominio con stato **Active**.
+  <Step title="Verifica il tuo dominio personalizzato">
+    Aggiungi e verifica il tuo dominio nella dashboard. Consulta [Domini personalizzati](/it/deploy/custom-domains). Per attivare l'opzione, il dominio deve avere lo stato **Active**.
   </Step>
-  <Step title="Controlla il proxy (solo configurazioni reverse proxy)">
-    Se il dominio è un semplice CNAME puntato a Jamdesk (ad esempio `docs.acme.com`), salta questo passaggio: non c'è nulla da configurare. Se pubblichi la documentazione su `yoursite.com/docs` tramite un proxy, il proxy deve identificarsi in ogni richiesta che inoltra — consulta [Configurazioni proxy](#configurazioni-proxy) qui sotto.
+  <Step title="Controlla il proxy (solo configurazioni con reverse proxy)">
+    Se il tuo dominio è un semplice CNAME che punta a Jamdesk (come `docs.acme.com`), salta questo passaggio. Se servi la documentazione su `yoursite.com/docs` tramite un proxy, quest'ultimo deve identificarsi in ogni richiesta inoltrata. Consulta [Configurazioni proxy](#configurazioni-proxy) qui sotto.
   </Step>
-  <Step title="Attiva il toggle">
-    Nel dashboard, apri le **Settings** del progetto, espandi la scheda **Custom Domain** e attiva **Custom domain only**. Jamdesk controlla prima il dominio online e non abilita il toggle finché la configurazione non supera il controllo; se il controllo fallisce, il messaggio indica esattamente cosa correggere.
+  <Step title="Attiva l'opzione">
+    Apri **Settings** del progetto nella dashboard. Espandi la scheda **Custom Domain** e attiva **Custom domain only**. Jamdesk controlla prima il tuo dominio attivo. L'opzione resta disattivata finché la configurazione non supera il controllo. Se il controllo non riesce, il messaggio indica cosa correggere.
 
     <Frame>
-      <img src="/images/dashboard/custom-domain-only-toggle.webp" alt="The Custom domain only toggle in the Custom Domain card, switched on" />
+      <img src="/images/dashboard/custom-domain-only-toggle.webp" alt="L'opzione Custom domain only nella scheda Custom Domain, attivata" />
     </Frame>
   </Step>
 </Steps>
@@ -44,16 +43,14 @@ Le modifiche raggiungono tutti i server edge entro un minuto.
 
 ## Configurazioni proxy
 
-Una richiesta a `YOUR_SLUG.jamdesk.app` viene pubblicata solo se si identifica come proveniente dal tuo proxy, tramite l'header `X-Jamdesk-Forwarded-Host` oppure il parametro di query `?jd_proxy=1`. Ogni guida alla configurazione include già l'opzione corretta:
+Jamdesk serve una richiesta a `YOUR_SLUG.jamdesk.app` solo se rileva che proviene dal tuo proxy. La richiesta deve includere l'header `X-Jamdesk-Forwarded-Host` oppure il parametro `?jd_proxy=1`. Queste guide di configurazione indicano quale usare:
 
-- **[Vercel](/it/deploy/vercel)** — le riscritture di `vercel.json` includono `?jd_proxy=1`; Edge Middleware imposta l'header
-- **[Cloudflare Workers](/it/deploy/cloudflare)** — il Worker imposta l'header
-- **[AWS CloudFront](/it/deploy/aws)** — l'header personalizzato dell'origine
-- **[Reverse proxy](/it/deploy/reverse-proxy)** — nginx, Apache, Caddy e HAProxy impostano l'header
+- **[Vercel](/it/deploy/vercel)**: le riscritture in `vercel.json` includono `?jd_proxy=1`. Edge Middleware imposta l'header.
+- **[Cloudflare Workers](/it/deploy/cloudflare)**: il Worker imposta l'header.
+- **[AWS CloudFront](/it/deploy/aws)**: usa l'header personalizzato dell'origine.
+- **[Reverse proxy](/it/deploy/reverse-proxy)**: nginx, Apache, Caddy e HAProxy impostano l'header.
 
-Se hai seguito una di queste guide, la configurazione è già pronta.
-
-Utilizzi [MCP](/it/ai/mcp-server) o il [widget di chat](/it/ai/chat) tramite un reverse proxy? Inoltra `/api/mcp/:path*` e `/api/chat/:path*` nello stesso modo di `/docs`. Su Vercel:
+Usi [MCP](/it/ai/mcp-server) o il [widget di chat](/it/ai/chat) tramite un reverse proxy? Inoltra `/api/mcp/:path*` e `/api/chat/:path*` come fai con `/docs`. Su Vercel:
 
 ```json vercel.json
 {
@@ -64,14 +61,14 @@ Utilizzi [MCP](/it/ai/mcp-server) o il [widget di chat](/it/ai/chat) tramite un 
 }
 ```
 
-Se il dominio personalizzato ha un CNAME verso Jamdesk, MCP e la chat sul tuo dominio continueranno a funzionare senza modifiche: indirizza i client MCP a `https://docs.acme.com/_mcp` e il gioco è fatto.
+MCP e la chat non richiedono modifiche se il dominio usa un CNAME che punta a Jamdesk. Indirizza i client MCP a `https://docs.acme.com/_mcp`.
 
 ## Da sapere
 
-- **Sul sottodominio senza percorso tutto restituisce 404**: pagine, `sitemap.xml`, `robots.txt`, `llms.txt` ed esportazioni Markdown. I browser visualizzano una semplice pagina Jamdesk di contenuto non trovato.
-- **Le immagini restano raggiungibili.** Immagini, video e immagini di anteprima social (OG) sono escluse: l'anteprima del sito nel dashboard le carica direttamente dal sottodominio.
-- **Non puoi bloccarti fuori dal sito.** Se il DNS del dominio dovesse smettere di funzionare, Jamdesk interrompe l'applicazione del blocco e il sottodominio torna a essere pubblicato finché il dominio non viene ripristinato. Se invece modifichi in modo errato la configurazione del proxy (ad esempio rimuovendo il parametro da una riscrittura), disattiva il toggle mentre risolvi il problema.
-- **La [Search API](/it/jamdesk-api/docs-search-api) non è interessata**: l'autenticazione avviene tramite chiave API.
+- **Sul sottodominio semplice tutto restituisce 404**: pagine, `sitemap.xml`, `robots.txt`, `llms.txt` ed esportazioni Markdown. I browser mostrano una pagina Jamdesk di contenuto non trovato.
+- **Le immagini restano accessibili.** Immagini, video e immagini di anteprima social (OG) sono esclusi. L'anteprima del sito nella dashboard li carica direttamente dal sottodominio.
+- **Non puoi bloccarti fuori.** Se il DNS del tuo dominio smette di funzionare, Jamdesk interrompe l'applicazione del blocco. Il sottodominio torna a servire i contenuti finché il dominio non viene ripristinato. Se si rompe la configurazione del proxy (ad esempio, rimuovendo il parametro da una riscrittura), disattiva l'opzione mentre la correggi.
+- **L'[API di ricerca](/it/jamdesk-api/docs-search-api) non è interessata.** L'autenticazione avviene tramite chiave API.
 
 ## E adesso?
 
@@ -79,10 +76,10 @@ Se il dominio personalizzato ha un CNAME verso Jamdesk, MCP e la chat sul tuo do
   <Card title="Vercel" icon="cloud-arrow-up" href="/it/deploy/vercel">
     Aggiungi il parametro jd_proxy o Edge Middleware
   </Card>
-  <Card title="Custom Domains" icon="globe" href="/it/deploy/custom-domains">
-    Registra e verifica il dominio
+  <Card title="Domini personalizzati" icon="globe" href="/it/deploy/custom-domains">
+    Registra e verifica il tuo dominio
   </Card>
-  <Card title="Password Protection" icon="lock" href="/it/setup/password-protection">
-    Controlla chi può leggere la documentazione
+  <Card title="Protezione con password" icon="lock" href="/it/setup/password-protection">
+    Controlla chi può consultare la documentazione
   </Card>
 </Columns>

@@ -1,9 +1,9 @@
 ---
-title: 构建 API / 触发器
-description: 通过 API 触发文档重建，无需推送提交，适用于 CI 流水线和定时更新。
+title: Builds API / Triggers
+description: 无需推送提交即可以编程方式触发文档重新构建，适用于 CI 流水线和定时更新。
 ---
 
-使用构建 API 触发文档重建，无需推送新提交。它适用于 CI 流水线、定时重建，或在文档目录外生成的内容。
+使用 Builds API 可在不推送新提交的情况下触发文档重新构建。这适用于 CI 流水线、定时重新构建，或在文档目录之外生成的内容。
 
 ## 身份验证
 
@@ -13,7 +13,7 @@ description: 通过 API 触发文档重建，无需推送提交，适用于 CI �
 Authorization: Bearer YOUR_API_KEY
 ```
 
-在项目的 **Settings** → **API** 中查找 API 密钥。
+在项目的 **Settings** → **API** 中找到你的 API 密钥。
 
 ## 触发重建
 
@@ -47,7 +47,7 @@ console.log(build.buildId, build.status);
 
 ### 响应
 
-请求成功时会返回包含构建元数据的 `200 OK` 响应，你可以使用这些元数据跟踪进度。
+成功的请求返回 `200 OK` 以及构建元数据，您可以用这些数据跟踪进度。
 
 ```json
 {
@@ -67,17 +67,17 @@ console.log(build.buildId, build.status);
 ```
 
 <Note>
-如果收到 `429` 响应，请使用指数退避策略重试。如果需要更高的限制，请联系支持团队。
+如果收到 `429` 响应，请使用指数退避策略重试。如需更高的限额，请联系支持人员。
 </Note>
 
 ### 响应字段
 
 <ResponseField name="buildId" type="string">
-  唯一的构建标识符。在仪表板中引用构建时使用此标识符。
+  唯一构建标识符。使用它可在仪表板中引用该构建。
 </ResponseField>
 
 <ResponseField name="status" type="string">
-  当前构建状态。可能的值包括：`queued`、`building`、`deployed`、`failed`。
+  当前构建状态。可能的值之一：`queued`、`building`、`deployed`、`failed`。
 </ResponseField>
 
 <ResponseField name="createdAt" type="string">
@@ -85,11 +85,11 @@ console.log(build.buildId, build.status);
 </ResponseField>
 
 <ResponseField name="commit.sha" type="string">
-  触发构建的短提交哈希。
+  触发构建的提交的短哈希值。
 </ResponseField>
 
 <ResponseField name="commit.message" type="string">
-  源代码仓库中的提交消息。
+  源代码仓库中的提交信息。
 </ResponseField>
 
 <ResponseField name="commit.author" type="string">
@@ -97,7 +97,7 @@ console.log(build.buildId, build.status);
 </ResponseField>
 
 <ResponseField name="project.id" type="string">
-  与仪表板项目匹配的项目标识符。
+  与您仪表板项目匹配的项目标识符。
 </ResponseField>
 
 <ResponseField name="project.name" type="string">
@@ -106,18 +106,18 @@ console.log(build.buildId, build.status);
 
 ## 跟踪构建状态
 
-你可以在仪表板的 **Deployments** 下查看构建状态。每次构建都会经历以下阶段：
+构建状态可在仪表板的 **Deployments** 下查看。每次构建都会经历以下阶段：
 
-1. **queued** -- 构建正在队列中等待。
-2. **building** -- 构建服务正在编译文档。
-3. **deployed** -- 构建已完成，网站已上线。
-4. **failed** -- 构建出现问题。请检查构建日志了解详情。
+1. **queued**：构建正在队列中等待。
+2. **building**：构建服务正在编译您的文档。
+3. **deployed**：构建完成，您的站点已上线。
+4. **failed**：出现错误。请查看构建日志了解详情。
 
-如果代码仓库已连接到 GitHub，提交状态检查会自动更新。构建部署成功后，提交上会显示绿色勾号；如果构建失败，则会显示红色 X。无需轮询 API 获取状态更新。
+如果您的仓库已连接到 GitHub，提交状态检查会自动更新。构建部署完成时，提交上会出现绿色勾号；构建失败时，会出现红色叉号。您无需轮询 API 来获取状态更新。
 
 ## 错误响应格式
 
-错误响应遵循一致的结构：
+错误响应遵循统一的结构：
 
 ```json
 {
@@ -134,22 +134,22 @@ console.log(build.buildId, build.status);
 </ResponseField>
 
 <ResponseField name="error.message" type="string">
-  对所发生问题的人类可读描述。
+  对出错原因的人类可读描述。
 </ResponseField>
 
 <ResponseField name="error.status" type="number">
-  与响应状态匹配的 HTTP 状态代码。
+  与响应状态一致的 HTTP 状态码。
 </ResponseField>
 
 ### 错误代码
 
-| 状态 | 代码 | 消息 | 修复方法 |
+| 状态 | 代码 | 消息 | 解决方法 |
 |--------|------|---------|-----|
-| **401** | `unauthorized` | API 密钥无效 | 在 **Settings** → **API** 中重新生成密钥 |
-| **403** | `forbidden` | 无权访问项目 | 确认项目 ID 与 API 密钥所属项目匹配 |
-| **404** | `project_not_found` | 未找到项目 | 在仪表板中验证项目 ID |
-| **429** | `rate_limited` | 请求过多 | 采用指数退避策略并重试 |
-| **500** | `internal_error` | 服务器内部错误 | 几秒后重试。如果问题仍然存在，请联系支持团队 |
+| **401** | `unauthorized` | Invalid API key | 在 **Settings** → **API** 中重新生成密钥 |
+| **403** | `forbidden` | Unauthorized project access | 确认项目 ID 与 API 密钥所属的项目一致 |
+| **404** | `project_not_found` | Project not found | 在仪表板中核对项目 ID |
+| **429** | `rate_limited` | Too many requests | 退避后使用指数退避策略重试 |
+| **500** | `internal_error` | Internal server error | 几秒后重试。如问题持续，请联系支持人员 |
 
 ## 相关文章
 

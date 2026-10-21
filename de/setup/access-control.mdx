@@ -1,29 +1,29 @@
 ---
 title: Zugriffskontrolle
-description: "Legen Sie fest, wie Leser auf Ihre Dokumentation zugreifen: öffentlich, per Passwort, teilweise privat, mit eigenem JWT-Login oder über SSO."
+description: "Legen Sie fest, wer Ihre Dokumentation lesen darf: öffentlich, passwortgeschützt, teilweise privat, per JWT-Login oder SSO – passend zu Ihrer Zielgruppe."
 ---
 
-Jamdesk bietet fünf Möglichkeiten, den Zugriff auf Ihre Dokumentation zu steuern. Die meisten Teams entscheiden sich für eine davon; manche kombinieren mehrere.
+Jamdesk bietet fünf Möglichkeiten, den Zugriff auf Ihre Dokumentation zu steuern.
 
 ## Den richtigen Ansatz wählen
 
 | Ansatz | Geeignet für | Einrichtung |
 |---|---|---|
-| **Vollständig öffentlich** | Externe Produktdokumentation, Open-Source-Projekte und alles, was indexiert und geteilt werden soll. | Standard; keine Konfiguration erforderlich. |
-| **Passwort für die gesamte Website** | Alles ist intern: technische Runbooks, Dokumentation nur für Partner oder ein noch nicht veröffentlichtes Produkt. Ein gemeinsames Passwort schützt die gesamte Website. | `auth.password.enabled: true` in `docs.json` + Passwort im Dashboard festlegen. Siehe [Passwortschutz](/de/setup/password-protection). |
-| **Gemischt (einige Seiten privat)** | Der Großteil der Dokumentation ist öffentlich; einige Seiten sind intern (ein Runbook, eine Beta-Funktion oder eine interne API-Referenz). | Fügen Sie `private: true` zum Frontmatter interner Seiten hinzu oder listen Sie sie unter `auth.password.private[]` auf. Siehe [Passwortschutz](/de/setup/password-protection). |
-| **Eigener Login (JWT)** | Leser melden sich bereits bei Ihrem Produkt an. Ihr Backend signiert für jeden von ihnen ein kurzlebiges Token, Jamdesk wandelt es in eine Sitzung um und Seiten lassen sich auf Gruppen beschränken, die Sie im Token angeben. | `auth.jwt.enabled: true` sowie eine `loginUrl` in `docs.json` und ein Signaturschlüssel aus dem Dashboard. In jedem Tarif enthalten. Siehe [JWT-Authentifizierung](/de/setup/jwt-authentication). |
-| **SSO (Enterprise)** | Leser sollen sich bei Ihrem bestehenden Identitätsanbieter anmelden: ohne gemeinsame Passwörter, mit Prüfprotokoll und der Möglichkeit, den Zugriff durch Entfernen eines Benutzers zu entziehen. | Enterprise-Tarif. Siehe [SSO](/de/setup/sso). |
+| **Vollständig öffentlich** | Produktdokumentation für externe Zielgruppen, Open-Source-Projekte und alle Inhalte, die indexiert und geteilt werden sollen. | Standard. Keine Konfiguration erforderlich. |
+| **Passwort für die gesamte Website** | Alles ist intern: Engineering-Runbooks, Dokumentation nur für Partner oder ein noch nicht veröffentlichtes Produkt. Ein gemeinsames Passwort schützt die gesamte Website. | `auth.password.enabled: true` in `docs.json` + Passwort im Dashboard festlegen. Siehe [Passwortschutz](/de/setup/password-protection). |
+| **Gemischt (einige Seiten privat)** | Der Großteil der Dokumentation ist öffentlich. Einige Seiten sind intern, etwa ein Runbook, eine Beta-Funktion oder eine interne API-Referenz. | Fügen Sie `private: true` zum Frontmatter interner Seiten hinzu oder listen Sie sie unter `auth.password.private[]` auf. Siehe [Passwortschutz](/de/setup/password-protection). |
+| **Eigener Login (JWT)** | Leser melden sich bereits bei Ihrem Produkt an. Ihr Backend signiert für jeden Leser ein kurzlebiges Token. Jamdesk wandelt es in eine Sitzung um. Seiten lassen sich auf Gruppen beschränken, die Sie im Token angeben. | `auth.jwt.enabled: true` und eine `loginUrl` in `docs.json` sowie ein Signaturschlüssel aus dem Dashboard. In allen Tarifen enthalten. Siehe [JWT-Authentifizierung](/de/setup/jwt-authentication). |
+| **SSO (Enterprise)** | Leser sollen sich bei Ihrem vorhandenen Identitätsanbieter anmelden: ohne gemeinsame Passwörter, mit Audit-Trail und der Möglichkeit, den Zugriff durch Entfernen eines Nutzers zu entziehen. | Enterprise-Tarif. Siehe [SSO](/de/setup/sso). |
 
 <Tip>
-  Sie können jederzeit zwischen den Ansätzen wechseln, indem Sie `docs.json` bearbeiten und die Änderungen pushen. Der Wechsel von der Website-weiten zur gemischten Zugriffskontrolle (oder umgekehrt) erfordert einen Build.
+  Wechseln Sie jederzeit den Ansatz, indem Sie `docs.json` bearbeiten und die Änderungen pushen. Der Wechsel vom Schutz der gesamten Website zum gemischten Modus (oder umgekehrt) erfordert nur einen Build.
 </Tip>
 
 ## Häufige Muster
 
 ### Interne und externe Dokumentation in einem Projekt
 
-Die meisten Teams möchten umfangreiche interne Dokumentation hinter einem Login und daneben eine kleinere öffentliche Website für Kunden. Dafür sind keine zwei Projekte nötig. Verwenden Sie den **gemischten Modus** in einem einzelnen Jamdesk-Projekt:
+Sie benötigen keine zwei Projekte für interne Dokumentation hinter einem Login und eine öffentliche Website für Kunden. Verwenden Sie den **gemischten Modus** in einem Jamdesk-Projekt:
 
 ```yaml
 ---
@@ -32,9 +32,9 @@ private: true
 ---
 ```
 
-Seiten mit `private: true` sind geschützt; alle anderen bleiben öffentlich. Alles liegt in einem einzelnen Repository mit einem Build und einem Dashboard. Der Entsperrbildschirm wird nur angezeigt, wenn ein Leser eine geschützte Seite aufruft.
+Seiten mit `private: true` sind geschützt. Alle anderen bleiben öffentlich. Sie behalten ein Repository, einen Build und ein Dashboard. Der Entsperrbildschirm erscheint nur auf geschützten Seiten.
 
-Bei größeren internen Bereichen können Sie die Pfade in `docs.json` auflisten, anstatt jede Datei einzeln zu markieren. Hinweis: `auth.password.private[]` aktiviert automatisch den Modus für bestimmte Seiten. Fügen Sie dazu nicht `enabled: true` hinzu (das ist der Modus für die gesamte Website – also das Gegenteil von dem, was Sie hier benötigen).
+Für größere interne Bereiche können Sie die Pfade stattdessen in `docs.json` auflisten, anstatt jede Datei einzeln zu markieren. `auth.password.private[]` aktiviert automatisch den Modus für bestimmte Seiten. Fügen Sie nicht zusätzlich `enabled: true` hinzu. Damit würden Sie den Modus für die gesamte Website aktivieren – genau das Gegenteil dessen, was Sie hier benötigen.
 
 ```json docs.json
 {
@@ -49,13 +49,13 @@ Bei größeren internen Bereichen können Sie die Pfade in `docs.json` auflisten
 
 ### Zwei separate Projekte
 
-Verwenden Sie nur dann zwei Projekte, wenn die Zielgruppen ein vollständig unterschiedliches Branding, separate benutzerdefinierte Domains, separate Analysen oder unterschiedliche Tarifstufen benötigen. Beispiele: eine öffentliche Dokumentationswebsite unter `docs.acme.com` und ein separates internes Wiki unter `internal.acme.com`. Der Wartungsaufwand ist höher: zwei Builds, zwei Dashboards, zwei Domains.
+Verwenden Sie zwei Projekte nur, wenn die Zielgruppen ein vollständig unterschiedliches Branding, separate benutzerdefinierte Domains, separate Analysen oder unterschiedliche Tarifstufen benötigen. Beispiele: eine öffentliche Dokumentationswebsite unter `docs.acme.com` und ein separates internes Wiki unter `internal.acme.com`. Der Wartungsaufwand ist höher: zwei Builds, zwei Dashboards und zwei Domains.
 
 ### Benutzerzugriff über den eigenen Login
 
-Wenn Ihre Kunden bereits Konten bei Ihnen haben, ist ein gemeinsames Passwort ein Rückschritt: Es wird weitergeleitet, läuft nicht automatisch ab und unterscheidet nicht zwischen einzelnen Kunden. Mit der [JWT-Authentifizierung](/de/setup/jwt-authentication) wird ein angemeldeter Benutzer, der Ihre Dokumentation öffnet, zu einer URL auf Ihrer Website weitergeleitet. Ihr Backend signiert ein Token und Jamdesk erstellt für diese Person eine Sitzung. Leser benötigen kein Jamdesk-Konto, und es gibt kein gemeinsames Geheimnis, das weitergegeben werden könnte.
+Ein gemeinsames Passwort ist ein Rückschritt, wenn Ihre Kunden bereits Konten bei Ihnen haben. Es wird weitergeleitet, läuft nie von selbst ab und kann Kunden nicht voneinander unterscheiden. Die [JWT-Authentifizierung](/de/setup/jwt-authentication) leitet angemeldete Leser, die Ihre Dokumentation aufrufen, zu einer URL auf Ihrer Seite weiter. Ihr Backend signiert ein Token. Jamdesk erstellt eine Sitzung für den jeweiligen Leser. Leser benötigen kein Jamdesk-Konto. Es gibt kein gemeinsames Geheimnis, das weitergeleitet werden könnte.
 
-Das Token kann auch Gruppen enthalten. Fügen Sie `groups: ["admin"]` zum Frontmatter einer Seite hinzu. Dann können nur Besucher, deren Token `admin` enthält, die Seite öffnen oder in der Navigation sehen. Alle anderen erhalten einen 404-Fehler. So erfahren sie nicht, dass die Seite existiert.
+Das Token kann auch Gruppen enthalten. Fügen Sie `groups: ["admin"]` zum Frontmatter einer Seite hinzu. Nur Besucher, deren Token `admin` enthält, können die Seite öffnen oder in der Navigation sehen. Alle anderen erhalten einen 404-Fehler. Die Seite verrät nicht, dass sie existiert.
 
 ```yaml
 ---
@@ -64,36 +64,34 @@ groups: ["enterprise"]
 ---
 ```
 
-Kombinieren Sie dies mit `public`-Pfaden für Bereiche der Website, die öffentlich bleiben sollen, etwa ein Änderungsprotokoll oder eine Statusseite.
+Kombinieren Sie dies mit öffentlichen Pfaden für Bereiche der Website, die offen bleiben sollen, etwa ein Änderungsprotokoll oder eine Statusseite.
 
 ### SSO für die Dokumentationswebsite
 
-Bei Enterprise-Tarifen melden sich Leser bei Ihrem Identitätsanbieter an (Okta, Google Workspace, Azure AD usw.), anstatt ein gemeinsames Passwort einzugeben. Das ist besonders geeignet, wenn Sie ein Prüfprotokoll darüber benötigen, wer was gelesen hat, oder wenn der Zugriff auf die Dokumentation beim Ausscheiden eines Benutzers sofort entzogen werden muss. Unter [SSO](/de/setup/sso) finden Sie eine allgemeine Übersicht und erfahren, wie Sie ein Gespräch mit dem Vertrieb beginnen.
+Leser mit Enterprise-Tarifen melden sich bei Ihrem Identitätsanbieter (Okta, Google Workspace, Azure AD usw.) an, statt ein gemeinsames Passwort einzugeben. Verwenden Sie SSO, wenn Sie einen Audit-Trail darüber benötigen, wer was gelesen hat, oder wenn beim Ausscheiden eines Mitarbeiters der Zugriff auf die Dokumentation sofort entzogen werden muss. Unter [SSO](/de/setup/sso) finden Sie eine Übersicht und Informationen zur Kontaktaufnahme mit dem Vertrieb.
 
 ## Editoren und Leser
 
-Drei verschiedene Zugriffskonzepte werden manchmal verwechselt:
+Jamdesk unterscheidet drei separate Zugriffsrollen:
 
-| Rolle | Aufgaben | So wird der Zugriff gewährt |
+| Rolle | Aufgaben | Zugriffserteilung |
 |---|---|---|
-| **Editoren** | MDX-Inhalte schreiben und aktualisieren. | Die Dokumentation wird bearbeitet, indem MDX in Ihr verbundenes GitHub-Repository committet wird. Daher **bestimmen die Berechtigungen für Ihr GitHub-Repository, wer Änderungen committen kann**. Ein Push löst nur dann einen Build aus, wenn die Person, die ihn ausgeführt hat, Mitglied des Jamdesk-Projekts ist (ermittelt anhand des verknüpften GitHub-Kontos oder der E-Mail-Adresse) oder ein von Ihnen autorisiertes Automatisierungskonto verwendet. Ein Push von einer anderen Person wird als fehlgeschlagener Build angezeigt, und der Projekteigentümer erhält eine E-Mail. Siehe [GitHub](/de/integrations/github#builds-werden-nicht-ausgelöst). |
-| **Leser** | Die veröffentlichte Dokumentationswebsite ansehen. | Alle (öffentlich), alle mit dem Passwort (Passwortmodus), alle, für die Ihr Login-Ablauf ein Token signiert (JWT), oder alle, die sich über Ihren IdP authentifizieren (SSO). |
-| **Dashboard-Teammitglieder** | Builds, Analysen und Projekteinstellungen im Jamdesk-Dashboard verwalten. | Im Dashboard über **Project Settings → Members** eingeladen. Die Mitgliedschaft ermöglicht außerdem, dass die Pushes einer Person Builds auslösen. Siehe [Teammitglieder](/de/help/projects/team-members). |
+| **Bearbeiter** | MDX-Inhalte schreiben und aktualisieren. | Die Dokumentation wird bearbeitet, indem MDX in Ihr verbundenes GitHub-Repository committet wird. **Die Berechtigungen Ihres GitHub-Repositorys bestimmen, wer committet darf**. Ein Push löst nur dann einen Build aus, wenn die Person, die ihn ausgeführt hat, Mitglied des Jamdesk-Projekts ist (zugeordnet über das verknüpfte GitHub-Konto oder die E-Mail-Adresse) oder ein von Ihnen autorisiertes Automatisierungskonto verwendet. Ein Push von allen anderen wird als fehlgeschlagener Build angezeigt. Der Projektinhaber erhält eine E-Mail. Siehe [GitHub](/de/integrations/github#builds-werden-nicht-ausgelöst). |
+| **Leser** | Die veröffentlichte Dokumentationswebsite ansehen. | Alle (öffentlich), alle Personen mit dem Passwort (Passwortmodus), alle Personen, für die Ihr Login-Ablauf ein Token signiert (JWT), oder alle Personen, die sich über Ihren IdP authentifizieren (SSO). |
+| **Dashboard-Teammitglieder** | Builds, Analysen und Projekteinstellungen im Jamdesk-Dashboard verwalten. | Werden über **Project Settings → Members** im Dashboard eingeladen. Die Mitgliedschaft ermöglicht außerdem, dass die Pushes einer Person Builds auslösen. Siehe [Teammitglieder](/de/help/projects/team-members). |
 
-Ein Teammitglied kann jede Kombination dieser drei Rollen haben. Es gibt eine Verbindung zwischen ihnen: Die Pushes eines Editors lösen erst dann Builds aus, wenn die Person auch Teammitglied ist.
+Ein Teammitglied kann beliebige Kombinationen dieser Rollen innehaben. Eine Regel verbindet sie: Die Pushes eines Bearbeiters lösen nur dann einen Build aus, wenn der Bearbeiter auch Teammitglied ist.
 
 ## Wie geht es weiter?
 
 <Columns cols={2}>
   <Card title="Passwortschutz" icon="lock" href="/de/setup/password-protection">
-    Passwortschutz für die gesamte Website und einzelne Seiten, Hinweise, Passwortwechsel und Sitzungskontrollen.
+    Passwortschutz für die gesamte Website oder einzelne Seiten, Hinweise, Passwortwechsel und Sitzungskontrollen.
   </Card>
   <Card title="JWT-Authentifizierung" icon="id-badge" href="/de/setup/jwt-authentication">
-    Schützen Sie die Dokumentation mit Ihrem eigenen Login, benutzerbezogenen Sitzungen und gruppenbeschränkten Seiten.
+    Schützen Sie die Dokumentation mit Ihrem eigenen Login, nutzerbezogenen Sitzungen und auf Gruppen beschränkten Seiten.
   </Card>
   <Card title="SSO (Enterprise)" icon="key" href="/de/setup/sso">
-    Anmeldung bei Ihrem Identitätsanbieter für Dashboard und Dokumentation.
+    Anmeldung bei Ihrem Identitätsanbieter für das Dashboard und die Dokumentation.
   </Card>
 </Columns>
-
-```

@@ -1,49 +1,49 @@
 ---
 title: Server MCP
 sidebarTitle: Server MCP
-description: Ogni sito Jamdesk include un server MCP integrato. Assistenti AI come Claude e Cursor possono cercare e leggere direttamente la documentazione del sito.
+description: Ogni sito Jamdesk include un server MCP integrato. Assistenti AI come Claude e Cursor possono cercare e leggere direttamente la tua documentazione.
 ---
 
-Ogni sito Jamdesk include un server MCP (Model Context Protocol) integrato. Mentre `llms.txt` fornisce agli strumenti AI un’istantanea statica della documentazione, MCP consente di cercare e interrogare i contenuti in modo interattivo: è utile quando gli agenti AI devono trovare risposte specifiche invece di leggere tutto.
+Ogni sito Jamdesk dispone di un server MCP (Model Context Protocol) integrato. `llms.txt` fornisce agli strumenti AI un'istantanea statica della tua documentazione. MCP permette loro di cercare e interrogare la documentazione per trovare risposte specifiche senza doverla leggere per intero.
 
 ## Che cos’è MCP?
 
-Il [Model Context Protocol](https://modelcontextprotocol.io) è uno standard aperto che consente agli strumenti AI di accedere a fonti di dati esterne. La documentazione Jamdesk espone due strumenti tramite MCP:
+[Model Context Protocol](https://modelcontextprotocol.io) è uno standard aperto per collegare strumenti AI a fonti di dati esterne. La tua documentazione Jamdesk espone due strumenti MCP:
 
 | Strumento | Scopo |
 |------|---------|
-| `searchDocs` | Cerca nella documentazione per parola chiave e restituisce risultati ordinati per pertinenza |
-| `getPage` | Recupera il contenuto completo di una pagina specifica |
+| `searchDocs` | Cerca nella documentazione per parola chiave, restituisce risultati ordinati |
+| `getPage` | Recupera una pagina come Markdown completo |
 
 ## URL dell’endpoint
 
-L’endpoint MCP è l’URL della documentazione con `/_mcp` aggiunto. Se hai attivato un [dominio personalizzato](/it/deploy/custom-domains), usalo:
+Il tuo endpoint MCP è l'URL della documentazione con `/_mcp` aggiunto. Se hai un [dominio personalizzato](/it/deploy/custom-domains) attivo, usalo:
 
 | Configurazione | Endpoint |
 |-------|----------|
-| Dominio personalizzato su `docs.acme.com` | `https://docs.acme.com/_mcp` |
+| Dominio personalizzato `docs.acme.com` | `https://docs.acme.com/_mcp` |
 | Nessun dominio personalizzato | `https://my-project.jamdesk.app/_mcp` |
 
 <Note>
-  Quando è collegato un dominio personalizzato, preferisci il relativo endpoint: mantiene il tuo brand in tutti gli URL visibili agli strumenti AI e continua a funzionare anche se in seguito nascondi il sottodominio `.jamdesk.app` con [Solo dominio personalizzato](/it/deploy/custom-domain-only).
+  Usa l'endpoint con dominio personalizzato quando ne è collegato uno. Mantiene il tuo branding in ogni URL che vedono gli strumenti AI. Continua inoltre a funzionare se in seguito nasconderai il sottodominio `.jamdesk.app` con [Solo dominio personalizzato](/it/deploy/custom-domain-only).
 </Note>
 
 ## Configurazione rapida
 
 <Tabs>
   <Tab title="Claude Code">
-    Aggiungi la documentazione come server MCP:
+    Aggiungi la tua documentazione come server MCP:
 
     ```bash
     claude mcp add --transport http my-docs https://docs.acme.com/_mcp
     ```
 
-    Sostituisci `docs.acme.com` con il dominio della documentazione oppure con `my-project.jamdesk.app` se non hai collegato un dominio personalizzato.
+    Sostituisci `docs.acme.com` con il tuo dominio di documentazione. Usa `my-project.jamdesk.app` se non hai collegato un dominio personalizzato.
 
-    Da quel momento, quando chiedi a Claude informazioni sul tuo progetto, potrà cercare e leggere direttamente la documentazione.
+    Claude può ora cercare e leggere la tua documentazione quando chiedi del tuo progetto.
   </Tab>
   <Tab title="Cursor">
-    Aggiungi la configurazione al file `.cursor/mcp.json` del progetto:
+    Aggiungi a `.cursor/mcp.json` del tuo progetto:
 
     ```json
     {
@@ -55,7 +55,7 @@ L’endpoint MCP è l’URL della documentazione con `/_mcp` aggiunto. Se hai at
     }
     ```
 
-    Cursor si connetterà automaticamente alla documentazione quando apri il progetto.
+    Cursor si collega alla tua documentazione quando apri il progetto.
   </Tab>
 </Tabs>
 
@@ -63,17 +63,17 @@ L’endpoint MCP è l’URL della documentazione con `/_mcp` aggiunto. Se hai at
 
 ### searchDocs
 
-Cerca nella documentazione e ottieni risultati ordinati per pertinenza.
+Cerca nella tua documentazione e ottieni risultati ordinati.
 
 **Parametri:**
 
 | Parametro | Tipo | Obbligatorio | Descrizione |
 |-----------|------|----------|-------------|
-| `query` | string | Sì | Termini di ricerca (ad es. "authentication", "getting started") |
-| `limit` | number | No | Numero massimo di risultati (predefinito: 10, massimo: 50) |
+| `query` | string | Sì | Termini di ricerca (es. "authentication", "getting started") |
+| `limit` | number | No | Risultati massimi (predefinito: 10, massimo: 50) |
 | `type` | string | No | Filtra per tipo di contenuto: `all`, `api`, `guide`, `quickstart`, `help`, `component` |
 
-**Eempio di richiesta:**
+**Esempio di richiesta:**
 
 ```json
 {
@@ -107,13 +107,16 @@ Cerca nella documentazione e ottieni risultati ordinati per pertinenza.
 
 ### getPage
 
-Recupera il contenuto completo di una pagina specifica della documentazione.
+Recupera una pagina della documentazione come Markdown. Tabelle, elenchi e blocchi di codice vengono restituiti integri, non come brevi estratti. Passa come `url` il valore restituito da `searchDocs`, oppure il percorso della pagina come `slug`. Le pagine più lunghe di 80.000 caratteri vengono troncate a quella lunghezza, con un rimando all'URL `.md` della pagina per il resto.
 
 **Parametri:**
 
 | Parametro | Tipo | Obbligatorio | Descrizione |
 |-----------|------|----------|-------------|
-| `slug` | string | Sì | Percorso della pagina senza il prefisso `/docs` (ad es. `api/authentication`) |
+| `url` | string | Uno tra `url` o `slug` | Il `url` di un risultato di `searchDocs` (es. `/docs/api/authentication`). Funzionano anche URL completi di pagina e link `.md`. |
+| `slug` | string | Uno tra `url` o `slug` | Il percorso della pagina senza il prefisso `/docs` (es. `api/authentication`) |
+
+Invia uno solo. Se invii entrambi, viene usato `slug`.
 
 **Esempio di richiesta:**
 
@@ -125,7 +128,7 @@ Recupera il contenuto completo di una pagina specifica della documentazione.
   "params": {
     "name": "getPage",
     "arguments": {
-      "slug": "api/authentication"
+      "url": "/docs/api/authentication"
     }
   }
 }
@@ -148,7 +151,7 @@ Recupera il contenuto completo di una pagina specifica della documentazione.
 
 ## Testare l’endpoint
 
-Puoi testare direttamente l’endpoint MCP con curl:
+Testa il tuo endpoint MCP con curl:
 
 ```bash
 # List available tools
@@ -164,67 +167,75 @@ curl -X POST https://docs.acme.com/_mcp \
 
 ## Siti protetti da login
 
-Se il sito usa l’autenticazione con password o JWT, il server MCP richiede una chiave API del progetto. Creane una in **Project Settings > API Keys** e inviala come header:
+Se il tuo sito usa l'autenticazione con password o JWT, il server MCP richiede una chiave API di progetto. Creala in **Project Settings > API Keys** e inviala come header:
 
 ```bash
 claude mcp add --transport http my-docs https://docs.example.com/_mcp \
   --header "Authorization: Bearer jd_live_..."
 ```
 
-Con la chiave, un client MCP può cercare e leggere le pagine consultabili del sito, ovvero lo stesso insieme di pagine coperto dalla ricerca del sito. Le pagine con accesso limitato a gruppi non sono mai disponibili tramite MCP, con o senza chiave. Le pagine nascoste e quelle con `search: false` vengono escluse, a meno che non siano state rese consultabili. Tratta la chiave come una password e revocala nel dashboard se viene esposta.
+Una chiave permette a un client MCP di cercare e leggere le pagine ricercabili del sito, lo stesso insieme coperto dalla ricerca del sito. Le pagine con accesso limitato a gruppi non sono mai disponibili tramite MCP, con o senza chiave. Le pagine nascoste e le pagine con `search: false` sono escluse, a meno che tu non le abbia rese ricercabili. Tratta la chiave come una password. Revocala dalla dashboard se viene divulgata.
 
-Senza una chiave, il server risponde con `401` e un corpo JSON che spiega come aggiungerne una. Le chiavi di un altro progetto vengono rifiutate. I codici di errore sono:
+La stessa chiave apre anche gli URL delle pagine `.md`, `llms.txt` e `llms-full.txt`. Vedi [llms.txt](/it/ai/llms-txt#siti-protetti-da-login) e [Markdown Source](/it/ai/markdown-source). La chiave non apre mai le pagine HTML né la chat AI. Per quelle serve comunque un login.
+
+Senza chiave, il server risponde con `401` e un corpo JSON che spiega come aggiungerne una. Una chiave di un altro progetto viene rifiutata. I codici di errore sono:
 
 | Stato | `error` | Significato |
 |--------|---------|---------|
-| 401 | `auth_required` | Non è stata inviata alcuna chiave. |
+| 401 | `auth_required` | Nessuna chiave è stata inviata. |
 | 401 | `invalid_api_key` | La chiave non è valida per questo sito. |
-| 503 | `auth_unavailable` | Non è stato possibile verificare la chiave. Riprova dopo il numero di secondi indicato nell’header `Retry-After`. |
+| 503 | `auth_unavailable` | Impossibile verificare la chiave. Riprova dopo il numero di secondi indicato nell'header `Retry-After`. |
 
 ## Come funziona
 
-L’endpoint MCP usa un indice di ricerca creato insieme alla documentazione:
+L'endpoint MCP usa un indice di ricerca creato insieme alla documentazione:
 
-- **Ranking BM25** - Ordina i risultati per pertinenza
-- **Ricerca approssimativa** - Gestisce gli errori di battitura (tolleranza di 1 carattere)
-- **Ponderazione dei campi** - Titoli e intestazioni delle sezioni hanno un peso maggiore rispetto al corpo del testo
-- **Filtro per tipo** - Filtra i risultati per tipo di contenuto (API, guide e così via)
+- **Ranking BM25:** ordina i risultati per pertinenza
+- **Corrispondenza approssimata:** tollera errori di battitura di 1 carattere
+- **Peso dei campi:** titoli e intestazioni di sezione pesano più del contenuto del corpo
+- **Filtro per tipo:** filtra i risultati per tipo di contenuto (API, guida, ecc.)
 
-L’indice viene ricreato a ogni deploy.
+L'indice viene ricostruito a ogni deploy.
 
 ## Limiti di frequenza
 
-L’endpoint MCP ha un limite di **60 richieste al minuto** per indirizzo IP. È sufficiente per il normale utilizzo degli assistenti AI. Se superi il limite, riceverai una risposta 429.
+Le richieste senza chiave API sono limitate a circa **60 al minuto** per indirizzo IP. È sufficiente per l'assistente AI di una persona. Tutti coloro che si trovano dietro un IP condiviso, come una rete d'ufficio o il tuo backend, attingono alla stessa quota.
+
+Le richieste che inviano una chiave API di progetto saltano il limite per IP e ricevono invece **120 al minuto** per chiave, su qualsiasi sito. Aggiungi la chiave alla configurazione del client MCP nello stesso modo previsto per i [siti protetti da login](#siti-protetti-da-login).
+
+Su un sito protetto da login, anche le richieste di pagine `.md` e di `llms.txt` o `llms-full.txt` fatte con una chiave contano nel limite di quella chiave. La [Search API](/it/jamdesk-api/docs-search-api#limiti-di-frequenza) mantiene un proprio limite di 60 al minuto per chiave.
+
+Le richieste oltre il limite ricevono una risposta `429` con `Retry-After: 60`.
 
 ## Risoluzione dei problemi
 
 <Accordion title="Il server MCP non si connette">
-  Verifica che l’URL dell’endpoint sia corretto e accessibile:
+  Verifica che l'URL dell'endpoint sia corretto e raggiungibile:
 
   ```bash
   curl https://docs.acme.com/_mcp
   ```
 
-  Dovresti ricevere una risposta JSON con le informazioni sul server. In caso contrario, verifica che la documentazione sia stata compilata almeno una volta.
+  Dovresti vedere una risposta JSON con le informazioni del server. In caso contrario, controlla che la documentazione sia stata compilata almeno una volta.
 </Accordion>
 
 <Accordion title="La ricerca non restituisce risultati">
-  L’indice di ricerca viene generato durante il build. Se hai aggiunto contenuti di recente, avvia una nuova compilazione dal dashboard Jamdesk per aggiornare l’indice.
+  Jamdesk genera l'indice di ricerca al momento della build. Avvia una ricompilazione dalla dashboard di Jamdesk per indicizzare i nuovi contenuti.
 </Accordion>
 
-<Accordion title="getPage restituisce null">
-  Verifica che lo slug corrisponda esattamente al percorso della pagina, senza l’estensione `.mdx`. Ad esempio, se la pagina si trova in `api/authentication.mdx`, usa `api/authentication` come slug.
+<Accordion title="getPage restituisce Page not found">
+  Passa il `url` di un risultato di `searchDocs` per evitare disallineamenti degli slug. Se invii uno `slug`, deve corrispondere esattamente al percorso della pagina, senza l'estensione `.mdx`. Una pagina in `api/authentication.mdx` ha lo slug `api/authentication`.
 </Accordion>
 
 <Accordion title="401 auth_required su un sito protetto">
-  Il sito usa l’autenticazione con password o JWT, quindi la richiesta necessita di una chiave API del progetto. Aggiungi l’header `Authorization: Bearer` con una chiave disponibile in **Project Settings > API Keys**. Consulta [Siti protetti da login](#siti-protetti-da-login).
+  Il sito usa l'autenticazione con password o JWT. La richiesta necessita di una chiave API di progetto. Aggiungi l'header `Authorization: Bearer` con una chiave presa da **Project Settings > API Keys**. Vedi [Siti protetti da login](#siti-protetti-da-login).
 </Accordion>
 
 ## Prossimi passi
 
 <Columns cols={2}>
-  <Card title="Scrivere con AI" icon="wand-magic-sparkles" href="/it/ai/writing-with-ai">
-    Suggerimenti per usare gli strumenti AI per scrivere la documentazione
+  <Card title="Scrivere con l'AI" icon="wand-magic-sparkles" href="/it/ai/writing-with-ai">
+    Consigli per usare gli strumenti AI nella scrittura della documentazione
   </Card>
   <Card title="llms.txt" icon="file-lines" href="/it/ai/llms-txt">
     Indice delle pagine generato automaticamente per gli strumenti AI

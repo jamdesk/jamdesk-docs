@@ -1,22 +1,22 @@
 ---
 title: 反向代理
-description: "使用 nginx、Apache、Caddy、Traefik 或 HAProxy，通过 /docs 提供文档，并为每种反向代理提供经过测试的配置片段。"
+description: "使用 nginx、Apache、Caddy、Traefik 或 HAProxy 在 /docs 路径提供文档服务。包含经过测试的各反向代理配置片段。"
 ---
 
-如果您已运行 nginx、Apache、Caddy、Traefik 或 HAProxy，请添加 location/route 块，将 `/docs` 流量转发到您的 Jamdesk 子域名。
+在 nginx、Apache、Caddy、Traefik 或 HAProxy 中添加 location/route 块，将 `/docs` 流量转发到您的 Jamdesk 子域名。
 
 ## 前置条件
 
-- 访问 Web 服务器配置的权限
+- 有权访问您的 Web 服务器配置
 - 您的 Jamdesk 子域名（可在仪表板设置中找到）
 
 <Note>
-如果您使用自定义子路径而不是默认的 `/docs`，请将下面每个 location/route 块（nginx、Apache、Caddy、Traefik、HAProxy）中的 `/docs` 替换为您的子路径。在仪表板中重命名后，也请再次更新配置。
+使用自定义子路径而非默认的 `/docs`？请在下面每个 location/route 块中将 `/docs` 替换为您的子路径。在仪表板中重命名子路径后，需要再次更新配置。
 </Note>
 
 ## nginx
 
-添加一个 location 块，将 `/docs` 请求代理到 Jamdesk：
+添加 location 块，将 `/docs` 请求代理到 Jamdesk：
 
 ```nginx nginx.conf
 server {
@@ -57,14 +57,14 @@ server {
 ```
 
 <Note>
-将 `YOUR_SLUG` 替换为您的实际 Jamdesk 子域名。
+将 `YOUR_SLUG` 替换为您的 Jamdesk 子域名。
 </Note>
 
 <Warning>
-**路径处理非常重要。** `proxy_pass` URL 没有尾随路径，因此 nginx 会保留原始请求路径。请求 `/docs/page` 会被代理到 `jamdesk.app/docs/page`。如果添加尾随斜杠（`proxy_pass https://...jamdesk.app/`），`/docs` 前缀就会被移除。请完全按照上面的示例保留配置。
+**路径处理很重要。** `proxy_pass` URL 不带尾随路径。nginx 会保留原始请求路径。对 `/docs/page` 的请求会代理到 `jamdesk.app/docs/page`。尾随斜杠（`proxy_pass https://...jamdesk.app/`）会去掉 `/docs` 前缀。请严格按照上面所示保持原样。
 </Warning>
 
-更新配置后，重新加载 nginx：
+重新加载 nginx：
 
 ```bash
 sudo nginx -t && sudo systemctl reload nginx
@@ -105,7 +105,7 @@ sudo nginx -t && sudo systemctl reload nginx
 </VirtualHost>
 ```
 
-确保已启用所需模块：
+启用所需模块：
 
 ```bash
 sudo a2enmod proxy proxy_http ssl headers
@@ -114,7 +114,7 @@ sudo systemctl reload apache2
 
 ## Caddy
 
-[Caddy](https://caddyserver.com/) 通过自动 HTTPS 提供简单的反向代理配置：
+[Caddy](https://caddyserver.com/) 会自行配置 HTTPS。添加以下 `handle` 块：
 
 ```caddy Caddyfile
 yoursite.com {
@@ -149,7 +149,7 @@ yoursite.com {
 }
 ```
 
-完成更改后重新加载 Caddy：
+更改后重新加载 Caddy：
 
 ```bash
 sudo systemctl reload caddy
@@ -157,7 +157,7 @@ sudo systemctl reload caddy
 
 ## Traefik
 
-对于 [Traefik](https://traefik.io/) 用户，请配置路由器和服务：
+配置 [Traefik](https://traefik.io/) 路由器和服务：
 
 ```yaml traefik.yml
 http:
@@ -186,7 +186,7 @@ http:
 
 ## HAProxy
 
-对于 [HAProxy](https://www.haproxy.org/)，请添加后端和 ACL 规则：
+添加 [HAProxy](https://www.haproxy.org/) 后端和 ACL 规则：
 
 ```haproxy haproxy.cfg
 frontend https
@@ -211,9 +211,9 @@ backend jamdesk_docs
 
 ## 同时转发根目录文件
 
-`robots.txt`、`sitemap.xml`、`llms.txt` 和 `llms-full.txt` 从域名根目录提供，而不是从 `/docs` 下提供——仅转发 `/docs`、`/_next` 和 `/_jd` 的代理会让这些文件由您自己的网站提供（或完全无法提供），从而破坏 AI 代理发现并影响 SEO，无论本页其他配置如何。
+`robots.txt`、`sitemap.xml`、`llms.txt` 和 `llms-full.txt` 位于域名根目录，而非 `/docs` 下。如果代理只转发 `/docs`、`/_next` 和 `/_jd`，这些文件将留给您自己的网站处理，或者会缺失。这会破坏 AI 代理的发现机制并影响 SEO。
 
-请为以下四个路径分别添加与上面 `/docs` 使用的相同 location/route 模式。nginx 配置如下：
+为这四个路径分别添加与 `/docs` 相同的 location/route 模式。以 nginx 为例：
 
 ```nginx nginx.conf
     location = /robots.txt {
@@ -245,82 +245,82 @@ backend jamdesk_docs
     }
 ```
 
-相同的四个块——使用相同的标头和上游——同样适用于 Apache、Caddy、Traefik 和 HAProxy：复制上面正在使用的 `/docs` 块，并为每个路径重复一次。
+对于 Apache、Caddy、Traefik 或 HAProxy，复制您的 `/docs` 块，并为每个路径重复一次。保持相同的请求头和上游地址。
 
 <Warning>
-仅当 Jamdesk 管理您的域名根目录时，才转发这些文件。如果您的主站点已经提供自己的 `robots.txt` 或 `sitemap.xml`，请将两者合并，而不是相互覆盖。
+仅当 Jamdesk 拥有您的域名根目录时才转发这些文件。如果您的主站已提供自己的 `robots.txt` 或 `sitemap.xml`，请合并两者，而不是用一个覆盖另一个。
 </Warning>
 
 ## 必需标头
 
-无论使用哪种代理，都请确保设置以下标头：
+在任何代理上设置这些请求头：
 
-| 标头 | 值 | 用途 |
+| 请求头 | 值 | 用途 |
 |--------|-------|---------|
-| `Host` | `YOUR_SLUG.jamdesk.app` | 将请求标识为发往 Jamdesk |
-| `X-Forwarded-Host` | 您的域名 | 告知 Jamdesk 在 URL 中使用哪个域名 |
-| `X-Forwarded-Proto` | `https` | 确保生成安全 URL |
+| `Host` | `YOUR_SLUG.jamdesk.app` | 标识发往 Jamdesk 的请求 |
+| `X-Forwarded-Host` | 您的域名 | 告诉 Jamdesk 在 URL 中使用哪个域名 |
+| `X-Forwarded-Proto` | `https` | 确保安全 URL 的生成 |
 | `X-Jamdesk-Forwarded-Host` | 您的域名 | 域名验证所必需 |
-| `?jd_proxy=1` 查询标记 | 附加到上游 URL | 标头的替代方式，适用于只能重写 URL 而无法设置请求标头的工具——请参阅[仅限自定义域名](/cn/deploy/custom-domain-only) |
+| `?jd_proxy=1` 查询标记 | 附加到上游 URL | 请求头的替代方案，适用于只能重写 URL、无法设置请求头的工具。参见 [仅自定义域名](/cn/deploy/custom-domain-only) |
 
 <Warning>
-`X-Jamdesk-Forwarded-Host` 标头（或 `?jd_proxy=1` 标记）是**必需的**，缺少这两者中的任意一个都会静默失败。
+`X-Jamdesk-Forwarded-Host` 请求头（或 `?jd_proxy=1` 标记）是**必需的**。两者都缺失会静默失败。
 
-请求仍会成功——不会出现任何错误，这正是问题容易被忽略的原因。真正出问题的地方更加隐蔽：
+请求仍会成功，也不会报错。以下情况会出错：
 
-- **如果您尚未在仪表板中注册自定义域名**，文档页面会带有 `<meta name="robots" content="noindex">`，并且规范 URL、Open Graph URL 和 sitemap URL 都会指向 `YOUR_SLUG.jamdesk.app`，而不是您的域名。搜索引擎将永远不会为您的文档建立索引。
-- **如果您已注册自定义域名**，Jamdesk 会回退到已登记的域名，因此 URL 仍然正确——但它仍无法区分代理流量与直接访问您的 `*.jamdesk.app` 子域名的流量，并且[仅限自定义域名](/cn/deploy/custom-domain-only)预检检查会失败。
+- **仪表板中未注册自定义域名**：Jamdesk 会在您的页面中提供 `<meta name="robots" content="noindex">`。规范链接、Open Graph 和站点地图 URL 指向 `YOUR_SLUG.jamdesk.app` 而非您的域名。搜索引擎将永远不会索引您的文档。
+- **已注册自定义域名**：Jamdesk 会回退到已记录的域名，您的 URL 保持正确。但 Jamdesk 仍无法区分代理流量与直接访问您的 `*.jamdesk.app` 子域名的流量。[仅自定义域名](/cn/deploy/custom-domain-only) 预检将失败。
 
-**403** 表示相反的问题：标头确实存在，但其中指定的域名尚未为此项目注册并激活。
+**403** 表示请求头存在，但指定的域名未在此项目中注册并激活。
 </Warning>
 
 <Tip>
-代理配置是**一次性设置**。如果您之后在 Jamdesk 仪表板中更改自定义域名或配置，则无需更新代理——所有路由决策都基于仪表板设置在服务器端完成。
+代理配置是**一次性设置**。在 Jamdesk 仪表板中更改自定义域名或配置无需更新代理。Jamdesk 根据您的仪表板设置在服务器端做出路由决策。
 </Tip>
 
 ## 故障排除
 
 <Accordion title="502 Bad Gateway">
-确认代理可以通过 HTTPS 访问 `YOUR_SLUG.jamdesk.app`。检查防火墙规则和 DNS 解析。
+验证代理能否通过 HTTPS 访问 `YOUR_SLUG.jamdesk.app`。检查防火墙规则和 DNS 解析。
 </Accordion>
 
-<Accordion title="SSL certificate errors">
-为上游连接启用 SSL/TLS。对于 nginx，请添加 `proxy_ssl_server_name on;`。对于 Apache，请启用 `SSLProxyEngine On`。
+<Accordion title="SSL 证书错误">
+为上游连接启用 SSL/TLS。对于 nginx，添加 `proxy_ssl_server_name on;`。对于 Apache，启用 `SSLProxyEngine On`。
 </Accordion>
 
-<Accordion title="Assets loading from wrong domain">
-确保正确设置 `X-Forwarded-Host` 标头。该标头会告知 Jamdesk 在资源 URL 和内部链接中使用哪个域名。
+<Accordion title="资源从错误域名加载">
+检查 `X-Forwarded-Host` 请求头。Jamdesk 用它来构建资源 URL 和内部链接。
 </Accordion>
 
-<Accordion title="Redirect loops">
-检查代理是否正在跟随重定向。代理应按原样转发响应，不进行额外的重定向处理。
+<Accordion title="重定向循环">
+检查您的代理是否在跟随重定向。它应当原样转发响应。
 </Accordion>
 
-<Accordion title="403 Domain not authorized error">
-如果看到“Domain is not authorized to serve this content”：
+<Accordion title="403 域名未授权错误">
+看到"Domain is not authorized to serve this content"？请按以下步骤检查：
 
-1. 确认您的域名已在 Jamdesk 仪表板中注册
-2. 为您的域名完成 DNS 验证（TXT 记录）
-3. 确保在代理配置中设置了 `X-Jamdesk-Forwarded-Host` 标头
+1. 验证您的域名已在 Jamdesk 仪表板中注册
+2. 完成域名的 DNS 验证（TXT 记录）
+3. 在代理配置中设置 `X-Jamdesk-Forwarded-Host` 请求头
 4. 检查您的域名是否映射到正确的项目
 
-代理只有在域名验证完成后才能提供文档。
+代理提供文档服务前，域名必须已通过验证。
 </Accordion>
 
-<Accordion title="The Custom domain only preflight check keeps failing">
-预检会在您的线上域名上获取 `/_jd/preflight`，并检查实际到达 Jamdesk 的内容。如果报告您的代理“没有标识自身”，说明请求已到达 Jamdesk，但缺少标头或标记——请重新检查上面每个 location/route 块中的 `X-Jamdesk-Forwarded-Host` 行。有关每条预检消息的含义，请参阅[仅限自定义域名](/cn/deploy/custom-domain-only)。
+<Accordion title="仅自定义域名预检持续失败">
+预检会访问您线上域名上的 `/_jd/preflight`，并检查到达 Jamdesk 的请求。"未标识自身"表示有请求到达 Jamdesk 时缺少请求头或标记。请逐一检查上面每个 location/route 块中的 `X-Jamdesk-Forwarded-Host` 行。各预检消息的含义参见 [仅自定义域名](/cn/deploy/custom-domain-only)。
 </Accordion>
 
 ## 下一步
 
 <Columns cols={3}>
-  <Card title="仅限自定义域名" icon="eye-slash" href="/cn/deploy/custom-domain-only">
-    停止子域名直接响应
+  <Card title="仅自定义域名" icon="eye-slash" href="/cn/deploy/custom-domain-only">
+    阻止您的子域名直接响应
   </Card>
   <Card title="自定义域名" icon="globe" href="/cn/deploy/custom-domains">
-    验证 DNS 并排查问题
+    验证 DNS 并排查故障
   </Card>
   <Card title="子路径托管" icon="folder-tree" href="/cn/deploy/subpath-hosting">
-    在 /docs 提供文档
+    在 /docs 提供文档服务
   </Card>
 </Columns>

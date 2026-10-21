@@ -1,9 +1,9 @@
 ---
 title: Autenticação
-description: "Faça login, gerencie sessões e entenda como o CLI do Jamdesk autentica você, com tokens, renovação, equipes e ambientes de CI/CD."
+description: "Faça login, verifique sessões e veja como a CLI do Jamdesk autentica. Abrange armazenamento de tokens, renovação de sessão, contas de equipe e ambientes CI/CD."
 ---
 
-O CLI usa autenticação baseada no navegador para se conectar à sua conta do Jamdesk. Você precisa fazer login antes de fazer deploy.
+A CLI faz login na sua conta Jamdesk pelo navegador. Faça login antes de fazer o deploy.
 
 ## Login
 
@@ -11,15 +11,15 @@ O CLI usa autenticação baseada no navegador para se conectar à sua conta do J
 jamdesk login
 ```
 
-Isso abre o dashboard do Jamdesk no navegador para autenticação. Nos bastidores:
+Isso abre o dashboard do Jamdesk no seu navegador. O fluxo:
 
-1. O CLI inicia um servidor HTTP local em `127.0.0.1:9876` (usa uma porta atribuída pelo sistema operacional se 9876 estiver ocupada)
-2. O navegador abre `dashboard.jamdesk.com/cli-auth`
+1. A CLI inicia um servidor HTTP local em `127.0.0.1:9876` (usa uma porta atribuída pelo sistema operacional se a 9876 estiver ocupada)
+2. Seu navegador abre em `dashboard.jamdesk.com/cli-auth`
 3. Você se autentica usando qualquer método de login do dashboard (e-mail/senha, Google, GitHub)
-4. O dashboard envia suas credenciais de volta ao servidor local do CLI
+4. O dashboard envia suas credenciais de volta ao servidor local da CLI
 5. As credenciais são armazenadas em `~/.jamdeskrc`
 
-Um parâmetro de estado é verificado no callback para impedir falsificação de solicitação entre sites. O fluxo de login expira após 2 minutos.
+A CLI verifica um parâmetro de estado no callback para prevenir falsificação de requisição entre sites (CSRF). O fluxo de login expira após 2 minutos.
 
 ```bash Expected output
 $ jamdesk login
@@ -31,7 +31,7 @@ $ jamdesk login
 ✔ Logged in as you@example.com
 ```
 
-**Ambientes sem interface e SSH**: a URL sempre é exibida no terminal, mesmo quando o navegador não pode ser aberto. Copie e cole a URL em qualquer navegador.
+**Ambientes headless e SSH**: A CLI sempre imprime a URL no terminal, mesmo quando não consegue abrir um navegador. Cole a URL em qualquer navegador.
 
 ## Logout
 
@@ -39,7 +39,7 @@ $ jamdesk login
 jamdesk logout
 ```
 
-Limpa as credenciais armazenadas em `~/.jamdeskrc`. Não faz nada se você não estiver conectado.
+Limpa as credenciais armazenadas em `~/.jamdeskrc`. Não faz nada se você não estiver logado.
 
 ```bash Expected output
 $ jamdesk logout
@@ -52,9 +52,9 @@ $ jamdesk logout
 jamdesk whoami
 ```
 
-Exibe seu e-mail autenticado e valida a sessão renovando o token. Esta é uma verificação ativa, não uma leitura do cache local.
+Mostra o e-mail com o qual você está logado. Ele atualiza o token para validar a sessão. Nunca lê um cache local.
 
-Há três estados possíveis:
+Estados possíveis:
 
 <CodeGroup>
 ```bash Logged in
@@ -76,7 +76,7 @@ $ jamdesk whoami
 
 ## Como funcionam as sessões
 
-As credenciais são armazenadas em `~/.jamdeskrc` como JSON, com permissões `0600` (somente o proprietário pode ler e escrever):
+As credenciais são armazenadas em `~/.jamdeskrc` como JSON com permissões `0600` (somente leitura e escrita pelo proprietário):
 
 ```json ~/.jamdeskrc
 {
@@ -89,54 +89,54 @@ As credenciais são armazenadas em `~/.jamdeskrc` como JSON, com permissões `06
 }
 ```
 
-O CLI usa uma arquitetura de **token de atualização + token de ID**:
+A CLI usa uma arquitetura de **refresh token + ID token**:
 
-- **Tokens de ID** expiram em aproximadamente 1 hora e são usados nas chamadas de API
-- O CLI **renova automaticamente** os tokens de ID usando o token de atualização armazenado, com uma margem de 5 minutos antes da expiração
-- Os tokens de atualização duram bastante, mas podem ser revogados (alteração de senha, exclusão da conta)
-- Se o token de atualização for permanentemente inválido (`TOKEN_EXPIRED`, `USER_NOT_FOUND`, `INVALID_REFRESH_TOKEN`), a autenticação armazenada será limpa automaticamente
+- **Os ID tokens** expiram em cerca de 1 hora e são usados nas chamadas de API
+- A CLI **renova automaticamente** os ID tokens com o refresh token armazenado 5 minutos antes da expiração
+- Os refresh tokens têm longa duração, mas podem ser revogados (troca de senha, exclusão da conta)
+- A CLI limpa a autenticação armazenada quando o refresh token é permanentemente inválido (`TOKEN_EXPIRED`, `USER_NOT_FOUND`, `INVALID_REFRESH_TOKEN`)
 
-Você não precisa gerenciar tokens manualmente. O CLI cuida das renovações de forma transparente em todos os comandos autenticados.
+A CLI renova os tokens em todo comando autenticado. Você nunca precisa renová-los manualmente.
 
 ## Solução de problemas
 
 <AccordionGroup>
   <Accordion title="O login expira após 2 minutos">
-    O servidor local de callback do CLI pode estar bloqueado por um firewall. Copie a URL exibida e abra-a manualmente no navegador.
+    Um firewall pode estar bloqueando o servidor de callback local da CLI. Copie a URL impressa e abra-a no seu navegador.
 
-    Se a porta 9876 estiver sendo usada por outro processo, o CLI escolherá outra porta automaticamente. Verifique a URL na saída do terminal.
+    A CLI escolhe outra porta quando outro processo usa a 9876. Verifique a URL na saída do terminal.
   </Accordion>
 
-  <Accordion title='"Sessão expirada" em todos os comandos'>
-    Seu token de atualização não é mais válido. Isso acontece após alterações de senha ou longos períodos de inatividade.
+  <Accordion title='"Session expired" em todo comando'>
+    Seu refresh token não é mais válido. Isso acontece após trocas de senha ou longos períodos de inatividade.
 
     Execute `jamdesk login` para obter uma nova sessão.
   </Accordion>
 
   <Accordion title="O navegador não abre">
-    Isso é esperado em ambientes sem interface (SSH, Docker, CI). Copie a URL do terminal e abra-a em qualquer navegador que consiga acessar a porta de callback da sua máquina.
+    Ambientes headless (SSH, Docker, CI) não conseguem abrir um navegador. Copie a URL do terminal e abra-a em qualquer navegador que consiga alcançar a porta de callback da sua máquina.
   </Accordion>
 
-  <Accordion title='"Não conectado" logo após fazer login'>
+  <Accordion title='"Not logged in" logo após fazer login'>
     Verifique se `~/.jamdeskrc` existe e contém uma chave `auth`:
 
     ```bash
     cat ~/.jamdeskrc
     ```
 
-    As permissões do arquivo devem ser `0600`. Se o arquivo estiver ausente, seu diretório pessoal pode ter problemas de permissão; verifique com `ls -la ~`.
+    As permissões do arquivo devem ser `0600`. Um arquivo ausente pode indicar um problema de permissão no seu diretório home. Verifique com `ls -la ~`.
   </Accordion>
 </AccordionGroup>
 
-Para obter mais ajuda sobre problemas do CLI, consulte o [guia do CLI na Central de ajuda](/pt/help/troubleshooting/cli-issues).
+Para mais solução de problemas da CLI, consulte o [guia da CLI na Central de ajuda](/pt/help/troubleshooting/cli-issues).
 
 ## O que vem a seguir?
 
 <Columns cols={2}>
-  <Card title="Deploy do CLI" icon="cloud-arrow-up" href="/pt/cli/deploy">
-    Faça deploy da sua documentação pelo terminal
+  <Card title="Deploy pela CLI" icon="cloud-arrow-up" href="/pt/cli/deploy">
+    Faça o deploy da sua documentação pelo terminal
   </Card>
-  <Card title="Visão geral do CLI" icon="terminal" href="/pt/cli/overview">
-    Todos os comandos do CLI em um só lugar
+  <Card title="Visão geral da CLI" icon="terminal" href="/pt/cli/overview">
+    Todos os comandos da CLI de relance
   </Card>
 </Columns>

@@ -1,15 +1,15 @@
 ---
 title: Como o Jamdesk funciona
-description: Publique documentação em menos de 60 segundos com um push no Git. Veja como o Jamdesk compila, implanta e otimiza seu site sem gerenciar infraestrutura.
+description: Como o Jamdesk transforma um git push em um site de documentação no ar em menos de 60 segundos, sem infraestrutura para você gerenciar.
 ---
 
-O Jamdesk cria sites de documentação a partir de arquivos MDX no seu repositório do GitHub. Você escreve em Markdown com componentes React, envia as alterações para o GitHub e publica seu site em uma CDN global em menos de 60 segundos. Seu conteúdo permanece no repositório como arquivos MDX simples, para que você possa migrá-lo para outra ferramenta a qualquer momento.
+O Jamdesk gera sites de documentação a partir de arquivos MDX no seu repositório do GitHub. Escreva Markdown com componentes React e faça push para o GitHub. Seu site vai ao ar em uma CDN global em menos de 60 segundos. O conteúdo permanece no seu repositório como arquivos MDX simples. Você pode migrá-lo para outra ferramenta a qualquer momento.
 
 ## Visão geral da arquitetura
 
-Seu repositório é a fonte da verdade. O Jamdesk se conecta a ele, cria seu site e o implanta em uma rede global de edge. Você não precisa gerenciar nenhuma infraestrutura.
+Seu repositório é a fonte da verdade. O Jamdesk se conecta a ele, gera seu site e faz o deploy em uma rede de borda global.
 
-<Frame caption="Como o conteúdo sai do seu repositório e chega aos usuários">
+<Frame caption="Como o conteúdo flui do seu repositório até os seus usuários">
   <Mermaid minWidth="700px">
 {`%%{init: {'theme': 'neutral', 'themeVariables': {'background': 'transparent'}, 'flowchart': {'nodeSpacing': 25, 'rankSpacing': 40, 'curve': 'basis', 'useMaxWidth': false}}}%%
 flowchart LR
@@ -41,79 +41,79 @@ flowchart LR
 
 ## O pipeline de build
 
-Normalmente, do início ao fim, leva de 30 a 60 segundos. Os builds são rápidos porque o Jamdesk não pré-renderiza as páginas. Seu conteúdo bruto vai para a edge, e as páginas são renderizadas sob demanda quando os visitantes as solicitam.
+Um build normalmente leva de 30 a 60 segundos. O Jamdesk não pré-renderiza as páginas. O conteúdo bruto vai para a borda, e as páginas são renderizadas sob demanda quando os visitantes as solicitam.
 
 <Steps>
-  <Step title="Obter o código-fonte">
-    Envie alterações para sua branch conectada do GitHub (ou clique em Rebuild no painel). O Jamdesk clona seu repositório e localiza o diretório de documentação.
+  <Step title="Obtenção do código-fonte">
+    Você faz push para a branch do GitHub conectada (ou clica em Rebuild no painel). O Jamdesk clona seu repositório e localiza o diretório da documentação.
   </Step>
   <Step title="Validação">
-    A configuração `docs.json` é validada de acordo com o esquema, e os links internos são verificados para detectar páginas inexistentes e âncoras inválidas.
+    O Jamdesk valida `docs.json` contra o schema. Verifica os links internos em busca de páginas quebradas e âncoras inválidas.
   </Step>
   <Step title="Processamento do conteúdo">
-    O Jamdesk gera, a partir do seu conteúdo, o índice de busca, os embeddings do [chat com IA](/pt/ai/chat), o mapa do site, o arquivo [`llms.txt`](/pt/ai/llms-txt) e as regras de redirecionamento.
+    O Jamdesk gera a partir do seu conteúdo o índice de busca, os embeddings do [chat com IA](/pt/ai/chat), o sitemap, o [`llms.txt`](/pt/ai/llms-txt) e as regras de redirecionamento.
   </Step>
-  <Step title="Implantação na edge">
-    O conteúdo é enviado para a CDN e distribuído por mais de 300 localidades de edge. Somente os arquivos alterados são transferidos, então as reimplantações são rápidas.
+  <Step title="Deploy na borda">
+    O conteúdo é enviado para a CDN e se propaga para mais de 300 locais de borda. Somente os arquivos alterados são transferidos.
   </Step>
 </Steps>
 
 ## Incluído em todos os sites
 
-Todos os sites incluem estes recursos por padrão. Não é necessário configurar nada.
+Estes recursos não exigem nenhuma configuração.
 
 <Columns cols={2}>
   <Card title="Busca com IA" icon="magnifying-glass" href="/pt/ai/chat">
-    Busca em linguagem natural que entende a intenção, não apenas palavras-chave. Usa embeddings vetoriais gerados a partir do seu conteúdo durante o build.
+    Busca em linguagem natural sobre embeddings vetoriais gerados a partir do seu conteúdo durante o build.
   </Card>
   <Card title="llms.txt" icon="robot" href="/pt/ai/llms-txt">
-    Índice legível por IA, seguindo a especificação llmstxt.org. Assistentes de programação e agentes de IA podem acessar sua documentação diretamente.
+    Índice legível por IA que segue a especificação llmstxt.org. Assistentes de programação e agentes de IA leem sua documentação diretamente a partir dele.
   </Card>
-  <Card title="Noções essenciais de SEO" icon="chart-line">
-    Mapa do site, robots.txt, imagens Open Graph e metatags. Sua documentação pode ser indexada desde a primeira implantação.
+  <Card title="Essenciais de SEO" icon="chart-line">
+    Sitemap, robots.txt, imagens Open Graph e meta tags. Sua documentação é indexável desde o primeiro deploy.
   </Card>
-  <Card title="Análise integrada" icon="chart-bar" href="/pt/setup/analytics-overview">
-    Dashboard de análise com foco em privacidade, sem necessidade de cookies. Ou use sua própria ferramenta: o Jamdesk oferece suporte a Google Analytics, Plausible, PostHog e outras.
+  <Card title="Análises integradas" icon="chart-bar" href="/pt/setup/analytics-overview">
+    Painel de análises sem cookies. Você também pode conectar Google Analytics, Plausible, PostHog e outras.
   </Card>
 </Columns>
 
 ## O que aciona um build
 
-Um push do Git para sua branch conectada, o botão Rebuild no painel ou [`jamdesk deploy`](/pt/cli/deploy) pela CLI. Se você enviar vários commits em sequência rápida, o Jamdesk os agrupa em um único build para evitar o uso desnecessário de recursos.
+Um git push para a branch conectada, o botão Rebuild no painel ou o [`jamdesk deploy`](/pt/cli/deploy) na CLI. O Jamdesk agrupa em um único build os commits enviados em sequência rápida.
 
-Para ver detalhes operacionais (monitoramento de status, reversões e implantações de branches), consulte [Ciclo de build e implantação](/pt/deploy/lifecycle).
+Para detalhes operacionais (monitoramento de status, rollbacks, deploys de branches), consulte [Ciclo de vida de build e deploy](/pt/deploy/lifecycle).
 
 ## Segurança e infraestrutura
 
-Você não precisa se preocupar com isso, mas, se sua equipe de segurança perguntar: os builds são executados em contêineres isolados, e a conexão do GitHub App é somente para leitura.
+Os builds são executados em contêineres isolados. Os builds só leem o seu repositório.
 
 <Columns cols={2}>
   <Card title="Permissões mínimas" icon="shield-check">
-    O GitHub App solicita acesso somente de leitura aos repositórios que você selecionar. O app não tem acesso de gravação e não solicita permissões para toda a organização.
+    O GitHub App solicita acesso apenas aos repositórios que você selecionar, sem escopos em nível de organização. O Jamdesk só grava no seu repositório quando você salva no editor, aceita edições do Corrigir com IA ou ativa a tradução.
   </Card>
   <Card title="Builds isolados" icon="box">
-    Cada build recebe seu próprio contêiner, que é destruído após a implantação. Nada persiste entre builds ou clientes.
+    Cada build recebe seu próprio contêiner, destruído após o deploy. Nada persiste entre builds ou clientes.
   </Card>
-  <Card title="HTTPS em todos os lugares" icon="lock">
-    Certificados SSL automáticos para domínios personalizados e subdomínios. Os certificados são emitidos e renovados automaticamente.
+  <Card title="HTTPS em todo lugar" icon="lock">
+    Certificados SSL para cada domínio, emitidos e renovados automaticamente.
   </Card>
   <Card title="CDN global" icon="globe">
-    Conteúdo servido pela rede da Cloudflare, com mais de 300 localidades de edge e 99,9% de disponibilidade.
+    Servido pela rede da Cloudflare, com mais de 300 locais de borda e 99,9% de disponibilidade.
   </Card>
 </Columns>
 
 ## Desempenho
 
-A rapidez de carregamento influencia a descoberta da sua documentação. O Google usa [Core Web Vitals](https://jamdesk.com/blog/why-google-pagespeed-matters) como sinal de classificação, e rastreadores de IA como GPTBot e ClaudeBot reservam de 1 a 5 segundos por página. Se sua documentação não carregar nesse intervalo, ela não será citada.
+A velocidade de carregamento afeta se a sua documentação é encontrada. O Google usa os [Core Web Vitals](https://jamdesk.com/blog/why-google-pagespeed-matters) como sinal de ranqueamento. Rastreadores de IA como GPTBot e ClaudeBot dão a si mesmos de 1 a 5 segundos por página. Documentações que não carregam nesse intervalo não são citadas.
 
-Todos os sites Jamdesk são servidos pela edge, com tempo até o primeiro byte inferior a 50 ms. Isso é rápido o suficiente para atender aos limites de classificação do Google e permitir que rastreadores de IA acessem e citem seu conteúdo.
+Todo site Jamdesk é servido da borda com tempo até o primeiro byte abaixo de 50 ms. Isso é rápido o suficiente para os limites de ranqueamento do Google e para que rastreadores de IA busquem e citem o conteúdo.
 
 | Métrica | Valor típico |
 |--------|---------------|
 | Tempo de build | 30-60 segundos |
-| Propagação da implantação | < 30 segundos |
-| Primeiro byte (edge) | < 50ms |
-| Carregamento completo da página | < 500ms |
+| Propagação do deploy | < 30 segundos |
+| Primeiro byte (borda) | < 50 ms |
+| Carregamento completo da página | < 500 ms |
 
 ## Próximas etapas
 
@@ -125,6 +125,6 @@ Todos os sites Jamdesk são servidos pela edge, com tempo até o primeiro byte i
     Vincule seu repositório para habilitar builds automáticos
   </Card>
   <Card title="Visualizar localmente" icon="terminal" href="/pt/cli/overview">
-    Use a CLI do Jamdesk para visualizar e validar sua documentação antes de enviar as alterações
+    Use a CLI do Jamdesk para visualizar e validar sua documentação antes de fazer push
   </Card>
 </Columns>

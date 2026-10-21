@@ -1,15 +1,15 @@
 ---
 title: Consentimento de cookies
-description: Bloqueie scripts de análise até o consentimento de cookies com integrations.cookies e carregue banners Osano ou Termly no seu site de documentação.
+description: Bloqueie scripts de análise até o consentimento de cookies com integrations.cookies e carregue um banner de consentimento Osano ou Termly no seu site de docs.
 ---
 
-O Jamdesk pode impedir todos os scripts de análise e rastreamento (Google Analytics, Google Tag Manager, Plausible, chat do Crisp, JavaScript personalizado e as próprias análises integradas do Jamdesk) até que um visitante dê consentimento para cookies. O consentimento é lido do `localStorage` do navegador, portanto funciona com qualquer plataforma de gerenciamento de consentimento (CMP) que registre o consentimento nesse local, incluindo Osano e Termly.
+A Jamdesk pode reter todos os scripts de análise e rastreamento (Google Analytics, Google Tag Manager, Plausible, chat do Crisp, JavaScript personalizado e a análise integrada da própria Jamdesk) até que o visitante consinta com os cookies. A Jamdesk lê o consentimento do `localStorage` do navegador. Qualquer plataforma de gerenciamento de consentimento (CMP) que registre o consentimento ali funciona, incluindo Osano e Termly.
 
-Isso ajuda você a cumprir regulamentações de privacidade, como o GDPR, a CCPA e a Diretiva ePrivacy, pois nenhum rastreamento é executado antes de o visitante concordar.
+Nenhum rastreamento é executado antes que o visitante concorde. Isso ajuda você a cumprir regulamentações de privacidade como LGPD, GDPR, CCPA e a Diretiva ePrivacy.
 
 ## Como funciona
 
-Defina uma chave de `localStorage` e o valor que representa “consentimento concedido” em `docs.json`:
+Defina uma chave de `localStorage` e o valor que significa "consentimento concedido" no `docs.json`:
 
 ```json docs.json
 {
@@ -22,25 +22,25 @@ Defina uma chave de `localStorage` e o valor que representa “consentimento con
 }
 ```
 
-Quando `integrations.cookies` está definido, nenhum script de análise é carregado até que `localStorage["jamdesk_consent"]` seja igual a `"granted"`. Assim que o banner de consentimento registrar a aceitação, os scripts serão carregados, sem necessidade de recarregar a página. Se um visitante revogar o consentimento, os scripts deixarão de ser carregados a partir do próximo carregamento completo da página (os scripts que já estiverem em execução na página atual continuarão funcionando até que o visitante saia dela ou a recarregue).
+Com `integrations.cookies` definido, nenhum script de análise é carregado até que `localStorage["jamdesk_consent"]` seja igual a `"granted"`. Os scripts são carregados assim que o seu banner de consentimento registra a aceitação, sem recarregar a página. A revogação do consentimento tem efeito no próximo carregamento completo da página do visitante. Scripts já em execução na página atual continuam executando até que o visitante navegue para outra página ou recarregue.
 
 <Info>
-`key` e `value` são obrigatórios. Se um deles estiver ausente ou vazio, o bloqueio por consentimento será desativado e os scripts serão carregados normalmente.
+`key` e `value` são obrigatórios. Uma `key` ou `value` ausente ou vazia desativa o controle de consentimento. Nesse caso, os scripts são carregados normalmente.
 </Info>
 
 <Warning>
-O bloqueio também se aplica às análises integradas do Jamdesk: visitantes que nunca derem consentimento não serão contabilizados. Portanto, espere números menores de visualizações de página no dashboard do seu projeto depois de ativar esse recurso.
+O controle também se aplica à análise integrada da Jamdesk. Visitantes que nunca consentirem não são contabilizados. Espere números de visualizações de página menores no painel do seu projeto após ativar esta opção.
 </Warning>
 
 ## Conectando seu banner de consentimento
 
-A maioria das CMPs (incluindo Osano e Termly) não expõe uma flag simples e estável de `localStorage` que você possa indicar diretamente ao Jamdesk: elas armazenam o consentimento em cookies ou em valores que mudam por visitante. Em vez disso, adicione um pequeno **snippet de ponte** na área de código personalizado da própria CMP para gravar `jamdesk_consent` quando um visitante aceitar. Como o snippet é executado como parte da CMP (e não como JavaScript personalizado do Jamdesk, que também é bloqueado), ele sempre será executado.
+A maioria das CMPs (incluindo Osano e Termly) não expõe uma flag estável de `localStorage` que a Jamdesk possa ler. Elas armazenam o consentimento em cookies ou em valores que mudam por visitante. Em vez disso, adicione um pequeno **snippet de ponte** na área de código personalizado da própria CMP. Ele grava `jamdesk_consent` quando um visitante aceita. O snippet é executado como parte da CMP, portanto sempre roda. O JavaScript personalizado da Jamdesk não consegue fazer essa tarefa, pois ele mesmo está sujeito ao controle.
 
-O snippet grava `granted` quando há consentimento e remove a chave quando o consentimento é retirado, para que o bloqueio seja reaplicado no próximo carregamento da página.
+O snippet grava `granted` ao consentir e remove a chave quando o consentimento é retirado. O controle então é reaplicado no próximo carregamento da página.
 
 ## Osano
 
-Adicione o script do Osano em `docs.json`:
+Adicione seu script do Osano no `docs.json`:
 
 ```json docs.json
 {
@@ -52,9 +52,9 @@ Adicione o script do Osano em `docs.json`:
 }
 ```
 
-A URL do script vem do seu dashboard do Osano. Ela sempre começa com `https://cmp.osano.com/` e termina com `/osano.js`.
+A URL do script vem do seu painel do Osano. Ela sempre começa com `https://cmp.osano.com/` e termina com `/osano.js`.
 
-Em seguida, adicione esta ponte no Osano (Consent Manager → sua configuração → JavaScript personalizado) para que o consentimento chegue ao Jamdesk:
+Depois, adicione esta ponte no Osano (Consent Manager → sua configuração → JavaScript personalizado):
 
 ```js
 function jdOsanoBridge(consent) {
@@ -77,7 +77,7 @@ if (window.Osano && window.Osano.cm) {
 
 ## Termly
 
-Adicione o script do Termly em `docs.json`:
+Adicione seu script do Termly no `docs.json`:
 
 ```json docs.json
 {
@@ -89,9 +89,9 @@ Adicione o script do Termly em `docs.json`:
 }
 ```
 
-A URL vem das instruções de incorporação do Termly para o seu site (o script Resource Blocker). A consulta `?autoBlock=on` ativa o bloqueio automático de scripts do Termly e é opcional.
+A URL vem das instruções de incorporação do Termly para o seu site (o script Resource Blocker). A query `?autoBlock=on` é opcional e ativa o bloqueio automático de scripts do Termly.
 
-Em seguida, adicione esta ponte no Termly (seu site → HTML/JavaScript personalizado) para que o consentimento chegue ao Jamdesk:
+Depois, adicione esta ponte no Termly (seu site → HTML/JavaScript personalizado):
 
 ```js
 function jdTermlyBridge() {
@@ -112,22 +112,22 @@ function jdTermlyBridge() {
 })();
 ```
 
-Osano e Termly são carregados primeiro no `<head>` da página, antes de qualquer outro script, para que o bloqueio automático funcione.
+Osano e Termly são carregados primeiro no `<head>` da página, antes de qualquer outro script. O bloqueio automático deles depende disso.
 
 <Warning>
-Se sua CMP for executada no modo estrito ou de bloqueio automático, permita `*.jamdesk.app` e seu domínio personalizado de documentação nas regras gerenciadas (Osano: classificação/lista de permissões; Termly: Domain Rules ou Custom Blocking Map). Caso contrário, a CMP poderá bloquear os próprios recursos do seu site de documentação e interromper o funcionamento da página.
+Se a sua CMP rodar em modo estrito ou de bloqueio automático, inclua na lista de permissões `*.jamdesk.app` e o seu domínio de docs personalizado nas regras gerenciadas dela (Osano: classificação/lista de permissões; Termly: Domain Rules ou Custom Blocking Map). Caso contrário, a CMP pode bloquear os recursos do seu site de docs e quebrar a página.
 </Warning>
 
 ## Testando sua configuração
 
-O bloqueio é executado apenas no seu site publicado e ativo, não em `jamdesk dev` (a prévia local ignora a configuração de consentimento). Para testar:
+O controle só funciona no seu site publicado. A prévia local `jamdesk dev` ignora a configuração de consentimento. Para testar:
 
-1. Abra seu site de documentação ativo com um `localStorage` vazio. As análises não devem ser carregadas (verifique a aba Network do navegador: não deve haver solicitações para Google, Plausible ou `/api/ev`).
-2. No console do navegador, execute `localStorage.setItem("jamdesk_consent", "granted")`. Os scripts devem ser carregados em aproximadamente um segundo, sem recarregar a página.
+1. Abra o seu site de docs publicado com o `localStorage` vazio. A análise não deve carregar (verifique a aba Network do navegador: nenhuma requisição ao Google, Plausible ou `/api/ev`).
+2. No console do navegador, execute `localStorage.setItem("jamdesk_consent", "granted")`. Os scripts devem carregar em cerca de um segundo, sem recarregar a página.
 
 ## Desativando completamente as análises do Jamdesk
 
-Para desativar as análises integradas (sem cookies) do Jamdesk para todos os visitantes, independentemente do consentimento:
+Desative a análise integrada (sem cookies) da Jamdesk para todos os visitantes, independentemente do consentimento:
 
 ```json docs.json
 {
@@ -139,15 +139,15 @@ Para desativar as análises integradas (sem cookies) do Jamdesk para todos os vi
 
 <Columns cols={2}>
   <Card title="Google Tag Manager" icon="tags" href="/pt/integrations/google-tag-manager">
-    Gerencie tags e o modo de consentimento do GTM
+    Carregue tags e defina o modo de consentimento do GTM
   </Card>
   <Card title="Google Analytics" icon="chart-simple" href="/pt/integrations/google-analytics">
     Adicione o GA4 diretamente
   </Card>
   <Card title="Plausible Analytics" icon="chart-pie" href="/pt/integrations/plausible-analytics">
-    Focado em privacidade e geralmente isento de consentimento
+    Focado em privacidade, muitas vezes isento de consentimento
   </Card>
-  <Card title="Custom JavaScript" icon="code" href="/pt/customization/custom-javascript">
-    Scripts personalizados também são bloqueados por consentimento
+  <Card title="JavaScript personalizado" icon="code" href="/pt/customization/custom-javascript">
+    Scripts personalizados também são controlados por consentimento
   </Card>
 </Columns>

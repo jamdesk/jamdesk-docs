@@ -1,13 +1,13 @@
 ---
-title: Verborgene Seiten
-description: Seiten aus Seitenleiste und Suchergebnissen ausblenden, ohne sie zu löschen. Sichtbarkeit per Frontmatter, docs.json oder SEO-Steuerung verwalten.
+title: Versteckte Seiten
+description: Blende Seiten aus Sidebar und Suchergebnissen aus, ohne sie zu löschen. Steuere die Sichtbarkeit über Frontmatter, docs.json oder SEO-Einstellungen.
 ---
 
-Einige Seiten gehören nicht in die öffentliche Seitenleiste: Entwürfe, interne Handbücher oder veraltete Leitfäden, auf die Sie weiterhin verlinken müssen. Verborgene Seiten bleiben über ihre direkte URL erreichbar, verschwinden jedoch aus Navigation, Suche, Ihrer Sitemap und dem KI-Kontext, der an LLMs übergeben wird.
+Manche Seiten gehören nicht in die öffentliche Sidebar: Entwürfe, interne Handbücher, veraltete Anleitungen, auf die du trotzdem verlinken musst. Versteckte Seiten bleiben über die direkte URL erreichbar, verschwinden aber aus der Navigation, der Suche, deiner Sitemap und dem KI-Kontext, der an LLMs übergeben wird.
 
 ## Eine einzelne Seite ausblenden
 
-Fügen Sie `hidden: true` zum Frontmatter der Seite hinzu:
+Füge `hidden: true` zum Frontmatter der Seite hinzu:
 
 ```mdx
 ---
@@ -16,15 +16,15 @@ hidden: true
 ---
 ```
 
-Die Seite wird normal gerendert, wenn jemand ihre URL aufruft, aber Jamdesk:
+Die Seite wird weiterhin unter ihrer URL gerendert. Jamdesk:
 
-- Entfernt sie aus der Seitenleiste
+- Entfernt sie aus der Sidebar
 - Fügt `<meta name="robots" content="noindex, follow">` hinzu, damit Suchmaschinen sie überspringen
-- Schließt sie aus `sitemap.xml`, `llms.txt`, `llms-full.txt` und der Website-Suche aus
+- Schließt sie aus `sitemap.xml`, `llms.txt`, `llms-full.txt` und der Suche auf der Website aus
 
 ## Eine ganze Gruppe oder einen Tab ausblenden
 
-Setzen Sie `"hidden": true` für eine Gruppe oder einen Tab in `docs.json`:
+Setze `"hidden": true` für eine Gruppe oder einen Tab in `docs.json`:
 
 ```json
 {
@@ -44,11 +44,11 @@ Setzen Sie `"hidden": true` für eine Gruppe oder einen Tab in `docs.json`:
 }
 ```
 
-Jede Seite unterhalb des verborgenen Knotens übernimmt diese Regel. Dasselbe Flag funktioniert für `tabs`, `groups`, `anchors`, `dropdowns`, `products`, `languages` und `versions`.
+Jede Seite unterhalb des versteckten Knotens übernimmt die Regel. Dasselbe Flag funktioniert für `tabs`, `groups`, `anchors`, `dropdowns`, `products`, `languages` und `versions`.
 
 ## Verborgene Seiten in der Suche behalten
 
-Wenn ein verborgener Tab oder eine verborgene Gruppe aus der Seitenleiste verschwinden, aber weiterhin für die Website-Suche, KI-Antworten und die Sitemap indexiert werden soll, fügen Sie `"searchable": true` hinzu:
+Füge `"searchable": true` hinzu, damit ein versteckter Tab oder eine versteckte Gruppe für die Website-Suche, KI-Antworten und die Sitemap indexiert bleibt:
 
 ```json
 {
@@ -59,11 +59,11 @@ Wenn ein verborgener Tab oder eine verborgene Gruppe aus der Seitenleiste versch
 }
 ```
 
-`hidden: true` im Frontmatter einer untergeordneten Seite hat weiterhin Vorrang. `searchable` öffnet nur Nachfahren wieder, die sich nicht selbst abgemeldet haben.
+Ein `hidden: true` im Frontmatter einer untergeordneten Seite hat weiterhin Vorrang. `searchable` öffnet nur Nachfahren wieder, die sich nicht selbst abgemeldet haben.
 
 ## Eine Seite nur aus der Suche entfernen
 
-Manchmal soll eine Seite in der Seitenleiste bleiben und weiterhin indexierbar sein, aber nicht mehr erscheinen, wenn jemand danach sucht oder eine Frage stellt. Fügen Sie `search: false` zum Frontmatter hinzu:
+Füge `search: false` zum Frontmatter einer Seite hinzu, die in der Sidebar bleiben und indexierbar sein soll, aber nicht in der Website-Suche oder in KI-Antworten auftauchen darf:
 
 ```yaml
 ---
@@ -72,47 +72,47 @@ search: false
 ---
 ```
 
-Die Seite behält ihren Platz in der Navigation, Ihrer Sitemap, `llms.txt` und Ihrem RSS-Feed, und Suchmaschinen indexieren sie weiterhin. Entfernt wird sie von den *Abruf*-Oberflächen: der Website-Suche, KI-Chat-Antworten und dem MCP-Server.
+Die Seite behält ihren Platz in der Navigation, in deiner Sitemap, in `llms.txt` und in deinem RSS-Feed. Suchmaschinen indexieren sie weiterhin. Sie verschwindet nur aus den *Abfrage*-Oberflächen: der Suche auf der Website, den Antworten des KI-Chats und dem MCP-Server.
 
 <Note>
-`search: false` erfüllt die entgegengesetzte Aufgabe wie `hidden: true`. `hidden` entfernt eine Seite aus der Navigation und den Indexierungsoberflächen; `search: false` lässt all das unverändert und verhindert nur, dass die Seite abgerufen wird. Verwechseln Sie dies nicht mit dem navigationsweiten `searchable`, das verborgene Seiten wieder *in* die Suche aufnimmt.
+`search: false` hat die entgegengesetzte Aufgabe zu `hidden: true`. `hidden` nimmt eine Seite aus der Navigation und den Indexierungs-Oberflächen heraus. `search: false` lässt all das unberührt und verhindert nur, dass die Seite abgerufen wird. Verwechsle es nicht mit der navigationsweiten Option `searchable`, die versteckte Seiten wieder *in* die Suche aufnimmt.
 </Note>
 
 ## Wie viel von einer Seite indexiert wird
 
-Die Suche indexiert eine Seite nicht als einen einzigen Block. Sie indexiert sie **Abschnitt für Abschnitt** — jede Überschrift wird zu einem eigenen Sucheintrag, sodass Leser, die nach „Rate limits“ suchen, bei dieser Überschrift statt am Anfang einer langen Seite landen.
+Die Suche indexiert eine Seite nicht als einen Block. Sie indexiert sie **abschnittsweise**. Jede Überschrift wird zu einem eigenen Sucheintrag. Eine Suche nach „Rate limits“ landet direkt bei dieser Überschrift und nicht am Anfang einer langen Seite.
 
-Dafür gelten zwei Beschränkungen, die beide automatisch angewendet werden:
+Zwei Grenzen gelten automatisch:
 
-| Limit | Wert | Was danach passiert |
+| Grenze | Wert | Was passiert darüber hinaus |
 |---|---|---|
-| Einträge pro Seite | 50 | Abschnitte werden in Seitenreihenfolge indexiert. Sobald der 50. Eintrag verwendet wurde, werden alle verbleibenden Abschnitte aus der Suche ausgeschlossen. |
-| Text pro Abschnitt | Erste 300 Zeichen | Formulierungen weiter unten in einem Abschnitt werden nicht gefunden. |
+| Einträge pro Seite | 50 | Abschnitte werden in Seitenreihenfolge indexiert. Abschnitte ab dem 50. werden von der Suche ausgeschlossen. |
+| Text pro Abschnitt | Die ersten 300 Zeichen | Formulierungen weiter hinten im Abschnitt werden nicht gefunden. |
 
-Die Seite selbst belegt einen der 50 Plätze, daher werden 49 Abschnitte indexiert.
+Die Seite selbst belegt einen der 50 Plätze, also werden 49 Abschnitte indexiert.
 
-Die Begrenzung besteht, weil die Suche jeden Eintrag im Verhältnis zum restlichen Index gewichtet. Wenn eine Seite Hunderte von Einträgen erzeugt, verdrängen diese die anderen aus den Ergebnissen — ein automatisch generiertes Änderungsprotokoll kann allein die Hälfte eines Index ausmachen und tatsächlich relevante Seiten von der ersten Ergebnisseite verdrängen.
+Die Obergrenze existiert, weil die Suche jeden Eintrag gegen den Rest deines Index gewichtet. Wenn eine einzelne Seite Hunderte Einträge erzeugt, verdrängt sie die anderen aus den Ergebnissen. Ein generiertes Changelog kann die Hälfte eines Index füllen und relevante Seiten vom ersten Bildschirm verdrängen.
 
 <Warning>
-Eine Seite, die das Limit überschreitet, wird weiterhin vollständig gerendert. Nur ihre späteren Abschnitte können nicht mehr gefunden werden, und nichts auf der Seite weist Ihre Leser darauf hin.
+Eine Seite über der Grenze wird weiterhin vollständig gerendert. Nur ihre späteren Abschnitte werden nicht mehr auffindbar, und nichts auf der Seite zeigt deinen Lesern das an.
 
-Wenn eine Seite mehr als ungefähr 50 Überschriften enthält, teilen Sie sie entweder in mehrere Seiten auf — was ohnehin für eine bessere Navigation sorgt — oder fügen Sie bei maschinell generierten Seiten, nach denen niemand manuell sucht, `search: false` hinzu, um die gesamte Seite aus dem Index zu entfernen.
+Teile eine Seite mit mehr als ~50 Überschriften in mehrere Seiten auf. Das verbessert auch die Navigation. Für eine maschinell erzeugte Seite, die niemand von Hand durchsucht, setze stattdessen `search: false`, um die gesamte Seite aus dem Index herauszuhalten.
 </Warning>
 
-Damit ein Begriff von der Suche richtig gewichtet werden kann, verwenden Sie zuerst den Seitentitel (höchste Gewichtung), dann eine Überschrift und anschließend die Beschreibung. Fließtext wird am niedrigsten gewichtet; pro Abschnitt zählen nur die ersten 300 Zeichen.
+Platziere einen Begriff dort, wo die Suche ihn am stärksten gewichtet: der Seitentitel (höchste Gewichtung), dann eine Überschrift, dann die Beschreibung. Der Fließtext wird am niedrigsten gewichtet. Nur seine ersten 300 Zeichen pro Abschnitt zählen.
 
 <Note>
-`seo.metatags.keywords` wird nicht in die Website-Suche übernommen. Es erzeugt ein HTML-Tag `<meta name="keywords">`, das Google laut eigener Aussage bei der Bewertung ignoriert. Es gibt keine Möglichkeit, einer Seite zusätzliche Suchbegriffe zuzuweisen — platzieren Sie die gewünschten Begriffe im Titel, in einer Überschrift oder in der Beschreibung.
+`seo.metatags.keywords` fließt *nicht* in die Website-Suche ein. Es erzeugt ein HTML-`<meta name="keywords">`-Tag. Google hat erklärt, dass es dieses Tag für das Ranking ignoriert. Du kannst einer Seite keine zusätzlichen Suchbegriffe anhängen. Setze die Wörter, nach denen gesucht werden soll, in den Titel, eine Überschrift oder die Beschreibung.
 </Note>
 
 ## Projektweite Steuerungen
 
-Beide Flags befinden sich unter `seo` in `docs.json`:
+Diese Flags befinden sich unter `seo` in `docs.json`:
 
 | Flag | Standard | Wirkung |
 |---|---|---|
-| `seo.indexing` | `"navigable"` | Nur in Ihrer Navigation aufgeführte Seiten erscheinen in Artefakten. Setzen Sie den Wert auf `"all"`, um jede MDX-Datei in Ihrem Repository einzuschließen. |
-| `seo.indexHiddenPages` | `false` | Setzen Sie den Wert auf `true`, um Seiten mit `hidden: true` in Sitemap, llms.txt und Suche einzuschließen und das automatische No-Index-Tag zu entfernen. |
+| `seo.indexing` | `"navigable"` | Nur Seiten, die in deiner Navigation aufgeführt sind, erscheinen in den Artefakten. Setze `"all"`, um jede MDX-Datei in deinem Repository einzubeziehen. |
+| `seo.indexHiddenPages` | `false` | Setze `true`, um Seiten mit `hidden: true` in Sitemap, llms.txt und Suche aufzunehmen und das automatische noindex-Tag zu entfernen. |
 
 Beispiel:
 
@@ -126,22 +126,22 @@ Beispiel:
 
 ## Schnellreferenz
 
-| Szenario | Frontmatter | docs.json | In Seitenleiste sichtbar | Direkte URL | In Sitemap |
+| Szenario | Frontmatter | docs.json | In der Sidebar sichtbar | Direkte URL | In der Sitemap |
 |---|---|---|---|---|---|
-| Normale Seite | — | aufgeführt | Ja | Ja | Ja |
-| Über Frontmatter verborgen | `hidden: true` | aufgeführt | Nein | Ja | Nein |
-| Seite nicht in Navigation (verwaist) | — | nicht aufgeführt | Nein | Ja | Nein |
-| Verborgene Gruppe | — | `hidden: true` für Gruppe | Nein | Ja | Nein |
-| Verborgene, durchsuchbare Gruppe | — | `hidden: true, searchable: true` | Nein | Ja | Ja |
-| Nur aus Suche entfernt | `search: false` | aufgeführt | Ja | Ja | Ja |
-| Projekt aktiviert vollständige Indexierung | — | beliebig | Wie oben | Ja | Ja |
+| Normale Seite | - | aufgeführt | Ja | Ja | Ja |
+| Versteckt über Frontmatter | `hidden: true` | aufgeführt | Nein | Ja | Nein |
+| Seite nicht in der Navigation (verwaist) | - | fehlt | Nein | Ja | Nein |
+| Versteckte Gruppe | - | `hidden: true` an der Gruppe | Nein | Ja | Nein |
+| Versteckte, durchsuchbare Gruppe | - | `hidden: true, searchable: true` | Nein | Ja | Ja |
+| Nur aus der Suche ausgeschlossen | `search: false` | aufgeführt | Ja | Ja | Ja |
+| Projekt aktiviert Indexierung aller Seiten | - | beliebig | Wie oben | Ja | Ja |
 
 ## Wann welche Option verwendet wird
 
 - **Entwürfe und Vorschauen:** `hidden: true` im Frontmatter einzelner Seiten
-- **Interne Bereiche** für ein kleines Team: eine verborgene Gruppe oder ein verborgener Tab
-- **Compliance-Dokumente**, die öffentlich sein, aber nicht hervorgehoben werden sollen: verborgene Gruppe mit `searchable: true`
-- **Indexierung des gesamten Repositorys** nur für KI-Grounding: `seo.indexing: "all"`
-- **Ersetzte Seiten**, auf die weiterhin verlinkt und die indexiert werden sollen, die aber nicht über Suche oder KI angezeigt werden sollen: `search: false` im Frontmatter
+- **Interne Bereiche** für ein kleines Team: eine versteckte Gruppe oder ein versteckter Tab
+- **Compliance-Dokumente**, die öffentlich, aber nicht prominent sein sollen: versteckte Gruppe mit `searchable: true`
+- **Vollständige Indexierung des Repositories** nur für KI-Grounding: `seo.indexing: "all"`
+- **Abgelöste Seiten**, die verlinkbar und indexiert bleiben sollen, aber nicht von Suche oder KI hervorgehoben werden: `search: false` im Frontmatter
 
-Verborgene Seiten sind keine Zugriffskontrolle. Jeder, der die URL kennt, kann sie lesen. Eine echte Zugriffskontrolle finden Sie unter [Passwortschutz](/de/setup/password-protection).
+Versteckte Seiten sind keine Zugriffskontrolle. Jeder, der die URL kennt, kann sie lesen. Für Zugriffskontrolle siehe [Passwortschutz](/de/setup/password-protection).

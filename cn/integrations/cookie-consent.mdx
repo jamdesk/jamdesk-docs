@@ -1,15 +1,15 @@
 ---
-title: Cookie 同意
-description: 通过 integrations.cookies 在获得 Cookie 同意前阻止分析脚本，并在文档网站加载 Osano 或 Termly 同意横幅。
+title: Consentimento de cookies
+description: Bloqueie scripts de análise até o consentimento de cookies com integrations.cookies e carregue um banner do Osano ou Termly no seu site de documentação.
 ---
 
-Jamdesk 可以在访客同意 Cookie 前阻止所有分析和跟踪脚本（Google Analytics、Google Tag Manager、Plausible、Crisp 聊天、自定义 JavaScript 以及 Jamdesk 内置的分析功能）运行。同意状态从浏览器的 `localStorage` 中读取，因此适用于任何会在其中记录同意状态的同意管理平台（CMP），包括 Osano 和 Termly。
+Jamdesk pode reter todos os scripts de análise e rastreamento (Google Analytics, Google Tag Manager, Plausible, chat do Crisp, JavaScript personalizado e a própria análise integrada do Jamdesk) até que o visitante consinta com os cookies. O Jamdesk lê o consentimento do `localStorage` do navegador. Qualquer plataforma de gerenciamento de consentimento (CMP) que registre o consentimento ali funciona, incluindo Osano e Termly.
 
-这有助于你遵守 GDPR、CCPA 和《ePrivacy 指令》等隐私法规，因为访客同意前不会运行任何跟踪功能。
+Nenhum rastreamento é executado antes de o visitante concordar. Isso ajuda você a cumprir regulamentações de privacidade como a LGPD, o GDPR, o CCPA e a Diretiva ePrivacy.
 
 ## 工作原理
 
-在 `docs.json` 中设置 `localStorage` 键及表示“已授予同意”的值：
+Defina uma chave de `localStorage` e o valor que significa "consentimento concedido" em `docs.json`:
 
 ```json docs.json
 {
@@ -22,25 +22,25 @@ Jamdesk 可以在访客同意 Cookie 前阻止所有分析和跟踪脚本（Goog
 }
 ```
 
-设置 `integrations.cookies` 后，只有当 `localStorage["jamdesk_consent"]` 等于 `"granted"` 时，分析脚本才会加载。同意横幅记录访客接受操作后，脚本会立即加载，无需重新加载页面。如果访客撤回同意，脚本会从其下一次完整的页面加载开始停止加载（当前页面中已经运行的脚本会继续运行，直到访客离开或重新加载页面）。
+Com `integrations.cookies` definido, nenhum script de análise é carregado até que `localStorage["jamdesk_consent"]` seja igual a `"granted"`. Os scripts são carregados assim que o seu banner de consentimento registra a aceitação, sem recarregar a página. Um consentimento revogado passa a valer no próximo carregamento completo da página do visitante. Scripts já em execução na página atual continuam executando até que o visitante navegue para outra página ou recarregue.
 
 <Info>
-`key` 和 `value` 都是必需的。如果任一项缺失或为空，则不会启用同意控制，脚本会正常加载。
+`key` e `value` são obrigatórios. Uma `key` ou `value` ausente ou vazia desativa o controle de consentimento. Os scripts são então carregados normalmente.
 </Info>
 
 <Warning>
-同意控制也适用于 Jamdesk 的内置分析功能：从未同意的访客不会计入统计，因此启用此功能后，项目仪表板中的页面浏览量预计会降低。
+O controle também se aplica à análise integrada do Jamdesk. Visitantes que nunca consentem não são contabilizados. Espere números de visualizações de página mais baixos no painel do seu projeto depois de ativar isso.
 </Warning>
 
 ## 连接同意横幅
 
-大多数 CMP（包括 Osano 和 Termly）不会提供可直接供 Jamdesk 使用的简单、稳定的 `localStorage` 标志：它们会将同意状态存储在 Cookie 中，或存储在因访客而异的值中。你可以在 CMP 自带的自定义代码区域中添加一段简短的**桥接代码片段**，在访客接受同意时写入 `jamdesk_consent`。由于该代码片段作为 CMP 的一部分运行（而不是作为受同意控制的 Jamdesk 自定义 JavaScript 运行），因此它始终会运行。
+A maioria das CMPs (incluindo Osano e Termly) não expõe uma flag estável de `localStorage` que o Jamdesk possa ler. Elas armazenam o consentimento em cookies ou em valores que mudam por visitante. Em vez disso, adicione um pequeno **snippet de ponte** na área de código personalizado da própria CMP. Ele grava `jamdesk_consent` quando um visitante aceita. O snippet é executado como parte da CMP, então sempre é executado. O JavaScript personalizado do Jamdesk não pode fazer esse trabalho, pois ele mesmo é controlado pelo consentimento.
 
-该代码片段会在访客同意时写入 `granted`，并在撤回同意时删除此键，因此同意控制会在下一次页面加载时重新生效。
+O snippet grava `granted` no consentimento. Ele remove a chave quando o consentimento é retirado. O controle então se reaplica no próximo carregamento da página.
 
 ## Osano
 
-在 `docs.json` 中添加 Osano 脚本：
+Adicione o seu script do Osano em `docs.json`:
 
 ```json docs.json
 {
@@ -52,9 +52,9 @@ Jamdesk 可以在访客同意 Cookie 前阻止所有分析和跟踪脚本（Goog
 }
 ```
 
-脚本 URL 来自 Osano 仪表板。它始终以 `https://cmp.osano.com/` 开头，并以 `/osano.js` 结尾。
+A URL do script vem do seu painel do Osano. Ela sempre começa com `https://cmp.osano.com/` e termina com `/osano.js`.
 
-然后在 Osano 中添加以下桥接代码（Consent Manager → your config → custom JavaScript），使同意状态传递给 Jamdesk：
+Em seguida, adicione esta ponte no Osano (Consent Manager → sua configuração → JavaScript personalizado):
 
 ```js
 function jdOsanoBridge(consent) {
@@ -77,7 +77,7 @@ if (window.Osano && window.Osano.cm) {
 
 ## Termly
 
-在 `docs.json` 中添加 Termly 脚本：
+Adicione o seu script do Termly em `docs.json`:
 
 ```json docs.json
 {
@@ -89,9 +89,9 @@ if (window.Osano && window.Osano.cm) {
 }
 ```
 
-该 URL 来自 Termly 针对你网站提供的嵌入说明（Resource Blocker 脚本）。查询参数 `?autoBlock=on` 用于启用 Termly 的自动脚本阻止功能，可选。
+A URL vem das instruções de incorporação do Termly para o seu site (o script Resource Blocker). A query `?autoBlock=on` é opcional. Ela ativa o bloqueio automático de scripts do Termly.
 
-然后在 Termly 中添加以下桥接代码（your website → custom HTML/JavaScript），使同意状态传递给 Jamdesk：
+Em seguida, adicione esta ponte no Termly (seu site → HTML/JavaScript personalizado):
 
 ```js
 function jdTermlyBridge() {
@@ -112,22 +112,22 @@ function jdTermlyBridge() {
 })();
 ```
 
-Osano 和 Termly 都会先在页面的 `<head>` 中加载，然后才加载其他脚本，因此它们的自动阻止功能可以正常运行。
+Osano e Termly são carregados primeiro no `<head>` da página, antes de qualquer outro script. O bloqueio automático deles depende disso.
 
 <Warning>
-如果你的 CMP 运行在严格或自动阻止模式下，请在其管理规则中将 `*.jamdesk.app` 和你的自定义文档域名加入允许列表（Osano：classification/allowlist；Termly：Domain Rules 或 Custom Blocking Map）。否则，CMP 可能会阻止文档网站自身的资源，导致页面无法正常运行。
+Se a sua CMP operar no modo estrito ou de bloqueio automático, inclua na lista de permissões `*.jamdesk.app` e o seu domínio de documentação personalizado nas regras gerenciadas dela (Osano: classificação/lista de permissões; Termly: Domain Rules ou Custom Blocking Map). Caso contrário, a CMP pode bloquear os recursos do seu próprio site de documentação e quebrar a página.
 </Warning>
 
 ## 测试设置
 
-同意控制仅在已上线的正式网站上运行，不会在 `jamdesk dev` 中运行（本地预览会忽略同意配置）。测试步骤如下：
+O controle só é executado no seu site publicado ao vivo. A pré-visualização local `jamdesk dev` ignora a configuração de consentimento. Para testar:
 
-1. 在 `localStorage` 为空的情况下打开正式文档网站。分析功能不应加载（检查浏览器的 Network 标签页：不应有发送到 Google、Plausible 或 `/api/ev` 的请求）。
-2. 在浏览器控制台中运行 `localStorage.setItem("jamdesk_consent", "granted")`。脚本应在大约一秒内加载，无需重新加载页面。
+1. Abra o seu site de documentação ao vivo com o `localStorage` vazio. A análise não deve carregar (verifique a aba Network do navegador: nenhuma requisição para Google, Plausible ou `/api/ev`).
+2. No console do navegador, execute `localStorage.setItem("jamdesk_consent", "granted")`. Os scripts devem carregar em cerca de um segundo, sem recarregar a página.
 
 ## 完全停用 Jamdesk 分析
 
-无论访客是否同意，都可以关闭面向所有访客的 Jamdesk 内置（无 Cookie）分析功能：
+Desligue a análise integrada (sem cookies) do Jamdesk para todos os visitantes, independentemente do consentimento:
 
 ```json docs.json
 {
@@ -139,15 +139,15 @@ Osano 和 Termly 都会先在页面的 `<head>` 中加载，然后才加载其�
 
 <Columns cols={2}>
   <Card title="Google Tag Manager" icon="tags" href="/cn/integrations/google-tag-manager">
-    管理标签和 GTM 同意模式
+    Carregue tags e defina o modo de consentimento do GTM
   </Card>
   <Card title="Google Analytics" icon="chart-simple" href="/cn/integrations/google-analytics">
-    直接添加 GA4
+    Adicione o GA4 diretamente
   </Card>
   <Card title="Plausible Analytics" icon="chart-pie" href="/cn/integrations/plausible-analytics">
-    注重隐私，通常无需同意
+    Focado em privacidade, geralmente isento de consentimento
   </Card>
-  <Card title="Custom JavaScript" icon="code" href="/cn/customization/custom-javascript">
-    自定义脚本同样受同意控制
+  <Card title="JavaScript personalizado" icon="code" href="/cn/customization/custom-javascript">
+    Scripts personalizados também são controlados pelo consentimento
   </Card>
 </Columns>

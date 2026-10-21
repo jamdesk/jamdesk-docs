@@ -1,98 +1,98 @@
 ---
 title: AWS Route 53 与 CloudFront
-description: "通过 AWS CloudFront 和 Route 53 将 /docs 流量代理到您的 Jamdesk 站点，涵盖分配设置、源配置和缓存行为规则。"
+description: "通过 AWS CloudFront 和 Route 53 将 /docs 流量代理到你的 Jamdesk 站点。包括分发设置、源站配置和缓存行为规则。"
 ---
 
-设置 CloudFront 分配，将 `/docs/*` 转发到您的 Jamdesk 站点，并使用 Route 53 管理 DNS。大约需要 15 分钟。
+设置 CloudFront 分发，将 `/docs/*` 转发到你的 Jamdesk 站点，并使用 Route 53 管理 DNS。大约需要 15 分钟。
 
 ## 前提条件
 
-- 拥有可访问 CloudFront 和 Route 53 的 AWS 账户
-- 您的域名由 Route 53 管理（或能够在其他位置更新 DNS）
-- 您的 Jamdesk 子域名（位于仪表板设置中）
-- 您的自定义域名已注册，并已在 Jamdesk 仪表板中完成 DNS 验证
+- 拥有 CloudFront 和 Route 53 访问权限的 AWS 账户
+- 你的域名由 Route 53 管理（或能够在其他地方更新 DNS）
+- 你的 Jamdesk 子域名（可在仪表板设置中找到）
+- 你的自定义域名已在 Jamdesk 仪表板中注册并完成 DNS 验证
 
 <Note>
-如果您使用自定义子路径而不是默认的 `/docs`，请在缓存行为路径模式（第 3 步）中将 `/docs/*` 替换为您的子路径。在仪表板中重命名后，请再次更新分配。
+如果你使用自定义子路径而非默认的 `/docs`，请将缓存行为路径模式（步骤 3）中的 `/docs/*` 替换为你的子路径。在仪表板中进行任何重命名后，请重新更新分发。
 </Note>
 
 ## 第 1 步：创建 CloudFront 分配
 
 1. 打开 [CloudFront 控制台](https://console.aws.amazon.com/cloudfront/)
 2. 点击 **Create Distribution**
-3. 配置源：
+3. 配置源站：
 
 | 设置 | 值 |
 |---------|-------|
-| 源域名 | `YOUR_SLUG.jamdesk.app` |
-| 协议 | 仅 HTTPS |
-| 名称 | `jamdesk-docs-origin` |
+| Origin domain | `YOUR_SLUG.jamdesk.app` |
+| Protocol | HTTPS only |
+| Name | `jamdesk-docs-origin` |
 
 <Note>
-将 `YOUR_SLUG` 替换为您的实际 Jamdesk 子域名。
+将 `YOUR_SLUG` 替换为你的 Jamdesk 子域名。
 </Note>
 
 ## 第 2 步：配置源设置
 
-在源设置中添加自定义标头，以识别您的域名：
+在源站设置中添加自定义标头，以标识你的域名：
 
 | 标头名称 | 值 |
 |-------------|-------|
 | `X-Forwarded-Host` | `yoursite.com` |
 | `X-Jamdesk-Forwarded-Host` | `yoursite.com` |
 
-这些标头会告知 Jamdesk 发起请求的域名。
+这些标头告诉 Jamdesk 是哪个域名发出的请求。
 
 <Warning>
-此步骤是必需的，跳过后不会显示明显错误。`AllViewerExceptHostHeader` 策略（下一步）只会转发访客浏览器发送的标头，不会添加新标头，因此 `X-Jamdesk-Forwarded-Host` 只有作为**源自定义标头**时才能到达 Jamdesk。没有此标头，请求仍会成功，但页面会提供 `noindex`，且规范链接会指向 `YOUR_SLUG.jamdesk.app`，而不是您的域名。
+此步骤是必需的。跳过它会静默失败。`AllViewerExceptHostHeader` 策略（下一步）只转发访问者浏览器发送的标头，不会添加新的标头。`X-Jamdesk-Forwarded-Host` 只能作为**源站自定义标头**到达 Jamdesk。如果没有它，请求仍会成功，但页面会以 `noindex` 提供服务，并且规范链接会指向 `YOUR_SLUG.jamdesk.app` 而不是你的域名。
 </Warning>
 
-如果您通过一个分配提供多个备用域名，静态源标头无法根据请求变化 — 请改用 [CloudFront Function](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/cloudfront-functions.html)，在 **viewer request** 阶段运行，并设置 `request.headers['x-jamdesk-forwarded-host'] = { value: request.headers.host.value }`。
+静态源站标头无法按请求变化。若要通过一个分发提供多个备用域名，请改用**查看器请求**上的 [CloudFront Function](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/cloudfront-functions.html)，并让它设置 `request.headers['x-jamdesk-forwarded-host'] = { value: request.headers.host.value }`。
 
 ## 第 3 步：创建缓存行为
 
-添加行为，将 `/docs/*` 和资源请求路由到您的 Jamdesk 源：
+添加行为，将 `/docs/*` 和资源请求路由到你的 Jamdesk 源站：
 
-1. 转到 **Behaviors** 标签页
+1. 转到 **Behaviors** 选项卡
 2. 点击 **Create Behavior**
 3. 使用以下设置创建三个行为：
 
-| 路径模式 | 源 | 缓存策略 | 源请求策略 |
+| 路径模式 | 源站 | 缓存策略 | 源站请求策略 |
 |-------------|--------|-------------|----------------------|
 | `/docs/*` | `jamdesk-docs-origin` | CachingOptimized | AllViewerExceptHostHeader |
 | `/_next/*` | `jamdesk-docs-origin` | CachingOptimized | AllViewerExceptHostHeader |
 | `/_jd/*` | `jamdesk-docs-origin` | CachingOptimized | AllViewerExceptHostHeader |
 
-将三个行为的 **Viewer protocol policy** 都设置为 **Redirect HTTP to HTTPS**。
+将三者的 **Viewer protocol policy** 均设置为 **Redirect HTTP to HTTPS**。
 
-三个行为都是必需的：`/_next/*` 和 `/_jd/*` 提供文档页面加载的 JavaScript、CSS、字体和图像。`AllViewerExceptHostHeader` 策略会转发查看者的请求标头（除 `Host` 外的所有标头；CloudFront 会将 `Host` 保留给源），并且必须在三个行为中全部设置。
+每个行为都是必需的。`/_next/*` 和 `/_jd/*` 提供你的文档页面所加载的 JavaScript、CSS、字体和图片。`AllViewerExceptHostHeader` 策略转发查看器的请求标头（除 `Host` 外，CloudFront 将其保留给源站）。请在三个行为上都设置它。
 
 ## 第 4 步：添加备用域名
 
-1. 在 **General** 标签页中，点击 **Edit**
-2. 在 **Alternate domain name (CNAME)** 下添加 `yoursite.com`
-3. 为您的域名选择或申请 SSL 证书
+1. 在 **General** 选项卡中，点击 **Edit**
+2. 在 **Alternate domain name (CNAME)** 下，添加 `yoursite.com`
+3. 为你的域名选择或申请 SSL 证书
 
 ## 第 5 步：配置 Route 53
 
-创建一个指向 CloudFront 分配的别名记录：
+创建一条指向 CloudFront 分发的别名记录：
 
 1. 打开 [Route 53 控制台](https://console.aws.amazon.com/route53/)
-2. 选择您的托管区域
+2. 选择你的托管区域
 3. 点击 **Create Record**
 4. 配置：
 
 | 设置 | 值 |
 |---------|-------|
-| 记录名称 | `yoursite.com`（或留空以用于根域名） |
-| 记录类型 | A |
-| 别名 | 是 |
-| 路由流量到 | CloudFront 分配 |
-| 分配 | 选择您的分配 |
+| Record name | `yoursite.com`（或留空以使用顶级域名） |
+| Record type | A |
+| Alias | Yes |
+| Route traffic to | CloudFront distribution |
+| Distribution | 选择你的分发 |
 
 ## 第 6 步：验证
 
-DNS 传播后（通常需要 5–15 分钟），访问 `https://yoursite.com/docs`，确认文档能够正确加载。
+等待 DNS 传播（通常需要 5–15 分钟）。然后访问 `https://yoursite.com/docs`，确认你的文档已加载。
 
 ## CloudFront 完整配置摘要
 
@@ -116,42 +116,42 @@ Distribution Settings:
 ## 故障排除
 
 <Accordion title="403 Forbidden 错误">
-确保源域名必须准确为 `YOUR_SLUG.jamdesk.app`，且不带 `https://` 前缀。
+检查源站域名是否完全为 `YOUR_SLUG.jamdesk.app`，且不包含 `https://` 前缀。
 </Accordion>
 
 <Accordion title="混合内容警告">
-确认 Viewer protocol policy 已设置为 "Redirect HTTP to HTTPS"，并确保您的 SSL 证书有效。
+确认 Viewer protocol policy 设置为 "Redirect HTTP to HTTPS"，并且你的 SSL 证书有效。
 </Accordion>
 
 <Accordion title="更新后内容过时">
-为 `/docs/*` 创建 CloudFront 缓存失效，以便在发布更改后清除缓存内容。
+为 `/docs/*` 创建 CloudFront 失效（invalidation），以在发布更改后清除缓存内容。
 </Accordion>
 
-<Accordion title="403 域名未授权错误">
-如果看到 "Domain is not authorized to serve this content"：
+<Accordion title="403 Domain not authorized 错误">
+如果你看到 "Domain is not authorized to serve this content"：
 
-1. 确认您的域名已在 Jamdesk 仪表板中注册
-2. 完成域名的 DNS 验证（TXT 记录）
-3. 确保源配置中已设置 `X-Forwarded-Host` 和 `X-Jamdesk-Forwarded-Host` 自定义标头
-4. 检查您的域名是否映射到正确的项目
+1. 确认你的域名已在 Jamdesk 仪表板中注册
+2. 完成你的域名的 DNS 验证（TXT 记录）
+3. 在源站配置中设置 `X-Forwarded-Host` 和 `X-Jamdesk-Forwarded-Host` 自定义标头
+4. 检查你的域名是否映射到正确的项目
 
-CloudFront 必须在域名完成验证后才能提供文档。
+在 CloudFront 能够提供文档服务之前，域名必须已通过验证。
 </Accordion>
 
-<Accordion title="Custom domain only 预检检查持续失败">
-预检会在您的线上域名上请求 `/_jd/preflight`，并检查实际到达 Jamdesk 的内容。如果报告您的代理“未标识自身”，说明 CloudFront 已到达 Jamdesk，但没有携带 `X-Jamdesk-Forwarded-Host` — 请重新检查第 2 步中的源自定义标头。有关每条预检消息含义，请参阅[仅限自定义域名](/cn/deploy/custom-domain-only)。
+<Accordion title="Custom domain only 预检持续失败">
+预检会在你的线上域名上获取 `/_jd/preflight`，并检查到达 Jamdesk 的内容。如果它报告你的代理"未标识自身"，说明 CloudFront 在没有 `X-Jamdesk-Forwarded-Host` 的情况下访问 Jamdesk。请重新检查步骤 2 中的源站自定义标头。有关每条预检消息的含义，请参阅 [Custom domain only](/cn/deploy/custom-domain-only)。
 </Accordion>
 
 ## 接下来做什么？
 
 <Columns cols={3}>
-  <Card title="仅限自定义域名" icon="eye-slash" href="/cn/deploy/custom-domain-only">
-    停止让您的子域名直接响应
+  <Card title="Custom Domain Only" icon="eye-slash" href="/cn/deploy/custom-domain-only">
+    阻止你的子域名直接响应
   </Card>
-  <Card title="自定义域名" icon="globe" href="/cn/deploy/custom-domains">
-    验证 DNS 并排查问题
+  <Card title="Custom Domains" icon="globe" href="/cn/deploy/custom-domains">
+    验证 DNS 并排查故障
   </Card>
-  <Card title="子路径托管" icon="folder-tree" href="/cn/deploy/subpath-hosting">
-    在 /docs 提供文档
+  <Card title="Subpath Hosting" icon="folder-tree" href="/cn/deploy/subpath-hosting">
+    在 /docs 提供文档服务
   </Card>
 </Columns>

@@ -1,24 +1,24 @@
 ---
-title: 文档搜索 API
-description: 通过语义搜索以编程方式检索 Jamdesk 文档，为聊天机器人、Slack 机器人和 AI 智能体提供最新答案。
+title: Docs 搜索 API
+description: 以编程方式搜索您的 Jamdesk 文档。为聊天机器人、Slack 机器人、自定义搜索和 AI 智能体提供最新答案。
 ---
 
-Docs Search API 通过语义搜索，让你以编程方式访问文档内容。一个端点（`POST /_api/search`）接收自然语言查询，并按相关性排序，返回文档中最相关的段落。
+Docs Search API 通过语义搜索为您提供文档内容的编程访问。一个端点（`POST /_api/search`）接收自然语言查询，并返回文档中按相关性排序的最相关段落。
 
 ## 使用场景
 
 <Columns cols={2}>
-  <Card title="客服聊天机器人" icon="comment-dots">
-    将 Intercom Fin、Zendesk AI 或自定义聊天机器人连接到文档，让它们基于准确且带引用的内容回答问题。
+  <Card title="支持聊天机器人" icon="comment-dots">
+    将 Intercom Fin、Zendesk AI 或自定义聊天机器人连接到您的文档。机器人会基于引用的内容回答问题。
   </Card>
   <Card title="Slack 机器人" icon="slack">
-    构建一个 `/docs` Slack 命令，搜索文档并将最相关的结果发布到任意频道。
+    构建一个 `/docs` Slack 命令，搜索您的文档并将排名靠前的结果发布到任意频道。
   </Card>
   <Card title="自定义搜索" icon="magnifying-glass">
-    在产品、仪表板或内部工具中添加搜索界面，在相关场景中展示文档内容。
+    在您的产品、仪表板或内部工具中添加搜索界面，在上下文中展示相关文档。
   </Card>
   <Card title="AI 智能体" icon="robot">
-    为 Claude 或 GPT 等 AI 智能体提供工具，让它们检索最新文档，而不是依赖训练数据。
+    为 Claude 或 GPT 等 AI 智能体提供一个工具，让它们检索您最新的文档，而不是依赖其训练数据。
   </Card>
 </Columns>
 
@@ -26,10 +26,10 @@ Docs Search API 通过语义搜索，让你以编程方式访问文档内容。�
 
 <Steps>
   <Step title="生成 API 密钥">
-    前往 [Jamdesk 仪表板](https://dashboard.jamdesk.com)中的 **Project Settings → API Keys**。点击 **Generate Key**，为密钥命名并复制。密钥以 `jd_live_` 开头，后接 32 个十六进制字符（总计 40 个字符），且仅显示一次。
+    前往 [Jamdesk 仪表板](https://dashboard.jamdesk.com)中的 **Project Settings → API Keys**。点击 **Generate Key**，为其命名并复制密钥。密钥以 `jd_live_` 开头，后跟 32 个十六进制字符（共 40 个字符）。密钥仅显示一次。
   </Step>
-  <Step title="发送第一个搜索请求">
-    向文档子域名上的 `/_api/search` 发送 `POST` 请求：
+  <Step title="发起第一个搜索请求">
+    在您的文档子域名上向 `/_api/search` 发送 `POST` 请求：
 
     ```bash
     curl -X POST https://your-project.jamdesk.app/_api/search \
@@ -38,8 +38,8 @@ Docs Search API 通过语义搜索，让你以编程方式访问文档内容。�
       -d '{"query": "How do I set up a custom domain?", "limit": 5, "language": "en"}'
     ```
   </Step>
-  <Step title="使用搜索结果">
-    响应会返回一个匹配段落数组，其中包含相关性评分和页面元数据：
+  <Step title="使用结果">
+    响应返回一个匹配段落数组，包含相关性分数和页面元数据：
 
     ```json
     {
@@ -64,49 +64,51 @@ Docs Search API 通过语义搜索，让你以编程方式访问文档内容。�
 
 ## 身份验证
 
-所有请求都必须在 `Authorization` 标头中提供 Bearer 令牌。
+所有请求都需要在 `Authorization` 头中提供 Bearer 令牌。
 
 ```http
 Authorization: Bearer jd_live_c83003a54ae0a83123454c3f7ec82f0a
 ```
 
 <Info>
-  Search API 可用于启用了密码或 JWT 身份验证的网站。它会验证你的 API 密钥，而不是访客的登录状态，因此无需将 `/_api/search` 添加到 `auth.jwt.public`。搜索结果可能包含需要登录才能访问的页面，因此请从服务器调用 API，切勿将密钥放入浏览器代码中。搜索结果遵循与站内搜索相同的规则：不会返回受群组限制的页面；除非你已将隐藏页面或设置了 `search: false` 的页面设为可搜索，否则这些页面也不会出现在结果中。
+  Search API 适用于使用密码或 JWT 身份验证的站点。它检查的是您的 API 密钥，而不是访问者的登录状态。您无需将 `/_api/search` 添加到 `auth.jwt.public`。结果可能包含需要登录才能访问的页面。请从您的服务器调用该 API，切勿将密钥放入浏览器代码中。结果遵循与站内搜索相同的规则：受组限制的页面永远不会返回。隐藏页面以及设置了 `search: false` 的页面会被排除，除非您已将其设为可搜索。
+
+  同一密钥也可用于这些站点上的 [MCP 服务器](/cn/ai/mcp-server#受登录保护的网站)、`.md` 页面 URL 以及 [`llms.txt` 和 `llms-full.txt`](/cn/ai/llms-txt#受登录保护的站点)。
 </Info>
 
 ### 生成 API 密钥
 
 <Steps>
   <Step title="打开项目设置">
-    在 Jamdesk 仪表板中，进入你的项目并点击 **Settings**。
+    在 Jamdesk 仪表板中，进入您的项目并点击 **Settings**。
   </Step>
-  <Step title="前往 API Keys">
+  <Step title="进入 API Keys">
     选择 **API Keys** 标签页。
   </Step>
   <Step title="创建密钥">
-    点击 **Generate Key**，输入描述性名称（例如“Intercom 聊天机器人”），然后点击 **Create**。
+    点击 **Generate Key**，输入一个描述性名称（例如 "Intercom chatbot"），然后点击 **Create**。
   </Step>
   <Step title="复制密钥">
-    立即复制密钥。它以 `jd_live_` 开头，后接 32 个十六进制字符，并且**仅显示一次**。请将其存储在密钥管理器或环境变量中。
+    立即复制密钥。它以 `jd_live_` 开头，后跟 32 个十六进制字符。密钥**仅显示一次**。请将其存储在您的密钥管理器或环境变量中。
   </Step>
 </Steps>
 
 ### 密钥管理
 
 <Info>
-API 密钥仅适用于单个项目。为 `acme.jamdesk.app` 创建的密钥无法查询其他项目的文档。
+API 密钥仅限于一个项目。针对 `acme.jamdesk.app` 的密钥无法查询其他项目的文档。
 </Info>
 
 | 规则 | 详情 |
 |------|--------|
-| **格式** | `jd_live_<32 hex chars>`（总计 40 个字符，永不过期） |
-| **适用范围** | 每个项目一个密钥（无法访问其他项目） |
+| **格式** | `jd_live_<32 个十六进制字符>`（共 40 个字符，永不过期） |
+| **范围** | 每个项目一个密钥（无法访问其他项目） |
 | **轮换** | 可随时在 Project Settings 中撤销并重新生成 |
-| **存储** | 存储在环境变量或密钥管理器中；切勿提交到源代码管理系统 |
+| **存储** | 存储在环境变量或密钥管理器中；切勿提交到源代码管理 |
 
 ### 撤销密钥
 
-要撤销密钥，请前往 **Project Settings → API Keys**，按名称找到密钥，然后点击 **Revoke**。密钥撤销后会立即失效。生成新密钥即可替换它。
+前往 **Project Settings → API Keys**，按名称找到该密钥，然后点击 **Revoke**。已撤销的密钥会立即失效。生成新密钥以替换它。
 
 ## 速率限制
 
@@ -114,20 +116,22 @@ API 密钥仅适用于单个项目。为 `acme.jamdesk.app` 创建的密钥无�
 
 | 套餐 | 限制 |
 |------|-------|
-| **Pro** | 每分钟 60 个请求 |
-| **Enterprise** | 自定义；请联系[支持团队](mailto:support@jamdesk.com) |
+| **Pro** | 60 次请求 / 分钟 |
+| **Enterprise** | 自定义；请联系[支持](mailto:support@jamdesk.com) |
 
-超过限制时，API 会返回 `429 Too Many Requests`，并在标头中提供 `Retry-After: 60`，在响应正文中提供 `{"error": "Rate limit exceeded"}`。
+在需要登录的站点上，使用同一密钥发出的 MCP、`.md` 和 `llms.txt` 请求共享单独的限制，即每分钟 120 次请求。它们不计入 Search API 的限制，Search API 的请求也不计入它们的限制。
+
+当超出限制时，API 返回 `429 Too Many Requests`，并附带 `Retry-After: 60` 头以及响应体中的 `{"error": "Rate limit exceeded"}`。
 
 <Warning>
-如果生产环境集成需要更高的速率限制，请[联系我们](mailto:support@jamdesk.com)，了解 Enterprise 方案。
+如需为生产集成获得更高的速率限制，请[联系我们](mailto:support@jamdesk.com)了解 Enterprise 方案。
 </Warning>
 
 ## 查询限制
 
-每个请求都可以通过 `limit` 参数控制返回结果数量。最大值为 **20**，默认值为 **5**，最小值为 **1**。不支持分页；所有匹配结果都会在单个响应中返回。如果需要更多上下文，请尝试使用更具体的查询，而不是增大限制。
+每个请求都接受一个 `limit` 参数，用于控制返回的结果数量。最大值为 **20**，默认值为 **5**，最小值为 **1**。不支持分页。所有匹配结果都会在一个响应中返回。如需更多上下文，请尝试使用更具体的查询，而不是提高 `limit`。
 
-查询没有匹配项时，API 会返回 HTTP 200 和一个空结果数组：
+没有匹配项的查询返回 HTTP 200 以及一个空结果数组：
 
 ```json
 {"query": "quantum entanglement", "results": [], "total": 0, "durationMs": 48}
@@ -135,7 +139,7 @@ API 密钥仅适用于单个项目。为 `acme.jamdesk.app` 创建的密钥无�
 
 ## 按语言筛选
 
-如果文档站点支持多种语言，API 会将每个请求的结果筛选为单一语言。在请求正文中传入 `language`，并使用 BCP-47 代码（例如 `en`、`es`、`fr`、`pt-BR`、`zh-Hans`）。
+在多语言站点上，API 每次请求只按一种语言过滤结果。在请求体中传入 `language`，使用 BCP-47 代码（例如 `en`、`es`、`fr`、`pt-BR`、`zh-Hans`）。
 
 ```bash
 curl -X POST https://your-project.jamdesk.app/_api/search \
@@ -146,93 +150,93 @@ curl -X POST https://your-project.jamdesk.app/_api/search \
 
 | 规则 | 详情 |
 |------|--------|
-| **默认值** | `en`（英语）。省略此字段或传入 `null` 即使用默认值。 |
+| **默认值** | `en`（英语）。省略该字段，或传入 `null`，即使用默认值。 |
 | **格式** | BCP-47（`^[a-zA-Z]{2,3}([-_][a-zA-Z]{2,4})?$`）。示例：`en`、`es`、`fr`、`pt-BR`、`zh-Hans`。 |
-| **验证** | 格式错误的值会返回 `400` 和 `{"error": "Invalid language code"}`。 |
-| **3 段式标签** | 目前不支持。`zh-Hant-HK` 和 `sr-Latn-RS` 等代码会返回 `400`。如有需要，请[联系支持团队](mailto:support@jamdesk.com)。 |
-| **多语言项目** | 筛选条件严格生效：只返回标记为所请求语言的内容块。对于仅包含英语和法语内容的项目，使用 `de` 请求会返回空结果集，而不是 `400`。 |
-| **单语言项目** | 忽略筛选条件；始终返回完整结果集。传入 `language` 不会造成影响，也不会报错。 |
-| **响应中回显** | 每个成功响应都包含 `language` 字段，其值为服务器解析出的语言（请求中的值或默认值 `en`）。 |
+| **验证** | 格式错误的值返回 `400` 以及 `{"error": "Invalid language code"}`。 |
+| **三段式标签** | 目前不支持。`zh-Hant-HK` 和 `sr-Latn-RS` 等代码返回 `400`。如需使用，请[联系支持](mailto:support@jamdesk.com)。 |
+| **多语言项目** | 过滤是严格的：只返回标记为所请求语言的分块。对于仅包含英语和法语的项目，请求 `de` 会返回空结果集，而不是 `400`。 |
+| **单语言项目** | 过滤被忽略。您始终会获得完整结果集。发送 `language` 不会导致错误。 |
+| **在响应中回显** | 每个成功的响应都包含一个 `language` 字段，其值为服务器解析后的结果（请求值，或默认的 `en`）。 |
 
 <Info>
-当项目的 `docs.json` 中包含一个有两个或更多条目的 `navigation.languages` 数组时，该项目即为多语言项目。要检查站点是否为多语言站点，请打开仪表板中的 **Settings → Languages** 标签页，或直接打开 `docs.json`。
+当项目的 `docs.json` 中 `navigation.languages` 数组包含两个或更多条目时，该项目即为多语言项目。请在仪表板的 **Settings → Languages** 标签页或 `docs.json` 中检查您的站点是否为多语言。
 </Info>
 
 <Warning>
-默认值 `en` 同样适用于没有英语版本的项目。如果你的多语言项目仅包含法语和西班牙语等语言，不传入 `language` 字段调用端点时，API 会按 `en` 筛选并返回空结果集。对于不包含英语的站点，请务必显式传入 `language`。
+即使项目没有英语版本，默认的 `en` 仍然适用。一个仅有法语和西班牙语的项目，如果调用时未传入 `language` 字段，则会过滤 `en`，并返回空结果集。对于没有英语内容的站点，请始终显式传入 `language`。
 </Warning>
 
 ## 错误处理
 
-所有错误响应都包含一个可供程序分支判断的机器可读 `error` 字段。
+所有错误响应都包含一个机器可读的 `error` 字段，您可以据此进行程序化分支处理。
 
-| 状态 | `error` 值 | 含义 | 处理方式 |
+| 状态码 | `error` 值 | 含义 | 处理方式 |
 |--------|---------------|---------|--------|
-| **400** | `Missing or empty "query" field` | 请求正文缺少 `query`，或该字段为空 | 添加非空的 `query` 字符串 |
-| **400** | `Invalid language code` | `language` 字段不是字符串，或不符合 BCP-47 格式（`null` 有效；空字符串、仅含空白字符的字符串和 3 段式标签无效） | 使用有效的 1 段或 2 段代码，例如 `en`、`es`、`fr` 或 `pt-BR` |
-| **401** | `invalid_key_format` | 缺少 `Authorization` 标头，或密钥不符合 `jd_live_<32 hex>` 格式 | 检查标头格式；必须使用 `Bearer jd_live_...` |
+| **400** | `Missing or empty "query" field` | 请求体缺少 `query` 或其为空 | 添加一个非空的 `query` 字符串 |
+| **400** | `Invalid language code` | `language` 字段不是字符串或不符合 BCP-47 模式（`null` 可以；空字符串/仅含空白以及三段式标签则不行） | 使用有效的一段或两段代码，如 `en`、`es`、`fr` 或 `pt-BR` |
+| **401** | `invalid_key_format` | `Authorization` 头缺失，或密钥不符合 `jd_live_<32 个十六进制字符>` | 检查头格式；必须为 `Bearer jd_live_...` |
 | **401** | `invalid_key` | 密钥无法识别或已被撤销 | 在仪表板中生成新密钥 |
-| **403** | `wrong_project` | 密钥有效，但它是为其他项目生成的 | 使用与 URL 中项目 slug 对应的密钥 |
-| **429** | `Rate limit exceeded` | 每分钟请求数超过 60 | 等待 `Retry-After` 标头中指定的秒数 |
+| **403** | `wrong_project` | 密钥有效，但它是为其他项目生成的 | 使用与 URL 中的项目 slug 匹配的密钥 |
+| **429** | `Rate limit exceeded` | 超过每分钟 60 次请求 | 等待 `Retry-After` 头中指定的秒数 |
 | **502** | `Search temporarily unavailable` | 向量搜索后端不可用 | 短暂退避后重试 |
-| **503** | `lookup_failed` 或 `redis_unavailable` | 密钥验证后端无法访问 | 短暂退避后重试 |
+| **503** | `lookup_failed` 或 `redis_unavailable` | 无法连接密钥验证后端 | 短暂退避后重试 |
 
 <Info>
-401 和 403 是永久性故障，使用同一密钥重试无济于事。429、502 和 503 是暂时性故障，请采用指数退避策略重试。
+401 和 403 是永久性失败。使用相同密钥重试无济于事。429、502 和 503 是暂时性的。请使用指数退避进行重试。
 </Info>
 
 ## CORS
 
-所有端点均已启用 CORS。基于浏览器的客户端（单页应用、浏览器扩展、静态站点）无需后端代理，即可直接调用 `/_api/search`。所有来源均获准访问。
+所有端点均已启用 CORS。基于浏览器的客户端（单页应用、浏览器扩展、静态站点）可以直接调用 `/_api/search`，无需后端代理。允许所有来源。
 
 ## SDK
 
-目前没有官方的编程语言 SDK。请使用 `fetch`、`requests`、`curl` 或任何 HTTP 客户端直接调用 REST API。下方的 [Postman 集合](#postman-集合)提供了可直接复用的示例。
+目前没有官方的语言 SDK。请通过 `fetch`、`requests`、`curl` 或任何 HTTP 客户端直接使用 REST API。下方的 [Postman 集合](#postman-集合)提供了可直接分叉使用的示例。
 
 ## 版本控制
 
-API 当前版本为 **v1.0.0**。破坏性变更（字段重命名、移除端点、更改身份验证）会通过 [Jamdesk 博客](https://jamdesk.com/blog)和 `X-Deprecation` 响应标头中的弃用通知提前至少 90 天公布。
+该 API 目前版本为 **v1.0.0**。破坏性变更（字段重命名、端点移除、身份验证方式变更）将通过 [Jamdesk 博客](https://jamdesk.com/blog)公布，并在移除前至少 90 天通过响应头 `X-Deprecation` 发出弃用通知。
 
 ## OpenAPI 规范
 
-完整的 OpenAPI 3.1 规范以 YAML 格式提供。你可以将其导入代码生成工具、API 客户端或契约测试流程。
+完整的 OpenAPI 3.1 规范以 YAML 格式提供。将其导入您的代码生成工具、API 客户端或契约测试流水线。
 
 <Columns cols={2}>
   <Card title="下载 OpenAPI YAML" icon="file-arrow-down" href="https://raw.githubusercontent.com/jamdesk/jamdesk-docs/main/openapi/docs-search-api.yaml">
-    `docs-search-api.yaml`（OpenAPI 3.1，与最新发布版本始终保持同步）。
+    `docs-search-api.yaml`（OpenAPI 3.1，始终与最新发布版本保持同步）。
   </Card>
   <Card title="在 GitHub 上浏览" icon="github" href="https://github.com/jamdesk/jamdesk-docs/blob/main/openapi/docs-search-api.yaml">
-    查看规范源文件、提交问题或关注变更。
+    阅读规范源文件、提交 issue 或关注变更。
   </Card>
 </Columns>
 
 ## Postman 集合
 
-我们提供官方 Postman 工作区，其中包含完整的 OpenAPI 规范和可直接复用的集合，你无需编写代码即可在 Postman 界面中测试请求。
+我们发布了官方 Postman 工作区，包含完整的 OpenAPI 规范和可直接分叉使用的集合。无需编写代码，即可在 Postman 界面中测试请求。
 
 <Columns cols={2}>
-  <Card title="Jamdesk 文档 API 工作区" icon="rocket" href="https://www.postman.com/jamdesk/jamdesk-docs-api">
-    复用集合并在 Postman 中运行请求。其中包含“入门”文件夹和可运行的示例。
+  <Card title="Jamdesk Docs API 工作区" icon="rocket" href="https://www.postman.com/jamdesk/jamdesk-docs-api">
+    分叉该集合并在 Postman 中运行请求。包含入门文件夹和可用示例。
   </Card>
   <Card title="所有 Jamdesk API" icon="layer-group" href="https://www.postman.com/jamdesk">
-    浏览所有公开的 Jamdesk API 工作区，并及时了解新发布的 API。
+    浏览所有公开的 Jamdesk API 工作区，并随新 API 的发布保持更新。
   </Card>
 </Columns>
 
 <Warning>
-复用集合后，必须先更新两个集合变量，才能发送请求：
+在分叉后的集合中更新两个集合变量。在您完成此操作之前，任何请求都无法正常工作：
 
-- **`baseUrl`**：设为你自己的 Jamdesk 文档站点。对于大多数客户，该值为 `https://your-project.jamdesk.app`（将 `your-project` 替换为你的项目 slug）。使用自定义域名的客户应填写自己的主机名。通过子路径提供文档的客户应填写完整路径（例如 `https://example.com/docs`）。
-- **`apiKey`**：将占位符替换为在 **Dashboard → Project Settings → API Keys** 中生成的真实密钥。
+- **`baseUrl`**：设置为您自己的 Jamdesk 文档站点。通常为 `https://your-project.jamdesk.app`（将 `your-project` 替换为您的项目 slug）。若使用自定义域名，请使用您自己的主机。若文档位于子路径下，请包含完整路径（例如 `https://example.com/docs`）。
+- **`apiKey`**：将占位符替换为在 **仪表板 → Project Settings → API Keys** 中生成的真实密钥。
 </Warning>
 
 ## 后续步骤
 
 <Columns cols={2}>
-  <Card title="搜索端点" icon="magnifying-glass" href="/cn/jamdesk-api/search">
-    完整参考文档，包含请求与响应架构以及交互式 Playground
+  <Card title="Search 端点" icon="magnifying-glass" href="/cn/jamdesk-api/search">
+    包含请求/响应模式和交互式 playground 的完整参考
   </Card>
   <Card title="集成指南" icon="plug" href="/cn/jamdesk-api/integrations">
-    关于 Intercom、Zendesk、Slack 机器人和自定义聊天机器人的分步指南
+    Intercom、Zendesk、Slack 机器人和自定义聊天机器人的分步指南
   </Card>
 </Columns>

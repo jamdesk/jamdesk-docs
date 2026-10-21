@@ -1,30 +1,30 @@
 ---
 title: Codex
 description: >-
-  Codex è l'agente cloud di OpenAI per attività asincrone di documentazione su più file direttamente nei repository GitHub.
+  Codex è l'agente di codifica cloud di OpenAI per attività batch asincrone su più file di documentazione, direttamente sui repository GitHub.
 ---
 
-[Codex](https://openai.com/index/introducing-codex/) è l'agente cloud di OpenAI per la programmazione. Funziona direttamente con i repository GitHub, quindi puoi lavorare sulla documentazione del tuo progetto senza configurare prima un ambiente locale.
+[Codex](https://openai.com/index/introducing-codex/) è l'agente di codifica cloud di OpenAI. Lavora sui tuoi repository GitHub. Non serve un ambiente locale.
 
-La differenza tra Codex e [Claude Code](/it/ai/claude-code) riguarda soprattutto il flusso di lavoro. Codex viene eseguito nel cloud e lavora in modo asincrono: descrivi un'attività, ti allontani e rivedi una PR quando è pronta. È adatto alle attività batch (dividere un README di 500 righe in una dozzina di pagine o generare una pagina di risoluzione dei problemi dagli ultimi sei mesi di issue GitHub), ma non è l'ideale per il confronto continuo necessario a perfezionare una singola pagina. Se devi gestire un'attività batch su più file senza doverla seguire passo passo, Codex è la scelta giusta. Per lavorare in modo interattivo su una singola pagina, usa invece [Claude Code](/it/ai/claude-code).
+Codex e [Claude Code](/it/ai/claude-code) differiscono soprattutto nel flusso di lavoro. Codex viene eseguito nel cloud e lavora in modo asincrono. Descrivi un blocco di lavoro, lo lasci andare e revisioni una PR quando è completato. Questo si adatta alle attività batch (dividere un README di 500 righe in una dozzina di pagine, o generare una pagina di risoluzione dei problemi dalle issue GitHub degli ultimi sei mesi). Si adatta meno bene allo scambio continuo necessario per perfezionare una singola pagina. Usa [Claude Code](/it/ai/claude-code) per il lavoro interattivo su una singola pagina.
 
 ## Configurazione rapida
 
 <Steps>
-  <Step title="Apri il repository">
-    Apri il repository della documentazione Jamdesk in Codex. Codex funziona direttamente con i repository GitHub.
+  <Step title="Apri il tuo repository">
+    Apri il repository GitHub della documentazione Jamdesk in Codex.
   </Step>
   <Step title="Aggiungi le istruzioni per l'agente">
-    Crea un file `AGENTS.md` nella directory principale del progetto con gli standard di documentazione, così Codex seguirà le tue convenzioni.
+    Crea un file `AGENTS.md` nella radice del progetto con i tuoi standard di documentazione. Codex segue le convenzioni che vi sono contenute.
   </Step>
-  <Step title="Connetti il server MCP">
-    Aggiungi l'endpoint MCP della documentazione a `.codex/config.toml`, così Codex potrà cercare nella documentazione pubblicata.
+  <Step title="Collega il server MCP">
+    Aggiungi l'endpoint MCP della documentazione in `.codex/config.toml`. Codex potrà quindi cercare nella tua documentazione pubblicata.
   </Step>
 </Steps>
 
 ## Modello AGENTS.md
 
-Crea `AGENTS.md` nella directory principale del progetto:
+Crea `AGENTS.md` nella radice del progetto:
 
 ```markdown AGENTS.md
 # Jamdesk Documentation Project
@@ -120,59 +120,59 @@ If you skip step 2, the page won't show up in the sidebar. Read `docs.json` befo
 ```
 
 <Tip>
-  Aggiungi la terminologia del prodotto, le convenzioni per i nomi delle API e tutte le regole di stile specifiche della tua documentazione.
+  Aggiungi la terminologia del tuo prodotto, le convenzioni di denominazione delle API e qualsiasi regola di stile specifica della tua documentazione.
 </Tip>
 
 ## Configurazione MCP
 
-Aggiungi il tuo endpoint della documentazione a `.codex/config.toml`:
+Aggiungi l'endpoint della documentazione in `.codex/config.toml`:
 
 ```toml .codex/config.toml
 [mcp_servers.my-docs]
 url = "https://your-project.jamdesk.app/_mcp"
 ```
 
-Sostituisci `your-project` con il sottodominio Jamdesk oppure, se hai un dominio personalizzato attivo, usalo al suo posto: `url = "https://docs.acme.com/_mcp"`. Consulta [Server MCP](/it/ai/mcp-server) per i dettagli sull'endpoint.
+Sostituisci `your-project` con il tuo sottodominio Jamdesk. Se hai un dominio personalizzato attivo, usa quello: `url = "https://docs.acme.com/_mcp"`. Vedi [Server MCP](/it/ai/mcp-server) per i dettagli degli endpoint.
 
 ## Prompt di esempio
 
-Codex esegue le attività in modo asincrono. Questo cambia il modo in cui devi formulare i prompt: invece di uno scambio interattivo continuo, avvii un'attività lunga e la controlli in un secondo momento. Per questo, i prompt più efficaci chiedono di lavorare su una parte specifica.
+Codex esegue le attività in modo asincrono. Inviagli un'attività lunga e torna a controllare più tardi. I prompt che chiedono un blocco di lavoro rendono al meglio.
 
-Un buon primo tentativo: *"Scrivi la documentazione per l'API di autenticazione basandoti sul codice sorgente in /src/auth"*. Codex legge la base di codice, individua i file rilevanti e genera pagine coerenti. Per qualcosa di più complesso, indirizzalo alla cronologia reale dei bug: *"Crea una pagina di risoluzione dei problemi che descriva i 5 errori più comuni nelle nostre issue GitHub"* tende a produrre una pagina più realistica di quella che scriveresti a memoria.
+Un buon primo tentativo: *"Scrivi la documentazione per l'API di autenticazione basandoti sul sorgente in /src/auth"*. Codex legge la tua codebase, trova i file pertinenti e genera pagine corrispondenti. Indicagli la cronologia dei bug per lavori più complessi. *"Crea una pagina di risoluzione dei problemi che copra i 5 errori più comuni nelle nostre issue GitHub"* tende a produrre una pagina più accurata di quella che scriveresti a memoria.
 
-Le ristrutturazioni su più file funzionano particolarmente bene in questa modalità. Copia questo prompt in Codex per un'attività con criteri di revisione chiari:
+Le ristrutturazioni su più file funzionano bene in questa modalità. Copia questo prompt in Codex per un'attività con criteri di revisione chiari:
 
-<Prompt title="Ristruttura un README di grandi dimensioni">
-Ristruttura il `README.md` di 500 righe in pagine di documentazione Jamdesk incentrate su argomenti specifici.
+<Prompt title="Ristruttura un README esteso">
+Ristruttura il `README.md` di 500 righe in pagine di documentazione Jamdesk mirate.
 
 Criteri di accettazione:
 
-- Conserva ogni dettaglio tecnico, comando, avviso ed esempio di codice univoco presente nel README.
-- Raggruppa i contenuti in pagine `.mdx` incentrate sulle attività, usando nomi file descrittivi.
-- Assegna a ogni pagina il frontmatter `title` e `description`, un paragrafo introduttivo e schede What's Next.
-- Aggiungi ogni nuova pagina al gruppo appropriato in `docs.json` e mantieni un ordine logico.
+- Conserva ogni dettaglio tecnico, comando, avviso ed esempio di codice unico presente nel README.
+- Raggruppa il contenuto in pagine `.mdx` orientate ai task, con nomi di file descrittivi.
+- Dai a ogni pagina il frontmatter `title` e `description`, un paragrafo introduttivo e le card Cosa segue.
+- Aggiungi ogni nuova pagina al gruppo appropriato in `docs.json` e mantieni un ordine logico delle pagine.
 - Usa solo i componenti Jamdesk già elencati in `components/overview.mdx`; non inventare componenti.
-- Correggi i link interni per la nuova struttura dei file e segnala ogni link sorgente che non riesci a risolvere.
-- Non eliminare il README originale finché tutti i contenuti non sono stati rappresentati e le nuove pagine non superano la convalida del progetto e i controlli sui link non funzionanti.
+- Correggi i link interni per la nuova struttura dei file e segnala qualsiasi link di origine che non riesci a risolvere.
+- Non eliminare il README originale finché tutto il contenuto non è rappresentato e le nuove pagine non superano la validazione del progetto e i controlli sui link rotti.
 </Prompt>
 
 ## Skill `/update-jamdesk`
 
-Per aggiornare automaticamente la documentazione quando cambia il codice, installa la skill `/update-jamdesk`:
+Installa la skill `/update-jamdesk` per aggiornare automaticamente la documentazione quando cambia il codice:
 
 ```bash
 npx skills add jamdesk/skills --skill update-jamdesk -a codex
 ```
 
-Consulta [Aggiornamenti automatici](/it/ai/automated-updates) per la guida completa.
+Vedi [Aggiornamenti automatici](/it/ai/automated-updates) per la guida completa.
 
 ## Cosa fare ora
 
 <Columns cols={2}>
   <Card title="Scrivere con l'AI" icon="wand-magic-sparkles" href="/it/ai/writing-with-ai">
-    Strategie di prompting efficaci con tutti gli strumenti
+    Strategie di prompting per qualsiasi strumento
   </Card>
   <Card title="Claude Code" icon="terminal" href="/it/ai/claude-code">
-    Modello CLAUDE.md e flussi di lavoro con il contesto dell'intero progetto
+    Modello CLAUDE.md e flussi di lavoro con contesto dell'intero progetto
   </Card>
 </Columns>

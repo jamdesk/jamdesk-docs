@@ -1,19 +1,19 @@
 ---
 title: Hospedagem em subcaminho
-description: "Hospede sua documentação em yoursite.com/docs ou outro subcaminho personalizado, com configurações para Vercel, CloudFront, Cloudflare e proxies reversos."
+description: "Hospede sua documentação em yoursite.com/docs ou em qualquer subcaminho personalizado do seu domínio, com configurações para Vercel, CloudFront, Cloudflare e proxies reversos."
 ---
 
-Hospede sua documentação em um subcaminho do seu domínio em vez de usar um subdomínio separado: `yoursite.com/docs` por padrão ou um segmento personalizado, como `yoursite.com/help`. Para ver todas as opções de implantação, consulte [Visão geral da implantação](/pt/deploy/overview).
+Hospede sua documentação em um subcaminho do seu domínio, em vez de um subdomínio separado. O padrão é `yoursite.com/docs`, ou você pode escolher um segmento personalizado como `yoursite.com/help`. Consulte a [Visão geral de deploy](/pt/deploy/overview) para ver todas as opções de deploy.
 
-As capturas de tela mostram a interface em inglês.
+Screenshot note text: As capturas de tela mostram a interface em inglês.
 
 ## Por que usar um subcaminho?
 
-Em comparação com um subdomínio, como `docs.yoursite.com`, um subcaminho mantém os leitores no seu domínio principal, e suas páginas de documentação contribuem para a autoridade de busca desse domínio, em vez de dividir os sinais de classificação entre dois hosts.
+Um subcaminho mantém os leitores no seu domínio principal. As páginas da sua documentação somam à autoridade de busca desse domínio. Um subdomínio como `docs.yoursite.com` divide os sinais de ranqueamento entre dois hosts.
 
 ## Como funciona
 
-Seu servidor Web ou CDN faz proxy das solicitações de `/docs/*` para seu site Jamdesk, preservando o URL original no navegador:
+Seu servidor web ou CDN faz proxy das requisições de `/docs/*` para o seu site Jamdesk. O navegador mantém a URL original:
 
 ```mermaid
 sequenceDiagram
@@ -27,20 +27,18 @@ sequenceDiagram
     Proxy-->>User: Served with yoursite.com/docs URLs
 ```
 
-O proxy envia o cabeçalho `X-Jamdesk-Forwarded-Host` com seu domínio. O Jamdesk usa esse cabeçalho para:
+O proxy envia o cabeçalho `X-Jamdesk-Forwarded-Host` com o seu domínio. O Jamdesk usa esse cabeçalho para:
 
-1. **Verificar se seu domínio** está autorizado a servir o conteúdo
-2. **Aplicar sua configuração** do dashboard
+1. **Verificar se o seu domínio** está autorizado a servir o conteúdo
+2. **Aplicar a sua configuração** feita no painel
 
-Isso torna a configuração do proxy uma operação única: se você alterar as configurações no dashboard, não será necessário atualizar o proxy.
+A configuração do proxy é feita uma única vez. Alterações no painel não exigem atualização do proxy.
 
 ## Configuração por provedor
 
-Escolha seu provedor de hospedagem para começar:
-
 <Columns cols={2}>
   <Card title="Cloudflare" icon="cloud" href="/pt/deploy/cloudflare">
-    Use o Cloudflare Workers para fazer proxy do tráfego de /docs
+    Use Cloudflare Workers para fazer proxy do tráfego de /docs
   </Card>
   <Card title="AWS" icon="aws" href="/pt/deploy/aws">
     Configure o CloudFront com o Route 53
@@ -48,67 +46,67 @@ Escolha seu provedor de hospedagem para começar:
   <Card title="Vercel" icon="triangle" href="/pt/deploy/vercel">
     Adicione rewrites ao vercel.json
   </Card>
-  <Card title="Proxy reverso" icon="server" href="/pt/deploy/reverse-proxy">
+  <Card title="Reverse Proxy" icon="server" href="/pt/deploy/reverse-proxy">
     nginx, Apache ou outros servidores proxy
   </Card>
 </Columns>
 
 ## Pré-requisitos
 
-Antes de configurar seu proxy:
+Execute estes passos antes de configurar o seu proxy:
 
-1. **Adicione seu domínio** no [dashboard do Jamdesk](https://dashboard.jamdesk.com), em Settings → Custom Domain
+1. **Adicione o seu domínio** no seu [painel Jamdesk](https://dashboard.jamdesk.com), em Settings → Custom Domain
 2. **Ative "Host at a subpath"**
-3. **Escolha seu subcaminho** (opcional; consulte [Escolhendo seu subcaminho](#escolhendo-seu-subcaminho) abaixo) e clique em **Save**
+3. **Escolha o seu subcaminho** (opcional; veja [Escolhendo o seu subcaminho](#escolhendo-seu-subcaminho) abaixo) e clique em **Save**
 
-Seu subdomínio do Jamdesk (por exemplo, `acme.jamdesk.app`) será exibido no dashboard. Você precisará dele para configurar o proxy.
+O painel mostra o seu subdomínio Jamdesk (por exemplo, `acme.jamdesk.app`). A configuração do seu proxy precisa dele.
 
 <Note>
-Salvar uma alteração na hospedagem em subcaminho (ativá-la ou desativá-la, ou alterar o próprio subcaminho) inicia uma reconstrução completa da sua documentação. Isso é necessário porque a estrutura de URL é alterada (por exemplo, entre `/introduction` e `/docs/introduction`).
+Salvar uma alteração na hospedagem em subcaminho dispara uma reconstrução completa da sua documentação. Isso inclui ativar ou desativar a opção e alterar o subcaminho. A estrutura de URLs muda (por exemplo, entre `/introduction` e `/docs/introduction`).
 </Note>
 
 ## Escolhendo seu subcaminho
 
-Por padrão, sua documentação é servida em `/docs`. Para usar outro caminho, como `/help` ou `/support`, insira-o no campo de subcaminho ao lado do toggle. Com o campo vazio, o toggle exibe `Host at a subpath (e.g. /docs)`; quando você insere um valor, ele é atualizado imediatamente para o caminho que será ativado (`Host at /help` e assim por diante).
+Sua documentação é servida em `/docs` por padrão. Digite outro valor, como `/help` ou `/support`, no campo de subcaminho ao lado da opção. Um campo vazio mostra a opção como `Host at a subpath (e.g. /docs)`. Ao digitar um valor, o rótulo muda para o caminho que você está prestes a ativar (`Host at /help`, e assim por diante).
 
 <Frame>
-  <img src="/images/dashboard/custom-domain-subpath-field.webp" alt="O cartão Custom Domain com docs.example.com inserido, o campo de subcaminho definido como help e o toggle Host at /help ativado" />
+  <img src="/images/dashboard/custom-domain-subpath-field.webp" alt="The Custom Domain card with docs.example.com entered, the subpath field set to help, and the Host at /help toggle switched on" />
 </Frame>
 
-O campo aceita um único segmento em minúsculas: letras, dígitos e hifens internos, sem hífen no início ou no fim, com no máximo 63 caracteres. Alguns segmentos são reservados e rejeitados imediatamente, incluindo `api`, `jd`, caminhos administrativos comuns, como `wp-admin`, e qualquer código de localidade que sua documentação possa usar (`fr`, `es`, `de` e similares). Essa reserva impede que seu subcaminho entre em conflito com uma rota que o Jamdesk já serve.
+O campo aceita um único segmento em minúsculas: apenas letras, dígitos e hífens internos, sem hífen no início ou no fim, com no máximo 63 caracteres. O Jamdesk rejeita segmentos reservados, incluindo `api`, `jd`, caminhos administrativos comuns como `wp-admin` e qualquer código de idioma que sua documentação possa usar (`fr`, `es`, `de` e similares). Seu subcaminho nunca pode colidir com uma rota que o Jamdesk já serve.
 
 Deixe o campo vazio para manter o padrão `/docs`.
 
 ## Renomear ou remover seu subcaminho
 
-Alterar seu subcaminho ou limpá-lo para voltar ao padrão é seguro e não quebra links que já foram indexados ou adicionados aos favoritos:
+Alterar ou limpar o seu subcaminho não quebra links já indexados ou salvos nos favoritos:
 
-- **`/docs` nunca deixa de ser servido.** Mesmo depois que você muda para um subcaminho personalizado, como `/help`, os caminhos originais `/docs/*` continuam respondendo no seu subdomínio `[slug].jamdesk.app` e por qualquer proxy que ainda aponte para eles. Os links canônicos são transferidos imediatamente para seu novo subcaminho, para que os mecanismos de busca façam uma nova indexação nele. Nada que já aponte para `/docs` deixa de funcionar, o que significa que você pode atualizar a configuração do seu próprio proxy no seu ritmo, sem pressão.
-- **Renomear um subcaminho personalizado encaminha o anterior uma vez.** Se você renomear `/help` para `/guide`, as solicitações para `/help/*` receberão um redirecionamento 308 para o caminho correspondente em `/guide/*`. Esse histórico tem apenas um nível: se você renomear novamente `/guide` para `/support`, `/guide/*` passará a redirecionar para `/support/*`, mas `/help/*` (o segmento de duas renomeações atrás) não será mais rastreado. Assim, esses links deixarão de ser resolvidos e levarão a uma página de "not found", às vezes após um redirecionamento para um caminho combinado de aparência estranha. Não encadeie renomeações se depender do redirecionamento para preservar links antigos; atualize os links externos para apontarem para o subcaminho atual.
-- **Voltar para `/docs`** funciona da mesma forma: seu subcaminho personalizado anterior (um nível do histórico) redireciona para `/docs/*`.
+- **`/docs` nunca deixa de ser servido.** Os caminhos originais `/docs/*` continuam respondendo depois que você muda para um subcaminho personalizado como `/help`. Eles respondem no seu subdomínio `[slug].jamdesk.app` e por qualquer proxy ainda apontado para eles. Os links canônicos passam para o novo subcaminho imediatamente. Os mecanismos de busca reindexam ali. Atualize a configuração do seu proxy no seu próprio ritmo.
+- **Renomear um subcaminho personalizado encaminha o antigo, por uma renomeação.** Renomeie `/help` para `/guide`, e as requisições para `/help/*` recebem um redirecionamento 308 para o caminho correspondente `/guide/*`. Esse histórico tem um nível de profundidade. Renomeie novamente de `/guide` para `/support`, e `/guide/*` redireciona para `/support/*`. O Jamdesk não rastreia mais `/help/*` (o segmento de duas renomeações atrás). Esses links caem em uma página de "não encontrado", às vezes depois de um redirecionamento para um caminho combinado estranho. Não encadeie renomeações se você depende do redirecionamento para manter os links antigos. Atualize os links externos para o subcaminho atual.
+- **Voltar para `/docs`** redireciona o seu subcaminho personalizado anterior (um nível de histórico) para `/docs/*`.
 
 <Warning>
-Isso **não** significa que `/docs` redireciona para qualquer subcaminho escolhido. Isso não é necessário, pois `/docs` continua sendo servido diretamente e permanentemente. O redirecionamento de um nível só se aplica a um subcaminho *personalizado* do qual você está saindo.
+`/docs` **não** redireciona para o subcaminho que você escolher. `/docs` continua sendo servido diretamente, de forma permanente. O redirecionamento de um nível se aplica apenas a um subcaminho *personalizado* do qual você está se afastando.
 </Warning>
 
-Depois de configurar o proxy, faça um teste acessando `https://yoursite.com/docs` (ou seu subcaminho configurado). Sua documentação deve carregar com todos os assets e links funcionando corretamente.
+Teste o seu proxy acessando `https://yoursite.com/docs` (ou o subcaminho configurado). Verifique se os recursos e os links carregam.
 
 ## Preciso ocultar o subdomínio jamdesk.app?
 
-Não. Seu subdomínio `[slug].jamdesk.app` continua acessível (é a origem upstream para a qual seu proxy encaminha as solicitações), mas não competirá com seu site nos resultados de busca:
+Não. O seu subdomínio `[slug].jamdesk.app` continua acessível. Ele é a origem upstream para a qual o seu proxy encaminha. Ele não concorre com o seu site nos resultados de busca:
 
-- **Com seu domínio registrado**, todas as páginas servidas diretamente pelo subdomínio incluem um link canônico apontando para a mesma página no seu domínio, para que os mecanismos de busca consolidem todos os sinais de classificação nele.
-- **Antes de um domínio ser registrado**, as páginas do subdomínio no modo de subcaminho são marcadas como `noindex`, portanto nunca entram no índice.
+- **Domínio registrado**: as páginas servidas pelo subdomínio incluem um link canônico apontando para a mesma página no seu domínio. Os mecanismos de busca atribuem os sinais de ranqueamento ao seu domínio.
+- **Nenhum domínio registrado ainda**: as páginas do subdomínio em modo de subcaminho são marcadas como `noindex`. Elas nunca entram no índice.
 
-Se você também quiser impedir o acesso ao conteúdo no subdomínio (e não apenas evitar sua indexação), ative a [Proteção por senha](/pt/setup/password-protection): o subdomínio passará a exibir uma tela de desbloqueio em vez da sua documentação.
+Para bloquear também o conteúdo no subdomínio (não apenas removê-lo do índice), ative a [Proteção por senha](/pt/setup/password-protection). Assim, o subdomínio exibe uma tela de desbloqueio em vez da sua documentação.
 
 ## O que vem a seguir?
 
 <Columns cols={2}>
-  <Card title="Visão geral da implantação" icon="cloud-arrow-up" href="/pt/deploy/overview">
-    Compare hospedagem em subdomínio, domínio personalizado e subcaminho
+  <Card title="Visão geral de deploy" icon="cloud-arrow-up" href="/pt/deploy/overview">
+    Compare subdomínio, domínio personalizado e hospedagem em subcaminho
   </Card>
   <Card title="Domínios personalizados" icon="globe" href="/pt/deploy/custom-domains">
-    Verifique o DNS e solucione problemas na configuração do domínio
+    Verifique o DNS e solucione problemas de configuração de domínio
   </Card>
 </Columns>

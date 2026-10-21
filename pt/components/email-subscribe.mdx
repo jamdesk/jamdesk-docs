@@ -1,21 +1,21 @@
 ---
-title: EmailSubscribe: inscrição
-description: Adicione inscrição em newsletter ou changelog a páginas de documentação com EmailSubscribe: captura nativa para sete provedores e embeds para os demais.
+title: EmailSubscribe
+description: Adicione um formulário de inscrição em newsletter ou changelog a qualquer página de documentação com o componente EmailSubscribe: captura nativa para sete provedores e embeds para os demais.
 ---
 
-`<EmailSubscribe>` adiciona um formulário de inscrição por e-mail diretamente a uma página de documentação usando uma única tag MDX. Depois de [conectar um provedor](/pt/integrations/email-signups) no dashboard, ele renderiza um formulário hospedado pela Jamdesk que envia novos inscritos diretamente para seu público. Sem um provedor conectado, ele também pode hospedar o embed de outra plataforma. O componente foi criado para páginas de changelog e notas de versão, nas quais os leitores querem saber o que há de novo.
+`<EmailSubscribe>` exibe um formulário de inscrição por e-mail diretamente em uma página de documentação. Com um provedor [conectado no painel](/pt/integrations/email-signups), ele renderiza um formulário hospedado pela Jamdesk que adiciona novos assinantes à sua audiência. Sem um provedor, pode hospedar o embed de outro serviço. Use-o em páginas de changelog e notas de versão.
 
 ## Início rápido
 
-Conecte primeiro um provedor no dashboard e, em seguida, adicione a tag com o id desse provedor:
+Conecte um provedor no painel. Em seguida, adicione a tag com o id desse provedor:
 
 ```mdx
 <EmailSubscribe provider="resend" />
 ```
 
-Isso renderiza um campo de e-mail identificado e um botão Subscribe. Ao enviar, o endereço é adicionado ao público que você conectou. A mesma tag funciona com qualquer provedor nativo (`mailchimp`, `kit`, `loops`, `beehiiv`, `brevo` ou `sendgrid`) depois que ele for conectado.
+Isso renderiza um campo de e-mail com rótulo e um botão Subscribe. A Jamdesk adiciona cada endereço enviado à audiência que você conectou. A mesma tag funciona com qualquer provedor nativo conectado (`mailchimp`, `kit`, `loops`, `beehiiv`, `brevo` ou `sendgrid`).
 
-Adicione um título opcional e uma linha de apoio:
+Adicione um título e uma linha de apoio opcionais:
 
 ```mdx
 <EmailSubscribe
@@ -27,30 +27,30 @@ Adicione um título opcional e uma linha de apoio:
 
 ## Propriedades
 
-| Prop | Type | Purpose |
+| Prop | Tipo | Finalidade |
 |------|------|---------|
 | `provider` | string | Id do provedor: `resend`, `mailchimp`, `kit`, `loops`, `beehiiv`, `brevo`, `sendgrid`, `buttondown` ou `substack`. |
 | `title` | string | Título opcional exibido acima do formulário. |
 | `description` | string | Linha de apoio opcional abaixo do título. |
-| `collapsed` | boolean | Somente para provedores nativos. Começa como um botão Subscribe compacto que expande para o formulário completo ao ser clicado. |
-| `username` | string | Nome de usuário da conta Buttondown / Substack (provedores que aceitam apenas embed). |
-| `snippet` | string | Marcação bruta do embed de qualquer provedor. A alternativa flexível (veja abaixo). |
-| `className` | string | Classe CSS adicional no contêiner. |
+| `collapsed` | boolean | Apenas provedores nativos. Começa como um botão Subscribe compacto que expande para o formulário completo ao clicar. |
+| `username` | string | Nome de usuário da conta Buttondown / Substack (provedores somente de embed). |
+| `snippet` | string | Marcação de embed bruta de qualquer provedor. A saída de emergência (veja abaixo). |
+| `className` | string | Classe CSS extra no wrapper. |
 
 ## Nativo vs. embed
 
-O `provider` informado determina o comportamento do formulário:
+O `provider` que você passa define como o formulário se comporta:
 
-- **Provedores nativos** (`resend`, `mailchimp`, `kit`, `loops`, `beehiiv`, `brevo`, `sendgrid`) renderizam um formulário hospedado pela Jamdesk. A Jamdesk captura o endereço e o adiciona usando sua chave conectada. Esse é o caminho que exige um provedor [conectado no dashboard](/pt/integrations/email-signups).
-- **Provedores que aceitam apenas embed** (`buttondown`, `substack`) renderizam o próprio formulário ou iframe do serviço. Não é necessário conectar uma chave: informe seu `username` e o visitante enviará os dados diretamente ao provedor.
+- **Provedores nativos** (`resend`, `mailchimp`, `kit`, `loops`, `beehiiv`, `brevo`, `sendgrid`) renderizam um formulário hospedado pela Jamdesk. A Jamdesk captura o endereço e o adiciona usando a chave conectada. Eles exigem um provedor [conectado no painel](/pt/integrations/email-signups).
+- **Provedores somente de embed** (`buttondown`, `substack`) renderizam o formulário ou iframe próprio desse serviço. Você não conecta nenhuma chave. Passe seu `username`. O visitante envia diretamente ao provedor.
 
 <Note>
-Se você informar um provedor nativo que ainda não conectou no dashboard, o formulário não capturará os dados. Conecte primeiro o provedor para que os envios tenham um destino.
+Um provedor nativo que não está conectado no painel não captura nada. Conecte o provedor primeiro.
 </Note>
 
 ### Provedores que aceitam apenas embed
 
-Buttondown e Substack funcionam sem uma conexão com o dashboard. Informe o nome de usuário da sua conta:
+Buttondown e Substack funcionam sem conexão no painel. Passe o nome de usuário da sua conta:
 
 ```mdx
 <EmailSubscribe provider="buttondown" username="acme" />
@@ -59,35 +59,35 @@ Buttondown e Substack funcionam sem uma conexão com o dashboard. Informe o nome
 
 ### Alternativa flexível: cole qualquer embed
 
-Para um provedor que não tenha uma abreviação na Jamdesk, cole a marcação do embed em `snippet`. Ela será renderizada como está na página publicada:
+Cole a marcação de embed de qualquer provedor em `snippet`. Ela é renderizada como está na página publicada:
 
 ```mdx
 <EmailSubscribe snippet={`<form action="https://example.com/subscribe">...</form>`} />
 ```
 
 <Warning>
-Um `snippet` executa o próprio código do provedor na sua página. Alguns provedores fornecem um script executado uma única vez, que não será executado novamente quando o leitor navegar entre páginas sem uma recarga completa. Coloque embeds baseados em script em uma página dedicada e carregada diretamente (como seu changelog), em vez de inseri-los no meio de um fluxo de navegação.
+Um `snippet` executa o código próprio do provedor na sua página. Alguns provedores usam um script de execução única que não é executado novamente quando o leitor navega entre páginas sem um recarregamento completo. Coloque embeds baseados em script em uma página dedicada e carregada diretamente (como seu changelog), em vez de no meio de um fluxo de navegação.
 </Warning>
 
 ## Modo compacto
 
-Um campo de e-mail completo e um botão Subscribe ocupam bastante espaço quando inseridos no meio de uma página. Defina `collapsed` para que o formulário nativo comece apenas como um botão Subscribe. Quando o leitor clicar nele, o campo completo será exibido diretamente na página, sem recarregá-la:
+Defina `collapsed` para iniciar o formulário nativo como um botão Subscribe. Ao clicar, o campo completo abre na própria página, sem recarregá-la:
 
 ```mdx
 <EmailSubscribe provider="resend" collapsed title="Subscribe to updates" />
 ```
 
-O rótulo do botão vem de `title` (ele usa "Subscribe to updates" como alternativa quando nenhum título é definido). Esse recurso funciona apenas com provedores nativos. Os provedores de embed renderizam a própria marcação, portanto a Jamdesk não tem nada para compactar.
+O rótulo do botão vem de `title`. O padrão é "Subscribe to updates". O modo compacto é exclusivo de provedores nativos. Provedores de embed renderizam a própria marcação.
 
 ## Inscritos recorrentes
 
-Depois que um leitor se inscreve por meio de um formulário nativo, o navegador se lembra disso. Na próxima visita, em vez do formulário completo, ele verá uma linha curta: *You're subscribed to the newsletter.* Ninguém será convidado a se inscrever novamente em algo que já assinou.
+O navegador lembra de um leitor que assinou por um formulário nativo. Na próxima visita, o leitor vê uma linha curta em vez do formulário: *You're subscribed to the newsletter.*
 
-Se quiser adicionar um segundo endereço, o leitor encontrará um controle "Use a different email?" que reabre o formulário completo imediatamente. Essa informação é armazenada por navegador (em `localStorage`, não no seu público); portanto, limpar os dados do site ou trocar de navegador fará o formulário aparecer novamente. Não é necessário configurar nada: todo formulário nativo funciona assim.
+A linha tem um controle "Use a different email?" que reabre o formulário completo. A memória é por navegador. Ela fica em `localStorage`, não na sua audiência. Limpar os dados do site ou trocar de navegador faz o formulário aparecer novamente. Formulários nativos fazem isso sem nenhuma configuração.
 
 ## Posicionamento automático em páginas de changelog
 
-Em vez de adicionar a tag manualmente a cada página de versão, monte o formulário automaticamente nas páginas de changelog. Em `docs.json`, defina `placement` como `changelog` na integração de newsletter:
+Monte o formulário nas páginas de changelog sem adicionar a tag manualmente. Defina o `placement` da integração de newsletter como `changelog` em `docs.json`:
 
 ```json
 {
@@ -101,21 +101,21 @@ Em vez de adicionar a tag manualmente a cada página de versão, monte o formul�
 }
 ```
 
-Com `placement: "changelog"`, o formulário é montado em todas as páginas de changelog (qualquer página com `rss: true`). Para ignorá-lo em uma dessas páginas, defina `newsletter: false` no frontmatter da página. Se uma página já tiver um `<EmailSubscribe>` adicionado manualmente, o posicionamento automático dará preferência a ele, evitando a exibição de dois formulários.
+O formulário é então montado em todas as páginas de changelog (qualquer página com `rss: true`). Ignore-o em uma página específica com `newsletter: false` no frontmatter dessa página. Uma página com um `<EmailSubscribe>` posicionado manualmente não recebe um segundo formulário.
 
-O bloco completo `integrations.newsletter` aceita os mesmos campos do componente (`provider`, `title`, `description`, `collapsed`, `username`, `snippet`, `height`), além de `placement` (`none`, o valor padrão, ou `changelog`).
+O bloco completo `integrations.newsletter` aceita os mesmos campos do componente (`provider`, `title`, `description`, `collapsed`, `username`, `snippet`, `height`) além de `placement` (`none`, o padrão, ou `changelog`).
 
 <Tip>
-Você não precisa definir o título e a linha de apoio em `docs.json`. O cartão **Email Signups** no dashboard tem os campos Form title e Form subtitle, e um formulário posicionado automaticamente usa esses valores quando `docs.json` não os informa. Defina `title`/`description` aqui somente quando quiser que o `docs.json` deste site tenha prioridade sobre o texto do dashboard.
+O cartão **Email Signups** no painel tem os campos Form title e Form subtitle. Um formulário posicionado automaticamente os usa quando o `docs.json` omite `title` e `description`. Defina `title`/`description` no `docs.json` apenas para substituir o texto do painel.
 </Tip>
 
 ## O que vem a seguir?
 
 <Columns cols={2}>
-  <Card title="Conectar um provedor" icon="envelope" href="/pt/integrations/email-signups">
+  <Card title="Conecte um provedor" icon="envelope" href="/pt/integrations/email-signups">
     Configure Resend, Mailchimp, Kit, Loops, beehiiv, Brevo ou SendGrid
   </Card>
-  <Card title="Atualizar componente" icon="timeline" href="/pt/components/update">
-    Escreva as entradas do changelog sobre as quais seus inscritos querem saber
+  <Card title="Componente Update" icon="timeline" href="/pt/components/update">
+    Escreva as entradas de changelog que seus assinantes acompanham
   </Card>
 </Columns>

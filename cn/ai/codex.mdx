@@ -1,30 +1,30 @@
 ---
 title: Codex
 description: >-
-  Codex 是 OpenAI 的云端编码代理，可直接针对 GitHub 仓库异步执行多文件文档批处理任务。
+  Codex 是 OpenAI 的云端编程代理，可直接针对 GitHub 仓库异步完成多文件文档批量任务。
 ---
 
-[Codex](https://openai.com/index/introducing-codex/) 是 OpenAI 的云端编码代理。它可以直接处理 GitHub 仓库，因此你无需先设置本地环境，就能针对项目执行文档任务。
+[Codex](https://openai.com/index/introducing-codex/) 是 OpenAI 的云端编程代理。它直接在你的 GitHub 仓库上运行，无需本地环境。
 
-Codex 与 [Claude Code](/cn/ai/claude-code) 的差异主要在于工作流形式。Codex 在云端异步运行：你描述一项工作，暂时离开，完成后再检查 PR。这非常适合批处理任务（例如将包含 500 行内容的 README 拆分成十几个页面，或根据过去六个月的 GitHub issue 生成故障排查页面），但不太适合反复完善单个页面。如果你的工作是一个不想持续跟进的多文件批处理任务，Codex 是合适的选择。对于交互式单页面工作，请改用 [Claude Code](/cn/ai/claude-code)。
+Codex 与 [Claude Code](/cn/ai/claude-code) 的主要区别在于工作流程。Codex 在云端运行并异步工作。描述一段工作任务后即可离开，完成后再审查 PR。这适合批量任务（例如将一个 500 行的 README 拆分为十几个页面，或根据你过去六个月的 GitHub 问题生成一个故障排除页面）。它则不太适合反复修改单个页面的交互式工作。单页面的交互式工作请使用 [Claude Code](/cn/ai/claude-code)。
 
 ## 快速设置
 
 <Steps>
-  <Step title="打开仓库">
-    在 Codex 中打开你的 Jamdesk 文档仓库。Codex 可直接连接 GitHub 仓库。
+  <Step title="打开你的仓库">
+    在 Codex 中打开你的 Jamdesk 文档 GitHub 仓库。
   </Step>
-  <Step title="添加代理说明">
-    在项目根目录中创建 `AGENTS.md` 文件，写入文档规范，让 Codex 遵循你的约定。
+  <Step title="添加代理指令">
+    在项目根目录创建一个 `AGENTS.md` 文件，写入你的文档规范。Codex 会遵循其中的约定。
   </Step>
   <Step title="连接 MCP 服务器">
-    将文档 MCP 端点添加到 `.codex/config.toml`，让 Codex 能够搜索已发布的文档。
+    将你的文档 MCP 端点添加到 `.codex/config.toml`。之后 Codex 即可搜索你已发布的文档。
   </Step>
 </Steps>
 
 ## AGENTS.md 模板
 
-在项目根目录中创建 `AGENTS.md`：
+在项目根目录创建 `AGENTS.md`：
 
 ```markdown AGENTS.md
 # Jamdesk Documentation Project
@@ -120,59 +120,59 @@ If you skip step 2, the page won't show up in the sidebar. Read `docs.json` befo
 ```
 
 <Tip>
-  添加产品术语、API 命名约定，以及适用于文档的任何特定风格规则。
+  添加你的产品术语、API 命名约定，以及任何特定于你文档的风格规则。
 </Tip>
 
 ## MCP 配置
 
-将文档端点添加到 `.codex/config.toml`：
+将你的文档端点添加到 `.codex/config.toml`：
 
 ```toml .codex/config.toml
 [mcp_servers.my-docs]
 url = "https://your-project.jamdesk.app/_mcp"
 ```
 
-将 `your-project` 替换为你的 Jamdesk 子域名；如果你已启用自定义域名，也可以改用该域名：`url = "https://docs.acme.com/_mcp"`。有关端点的详细信息，请参阅 [MCP 服务器](/cn/ai/mcp-server)。
+将 `your-project` 替换为你的 Jamdesk 子域名。如果你已上线自定义域名，请改用它：`url = "https://docs.acme.com/_mcp"`。端点详情请参阅 [MCP 服务器](/cn/ai/mcp-server)。
 
 ## 示例提示词
 
-Codex 会异步执行任务。这会改变你编写提示词的方式：你不再进行交互式来回沟通，而是提交一项长期任务，稍后再查看结果。因此，最有效的提示词是要求 Codex 完成一组明确的工作。
+Codex 异步运行任务。发送一个较长的任务，之后再回来查看。要求完成一段工作量的提示词效果最好。
 
-可以先尝试：*"根据 `/src/auth` 中的源代码，为身份验证 API 编写文档"*。Codex 会读取代码库，找到相关文件，并生成匹配的页面。对于更复杂的情况，可以让它参考真实的 bug 历史：*"创建一个故障排查页面，涵盖 GitHub issue 中最常见的 5 个错误"*，这样生成的页面通常比凭记忆编写的内容更贴合实际。
+一个不错的起点："Write docs for the authentication API based on the source in /src/auth"。Codex 会读取你的代码库，找到相关文件，并生成对应的页面。对于更复杂的工作，可以让它参考你的 bug 历史。"Create a troubleshooting page covering the 5 most common errors in our GitHub issues" 通常比你凭记忆写的页面更准确。
 
-多文件重构尤其适合这种模式。对于具有明确审查标准的任务，可以将以下提示词复制到 Codex：
+在这种模式下，多文件重构效果很好。对于有明确审查标准的任务，可将以下提示词复制到 Codex 中：
 
 <Prompt title="重构大型 README">
-将包含 500 行内容的 `README.md` 重构为重点明确的 Jamdesk 文档页面。
+将 500 行的 `README.md` 重构为专注的 Jamdesk 文档页面。
 
 验收标准：
 
-- 保留 README 中每一项独特的技术细节、命令、警告和代码示例。
-- 将内容分组为面向任务的 `.mdx` 页面，并使用具有描述性的文件名。
-- 为每个页面添加 `title` 和 `description` frontmatter、开头段落以及“下一步”卡片。
-- 将每个新页面添加到 `docs.json` 中对应的分组，并保持合理的页面顺序。
-- 只能使用 `components/overview.mdx` 中已列出的 Jamdesk 组件；不要自行创建组件。
-- 根据新的文件结构修复内部链接，并报告任何无法解析的源链接。
-- 在所有内容都已迁移，且新页面通过项目验证和失效链接检查之前，不要删除原始 README。
+- 保留 README 中每一个独特的技术细节、命令、警告和代码示例。
+- 将内容组织为以任务为中心的 `.mdx` 页面，并使用描述性文件名。
+- 为每个页面提供 `title` 和 `description` frontmatter、开篇段落以及 What's Next 卡片。
+- 将每个新页面添加到 `docs.json` 中相应的分组，并保持页面顺序合理。
+- 仅使用 `components/overview.mdx` 中已列出的 Jamdesk 组件；不要发明组件。
+- 修正新文件结构下的内部链接，并报告你无法解析的源链接。
+- 在所有内容都已体现、新页面通过项目的验证和失效链接检查之前，不要删除原始 README。
 </Prompt>
 
 ## /update-jamdesk 技能
 
-代码发生变更时，如需自动更新文档，请安装 `/update-jamdesk` 技能：
+安装 `/update-jamdesk` 技能，以便在代码变更时自动更新文档：
 
 ```bash
 npx skills add jamdesk/skills --skill update-jamdesk -a codex
 ```
 
-有关完整指南，请参阅[自动更新](/cn/ai/automated-updates)。
+完整指南请参阅[自动更新](/cn/ai/automated-updates)。
 
 ## 下一步
 
 <Columns cols={2}>
-  <Card title="使用 AI 编写文档" icon="wand-magic-sparkles" href="/cn/ai/writing-with-ai">
-    适用于各种工具的有效提示词策略
+  <Card title="使用 AI 编写" icon="wand-magic-sparkles" href="/cn/ai/writing-with-ai">
+    适用于任何工具的提示策略
   </Card>
   <Card title="Claude Code" icon="terminal" href="/cn/ai/claude-code">
-    CLAUDE.md 模板和完整项目上下文工作流
+    CLAUDE.md 模板与完整项目上下文工作流
   </Card>
 </Columns>

@@ -1,13 +1,13 @@
 ---
 title: Markdown 源代码
-description: 在文档页面 URL 后添加 .md，即可获取供 AI 工具、脚本和内容流水线使用的原始 Markdown。
+description: 在任意文档页面 URL 末尾添加 .md 即可获取原始 Markdown 源码。为 AI 工具、脚本和内容流水线提供结构化文本。
 ---
 
-AI 工具处理 Markdown 的效率高于渲染后的 HTML。Jamdesk 支持在任意页面 URL 后添加 `.md`，以获取每个页面的原始 Markdown 源代码。无需身份验证。
+AI 工具处理 Markdown 的效率高于渲染后的 HTML。在任意页面 URL 末尾添加 `.md`，即可获取其原始 Markdown 源码。无需身份验证。
 
 ## `.md` URL 扩展名
 
-在任意文档页面 URL 后添加 `.md`，即可获取原始源代码，而不是渲染后的 HTML：
+在任意文档页面 URL 末尾添加 `.md`，即可获取原始源码，而非渲染后的 HTML：
 
 ```bash
 # Rendered page
@@ -17,7 +17,7 @@ https://acme.jamdesk.app/getting-started
 https://acme.jamdesk.app/getting-started.md
 ```
 
-这适用于任意路径深度。以下是响应示例：
+此方法适用于任意路径深度。以下是响应的示例：
 
 ```bash
 curl https://acme.jamdesk.app/getting-started.md
@@ -36,11 +36,11 @@ Welcome to the getting started guide.
 <Note>You'll need Node.js 18 or later.</Note>
 ```
 
-响应内容就是仓库中的完整源文件，包括 frontmatter 和组件标签。
+响应内容即为代码仓库中的原始源文件，包括 frontmatter 和组件标签。
 
 ### 自定义域名
 
-自定义域名同样支持原始内容。使用读者看到的相同 URL，并在末尾添加 `.md`：
+在读者看到的自定义域名 URL 末尾添加 `.md`：
 
 ```bash
 # Docs served at root
@@ -52,7 +52,7 @@ curl https://docs.example.com/docs/getting-started.md
 
 ### 网站根路径和语言根路径
 
-网站根路径和不带路径的语言根路径会导出其 HTML 版本显示的页面：导航中的第一个页面，或该语言导航中的第一个页面。不会发生重定向，Markdown 会在首次请求时直接返回。
+站点根路径和纯语言根路径会导出其 HTML 版本所展示的页面：即导航中的第一个页面，或该语言导航中的第一个页面。不会发生重定向，首次请求即返回 Markdown。
 
 ```bash
 # All three return the first navigation page's Markdown
@@ -61,21 +61,21 @@ curl -H "Accept: text/markdown" https://acme.jamdesk.app/
 curl https://acme.jamdesk.app/fr.md
 ```
 
-如果项目包含实际的 `index.mdx` 页面，则 `/index.md` 和根路径仍会提供该页面。如果导航中第一个页面的文件缺失，根路径会像其他缺失页面一样返回 `404`。
+如果项目包含真实的 `index.mdx` 页面，则 `/index.md` 和根路径将继续提供该页面。当第一个导航页面的文件缺失时，根路径返回 `404`，与其他缺失页面的行为一致。
 
 ## 内容格式
 
-原始内容是扩展了 `<Note>`、`<Steps>` 和 `<Tabs>` 等组件标签的 Markdown。标准 Markdown 解析器会将组件标签视为原始 HTML。完整语法参考请参阅 [Markdown 基础](/cn/content/mdx-basics)。
+原始内容是扩展了组件标签（如 `<Note>`、`<Steps>` 和 `<Tabs>`）的 Markdown。标准 Markdown 解析器会将组件标签视为原始 HTML。完整语法参考请见 [Markdown 基础](/cn/content/mdx-basics)。
 
 ## 端点页面导出的内容
 
-`openapi:` 页面几乎没有自己的正文内容——端点会根据规范进行渲染——因此其 Markdown 导出内容会改为根据规范展平。获取该页面的代理会得到方法和路径、带说明的参数、请求和响应架构，以及一个 `## Authentication` 部分，其中列出操作所需的安全方案：方案类型、`apiKey` 请求头名称、bearer 格式以及 OAuth 2 作用域。
+`openapi:` 页面本身几乎没有正文。Jamdesk 根据你的规范渲染端点。其 Markdown 导出则由规范展平生成。获取该页面的代理可以拿到请求方法和路径、带描述的参数、请求与响应模式，以及一个 `## Authentication` 部分，列出该操作所需的安全方案：方案类型、`apiKey` 的请求头名称、bearer 格式以及任何 OAuth 2 作用域。
 
-替代方案会标记为“Any one of”，必须全部发送的方案会列在一起，而显式使用 `security: []` 选择退出的操作也会明确说明，而不是保持沉默。无需打开规范，这些信息已足以构建可正常运行的请求。
+备选方案标注为 "Any one of"。必须同时发送的方案会列在一起。通过 `security: []` 选择退出的操作会明确说明。这些信息足以让代理在无需打开规范的情况下构建可用的请求。
 
 ## API 参考页面上的 OpenAPI 规范
 
-获取 API 参考页面的 Markdown 时（其 frontmatter 声明了 `api:` 或 `openapi:` 规范），Jamdesk 会附加一个简短页脚，引导 AI 代理获取项目中的所有 OpenAPI 规范，这些规范会打包为一个下载文件：
+API 参考页面（其 frontmatter 声明了 `api:` 或 `openapi:` 规范）的 Markdown 末尾会附带一段简短的页脚。它会指引 AI 代理到项目中所有的 OpenAPI 规范，这些规范打包为一个下载文件：
 
 ```markdown
 ---
@@ -83,35 +83,35 @@ curl https://acme.jamdesk.app/fr.md
 📦 **OpenAPI specs:** Every OpenAPI specification referenced by this documentation is available as a single download — https://acme.jamdesk.app/api-specs.zip
 ```
 
-这与 [下载 API 规范](/cn/ai/ai-actions#download-api-spec) 操作提供的 `api-specs.zip` 相同，并且会在每次请求时即时组装。这样做是为了扩大覆盖范围：读取单个端点页面的代理可以得知，只需一次请求即可获取完整的机器可读契约，而不必抓取每个端点。只有至少包含一个规范的项目中的 API 参考页面才会显示该页脚；普通指南不受影响。
+这与 [下载 API 规范](/cn/ai/ai-actions#download-api-spec) 操作中的 `api-specs.zip` 为同一文件，每次请求都会重新生成。代理在读取单个端点页面时，即可了解到可以通过一次请求获取完整的机器可读契约，而无需逐个抓取每个端点。该页脚仅出现在拥有至少一个规范的项目的 API 参考页面上。
 
 ## 响应详情
 
 ### 请求头
 
-| 请求头 | 值 | 用途 |
+| Header | Value | 用途 |
 |--------|-------|---------|
-| `Content-Type` | `text/markdown; charset=utf-8` | 指示内容为 Markdown |
+| `Content-Type` | `text/markdown; charset=utf-8` | 标识内容为 Markdown |
 | `Cache-Control` | `public, max-age=3600, s-maxage=86400` | 浏览器缓存 1 小时，CDN 缓存 1 天（`.md` URL） |
-| `Vary` | `Accept` | 根据请求的 `Accept` 请求头，同一 URL 可提供 HTML 或 Markdown |
-| `X-Robots-Tag` | `noindex, nofollow` | 防止搜索引擎将内容编入索引 |
-| `Content-Disposition` | `inline` | 在浏览器中显示，而不是下载 |
-| `X-Frame-Options` | `DENY` | 防止在 iframe 中嵌入 |
+| `Vary` | `Accept` | 同一 URL 根据请求的 `Accept` 头返回 HTML 或 Markdown |
+| `X-Robots-Tag` | `noindex, nofollow` | 防止搜索引擎索引 |
+| `Content-Disposition` | `inline` | 在浏览器中显示而非下载 |
+| `X-Frame-Options` | `DENY` | 防止被嵌入 iframe |
 | `Content-Security-Policy` | `default-src 'none'` | 阻止脚本执行 |
 
-使用 `Accept: text/markdown` 请求页面的规范 URL（不带 `.md`）时，也会返回相同的 Markdown，但 `Cache-Control` 为 `private, no-store`。它与 HTML 页面共享缓存键，因此该响应永远不会被缓存。
+以请求头 `Accept: text/markdown` 请求页面的规范 URL（不带 `.md`），将返回相同的 Markdown，但响应头为 `Cache-Control: private, no-store`。该响应与 HTML 页面共享缓存键，但永远不会被缓存。
 
 ### 错误响应
 
-| 状态 | 含义 |
+| 状态码 | 含义 |
 |--------|---------|
-| `308` | 末尾斜杠重定向（例如，`/intro.md/` 重定向到 `/intro.md`） |
-| `404` | 页面不存在（返回简短的纯文本错误，而不是 Markdown）。网站根路径和语言根路径会解析到导航中的第一个页面，只有该页面的文件也缺失时才返回 404 |
+| `308` | 尾部斜杠重定向（例如 `/intro.md/` 重定向至 `/intro.md`） |
+| `404` | 页面不存在（返回简短的纯文本错误，而非 Markdown）。站点根路径和语言根路径会解析为第一个导航页面，仅当该页面的文件同样缺失时才返回 404 |
 | `500` | 服务器错误（返回 HTML 错误页面） |
 
 ## 与 AI 工具结合使用
 
-Markdown 源代码 URL 与 [MCP 服务器](/cn/ai/mcp-server) 配合使用效果良好。使用 `searchDocs` 按关键字查找页面，然后获取匹配页面的原始源代码：
+在 [MCP 服务器](/cn/ai/mcp-server) 上使用 `searchDocs` 按关键词查找页面，然后获取匹配页面的原始源码：
 
 ```bash
 # 1. Search for a topic via MCP
@@ -123,13 +123,13 @@ curl -X POST https://acme.jamdesk.app/_mcp \
 curl https://acme.jamdesk.app/guides/authentication.md
 ```
 
-这样，AI 工具即可同时搜索文档并访问完整源代码。这两个 URL 在运行中的自定义域名上同样有效：`https://docs.acme.com/_mcp` 和 `https://docs.acme.com/guides/authentication.md`。
+这使 AI 工具能够搜索你的文档并获取完整源码。这些 URL 同样适用于线上自定义域名：`https://docs.acme.com/_mcp` 和 `https://docs.acme.com/guides/authentication.md`。
 
 ## 接下来做什么？
 
 <Columns cols={2}>
   <Card title="MCP 服务器" icon="robot" href="/cn/ai/mcp-server">
-    将 AI 助手直接连接到您的文档
+    将 AI 助手直接连接到你的文档
   </Card>
   <Card title="Markdown 基础" icon="pen-nib" href="/cn/content/mdx-basics">
     文档页面的 MDX 语法参考

@@ -1,14 +1,14 @@
 ---
-title: Nur benutzerdefinierte Domain
+title: Nur eigene Domain
 description: >-
-  Aktivieren Sie „Nur benutzerdefinierte Domain“, um den direkten Subdomain-Zugriff zu blockieren und Ihre Dokumentation nur über Ihre Domain bereitzustellen.
+  Aktivieren Sie „Nur eigene Domain“ in Jamdesk, um den direkten Subdomain-Zugriff zu blockieren und Ihre Dokumentation nur über Ihre eigene Domain bereitzustellen.
 ---
 
-Ihre Dokumentation wird unter `YOUR_SLUG.jamdesk.app` gehostet. Wenn Sie eine benutzerdefinierte Domain verbinden, antwortet diese Subdomain weiterhin – aber jede von ihr bereitgestellte Seite enthält ein `<link rel="canonical">`-Tag, das auf Ihre Domain verweist. Dadurch indexieren Suchmaschinen Ihre Domain, niemals die Subdomain. Für die meisten Projekte ist das alles, was Sie benötigen.
+Ihre Dokumentation wird unter `YOUR_SLUG.jamdesk.app` gehostet. Die Subdomain antwortet weiterhin, nachdem Sie eine eigene Domain verbunden haben. Jede darüber ausgelieferte Seite enthält ein `<link rel="canonical">`-Tag, das auf Ihre Domain verweist. Suchmaschinen indexieren Ihre Domain, niemals die Subdomain.
+
+Die Option **Nur eigene Domain** deaktiviert den direkten Zugriff auf die Subdomain. Ein direkter Aufruf von `YOUR_SLUG.jamdesk.app` gibt einen 404-Fehler zurück. Ihre Dokumentation ist nur über Ihre eigene Domain erreichbar.
 
 Die Screenshots zeigen die Benutzeroberfläche auf Englisch.
-
-**Nur benutzerdefinierte Domain** geht einen Schritt weiter: Die Subdomain wird für direkte Besucher deaktiviert. Ein direkter Aufruf von `YOUR_SLUG.jamdesk.app` liefert einen 404-Fehler, und Ihre Dokumentation ist nur über Ihre eigene Domain erreichbar.
 
 ```mermaid
 flowchart LR
@@ -18,41 +18,39 @@ flowchart LR
 ```
 
 <Warning>
-Dadurch wird Ihre Subdomain verborgen – es handelt sich nicht um einen Passwortschutz. Jeder, der Ihre Domain aufruft, kann Ihre Dokumentation weiterhin sehen. Um zu steuern, *wer* sie lesen kann, verwenden Sie den [Passwortschutz](/de/setup/password-protection); beides funktioniert zusammen.
+Dadurch wird Ihre Subdomain verborgen. Es ist kein Passwortschutz. Alle, die Ihre Domain aufrufen, können Ihre Dokumentation weiterhin sehen. Mit dem [Passwortschutz](/de/setup/password-protection) legen Sie fest, *wer* sie lesen darf. Sie können beides aktivieren.
 </Warning>
 
 ## Aktivierung
 
 <Steps>
-  <Step title="Ihre benutzerdefinierte Domain überprüfen">
-    Fügen Sie Ihre Domain im Dashboard hinzu und überprüfen Sie sie – siehe [Benutzerdefinierte Domains](/de/deploy/custom-domains). Der Umschalter erfordert eine Domain mit dem Status **Active**.
+  <Step title="Eigene Domain verifizieren">
+    Fügen Sie Ihre Domain im Dashboard hinzu und verifizieren Sie sie. Weitere Informationen finden Sie unter [Eigene Domains](/de/deploy/custom-domains). Die Option setzt eine Domain mit dem Status **Active** voraus.
   </Step>
-  <Step title="Ihren Proxy überprüfen (nur bei Reverse-Proxy-Konfigurationen)">
-    Wenn Ihre Domain ein einfacher, auf Jamdesk verweisender CNAME ist (z. B. `docs.acme.com`), überspringen Sie diesen Schritt – es gibt nichts zu konfigurieren. Wenn Sie Dokumentation unter `yoursite.com/docs` über einen Proxy bereitstellen, muss der Proxy sich bei jeder weitergeleiteten Anfrage identifizieren – siehe unten [Proxy-Konfigurationen](#proxy-konfigurationen).
+  <Step title="Proxy überprüfen (nur Reverse-Proxy-Setups)">
+    Wenn Ihre Domain ein einfacher CNAME-Eintrag ist, der auf Jamdesk verweist (z. B. `docs.acme.com`), überspringen Sie diesen Schritt. Wenn Sie Ihre Dokumentation über einen Proxy unter `yoursite.com/docs` bereitstellen, muss der Proxy sich bei jeder weitergeleiteten Anfrage zu erkennen geben. Weitere Informationen finden Sie unten unter [Proxy-Setups](#proxy-konfigurationen).
   </Step>
-  <Step title="Den Umschalter aktivieren">
-    Öffnen Sie im Dashboard die **Settings** Ihres Projekts, erweitern Sie die Karte **Custom Domain** und aktivieren Sie **Custom domain only**. Jamdesk überprüft zuerst Ihre aktive Domain und aktiviert den Umschalter erst, wenn Ihre Konfiguration erfolgreich geprüft wurde – wenn die Prüfung fehlschlägt, teilt Ihnen die Meldung genau mit, was Sie korrigieren müssen.
+  <Step title="Option aktivieren">
+    Öffnen Sie **Settings** Ihres Projekts im Dashboard. Klappen Sie die Karte **Custom Domain** auf und aktivieren Sie **Custom domain only**. Jamdesk prüft zuerst Ihre aktive Domain. Die Option bleibt deaktiviert, bis Ihre Konfiguration die Prüfung besteht. Schlägt die Prüfung fehl, erfahren Sie in der Meldung, was Sie korrigieren müssen.
 
     <Frame>
-      <img src="/images/dashboard/custom-domain-only-toggle.webp" alt="The Custom domain only toggle in the Custom Domain card, switched on" />
+      <img src="/images/dashboard/custom-domain-only-toggle.webp" alt="Der Schalter Custom domain only in der Karte Custom Domain ist aktiviert" />
     </Frame>
   </Step>
 </Steps>
 
-Änderungen erreichen innerhalb einer Minute jeden Edge-Server.
+Änderungen werden innerhalb einer Minute auf allen Edge-Servern übernommen.
 
 ## Proxy-Konfigurationen
 
-Eine Anfrage an `YOUR_SLUG.jamdesk.app` wird nur bereitgestellt, wenn sie sich als über Ihren Proxy kommend identifiziert – entweder mit dem Header `X-Jamdesk-Forwarded-Host` oder dem Abfragemarker `?jd_proxy=1`. Jeder Konfigurationsleitfaden enthält bereits die richtige Option:
+Jamdesk liefert eine Anfrage an `YOUR_SLUG.jamdesk.app` nur dann aus, wenn es erkennt, dass sie über Ihren Proxy kommt. Dafür ist der Header `X-Jamdesk-Forwarded-Host` oder der Abfragemarker `?jd_proxy=1` erforderlich. Diese Einrichtungsanleitungen enthalten die passende Konfiguration:
 
-- **[Vercel](/de/deploy/vercel)** – Umschreibungen in `vercel.json` übertragen `?jd_proxy=1`; Edge Middleware setzt den Header
-- **[Cloudflare Workers](/de/deploy/cloudflare)** – Der Worker setzt den Header
-- **[AWS CloudFront](/de/deploy/aws)** – der benutzerdefinierte Origin-Header
-- **[Reverse Proxy](/de/deploy/reverse-proxy)** – nginx, Apache, Caddy und HAProxy setzen den Header
+- **[Vercel](/de/deploy/vercel)**: Rewrites in `vercel.json` fügen `?jd_proxy=1` hinzu. Edge Middleware setzt den Header.
+- **[Cloudflare Workers](/de/deploy/cloudflare)**: Der Worker setzt den Header.
+- **[AWS CloudFront](/de/deploy/aws)**: der benutzerdefinierte Origin-Header.
+- **[Reverse-Proxy](/de/deploy/reverse-proxy)**: nginx, Apache, Caddy und HAProxy setzen den Header.
 
-Wenn Sie einem dieser Leitfäden gefolgt sind, ist Ihre Konfiguration bereits fertig.
-
-Verwenden Sie [MCP](/de/ai/mcp-server) oder das [Chat-Widget](/de/ai/chat) über einen Reverse Proxy? Leiten Sie `/api/mcp/:path*` und `/api/chat/:path*` genauso weiter wie `/docs`. Auf Vercel:
+Verwenden Sie [MCP](/de/ai/mcp-server) oder das [Chat-Widget](/de/ai/chat) über einen Reverse-Proxy? Leiten Sie `/api/mcp/:path*` und `/api/chat/:path*` genauso weiter wie `/docs`. Auf Vercel:
 
 ```json vercel.json
 {
@@ -63,25 +61,25 @@ Verwenden Sie [MCP](/de/ai/mcp-server) oder das [Chat-Widget](/de/ai/chat) über
 }
 ```
 
-Wenn Ihre benutzerdefinierte Domain per CNAME auf Jamdesk verweist, funktionieren MCP und Chat auf Ihrer Domain ohne Änderungen weiter – richten Sie MCP-Clients auf `https://docs.acme.com/_mcp` und Sie sind fertig.
+Bei einer Domain, deren CNAME auf Jamdesk verweist, sind für MCP und Chat keine Änderungen erforderlich. Verweisen Sie MCP-Clients auf `https://docs.acme.com/_mcp`.
 
 ## Wissenswertes
 
-- **Auf der reinen Subdomain liefern alle Aufrufe 404** – Seiten, `sitemap.xml`, `robots.txt`, `llms.txt` und Markdown-Exporte. Browser zeigen eine einfache Jamdesk-Fehlerseite an.
-- **Bilder bleiben erreichbar.** Bilder, Videos und Social-Preview-Bilder (OG) sind ausgenommen – die Website-Vorschau im Dashboard lädt sie direkt von der Subdomain.
-- **Sie können sich nicht selbst aussperren.** Wenn der DNS-Eintrag Ihrer Domain ausfällt, beendet Jamdesk die Durchsetzung der Sperre, und die Subdomain wird wieder bereitgestellt, bis sich die Domain erholt. Wenn Sie stattdessen Ihre eigene Proxy-Konfiguration beschädigen (z. B. indem Sie den Marker aus einer Umschreibung entfernen), deaktivieren Sie den Umschalter, während Sie das Problem beheben.
-- Die [Search API](/de/jamdesk-api/docs-search-api) ist davon nicht betroffen – sie wird über einen API-Schlüssel authentifiziert.
+- **Auf der nackten Subdomain geben alle Inhalte einen 404-Fehler zurück**: Seiten, `sitemap.xml`, `robots.txt`, `llms.txt` und Markdown-Exporte. Im Browser wird eine Jamdesk-Fehlerseite angezeigt.
+- **Bilder bleiben erreichbar.** Bilder, Videos und Social-Preview-Bilder (OG) sind davon ausgenommen. Die Website-Vorschau im Dashboard lädt sie direkt von der Subdomain.
+- **Sie können sich nicht selbst aussperren.** Wenn die DNS-Konfiguration Ihrer Domain fehlerhaft ist, setzt Jamdesk die Sperre außer Kraft. Die Subdomain liefert wieder Inhalte aus, bis die Domain wieder erreichbar ist. Wenn Sie Ihre Proxy-Konfiguration beschädigen (z. B. indem Sie den Marker aus einem Rewrite entfernen), deaktivieren Sie die Option, während Sie den Fehler beheben.
+- **Die [Search API](/de/jamdesk-api/docs-search-api) ist davon nicht betroffen.** Die Authentifizierung erfolgt über einen API-Schlüssel.
 
 ## Was kommt als Nächstes?
 
 <Columns cols={3}>
   <Card title="Vercel" icon="cloud-arrow-up" href="/de/deploy/vercel">
-    Den jd_proxy-Marker oder Edge Middleware hinzufügen
+    Fügen Sie den jd_proxy-Marker hinzu oder richten Sie Edge Middleware ein
   </Card>
-  <Card title="Benutzerdefinierte Domains" icon="globe" href="/de/deploy/custom-domains">
-    Ihre Domain registrieren und überprüfen
+  <Card title="Eigene Domains" icon="globe" href="/de/deploy/custom-domains">
+    Registrieren und verifizieren Sie Ihre Domain
   </Card>
   <Card title="Passwortschutz" icon="lock" href="/de/setup/password-protection">
-    Steuern, wer Ihre Dokumentation lesen kann
+    Legen Sie fest, wer Ihre Dokumentation lesen darf
   </Card>
 </Columns>

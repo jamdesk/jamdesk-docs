@@ -1,15 +1,15 @@
 ---
-title: Consenso ai cookie
-description: Blocca gli script di analisi finché l'utente non accetta i cookie con integrations.cookies e carica un banner Osano o Termly sul tuo sito di documentazione.
+title: Consenso cookie
+description: Blocca gli script di analisi finché il visitatore non acconsente ai cookie con integrations.cookies, e carica un banner di consenso Osano o Termly.
 ---
 
-Jamdesk può bloccare tutti gli script di analisi e tracciamento (Google Analytics, Google Tag Manager, Plausible, la chat Crisp, JavaScript personalizzato e gli strumenti di analisi integrati di Jamdesk) finché un visitatore non accetta i cookie. Il consenso viene letto dal `localStorage` del browser, quindi funziona con qualsiasi piattaforma di gestione del consenso (CMP) che lo registri lì, inclusi Osano e Termly.
+Jamdesk può trattenere tutti gli script di analisi e tracciamento (Google Analytics, Google Tag Manager, Plausible, la chat Crisp, JavaScript personalizzato e l'analisi integrata di Jamdesk) finché un visitatore non acconsente ai cookie. Jamdesk legge il consenso dal `localStorage` del browser. Funziona con qualsiasi piattaforma di gestione del consenso (CMP) che lo registri lì, inclusi Osano e Termly.
 
-Questo ti aiuta a rispettare normative sulla privacy come GDPR, CCPA e la direttiva ePrivacy, poiché nessun tracciamento viene eseguito prima che il visitatore esprima il proprio consenso.
+Nessun tracciamento viene eseguito prima che il visitatore accetti. Questo ti aiuta a rispettare normative sulla privacy come il GDPR, il CCPA e la Direttiva ePrivacy.
 
 ## Come funziona
 
-Imposta in `docs.json` una chiave `localStorage` e il valore che indica che il consenso è stato concesso:
+Imposta in `docs.json` una chiave di `localStorage` e il valore che significa "consenso concesso":
 
 ```json docs.json
 {
@@ -22,25 +22,25 @@ Imposta in `docs.json` una chiave `localStorage` e il valore che indica che il c
 }
 ```
 
-Quando `integrations.cookies` è configurato, nessuno script di analisi viene caricato finché `localStorage["jamdesk_consent"]` non è uguale a `"granted"`. Non appena il banner del consenso registra l'accettazione, gli script vengono caricati senza bisogno di ricaricare la pagina. Se un visitatore revoca il consenso, gli script smettono di essere caricati dal successivo caricamento completo della pagina (gli script già in esecuzione nella pagina corrente continuano a funzionare finché il visitatore non cambia pagina o ricarica la pagina).
+Con `integrations.cookies` impostato, nessuno script di analisi viene caricato finché `localStorage["jamdesk_consent"]` non è uguale a `"granted"`. Gli script si caricano non appena il tuo banner di consenso registra l'accettazione, senza ricaricare la pagina. La revoca del consenso ha effetto al successivo caricamento completo della pagina da parte del visitatore. Gli script già in esecuzione nella pagina corrente continuano a funzionare finché il visitatore non naviga altrove o ricarica.
 
 <Info>
-Sia `key` sia `value` sono obbligatori. Se uno dei due manca o è vuoto, il blocco basato sul consenso è disattivato e gli script vengono caricati normalmente.
+`key` e `value` sono obbligatori. Una `key` o un `value` mancanti o vuoti disattivano il controllo del consenso. In tal caso gli script si caricano normalmente.
 </Info>
 
 <Warning>
-Il blocco si applica anche agli strumenti di analisi integrati di Jamdesk: i visitatori che non esprimono mai il consenso non vengono conteggiati, quindi dopo l'attivazione potresti vedere numeri inferiori di visualizzazioni di pagina nel dashboard del progetto.
+Il controllo si applica anche all'analisi integrata di Jamdesk. I visitatori che non acconsentono non vengono conteggiati. Aspettati numeri di visualizzazioni di pagina più bassi nella dashboard del progetto dopo aver attivato questa opzione.
 </Warning>
 
 ## Collegare il banner del consenso
 
-La maggior parte delle CMP (incluse Osano e Termly) non espone un flag `localStorage` semplice e stabile a cui collegare direttamente Jamdesk: memorizzano il consenso nei cookie o in valori che cambiano per ogni visitatore. Aggiungi invece un breve **frammento bridge** nell'area del codice personalizzato della tua CMP, che scriva `jamdesk_consent` quando un visitatore accetta. Poiché il frammento viene eseguito come parte della CMP (non come JavaScript personalizzato di Jamdesk, che è a sua volta soggetto al blocco), viene sempre eseguito.
+La maggior parte delle CMP (inclusi Osano e Termly) non espone un flag stabile in `localStorage` che Jamdesk possa leggere. Memorizzano il consenso in cookie o in valori che cambiano per ogni visitatore. Aggiungi invece un breve **snippet ponte** nell'area di codice personalizzato della tua CMP. Scrive `jamdesk_consent` quando un visitatore accetta. Lo snippet viene eseguito come parte della CMP, quindi viene sempre eseguito. Il JavaScript personalizzato di Jamdesk non può svolgere questo compito, perché anch'esso è soggetto al controllo.
 
-Il frammento scrive `granted` quando il consenso viene concesso e rimuove la chiave quando il consenso viene revocato, quindi il blocco viene riapplicato al caricamento successivo della pagina.
+Lo snippet scrive `granted` al consenso e rimuove la chiave quando il consenso viene ritirato. Il controllo si riapplica poi al caricamento successivo della pagina.
 
 ## Osano
 
-Aggiungi lo script Osano in `docs.json`:
+Aggiungi lo script di Osano in `docs.json`:
 
 ```json docs.json
 {
@@ -52,9 +52,9 @@ Aggiungi lo script Osano in `docs.json`:
 }
 ```
 
-L'URL dello script proviene dal dashboard di Osano. Inizia sempre con `https://cmp.osano.com/` e termina con `/osano.js`.
+L'URL dello script proviene dalla tua dashboard Osano. Inizia sempre con `https://cmp.osano.com/` e termina con `/osano.js`.
 
-Poi aggiungi questo bridge in Osano (Consent Manager → la tua configurazione → custom JavaScript) in modo che il consenso venga trasmesso a Jamdesk:
+Poi aggiungi questo ponte in Osano (Consent Manager → la tua configurazione → JavaScript personalizzato):
 
 ```js
 function jdOsanoBridge(consent) {
@@ -77,7 +77,7 @@ if (window.Osano && window.Osano.cm) {
 
 ## Termly
 
-Aggiungi lo script Termly in `docs.json`:
+Aggiungi lo script di Termly in `docs.json`:
 
 ```json docs.json
 {
@@ -89,9 +89,9 @@ Aggiungi lo script Termly in `docs.json`:
 }
 ```
 
-L'URL proviene dalle istruzioni di incorporamento di Termly per il tuo sito (lo script Resource Blocker). Il parametro di query `?autoBlock=on` abilita il blocco automatico degli script di Termly ed è facoltativo.
+L'URL proviene dalle istruzioni di embed di Termly per il tuo sito web (lo script Resource Blocker). La query `?autoBlock=on` è facoltativa e attiva il blocco automatico degli script di Termly.
 
-Poi aggiungi questo bridge in Termly (il tuo sito web → custom HTML/JavaScript) in modo che il consenso venga trasmesso a Jamdesk:
+Poi aggiungi questo ponte in Termly (il tuo sito web → HTML/JavaScript personalizzato):
 
 ```js
 function jdTermlyBridge() {
@@ -112,22 +112,22 @@ function jdTermlyBridge() {
 })();
 ```
 
-Sia Osano sia Termly vengono caricati per primi nell'elemento `<head>` della pagina, prima di qualsiasi altro script, quindi il loro blocco automatico funziona.
+Osano e Termly si caricano per primi nel `<head>` della pagina, prima di qualsiasi altro script. Il loro blocco automatico dipende da questo.
 
 <Warning>
-Se la tua CMP viene eseguita in modalità rigorosa o di blocco automatico, inserisci nella lista consentita `*.jamdesk.app` e il tuo dominio personalizzato per la documentazione nelle regole gestite (Osano: classificazione/lista consentita; Termly: Domain Rules o Custom Blocking Map). In caso contrario, la CMP potrebbe bloccare gli asset del tuo sito di documentazione e causare il malfunzionamento della pagina.
+Se la tua CMP funziona in modalità strict o di blocco automatico, inserisci in allowlist `*.jamdesk.app` e il tuo dominio personalizzato della documentazione nelle regole gestite (Osano: classification/allowlist; Termly: Domain Rules o Custom Blocking Map). Altrimenti la CMP potrebbe bloccare le risorse del tuo sito di documentazione e compromettere la pagina.
 </Warning>
 
 ## Testare la configurazione
 
-Il blocco viene eseguito solo sul tuo sito pubblicato e online, non in `jamdesk dev` (l'anteprima locale ignora la configurazione del consenso). Per eseguire il test:
+Il controllo viene eseguito solo sul tuo sito live, pubblicato. L'anteprima locale `jamdesk dev` ignora la configurazione del consenso. Per verificare:
 
-1. Apri il tuo sito di documentazione online con un `localStorage` vuoto. Gli strumenti di analisi non dovrebbero essere caricati (controlla la scheda Network del browser: non devono essere presenti richieste a Google, Plausible o `/api/ev`).
-2. Nella console del browser, esegui `localStorage.setItem("jamdesk_consent", "granted")`. Gli script dovrebbero essere caricati entro circa un secondo, senza ricaricare la pagina.
+1. Apri il tuo sito di documentazione live con `localStorage` vuoto. L'analisi non dovrebbe caricarsi (controlla la scheda Network del browser: nessuna richiesta a Google, Plausible o `/api/ev`).
+2. Nella console del browser esegui `localStorage.setItem("jamdesk_consent", "granted")`. Gli script dovrebbero caricarsi entro circa un secondo, senza ricaricare la pagina.
 
 ## Disattivare completamente gli strumenti di analisi di Jamdesk
 
-Per disattivare gli strumenti di analisi integrati di Jamdesk (senza cookie) per tutti i visitatori, indipendentemente dal consenso:
+Disattiva l'analisi integrata (senza cookie) di Jamdesk per tutti i visitatori, indipendentemente dal consenso:
 
 ```json docs.json
 {
@@ -139,13 +139,13 @@ Per disattivare gli strumenti di analisi integrati di Jamdesk (senza cookie) per
 
 <Columns cols={2}>
   <Card title="Google Tag Manager" icon="tags" href="/it/integrations/google-tag-manager">
-    Gestisci i tag e la modalità di consenso di GTM
+    Carica i tag e imposta la modalità di consenso GTM
   </Card>
   <Card title="Google Analytics" icon="chart-simple" href="/it/integrations/google-analytics">
-    Aggiungi direttamente GA4
+    Aggiungi GA4 direttamente
   </Card>
   <Card title="Plausible Analytics" icon="chart-pie" href="/it/integrations/plausible-analytics">
-    Incentrato sulla privacy, spesso esente dal consenso
+    Orientata alla privacy, spesso esente dal consenso
   </Card>
   <Card title="JavaScript personalizzato" icon="code" href="/it/customization/custom-javascript">
     Anche gli script personalizzati sono soggetti al consenso

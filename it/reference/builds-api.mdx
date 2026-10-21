@@ -1,19 +1,19 @@
 ---
-title: API build / trigger
-description: Ricostruisci la documentazione via API senza nuovi commit, per pipeline CI e aggiornamenti pianificati.
+title: API Build / Trigger
+description: Attiva ricostruzioni della documentazione in modo programmatico senza inviare commit. Utile per pipeline CI e aggiornamenti pianificati.
 ---
 
-Usa la Builds API per avviare la ricostruzione della documentazione senza inviare nuovi commit. È utile per pipeline CI, ricostruzioni pianificate o contenuti generati al di fuori della directory della documentazione.
+Usa l'API Builds per attivare ricostruzioni della documentazione senza inviare nuovi commit. È utile per pipeline CI, ricostruzioni pianificate o contenuti generati al di fuori della directory della documentazione.
 
 ## Autenticazione
 
-Tutte le richieste utilizzano una chiave API del progetto:
+Tutte le richieste usano una chiave API del progetto:
 
 ```http
 Authorization: Bearer YOUR_API_KEY
 ```
 
-Trova la chiave API in **Settings** → **API** del progetto.
+Trova la tua chiave API in **Settings** → **API** per il progetto.
 
 ## Avvia una nuova build
 
@@ -47,7 +47,7 @@ console.log(build.buildId, build.status);
 
 ### Risposta
 
-Le richieste completate correttamente restituiscono `200 OK` con i metadati della build, che puoi usare per monitorarne l'avanzamento.
+Le richieste riuscite restituiscono `200 OK` con i metadati della build che puoi usare per monitorarne l'avanzamento.
 
 ```json
 {
@@ -67,17 +67,17 @@ Le richieste completate correttamente restituiscono `200 OK` con i metadati dell
 ```
 
 <Note>
-Se ricevi una risposta `429`, riprova aumentando esponenzialmente l'intervallo tra i tentativi. Contatta l'assistenza se hai bisogno di limiti più elevati.
+Se ricevi una risposta `429`, riprova con backoff esponenziale. Contatta il supporto se ti servono limiti più alti.
 </Note>
 
 ### Campi della risposta
 
 <ResponseField name="buildId" type="string">
-  Identificatore univoco della build. Usalo per fare riferimento alla build nel dashboard.
+  Identificatore univoco della build. Usalo per fare riferimento alla build nella dashboard.
 </ResponseField>
 
 <ResponseField name="status" type="string">
-  Stato attuale della build. Può essere uno di questi: `queued`, `building`, `deployed`, `failed`.
+  Stato corrente della build. Uno tra: `queued`, `building`, `deployed`, `failed`.
 </ResponseField>
 
 <ResponseField name="createdAt" type="string">
@@ -89,7 +89,7 @@ Se ricevi una risposta `429`, riprova aumentando esponenzialmente l'intervallo t
 </ResponseField>
 
 <ResponseField name="commit.message" type="string">
-  Messaggio del commit proveniente dal repository di origine.
+  Messaggio del commit dal repository di origine.
 </ResponseField>
 
 <ResponseField name="commit.author" type="string">
@@ -97,7 +97,7 @@ Se ricevi una risposta `429`, riprova aumentando esponenzialmente l'intervallo t
 </ResponseField>
 
 <ResponseField name="project.id" type="string">
-  Identificatore del progetto corrispondente al progetto nel dashboard.
+  Identificatore del progetto corrispondente al progetto nella dashboard.
 </ResponseField>
 
 <ResponseField name="project.name" type="string">
@@ -106,14 +106,14 @@ Se ricevi una risposta `429`, riprova aumentando esponenzialmente l'intervallo t
 
 ## Monitoraggio dello stato della build
 
-Lo stato della build è visibile nel dashboard, in **Deployments**. Ogni build attraversa queste fasi:
+Lo stato della build è visibile nella dashboard in **Deployments**. Ogni build passa attraverso queste fasi:
 
-1. **queued** -- La build è in attesa nella coda.
-2. **building** -- Il servizio di build sta compilando la documentazione.
-3. **deployed** -- La build è stata completata e il sito è online.
-4. **failed** -- Si è verificato un problema. Controlla i log della build per ulteriori dettagli.
+1. **queued**: la build è in attesa nella coda.
+2. **building**: il servizio di build sta compilando la tua documentazione.
+3. **deployed**: la build è completata e il tuo sito è online.
+4. **failed**: qualcosa è andato storto. Controlla i log della build per i dettagli.
 
-Se il repository è connesso a GitHub, i controlli sullo stato dei commit vengono aggiornati automaticamente. Quando la build viene distribuita, sul commit compare un segno di spunta verde; se la build non riesce, compare una X rossa. Non è necessario interrogare ripetutamente l'API per ricevere aggiornamenti sullo stato.
+Se il tuo repository è collegato a GitHub, i controlli di stato dei commit si aggiornano automaticamente. Un segno di spunta verde compare sul commit quando la build viene distribuita. Una X rossa compare se la build fallisce. Non è necessario interrogare l'API per ottenere aggiornamenti di stato.
 
 ## Formato della risposta di errore
 
@@ -130,11 +130,11 @@ Le risposte di errore seguono una struttura coerente:
 ```
 
 <ResponseField name="error.code" type="string">
-  Codice di errore leggibile dalla macchina. Consulta la tabella seguente per i possibili valori.
+  Codice di errore leggibile dalla macchina. Vedi la tabella sotto per i valori possibili.
 </ResponseField>
 
 <ResponseField name="error.message" type="string">
-  Descrizione leggibile dall'utente di ciò che non ha funzionato.
+  Descrizione leggibile di cosa è andato storto.
 </ResponseField>
 
 <ResponseField name="error.status" type="number">
@@ -143,21 +143,21 @@ Le risposte di errore seguono una struttura coerente:
 
 ### Codici di errore
 
-| Stato | Codice | Messaggio | Soluzione |
+| Status | Codice | Messaggio | Soluzione |
 |--------|------|---------|-----|
-| **401** | `unauthorized` | Invalid API key | Genera nuovamente la chiave in **Settings** → **API** |
+| **401** | `unauthorized` | Invalid API key | Rigenera la chiave in **Settings** → **API** |
 | **403** | `forbidden` | Unauthorized project access | Verifica che l'ID del progetto corrisponda al progetto della chiave API |
-| **404** | `project_not_found` | Project not found | Verifica l'ID del progetto nel dashboard |
-| **429** | `rate_limited` | Too many requests | Attendi e riprova aumentando esponenzialmente l'intervallo tra i tentativi |
-| **500** | `internal_error` | Internal server error | Riprova dopo alcuni secondi. Contatta l'assistenza se il problema persiste |
+| **404** | `project_not_found` | Project not found | Verifica l'ID del progetto nella dashboard |
+| **429** | `rate_limited` | Too many requests | Attendi e riprova con backoff esponenziale |
+| **500** | `internal_error` | Internal server error | Riprova dopo alcuni secondi. Contatta il supporto se persiste |
 
 ## Articoli correlati
 
 <Columns cols={2}>
-  <Card title="Avvio delle build" icon="hammer" href="/it/builds/triggering">
-    Trigger manuali e automatici delle build
+  <Card title="Attivare le build" icon="hammer" href="/it/builds/triggering">
+    Trigger di build manuali e automatici
   </Card>
-  <Card title="Monitoraggio delle build" icon="chart-line" href="/it/builds/monitoring">
-    Monitora lo stato e la coda delle build
+  <Card title="Monitorare le build" icon="chart-line" href="/it/builds/monitoring">
+    Traccia lo stato della build e la coda
   </Card>
 </Columns>
