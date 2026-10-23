@@ -1,11 +1,10 @@
 ---
 title: CLI Deploy
 description: >-
-  Saiba como o comando deploy da CLI do jamdesk empacota, envia e compila sua
-  documentação, incluindo flags, fases de build e códigos de erro.
+  Saiba como o comando deploy da CLI do jamdesk empacota, envia e compila sua documentação, incluindo flags, fases de build e códigos de erro.
 ---
 
-O comando `deploy` empacota sua documentação, envia para o Jamdesk e inicia um build pelo terminal. Use-o para iterações rápidas, testes de alterações ou projetos que não estão conectados a um repositório do GitHub.
+O comando `deploy` empacota sua documentação, envia para o Jamdesk e dispara um build pelo terminal. Use-o para iterações rápidas, testes de alterações ou projetos que não estão conectados a um repositório do GitHub.
 
 ## Início rápido
 
@@ -18,10 +17,12 @@ jamdesk deploy       # From your project directory
 
 | Flag | Descrição |
 |------|-----------|
-| `--detach` | Coloca o build na fila e encerra imediatamente (exibe um link para o dashboard) |
+| `--detach` | Enfileira o build e encerra imediatamente (exibe um link para o dashboard) |
 | `--full-rebuild` | Força um rebuild completo, ignorando o cache de build |
-| `--project <id>` | Faz o deploy em um ID de projeto específico (ignora a seleção interativa) |
+| `--project <id>` | Faz o deploy para um ID de projeto específico (ignora a seleção interativa) |
 | `--allow-empty` | Permite o deploy com zero páginas de conteúdo `.mdx`. Por padrão, a CLI recusa o deploy de um projeto vazio. Isso evita que um diretório de trabalho incorreto publique um site vazio. Snippets não contam como páginas de conteúdo |
+| `-m, --message <text>` | Mensagem de commit para alterações não commitadas em uma pasta criada por `jamdesk pull` (padrão: "Update docs") |
+| `--allow-secret-files` | Publica arquivos cujos nomes parecem segredos, em uma pasta criada por `jamdesk pull` |
 
 `jamdesk push` é um alias para `jamdesk deploy`.
 
@@ -35,23 +36,46 @@ jamdesk deploy       # From your project directory
     Lê e valida o `docs.json` do diretório atual.
   </Step>
   <Step title="Resolver projeto">
-    Lê o `projectId` do `docs.json`. Ele não existe no primeiro deploy. Nesse caso, a CLI pede que você escolha um projeto. A CLI salva sua escolha no `docs.json`. O próximo deploy pula essa solicitação.
+    Lê o `projectId` do `docs.json`. Ele não existe no primeiro deploy. Nesse caso, a CLI pede que você escolha um projeto. A CLI salva sua escolha no `docs.json`. O próximo deploy pula essa etapa.
 
     Use `--project <id>` para substituir.
   </Step>
   <Step title="Empacotar arquivos">
-    Cria um tarball compactado da sua documentação. Arquivos listados no `.gitignore` ficam de fora. A CLI avisa sobre arquivos que parecem conter segredos. O aviso não bloqueia o envio.
+    Cria um tarball compactado da sua documentação. Arquivos listados no `.gitignore` ficam de fora. A CLI avisa sobre arquivos que parecem segredos. O aviso não bloqueia o envio.
   </Step>
   <Step title="Enviar">
     Envia o tarball para o Jamdesk por meio de uma URL pré-assinada. O tamanho máximo de envio é 100 MB.
   </Step>
   <Step title="Build">
-    Coloca um build na fila e consulta o status. Cada fase é exibida conforme é concluída. Pressione Ctrl+C para parar a consulta. O build continua em segundo plano.
+    Enfileira um build e consulta o status periodicamente. Cada fase é exibida conforme é concluída. Pressione Ctrl+C para parar a consulta. O build continua em segundo plano.
   </Step>
   <Step title="Concluído">
     Exibe a URL ativa quando o build termina.
   </Step>
 </Steps>
+
+## Projetos sem GitHub
+
+Para um projeto cuja documentação é hospedada pelo Jamdesk ([Documentação sem GitHub](/pt/setup/without-github)), você executa o deploy dentro da pasta criada por `jamdesk pull`. Nesse caso, o deploy pula as etapas de tarball descritas acima. Em vez disso, ele:
+
+1. Verifica suas alterações e recusa arquivos que não serão publicados, como arquivos `.github`, arquivos com aparência de segredo e arquivos com mais de 25 MB, antes de fazer qualquer commit.
+2. Faz commit das alterações não commitadas. Use `-m` para definir a mensagem.
+3. Envia os novos commits (até 100 MB), que o Jamdesk adiciona à sua documentação.
+4. Inicia um build e exibe cada fase.
+
+O deploy funciona a partir de qualquer subpasta e nunca altera o `docs.json`. `--full-rebuild` e `--allow-empty` não se aplicam nessa pasta, e `--project` deve indicar o projeto próprio da pasta. Diferentemente do aviso em um deploy normal, um arquivo com aparência de segredo interrompe o deploy, a menos que você adicione `--allow-secret-files`.
+
+Se o Jamdesk tiver alterações que você ainda não possui, feitas no Editor ou por um colega de equipe, o deploy para e mantém seu commit. Execute `jamdesk pull` e depois `jamdesk deploy` novamente. Consulte [Editar no seu computador](/pt/setup/without-github#editar-no-seu-computador) para conflitos e a lista completa de arquivos recusados.
+
+| Erro | Código | Correção |
+|------|--------|----------|
+| O Jamdesk tem alterações que você ainda não possui | `HOSTED_STALE` | `jamdesk pull`, depois `jamdesk deploy` |
+| Nada foi publicado | `PUSH_REFUSED` | Remova ou corrija os arquivos listados e faça o deploy novamente |
+| Um merge ou rebase não foi concluído | `MERGE_IN_PROGRESS` | Corrija os conflitos e faça commit, ou execute `git merge --abort` |
+| A pasta está no branch errado | `WRONG_BRANCH` | `git switch` para o branch indicado na mensagem |
+| Não foi possível fazer commit das alterações | `COMMIT_FAILED` | Execute `git commit` na pasta para ver o motivo |
+| O Jamdesk não conseguiu confirmar a publicação | `PUSH_UNCONFIRMED` | `jamdesk pull` para verificar, depois faça o deploy novamente |
+| O projeto não é mais hospedado pelo Jamdesk | `NOT_HOSTED` | Envie para o seu repositório do GitHub com os comandos que o deploy exibir |
 
 ## Fases do build
 
@@ -63,8 +87,8 @@ A CLI exibe cada fase em ordem enquanto consulta o status:
 | Validando configuração | Verificando o schema e o conteúdo do `docs.json` |
 | Preparando conteúdo | Processando arquivos MDX e recursos |
 | Compilando documentação | Compilando páginas e gerando artefatos estáticos |
-| Enviando para o CDN | Publicando a saída compilada na rede de borda |
-| Atualizando o cache | Limpando conteúdo desatualizado do CDN |
+| Enviando para o CDN | Enviando a saída compilada para a rede de borda |
+| Atualizando o cache | Removendo conteúdo desatualizado do CDN |
 
 ## Exclusões de arquivos
 
@@ -76,33 +100,33 @@ Tudo o que estiver no seu `.gitignore` também é excluído.
 
 ### Avisos sobre arquivos secretos
 
-A CLI avisa (mas não bloqueia) quando detecta arquivos que parecem conter segredos:
+A CLI avisa (mas não bloqueia) quando detecta arquivos que parecem segredos:
 
 - Arquivos `.env` e `.env.*`
 - Arquivos `*.pem` e `*.key`
 - `credentials.json`
 - `service_account*.json`
-- Arquivos cujo nome começa com `secret`
+- Arquivos que começam com `secret`
 
 Adicione-os ao `.gitignore` para suprimir o aviso e excluí-los dos envios.
 
 ## Referência de erros
 
-| Erro | Código | Causa | Solução |
-|------|--------|-------|---------|
+| Erro | Código | Causa | Correção |
+|------|--------|-------|----------|
 | Não autenticado | `AUTH_REQUIRED` | Nenhuma credencial armazenada | `jamdesk login` |
-| Sessão expirada | `AUTH_EXPIRED` | Falha ao renovar o token | `jamdesk login` |
+| Sessão expirada | `AUTH_EXPIRED` | Falha na renovação do token | `jamdesk login` |
 | Acesso negado | `FORBIDDEN` | Você não é membro deste projeto | Verifique a participação no projeto no dashboard |
 | Projeto não encontrado | `NOT_FOUND` | ID de projeto inválido | Verifique o ID ou remova o `projectId` do docs.json |
 | Build em andamento | `BUILD_IN_PROGRESS` | Outro build está em execução | Aguarde ou verifique o dashboard |
-| Envio muito grande | `TOO_LARGE` | O servidor recusou o envio (limite de 100 MB) | Exclua arquivos grandes via `.gitignore` |
-| Projeto muito grande | `PROJECT_TOO_LARGE` | O tarball ultrapassa 100 MB durante o empacotamento | Exclua arquivos grandes via `.gitignore` |
-| Nenhum projeto | `NO_PROJECTS` | Não há projetos na sua conta | Crie um projeto no dashboard primeiro |
-| Nenhum arquivo | `EMPTY_PROJECT` | Todos os arquivos foram excluídos | Verifique o `.gitignore` |
-| Nenhuma página de conteúdo | `NO_CONTENT` | Nenhuma página de conteúdo `.mdx` encontrada (snippets não contam) | Execute a partir do seu diretório de documentação ou use `--allow-empty` se a publicação vazia for intencional |
+| Envio muito grande | `TOO_LARGE` | O servidor rejeitou o envio (limite de 100 MB) | Exclua arquivos grandes via `.gitignore` |
+| Projeto muito grande | `PROJECT_TOO_LARGE` | O tarball excede 100 MB durante o empacotamento | Exclua arquivos grandes via `.gitignore` |
+| Sem projetos | `NO_PROJECTS` | Não há projetos na sua conta | Crie um projeto no dashboard primeiro |
+| Sem arquivos | `EMPTY_PROJECT` | Todos os arquivos foram excluídos | Verifique o `.gitignore` |
+| Sem páginas de conteúdo | `NO_CONTENT` | Nenhuma página de conteúdo `.mdx` encontrada (snippets não contam) | Execute a partir do diretório da documentação ou use `--allow-empty` se a publicação vazia for intencional |
 | Configuração inválida | `CONFIG_NOT_FOUND` | `docs.json` ausente ou inválido | Execute a partir da raiz do projeto e verifique a configuração |
 | Falha no envio | `UPLOAD_FAILED` | Problema de rede durante o envio | Verifique a conexão e tente novamente |
-| Falha no build | `BUILD_FAILED` | Erro no serviço de build | Verifique os logs de build no dashboard |
+| Falha no build | `BUILD_FAILED` | Erro do serviço de build | Verifique os logs de build no dashboard |
 
 ## Solução de problemas
 
@@ -120,7 +144,7 @@ Adicione-os ao `.gitignore` para suprimir o aviso e excluí-los dos envios.
   </Accordion>
 
   <Accordion title="Deploy hangs during polling">
-    Pressione Ctrl+C para sair. O build continua em execução em segundo plano. Verifique o status no dashboard. Uma travessia que se repete pode indicar que sua rede está descartando as requisições de consulta.
+    Pressione Ctrl+C para sair. O build continua em execução em segundo plano. Verifique o dashboard para ver o status. Um travamento que se repete pode indicar que sua rede está derrubando as requisições de consulta.
   </Accordion>
 
   <Accordion title='"No projects found"'>
@@ -128,13 +152,13 @@ Adicione-os ao `.gitignore` para suprimir o aviso e excluí-los dos envios.
   </Accordion>
 </AccordionGroup>
 
-Para mais solução de problemas da CLI, consulte o [guia da CLI na Central de ajuda](/pt/help/troubleshooting/cli-issues).
+Para mais informações sobre solução de problemas da CLI, consulte o [guia da CLI na Central de ajuda](/pt/help/troubleshooting/cli-issues).
 
 ## O que vem a seguir?
 
 <Columns cols={2}>
   <Card title="Fluxo de deploy" icon="rotate" href="/pt/development/deployment">
-    Deploy automático pelo GitHub e status do deployment
+    Deploy automático pelo GitHub e status do deploy
   </Card>
   <Card title="Autenticação" icon="key" href="/pt/cli/authentication">
     Fluxo de login, sessões e solução de problemas

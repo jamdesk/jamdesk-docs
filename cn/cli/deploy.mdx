@@ -1,10 +1,10 @@
 ---
 title: CLI 部署
 description: >-
-  了解 jamdesk deploy CLI 命令如何打包、上传并构建你的文档，包括参数、构建阶段和错误代码。
+  了解 jamdesk deploy 命令如何打包、上传并构建你的文档，包括参数、构建阶段和错误代码。
 ---
 
-`deploy` 命令会打包你的文档，将其上传到 Jamdesk，并从终端触发构建。适用于快速迭代、测试更改，或未连接 GitHub 仓库的项目。
+`deploy` 命令会打包你的文档，将其上传到 Jamdesk，并从终端触发构建。适用于快速迭代、测试修改，或未连接 GitHub 仓库的项目。
 
 ## 快速开始
 
@@ -17,10 +17,12 @@ jamdesk deploy       # From your project directory
 
 | 参数 | 说明 |
 |------|-------------|
-| `--detach` | 将构建加入队列并立即退出（会打印仪表板链接） |
-| `--full-rebuild` | 强制完整重建，绕过构建缓存 |
+| `--detach` | 将构建加入队列后立即退出（会打印仪表板链接） |
+| `--full-rebuild` | 强制完整重新构建，跳过构建缓存 |
 | `--project <id>` | 部署到指定的项目 ID（跳过交互式选择） |
-| `--allow-empty` | 允许在没有任何 `.mdx` 内容页面的情况下部署。默认情况下，CLI 会拒绝部署空项目。这可以防止错误的工作目录发布一个空站点。代码片段不计入内容页面 |
+| `--allow-empty` | 允许部署零个 `.mdx` 内容页面的项目。默认情况下 CLI 会拒绝部署空项目，以防止错误的工作目录发布空站点。代码片段不计入内容页面 |
+| `-m, --message <text>` | 对 `jamdesk pull` 生成的文件夹中未提交更改的提交信息（默认值："Update docs"） |
+| `--allow-secret-files` | 发布 `jamdesk pull` 生成的文件夹中名称看起来像机密的文件 |
 
 `jamdesk push` 是 `jamdesk deploy` 的别名。
 
@@ -34,23 +36,46 @@ jamdesk deploy       # From your project directory
     读取并验证当前目录中的 `docs.json`。
   </Step>
   <Step title="确定项目">
-    从 `docs.json` 中读取 `projectId`。首次部署时该值不存在，此时 CLI 会提示你选择项目。CLI 会将你的选择保存到 `docs.json`，下次部署将跳过该提示。
+    从 `docs.json` 读取 `projectId`。首次部署时它不存在，CLI 会提示你选择一个项目，并将你的选择保存到 `docs.json`。下次部署将跳过该提示。
 
-    使用 `--project <id>` 可覆盖此设置。
+    使用 `--project <id>` 可覆盖。
   </Step>
   <Step title="打包文件">
-    创建文档的压缩 tarball。`.gitignore` 中的文件会被排除。CLI 会对看起来像机密的文件发出警告，但警告不会阻止上传。
+    创建文档的压缩 tar 包。`.gitignore` 中的文件会被排除。CLI 会对看起来像机密的文件发出警告，但该警告不会阻止上传。
   </Step>
   <Step title="上传">
-    通过预签名 URL 将 tarball 发送到 Jamdesk。最大上传大小为 100 MB。
+    通过预签名 URL 将 tar 包发送到 Jamdesk。最大上传大小为 100 MB。
   </Step>
   <Step title="构建">
-    将构建加入队列并轮询状态。每个阶段完成时都会打印出来。按 Ctrl+C 可停止轮询，构建将在后台继续进行。
+    将构建加入队列并轮询状态。每个阶段完成时都会打印。按 Ctrl+C 可停止轮询，构建将在后台继续。
   </Step>
   <Step title="完成">
-    构建完成时打印实时 URL。
+    构建完成后打印实时 URL。
   </Step>
 </Steps>
+
+## 不使用 GitHub 的项目
+
+对于由 Jamdesk 托管文档的项目（[不使用 GitHub 的文档](/cn/setup/without-github)），需要在 `jamdesk pull` 生成的文件夹中运行 deploy。在该文件夹中，deploy 会跳过上述 tar 包步骤，转而：
+
+1. 检查你的更改，并在提交任何内容之前拒绝发布不应发布的文件，例如 `.github` 文件、看起来像机密的文件，以及超过 25 MB 的文件。
+2. 提交你未提交的更改。使用 `-m` 设置提交信息。
+3. 上传新的提交（最大 100 MB），Jamdesk 会将其添加到你的文档中。
+4. 启动构建并显示每个阶段。
+
+Deploy 可在任意子文件夹中运行，且从不修改 `docs.json`。`--full-rebuild` 和 `--allow-empty` 在此文件夹中不适用，且 `--project` 必须指向该文件夹自身的项目。与普通部署中的警告不同，看起来像机密的文件会使部署停止，除非你添加 `--allow-secret-files`。
+
+如果 Jamdesk 上有你尚未获取的更改（来自编辑器或团队成员），deploy 会停止并保留你的提交。运行 `jamdesk pull`，然后再次运行 `jamdesk deploy`。有关冲突及被拒绝文件的完整列表，请参阅[在你的计算机上编辑](/cn/setup/without-github#在电脑上编辑)。
+
+| 错误 | 代码 | 解决方法 |
+|-------|------|-----|
+| Jamdesk 上有你尚未获取的更改 | `HOSTED_STALE` | `jamdesk pull`，然后 `jamdesk deploy` |
+| 未发布任何内容 | `PUSH_REFUSED` | 删除或修复列出的文件，然后重新部署 |
+| 合并或变基尚未完成 | `MERGE_IN_PROGRESS` | 解决冲突并提交，或运行 `git merge --abort` |
+| 文件夹位于错误的分支 | `WRONG_BRANCH` | 使用 `git switch` 切换到消息中指定的分支 |
+| 无法提交你的更改 | `COMMIT_FAILED` | 在该文件夹中运行 `git commit` 以查看原因 |
+| Jamdesk 无法确认发布 | `PUSH_UNCONFIRMED` | 运行 `jamdesk pull` 进行检查，然后重新部署 |
+| 项目不再由 Jamdesk 托管 | `NOT_HOSTED` | 使用 deploy 打印的命令推送到你的 GitHub 仓库 |
 
 ## 构建阶段
 
@@ -58,8 +83,8 @@ CLI 在轮询时会按顺序打印每个阶段：
 
 | 阶段 | 说明 |
 |-------|-------------|
-| 提取文件 | 解压已上传的 tarball |
-| 验证配置 | 检查 `docs.json` 的结构和内容 |
+| 提取文件 | 解压已上传的 tar 包 |
+| 验证配置 | 检查 `docs.json` 的架构和内容 |
 | 准备内容 | 处理 MDX 文件和资源 |
 | 构建文档 | 编译页面并生成静态产物 |
 | 上传到 CDN | 将构建输出推送到边缘网络 |
@@ -67,7 +92,7 @@ CLI 在轮询时会按顺序打印每个阶段：
 
 ## 文件排除
 
-无论 `.gitignore` 如何设置，以下内容始终会被排除在上传之外：
+无论你的 `.gitignore` 如何设置，以下内容始终会从上传中排除：
 
 `.git`、`node_modules`、`.next`、`.env`、`.env.*`、`*.pem`、`*.key`、`credentials.json`、`.gcloud`、`.DS_Store`、`Thumbs.db`
 
@@ -75,7 +100,7 @@ CLI 在轮询时会按顺序打印每个阶段：
 
 ### 机密文件警告
 
-当 CLI 检测到看起来像机密的文件时会发出警告（但不会阻止操作）：
+当 CLI 检测到看起来像机密的文件时会发出警告（但不会阻止）：
 
 - `.env` 和 `.env.*` 文件
 - `*.pem` 和 `*.key` 文件
@@ -83,7 +108,7 @@ CLI 在轮询时会按顺序打印每个阶段：
 - `service_account*.json`
 - 以 `secret` 开头的文件
 
-将它们添加到 `.gitignore` 可以抑制警告，并将其排除在上传之外。
+将它们添加到 `.gitignore` 可以消除警告，并将其排除在上传之外。
 
 ## 错误参考
 
@@ -91,43 +116,43 @@ CLI 在轮询时会按顺序打印每个阶段：
 |-------|------|-------|-----|
 | 未登录 | `AUTH_REQUIRED` | 没有已保存的凭据 | `jamdesk login` |
 | 会话已过期 | `AUTH_EXPIRED` | 令牌刷新失败 | `jamdesk login` |
-| 拒绝访问 | `FORBIDDEN` | 不是该项目的成员 | 在仪表板中检查项目成员资格 |
-| 未找到项目 | `NOT_FOUND` | 项目 ID 无效 | 核对 ID，或从 docs.json 中移除 `projectId` |
+| 访问被拒绝 | `FORBIDDEN` | 不是该项目的成员 | 在仪表板中检查项目成员资格 |
+| 未找到项目 | `NOT_FOUND` | 项目 ID 无效 | 核对 ID，或从 docs.json 中删除 `projectId` |
 | 构建进行中 | `BUILD_IN_PROGRESS` | 另一个构建正在运行 | 等待或在仪表板中查看 |
 | 上传过大 | `TOO_LARGE` | 服务器拒绝上传（100 MB 限制） | 通过 `.gitignore` 排除大文件 |
-| 项目过大 | `PROJECT_TOO_LARGE` | 打包时 tarball 超过 100 MB | 通过 `.gitignore` 排除大文件 |
+| 项目过大 | `PROJECT_TOO_LARGE` | 打包时 tar 包超过 100 MB | 通过 `.gitignore` 排除大文件 |
 | 没有项目 | `NO_PROJECTS` | 你的账户中没有项目 | 先在仪表板中创建项目 |
 | 没有文件 | `EMPTY_PROJECT` | 所有文件都被排除 | 检查 `.gitignore` |
-| 没有内容页面 | `NO_CONTENT` | 未找到 `.mdx` 内容页面（代码片段不计入） | 在文档目录中运行，或如果确实要发布空站点，传入 `--allow-empty` |
+| 没有内容页面 | `NO_CONTENT` | 未找到 `.mdx` 内容页面（代码片段不计入） | 在你的文档目录中运行，或者如果确实需要发布空站点，请传入 `--allow-empty` |
 | 配置无效 | `CONFIG_NOT_FOUND` | `docs.json` 缺失或无效 | 在项目根目录运行，检查配置 |
-| 上传失败 | `UPLOAD_FAILED` | 上传期间出现网络问题 | 检查网络连接，然后重试 |
+| 上传失败 | `UPLOAD_FAILED` | 上传期间出现网络问题 | 检查网络连接，重试 |
 | 构建失败 | `BUILD_FAILED` | 构建服务错误 | 在仪表板中查看构建日志 |
 
 ## 故障排除
 
 <AccordionGroup>
-  <Accordion title='"A build is already in progress"'>
-    每个项目同一时间只能运行一个构建。请等待当前构建完成。可在仪表板的 **Deployments** 下查看状态。
+  <Accordion title='"构建已在进行中"'>
+    每个项目一次只能运行一个构建。请等待当前构建完成。可在仪表板的 **Deployments** 下查看状态。
   </Accordion>
 
-  <Accordion title='"docs.json not found or invalid"'>
-    请在包含 `docs.json` 的目录中运行该命令。运行 `jamdesk validate` 可检查配置错误。
+  <Accordion title='"未找到 docs.json 或其无效"'>
+    请在包含 `docs.json` 的目录中运行该命令。运行 `jamdesk validate` 检查配置错误。
   </Accordion>
 
-  <Accordion title='"Upload too large"'>
-    100 MB 限制适用于所有未被排除的文件压缩后的 tarball。大型图片、视频或数据文件是常见原因。将它们添加到 `.gitignore` 即可排除。
+  <Accordion title='"上传过大"'>
+    100 MB 限制适用于所有未被排除的文件的压缩 tar 包。大型图片、视频或数据文件是常见原因。将它们添加到 `.gitignore` 即可排除。
   </Accordion>
 
-  <Accordion title="Deploy hangs during polling">
-    按 Ctrl+C 退出。构建会在后台继续运行。请在仪表板中查看状态。如果此问题反复出现，可能是网络丢弃了轮询请求。
+  <Accordion title="部署在轮询期间卡住">
+    按 Ctrl+C 退出。构建会在后台继续运行。请在仪表板中查看状态。如果卡住的情况反复出现，可能是网络丢弃了轮询请求。
   </Accordion>
 
-  <Accordion title='"No projects found"'>
-    你的 Jamdesk 账户中至少需要一个项目。请前往 [dashboard.jamdesk.com](https://dashboard.jamdesk.com) 创建。
+  <Accordion title='"未找到项目"'>
+    你的 Jamdesk 账户中至少需要一个项目。请在 [dashboard.jamdesk.com](https://dashboard.jamdesk.com) 创建一个。
   </Accordion>
 </AccordionGroup>
 
-更多 CLI 故障排除信息，请参阅 [帮助中心 CLI 指南](/cn/help/troubleshooting/cli-issues)。
+更多 CLI 故障排除信息，请参阅[帮助中心 CLI 指南](/cn/help/troubleshooting/cli-issues)。
 
 ## 接下来做什么？
 

@@ -1,0 +1,183 @@
+---
+title: Documentação sem GitHub
+description: Inicie um projeto Jamdesk sem conta no GitHub. O Jamdesk mantém sua documentação em um repositório privado e você pode migrá-la para o seu GitHub a qualquer momento.
+---
+
+Você não precisa de uma conta no GitHub para publicar documentação com o Jamdesk. Escolha esta opção quando quiser começar a escrever imediatamente e decidir sobre o Git depois. Você edita no Editor do painel ou no seu computador com a CLI do Jamdesk, e cada alteração publicada recompila o seu site.
+
+## Configurar um projeto sem GitHub
+
+<Steps>
+  <Step title="Escolha a opção">
+    Durante a configuração, ou no cartão do GitHub de um projeto existente, clique em **Continue without GitHub**. Somente o proprietário do projeto vê essa opção. Se ela não aparecer, conecte o GitHub.
+  </Step>
+
+  <Step title="Confirme">
+    Clique em **Continue without GitHub** novamente no painel que se abre. O Jamdesk cria um repositório privado com páginas iniciais e compila o seu site.
+  </Step>
+
+  <Step title="Edite sua documentação">
+    Abra **Editor** na barra lateral. Cada commit feito ali publica o seu site. O Editor precisa de uma tela de computador.
+  </Step>
+</Steps>
+
+Seu site fica disponível em `your-project.jamdesk.app`, da mesma forma que um projeto com GitHub.
+
+## O que funciona de forma diferente
+
+O Jamdesk é dono do repositório, então um recurso exige primeiro o seu próprio GitHub:
+
+| Recurso | Sem GitHub |
+|---------|------------|
+| Editor do painel e Fix with AI | Sim |
+| Domínios personalizados e análises | Sim |
+| Editar localmente e publicar com `jamdesk pull` e `jamdesk deploy` | Sim, CLI 1.1.227 ou posterior |
+| Editar com agentes de programação com IA, como Claude Code ou Cursor | Sim, na sua cópia local |
+| Tradução com IA | Não |
+
+Para usar a tradução com IA, [migre sua documentação para o GitHub](#migrar-sua-documentação-para-o-github).
+
+## Editar no seu computador
+
+`jamdesk pull` baixa sua documentação para uma pasta que é um repositório git com o histórico completo de edições. Você edita os arquivos ali, manualmente ou com um agente de programação com IA, e `jamdesk deploy` os publica.
+
+Você precisa da CLI 1.1.227 ou posterior e do [git](https://git-scm.com/downloads). Faça login primeiro com `jamdesk login`.
+
+```bash
+jamdesk pull
+cd your-project
+jamdesk dev
+```
+
+A pasta recebe o nome do slug do seu projeto. Se você tiver mais de um projeto sem GitHub, a CLI pergunta qual deles baixar. Adicione `--project your-project` para pular a pergunta, ou `--dir` para escolher a pasta.
+
+### Publicar suas alterações
+
+Execute `jamdesk deploy` de qualquer lugar dentro da pasta:
+
+```bash
+jamdesk deploy -m "Fix install steps"
+```
+
+O deploy faz commit das suas alterações não confirmadas, publica todos os novos commits e inicia uma compilação. Sem `-m`, a mensagem do commit é "Update docs". Commits que você fez com git também são publicados. Se nada tiver mudado, o deploy exibe `Nothing new to publish.` e para.
+
+### Receber alterações feitas no Jamdesk
+
+Edições feitas no Editor do painel, em Fix with AI ou em um deploy de um colega não chegam à sua pasta sozinhas. Quando o Jamdesk tem alterações que você não tem, o deploy para antes de publicar. Seu commit continua na pasta. Mescle as alterações do Jamdesk e execute o deploy novamente:
+
+```bash
+jamdesk pull
+jamdesk deploy
+```
+
+Dentro da pasta, `jamdesk pull` mescla as alterações do Jamdesk na sua cópia. Ele não é executado enquanto houver alterações não confirmadas. Faça commit delas primeiro, ou execute `jamdesk deploy`.
+
+### Resolver conflitos
+
+Um conflito acontece quando as mesmas linhas foram alteradas na sua pasta e no Jamdesk. O pull então para com `Some files changed both here and in Jamdesk.`
+
+1. Execute `git status` para ver os arquivos com conflito.
+2. Abra cada arquivo, mantenha o texto desejado e apague as linhas `<<<<<<<`, `=======` e `>>>>>>>`.
+3. Faça commit da mesclagem com `git add -A` e `git commit --no-edit`.
+4. Execute `jamdesk deploy`.
+
+O deploy recusa arquivos que ainda tenham marcadores de conflito.
+
+### Arquivos que o deploy não publica
+
+O deploy verifica suas alterações antes de fazer qualquer commit. Se encontrar algum destes arquivos, lista-os e não publica nada:
+
+- Arquivos que parecem conter segredos, como `service_account.json` ou nomes que começam com `secret`. Páginas (arquivos `.md` e `.mdx`) nunca são tratadas como arquivos de segredos. Se os arquivos forem seguros para publicar, execute `jamdesk deploy --allow-secret-files`.
+- Qualquer coisa na pasta `.github`.
+- Links simbólicos e pastas que são seu próprio repositório git.
+- Arquivos maiores que 25 MB.
+- Arquivos de texto com marcadores de conflito deixados neles.
+
+O deploy nunca faz commit de arquivos como `.env`, `.env.*`, chaves privadas (`*.pem`, `*.key`) e arquivos de credenciais, mesmo com `--allow-secret-files`. O git os ignora nesta pasta.
+
+O deploy também verifica commits que você fez com git. Um arquivo recusado em um commit anterior bloqueia o deploy, mesmo que um commit posterior o apague. A mensagem de erro mostra o comando `git reset --soft` que desfaz esses commits para que você corrija os arquivos.
+
+Um único deploy pode publicar até 100 MB de alterações.
+
+### Fazer backup no seu próprio repositório
+
+Você pode adicionar um remote git próprio, por exemplo um repositório privado para backups, e enviar para ele normalmente. O Jamdesk publica somente o que você envia com `jamdesk deploy`, então enviar para o seu remote não altera o seu site. Não nomeie seu remote git como `jamdesk`. A CLI usa esse nome para o registro do que o Jamdesk tem, e um remote com o mesmo nome quebra o seu próximo deploy até você executar `jamdesk pull`.
+
+### Transformar uma cópia antiga em repositório git
+
+Cópias feitas com a CLI 1.1.226 não são repositórios git, e `jamdesk deploy` não consegue publicá-las. Para manter edições que você fez em uma delas, entre na pasta da cópia (a que contém `docs.json`) e execute:
+
+```bash
+jamdesk pull --force
+```
+
+Seus arquivos permanecem como estão e aparecem como alterações não confirmadas. Páginas adicionadas no Jamdesk depois que você baixou a cópia são incluídas na pasta. Páginas que você apagou na cópia antiga também voltam, então apague-as novamente antes do commit se não quiser mantê-las.
+
+Se algum arquivo for diferente do Jamdesk, a CLI informa quantos são. Algumas dessas diferenças podem ser alterações feitas no Jamdesk depois que você baixou a cópia, e publicá-las como estão desfaria essas alterações. Por isso, esta pasta precisa de uma revisão antes do primeiro deploy:
+
+1. Execute `git status` e `git diff` para ver cada diferença.
+2. Para um arquivo em que o Jamdesk tem a versão desejada, execute `git restore <file>`.
+3. Faça commit das alterações que deseja manter com `git add` e `git commit`.
+4. Execute `jamdesk deploy`.
+
+Até você fazer commit, `jamdesk deploy` para com uma mensagem pedindo para revisar suas alterações, e não publica nada.
+
+### Baixar um zip
+
+Para obter uma cópia sem a CLI, abra **Settings**, encontre o cartão **Git Repository** e clique em **Download source (.zip)**. Qualquer membro do projeto pode baixar.
+
+## Migrar sua documentação para o GitHub
+
+Migrar para o GitHub copia sua documentação e seu histórico completo de edições para um repositório que você possui. Seu site continua no ar durante a migração. Funciona em todos os planos. Somente o proprietário do projeto pode migrar a documentação.
+
+<Steps>
+  <Step title="Crie um repositório vazio">
+    Em **Settings**, no cartão **Git Repository**, clique em **Move to GitHub**. Depois clique em **Create repository**. Deixe README, .gitignore e license desmarcados. O repositório precisa estar vazio. Mantenha-o privado, a menos que queira que todo o seu histórico de edições seja público.
+  </Step>
+
+  <Step title="Dê acesso ao Jamdesk">
+    Clique em **Install Jamdesk** e instale o GitHub App do Jamdesk na conta que possui o novo repositório. Inclua esse repositório. Em uma organização, um proprietário pode precisar aprovar a solicitação antes.
+
+    Se o Jamdesk já estiver nessa conta, o GitHub mostra a página de configurações dela. Adicione o repositório ali e depois clique no nome da conta no diálogo.
+  </Step>
+
+  <Step title="Escolha o repositório">
+    De volta ao diálogo, escolha o repositório. O Jamdesk copia sua documentação e troca o projeto para ele.
+  </Step>
+</Steps>
+
+Não edite no Editor nem execute `jamdesk deploy` enquanto a migração estiver em andamento. O Jamdesk mantém a cópia antiga por 30 dias e depois a apaga.
+
+## Depois da migração
+
+Envios para o repositório publicam seu site, conforme descrito em [Conectar o GitHub](/pt/setup/connecting-github). O Jamdesk compila apenas envios de membros do projeto com uma conta GitHub vinculada:
+
+1. Vincule sua conta GitHub em **User Settings**.
+2. Convide colegas que enviam para o repositório e peça que vinculem as contas deles.
+
+Uma pasta criada por `jamdesk pull` não pode publicar após a migração. Execute `jamdesk deploy` nela para ver os comandos git que a conectam ao seu novo repositório.
+
+## Se a migração não terminar
+
+O diálogo informa o que deu errado. Se ele disser que o repositório não está vazio, ou que o Jamdesk não conseguiu confirmar a cópia, apague o repositório no GitHub, crie um novo vazio e tente novamente. Seu site e sua documentação no Jamdesk permanecem como estavam.
+
+<Note>
+Se o diálogo disser que outra conta Jamdesk já usa esta conta GitHub, clique em **Verify on GitHub**. Consulte [Usar uma conta GitHub que outra conta Jamdesk usa](/pt/setup/connecting-github#usar-uma-conta-do-github-que-outra-conta-do-jamdesk-já-utiliza).
+</Note>
+
+## Se sua assinatura terminar
+
+<Warning>
+O Jamdesk apaga a origem de um projeto cancelado pelo menos 30 dias após o fim da assinatura. Você recebe um e-mail uma semana antes. Baixe sua documentação ou migre-a para o GitHub antes disso.
+</Warning>
+
+## Próximos passos
+
+<Columns cols={2}>
+  <Card title="Conectar o GitHub" icon="github" href="/pt/setup/connecting-github">
+    Como as compilações funcionam quando sua documentação está no GitHub
+  </Card>
+  <Card title="Criar um projeto" icon="plus" href="/pt/setup/creating-projects">
+    Outras formas de iniciar um projeto
+  </Card>
+</Columns>

@@ -1,10 +1,10 @@
 ---
 title: CLI-Deploy
 description: >-
-  Erfahren Sie, wie der Befehl jamdesk deploy Ihre Dokumentation packt, hochlädt und erstellt, inklusive Flags, Build-Phasen und Fehlercodes.
+  Erfahren Sie, wie der Befehl jamdesk deploy Ihre Dokumentation packt, hochlädt und erstellt, einschließlich Flags, Build-Phasen und Fehlercodes.
 ---
 
-Der Befehl `deploy` packt Ihre Dokumentation, lädt sie zu Jamdesk hoch und startet einen Build direkt aus dem Terminal. Verwenden Sie ihn für schnelle Iterationen, zum Testen von Änderungen oder für Projekte, die nicht mit einem GitHub-Repository verbunden sind.
+Der Befehl `deploy` packt Ihre Dokumentation, lädt sie zu Jamdesk hoch und startet einen Build über das Terminal. Verwenden Sie ihn für schnelle Iterationen, zum Testen von Änderungen oder für Projekte, die nicht mit einem GitHub-Repository verbunden sind.
 
 ## Schnellstart
 
@@ -17,10 +17,12 @@ jamdesk deploy       # From your project directory
 
 | Flag | Beschreibung |
 |------|-------------|
-| `--detach` | Stellt den Build in die Warteschlange und beendet sich sofort (gibt einen Dashboard-Link aus) |
-| `--full-rebuild` | Erzwingt einen vollständigen Rebuild unter Umgehung des Build-Caches |
-| `--project <id>` | Deployt in ein bestimmtes Projekt mit dieser ID (überspringt die interaktive Auswahl) |
-| `--allow-empty` | Erlaubt das Deployen ohne `.mdx`-Inhaltsseiten. Standardmäßig verweigert die CLI das Deployen eines leeren Projekts. So wird verhindert, dass ein falsches Arbeitsverzeichnis eine leere Site veröffentlicht. Snippets zählen nicht als Inhaltsseiten |
+| `--detach` | Build in die Warteschlange stellen und sofort beenden (gibt einen Dashboard-Link aus) |
+| `--full-rebuild` | Vollständigen Rebuild erzwingen und den Build-Cache umgehen |
+| `--project <id>` | In ein bestimmtes Projekt mit dieser ID deployen (überspringt die interaktive Auswahl) |
+| `--allow-empty` | Deployment mit null `.mdx`-Inhaltsseiten erlauben. Standardmäßig verweigert die CLI das Deployment eines leeren Projekts. So wird verhindert, dass ein falsches Arbeitsverzeichnis eine leere Website veröffentlicht. Snippets zählen nicht als Inhaltsseiten |
+| `-m, --message <text>` | Commit-Nachricht für nicht committete Änderungen in einem Ordner, der durch `jamdesk pull` erstellt wurde (Standard: "Update docs") |
+| `--allow-secret-files` | Dateien veröffentlichen, deren Namen nach Geheimnissen aussehen, aus einem Ordner, der durch `jamdesk pull` erstellt wurde |
 
 `jamdesk push` ist ein Alias für `jamdesk deploy`.
 
@@ -33,13 +35,13 @@ jamdesk deploy       # From your project directory
   <Step title="Konfiguration laden">
     Liest und validiert `docs.json` aus dem aktuellen Verzeichnis.
   </Step>
-  <Step title="Projekt ermitteln">
-    Liest `projectId` aus `docs.json`. Beim ersten Deploy fehlt sie. Die CLI fordert Sie dann auf, ein Projekt auszuwählen. Die CLI speichert Ihre Auswahl in `docs.json`. Beim nächsten Deploy entfällt die Abfrage.
+  <Step title="Projekt auflösen">
+    Liest `projectId` aus `docs.json`. Beim ersten Deployment fehlt sie. Die CLI fordert Sie dann auf, ein Projekt auszuwählen. Die CLI speichert Ihre Auswahl in `docs.json`. Das nächste Deployment überspringt die Abfrage.
 
     Verwenden Sie `--project <id>`, um dies zu überschreiben.
   </Step>
   <Step title="Dateien packen">
-    Erstellt ein komprimiertes Tarball Ihrer Dokumentation. Dateien in `.gitignore` werden ausgelassen. Die CLI warnt vor Dateien, die wie Geheimnisse aussehen. Die Warnung blockiert den Upload nicht.
+    Erstellt ein komprimiertes Tarball Ihrer Dokumentation. Dateien in `.gitignore` werden ausgeschlossen. Die CLI warnt vor Dateien, die nach Geheimnissen aussehen. Die Warnung blockiert den Upload nicht.
   </Step>
   <Step title="Hochladen">
     Sendet das Tarball über eine signierte URL an Jamdesk. Die maximale Upload-Größe beträgt 100 MB.
@@ -48,9 +50,32 @@ jamdesk deploy       # From your project directory
     Stellt einen Build in die Warteschlange und fragt den Status ab. Jede Phase wird bei Abschluss ausgegeben. Drücken Sie Strg+C, um die Abfrage zu beenden. Der Build läuft im Hintergrund weiter.
   </Step>
   <Step title="Fertig">
-    Gibt die Live-URL aus, sobald der Build abgeschlossen ist.
+    Gibt die Live-URL aus, wenn der Build abgeschlossen ist.
   </Step>
 </Steps>
+
+## Projekte ohne GitHub
+
+Für ein Projekt, dessen Dokumentation Jamdesk hostet ([Dokumentation ohne GitHub](/de/setup/without-github)), führen Sie deploy im Ordner aus, den `jamdesk pull` erstellt hat. Dort überspringt deploy die oben beschriebenen Tarball-Schritte. Stattdessen:
+
+1. Prüft Ihre Änderungen und verweigert Dateien, die nicht veröffentlicht werden, etwa `.github`-Dateien, Dateien, die nach Geheimnissen aussehen, und Dateien über 25 MB, bevor etwas committet wird.
+2. Committet Ihre nicht committeten Änderungen. Verwenden Sie `-m`, um die Nachricht festzulegen.
+3. Lädt die neuen Commits hoch (bis zu 100 MB), die Jamdesk zu Ihrer Dokumentation hinzufügt.
+4. Startet einen Build und zeigt jede Phase an.
+
+Deploy funktioniert aus jedem Unterordner und ändert niemals `docs.json`. `--full-rebuild` und `--allow-empty` gelten in diesem Ordner nicht, und `--project` muss das eigene Projekt des Ordners benennen. Anders als die Warnung bei einem normalen Deployment stoppt eine nach Geheimnissen aussehende Datei das Deployment, es sei denn, Sie fügen `--allow-secret-files` hinzu.
+
+Wenn Jamdesk Änderungen hat, die Ihnen noch fehlen, etwa aus dem Editor oder von einem Teammitglied, stoppt deploy und behält Ihren Commit. Führen Sie `jamdesk pull` und dann erneut `jamdesk deploy` aus. Informationen zu Konflikten und der vollständigen Liste abgelehnter Dateien finden Sie unter [Auf Ihrem Computer bearbeiten](/de/setup/without-github#edit-on-your-computer).
+
+| Fehler | Code | Lösung |
+|-------|------|-----|
+| Jamdesk hat Änderungen, die Sie noch nicht haben | `HOSTED_STALE` | `jamdesk pull`, dann `jamdesk deploy` |
+| Nichts wurde veröffentlicht | `PUSH_REFUSED` | Die aufgelisteten Dateien entfernen oder korrigieren, dann erneut deployen |
+| Ein Merge oder Rebase ist nicht abgeschlossen | `MERGE_IN_PROGRESS` | Konflikte beheben und committen oder `git merge --abort` ausführen |
+| Ordner ist auf dem falschen Branch | `WRONG_BRANCH` | `git switch` auf den in der Meldung genannten Branch |
+| Ihre Änderungen konnten nicht committet werden | `COMMIT_FAILED` | `git commit` im Ordner ausführen, um die Ursache zu sehen |
+| Jamdesk konnte die Veröffentlichung nicht bestätigen | `PUSH_UNCONFIRMED` | `jamdesk pull` zur Prüfung, dann erneut deployen |
+| Projekt wird nicht mehr von Jamdesk gehostet | `NOT_HOSTED` | Mit den von deploy ausgegebenen Befehlen in Ihr GitHub-Repository pushen |
 
 ## Build-Phasen
 
@@ -58,24 +83,24 @@ Die CLI gibt jede Phase in der Reihenfolge aus, während sie abfragt:
 
 | Phase | Beschreibung |
 |-------|-------------|
-| Dateien extrahieren | Entpackt das hochgeladene Tarball |
-| Konfiguration validieren | Prüft Schema und Inhalt von `docs.json` |
-| Inhalte vorbereiten | Verarbeitet MDX-Dateien und Assets |
-| Dokumentation erstellen | Kompiliert Seiten und erzeugt statische Artefakte |
-| Ins CDN hochladen | Überträgt die erstellte Ausgabe ins Edge-Netzwerk |
-| Cache aktualisieren | Leert veraltete Inhalte aus dem CDN |
+| Dateien extrahieren | Entpacken des hochgeladenen Tarballs |
+| Konfiguration validieren | Prüfen des `docs.json`-Schemas und -Inhalts |
+| Inhalte vorbereiten | Verarbeiten von MDX-Dateien und Assets |
+| Dokumentation erstellen | Kompilieren der Seiten und Erzeugen statischer Artefakte |
+| Auf CDN hochladen | Übertragen der erstellten Ausgabe ins Edge-Netzwerk |
+| Cache aktualisieren | Veraltete Inhalte aus dem CDN entfernen |
 
 ## Dateiausschlüsse
 
-Diese werden unabhängig von Ihrer `.gitignore` immer vom Upload ausgeschlossen:
+Diese werden immer vom Upload ausgeschlossen, unabhängig davon, was in Ihrer `.gitignore` steht:
 
 `.git`, `node_modules`, `.next`, `.env`, `.env.*`, `*.pem`, `*.key`, `credentials.json`, `.gcloud`, `.DS_Store`, `Thumbs.db`
 
-Alles in Ihrer `.gitignore` wird ebenfalls ausgeschlossen.
+Alles in Ihrer `.gitignore` ist ebenfalls ausgeschlossen.
 
 ### Warnungen zu geheimen Dateien
 
-Die CLI warnt (blockiert aber nicht), wenn sie Dateien erkennt, die wie Geheimnisse aussehen:
+Die CLI warnt (blockiert aber nicht), wenn sie Dateien erkennt, die nach Geheimnissen aussehen:
 
 - `.env`- und `.env.*`-Dateien
 - `*.pem`- und `*.key`-Dateien
@@ -87,19 +112,19 @@ Fügen Sie sie zu `.gitignore` hinzu, um die Warnung zu unterdrücken und sie vo
 
 ## Fehlerreferenz
 
-| Fehler | Code | Ursache | Behebung |
+| Fehler | Code | Ursache | Lösung |
 |-------|------|-----|-----|
 | Nicht angemeldet | `AUTH_REQUIRED` | Keine gespeicherten Zugangsdaten | `jamdesk login` |
 | Sitzung abgelaufen | `AUTH_EXPIRED` | Token-Erneuerung fehlgeschlagen | `jamdesk login` |
 | Zugriff verweigert | `FORBIDDEN` | Kein Mitglied dieses Projekts | Projektmitgliedschaft im Dashboard prüfen |
 | Projekt nicht gefunden | `NOT_FOUND` | Ungültige Projekt-ID | ID prüfen oder `projectId` aus docs.json entfernen |
-| Build läuft | `BUILD_IN_PROGRESS` | Ein anderer Build läuft | Warten oder Dashboard prüfen |
-| Upload zu groß | `TOO_LARGE` | Server hat Upload abgelehnt (Limit 100 MB) | Große Dateien über `.gitignore` ausschließen |
+| Build läuft | `BUILD_IN_PROGRESS` | Ein anderer Build läuft | Warten oder im Dashboard prüfen |
+| Upload zu groß | `TOO_LARGE` | Server hat den Upload abgelehnt (Limit 100 MB) | Große Dateien über `.gitignore` ausschließen |
 | Projekt zu groß | `PROJECT_TOO_LARGE` | Tarball überschreitet 100 MB beim Packen | Große Dateien über `.gitignore` ausschließen |
-| Keine Projekte | `NO_PROJECTS` | Keine Projekte in Ihrem Konto | Zuerst im Dashboard ein Projekt erstellen |
+| Keine Projekte | `NO_PROJECTS` | Keine Projekte in Ihrem Konto | Zuerst ein Projekt im Dashboard erstellen |
 | Keine Dateien | `EMPTY_PROJECT` | Alle Dateien ausgeschlossen | `.gitignore` prüfen |
 | Keine Inhaltsseiten | `NO_CONTENT` | Keine `.mdx`-Inhaltsseiten gefunden (Snippets zählen nicht) | Aus Ihrem Dokumentationsverzeichnis ausführen oder `--allow-empty` übergeben, falls die leere Veröffentlichung beabsichtigt ist |
-| Konfiguration ungültig | `CONFIG_NOT_FOUND` | `docs.json` fehlt oder ist ungültig | Aus dem Projektstamm ausführen, Konfiguration prüfen |
+| Konfiguration ungültig | `CONFIG_NOT_FOUND` | `docs.json` fehlt oder ist ungültig | Aus dem Projektstammverzeichnis ausführen, Konfiguration prüfen |
 | Upload fehlgeschlagen | `UPLOAD_FAILED` | Netzwerkproblem beim Upload | Internetverbindung prüfen, erneut versuchen |
 | Build fehlgeschlagen | `BUILD_FAILED` | Fehler im Build-Dienst | Build-Logs im Dashboard prüfen |
 
@@ -111,7 +136,7 @@ Fügen Sie sie zu `.gitignore` hinzu, um die Warnung zu unterdrücken und sie vo
   </Accordion>
 
   <Accordion title='"docs.json not found or invalid"'>
-    Führen Sie den Befehl in dem Verzeichnis aus, das `docs.json` enthält. Führen Sie `jamdesk validate` aus, um nach Konfigurationsfehlern zu suchen.
+    Führen Sie den Befehl aus dem Verzeichnis aus, das `docs.json` enthält. Führen Sie `jamdesk validate` aus, um nach Konfigurationsfehlern zu suchen.
   </Accordion>
 
   <Accordion title='"Upload too large"'>
@@ -127,13 +152,13 @@ Fügen Sie sie zu `.gitignore` hinzu, um die Warnung zu unterdrücken und sie vo
   </Accordion>
 </AccordionGroup>
 
-Weitere Hilfe zur CLI finden Sie im [CLI-Leitfaden des Hilfe-Centers](/de/help/troubleshooting/cli-issues).
+Weitere Informationen zur CLI-Fehlerbehebung finden Sie im [CLI-Leitfaden des Help Centers](/de/help/troubleshooting/cli-issues).
 
 ## Wie geht es weiter?
 
 <Columns cols={2}>
   <Card title="Deployment-Workflow" icon="rotate" href="/de/development/deployment">
-    GitHub-Auto-Deploy und Deployment-Status
+    GitHub Auto-Deploy und Deployment-Status
   </Card>
   <Card title="Authentifizierung" icon="key" href="/de/cli/authentication">
     Login-Ablauf, Sitzungen und Fehlerbehebung

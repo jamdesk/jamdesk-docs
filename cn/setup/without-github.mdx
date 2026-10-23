@@ -1,0 +1,183 @@
+---
+title: 不使用 GitHub 的文档
+description: 无需 GitHub 账户即可创建 Jamdesk 项目。文档保存在私有仓库中，随时可迁移到您自己的 GitHub。
+---
+
+您无需 GitHub 账户即可使用 Jamdesk 发布文档。如果您想立即开始写作，暂时不考虑 Git，可以选择此方式。您可以在仪表板的编辑器中编辑，也可以使用 Jamdesk CLI 在电脑上编辑，每次发布更改都会重新构建您的网站。
+
+## 在不使用 GitHub 的情况下设置项目
+
+<Steps>
+  <Step title="选择此选项">
+    在设置过程中，或在现有项目的 GitHub 卡片上，点击 **Continue without GitHub**。只有项目所有者能看到此选项。如果找不到，请改为连接 GitHub。
+  </Step>
+
+  <Step title="确认">
+    在打开的面板中再次点击 **Continue without GitHub**。Jamdesk 会创建一个包含入门页面的私有仓库，并构建您的网站。
+  </Step>
+
+  <Step title="编辑您的文档">
+    在侧边栏中打开 **Editor**。您在此处的每次提交都会发布您的网站。编辑器需要电脑屏幕才能使用。
+  </Step>
+</Steps>
+
+您的网站将在 `your-project.jamdesk.app` 上线，与 GitHub 项目相同。
+
+## 工作方式的差异
+
+由于仓库由 Jamdesk 管理，某些功能需要您先拥有自己的 GitHub：
+
+| 功能 | 不使用 GitHub |
+|------|----------------|
+| 仪表板编辑器和 Fix with AI | 支持 |
+| 自定义域名和分析 | 支持 |
+| 在本地编辑并使用 `jamdesk pull` 和 `jamdesk deploy` 发布 | 支持，需要 CLI 1.1.227 或更高版本 |
+| 使用 Claude Code 或 Cursor 等 AI 编码代理编辑 | 支持，在您的本地副本中 |
+| AI 翻译 | 不支持 |
+
+要使用 AI 翻译，请[将您的文档迁移到 GitHub](#将您的文档迁移到-github)。
+
+## 在电脑上编辑
+
+`jamdesk pull` 会将您的文档下载到一个文件夹中，该文件夹是包含完整编辑历史的 git 仓库。您可以手动或使用 AI 编码代理在其中编辑文件，然后使用 `jamdesk deploy` 发布。
+
+您需要 CLI 1.1.227 或更高版本以及 [git](https://git-scm.com/downloads)。请先运行 `jamdesk login` 登录。
+
+```bash
+jamdesk pull
+cd your-project
+jamdesk dev
+```
+
+该文件夹以您的项目 slug 命名。如果您有多个不使用 GitHub 的项目，CLI 会询问要拉取哪一个。添加 `--project your-project` 可跳过此问题，或使用 `--dir` 选择文件夹。
+
+### 发布您的更改
+
+在文件夹内的任意位置运行 `jamdesk deploy`：
+
+```bash
+jamdesk deploy -m "Fix install steps"
+```
+
+Deploy 会提交您未提交的更改，发布所有新提交，并启动构建。如果不带 `-m`，提交信息默认为 "Update docs"。您自己用 git 进行的提交也会被发布。如果没有任何变更，deploy 会输出 `Nothing new to publish.` 并停止。
+
+### 获取在 Jamdesk 中所做的更改
+
+在仪表板编辑器、Fix with AI 或队友的部署中所做的编辑不会自动同步到您的文件夹。当 Jamdesk 中有您没有的更改时，deploy 会在发布前停止。您的提交会保留在文件夹中。请合并 Jamdesk 的更改，然后再次部署：
+
+```bash
+jamdesk pull
+jamdesk deploy
+```
+
+在文件夹内，`jamdesk pull` 会将 Jamdesk 的更改合并到您的副本中。如果您有未提交的更改，它不会运行。请先提交这些更改，或运行 `jamdesk deploy`。
+
+### 解决冲突
+
+当同一行内容在您的文件夹和 Jamdesk 中都被修改时，就会发生冲突。此时 pull 会停止并显示 `Some files changed both here and in Jamdesk.`
+
+1. 运行 `git status` 查看有冲突的文件。
+2. 打开每个文件，保留您想要的文本，并删除 `<<<<<<<`、`=======` 和 `>>>>>>>` 行。
+3. 使用 `git add -A` 和 `git commit --no-edit` 提交合并。
+4. 运行 `jamdesk deploy`。
+
+如果文件中仍有冲突标记，deploy 会拒绝发布。
+
+### deploy 不会发布的文件
+
+Deploy 在提交任何内容之前会检查您的更改。如果发现以下任何文件，它会列出这些文件并且不发布任何内容：
+
+- 看起来像机密的文件，例如 `service_account.json` 或以 `secret` 开头的文件名。页面文件（`.md` 和 `.mdx`）永远不会被视为机密文件。如果这些文件可以安全发布，请运行 `jamdesk deploy --allow-secret-files`。
+- `.github` 文件夹中的任何内容。
+- 符号链接，以及本身就是独立 git 仓库的文件夹。
+- 超过 25 MB 的文件。
+- 仍包含冲突标记的文本文件。
+
+即使使用 `--allow-secret-files`，deploy 也永远不会提交 `.env`、`.env.*`、私钥（`*.pem`、`*.key`）和凭据文件等文件。在此文件夹中，git 会忽略它们。
+
+Deploy 也会检查您自己用 git 进行的提交。早前提交中被拒绝的文件会阻止部署，即使后续提交将其删除也是如此。错误信息会显示 `git reset --soft` 命令，用于拆分这些提交，以便您修复文件。
+
+一次部署最多可发布 100 MB 的更改。
+
+### 备份到您自己的仓库
+
+您可以添加自己的 git 远程仓库，例如用于备份的私有仓库，并像往常一样推送到该仓库。Jamdesk 只会发布您通过 `jamdesk deploy` 发送的内容，因此推送到您的远程仓库不会改变您的网站。请不要将您自己的 git 远程仓库命名为 `jamdesk`。CLI 使用该名称记录 Jamdesk 的状态，同名远程仓库会导致您的下一次部署失败，直到您运行 `jamdesk pull`。
+
+### 将旧副本转换为 git 仓库
+
+使用 CLI 1.1.226 创建的副本不是 git 仓库，`jamdesk deploy` 无法发布它们。如果要保留您在其中所做的编辑，请进入副本的文件夹（包含 `docs.json` 的文件夹）并运行：
+
+```bash
+jamdesk pull --force
+```
+
+您的文件将保持原样，并显示为未提交的更改。您下载副本后在 Jamdesk 中添加的页面会被添加到文件夹中。您在旧副本中删除的页面也会恢复，因此如果您不希望保留它们，请在提交前再次删除。
+
+如果有文件与 Jamdesk 不同，CLI 会告诉您数量。其中一些差异可能是您下载副本后在 Jamdesk 中所做的更改，若按原样发布会撤销这些更改。因此，此文件夹在首次部署前需要进行一次审查：
+
+1. 运行 `git status` 和 `git diff` 查看每个差异。
+2. 对于 Jamdesk 中包含您想要版本的文件，运行 `git restore <file>`。
+3. 使用 `git add` 和 `git commit` 提交您想保留的更改。
+4. 运行 `jamdesk deploy`。
+
+在您提交之前，`jamdesk deploy` 会停止并提示您审查更改，且不发布任何内容。
+
+### 改为下载 zip 文件
+
+如果想在不使用 CLI 的情况下获取副本，请打开 **Settings**，找到 **Git Repository** 卡片，然后点击 **Download source (.zip)**。任何项目成员都可以下载。
+
+## 将您的文档迁移到 GitHub
+
+迁移到 GitHub 会将您的文档及其完整编辑历史复制到您拥有的仓库中。迁移期间您的网站保持在线。所有套餐均支持此功能。只有项目所有者可以迁移文档。
+
+<Steps>
+  <Step title="创建一个空仓库">
+    在 **Settings** 中的 **Git Repository** 卡片上，点击 **Move to GitHub**，然后点击 **Create repository**。保持 README、.gitignore 和 license 未勾选。仓库必须为空。除非您希望完整编辑历史公开，否则请将其设为私有。
+  </Step>
+
+  <Step title="授予 Jamdesk 访问权限">
+    点击 **Install Jamdesk**，在拥有新仓库的账户上安装 Jamdesk GitHub App。请包含该仓库。对于组织，所有者可能需要先批准该请求。
+
+    如果该账户上已安装 Jamdesk，GitHub 会显示其设置页面。请在那里添加仓库，然后点击对话框中的账户名称。
+  </Step>
+
+  <Step title="选择仓库">
+    返回对话框，选择仓库。Jamdesk 会复制您的文档并将项目切换到该仓库。
+  </Step>
+</Steps>
+
+迁移过程中请勿在编辑器中编辑或运行 `jamdesk deploy`。Jamdesk 会将旧副本保留 30 天，然后将其删除。
+
+## 迁移之后
+
+推送到该仓库将发布您的网站，具体见[连接 GitHub](/cn/setup/connecting-github)。Jamdesk 只构建来自已关联 GitHub 账户的项目成员的推送：
+
+1. 在 **User Settings** 中关联您的 GitHub 账户。
+2. 邀请推送到该仓库的队友，并请他们关联各自的账户。
+
+迁移后，`jamdesk pull` 创建的文件夹无法发布。在其中运行 `jamdesk deploy`，即可查看将其连接到新仓库的 git 命令。
+
+## 如果迁移未完成
+
+对话框会说明出了什么问题。如果提示仓库不为空，或 Jamdesk 无法确认复制已完成，请在 GitHub 上删除该仓库，创建一个新的空仓库，然后重试。您的网站和 Jamdesk 中的文档将保持不变。
+
+<Note>
+如果对话框提示此 GitHub 账户已被另一个 Jamdesk 账户使用，请点击 **Verify on GitHub**。参见[使用其他 Jamdesk 账户正在使用的 GitHub 账户](/cn/setup/connecting-github#使用其他-jamdesk-账户正在使用的-github-账户)。
+</Note>
+
+## 如果您的订阅结束
+
+<Warning>
+Jamdesk 会在订阅结束后至少 30 天删除已取消项目的源文件。您会在一周前收到电子邮件通知。请在此之前下载您的文档或将其迁移到 GitHub。
+</Warning>
+
+## 下一步？
+
+<Columns cols={2}>
+  <Card title="连接 GitHub" icon="github" href="/cn/setup/connecting-github">
+    文档上传到 GitHub 后的构建方式
+  </Card>
+  <Card title="创建项目" icon="plus" href="/cn/setup/creating-projects">
+    启动项目的其他方式
+  </Card>
+</Columns>
