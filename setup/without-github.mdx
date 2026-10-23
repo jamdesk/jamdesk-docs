@@ -1,0 +1,174 @@
+---
+title: Docs Without GitHub
+description: Start a Jamdesk project with no GitHub account. Jamdesk keeps your docs in a private repository, and you can move them to your own GitHub at any time.
+---
+
+You don't need a GitHub account to publish docs with Jamdesk. Pick this option when you want to start writing right away and decide on Git later. You edit in the dashboard Editor or on your computer with the Jamdesk CLI, and each change you publish rebuilds your site.
+
+## Set up a project without GitHub
+
+<Steps>
+  <Step title="Choose the option">
+    During setup, or on an existing project's GitHub card, click **Continue without GitHub**. Only the project owner sees it. If it's missing, connect GitHub instead.
+  </Step>
+
+  <Step title="Confirm">
+    Click **Continue without GitHub** again in the panel that opens. Jamdesk creates a private repository with starter pages and builds your site.
+  </Step>
+
+  <Step title="Edit your docs">
+    Open **Editor** in the sidebar. Each commit you make there publishes your site. The Editor needs a computer screen.
+  </Step>
+</Steps>
+
+Your site goes live at `your-project.jamdesk.app`, the same as a GitHub project.
+
+## What works differently
+
+Jamdesk owns the repository, so one feature needs your own GitHub first:
+
+| Feature | Without GitHub |
+|---------|----------------|
+| Dashboard Editor and Fix with AI | Yes |
+| Custom domains and analytics | Yes |
+| Edit locally and publish with `jamdesk pull` and `jamdesk deploy` | Yes, CLI 1.1.227 or later |
+| Edit with AI coding agents such as Claude Code or Cursor | Yes, in your local copy |
+| AI translation | No |
+
+To use AI translation, [move your docs to GitHub](#move-your-docs-to-github).
+
+## Edit on your computer
+
+`jamdesk pull` downloads your docs into a folder that is a git repository with the full edit history. You edit the files there, by hand or with an AI coding agent, and `jamdesk deploy` publishes them.
+
+You need CLI 1.1.227 or later and [git](https://git-scm.com/downloads). Sign in with `jamdesk login` first.
+
+```bash
+jamdesk pull
+cd your-project
+jamdesk dev
+```
+
+The folder is named after your project slug. If you have more than one project without GitHub, the CLI asks which one to pull. Add `--project your-project` to skip the question, or `--dir` to choose the folder.
+
+### Publish your changes
+
+Run `jamdesk deploy` from anywhere inside the folder:
+
+```bash
+jamdesk deploy -m "Fix install steps"
+```
+
+Deploy commits your uncommitted changes, publishes every new commit, and starts a build. Without `-m`, the commit message is "Update docs". Commits you made yourself with git are published too. If nothing changed, deploy prints `Nothing new to publish.` and stops.
+
+### Get changes made in Jamdesk
+
+Edits from the dashboard Editor, Fix with AI, or a teammate's deploy don't reach your folder on their own. When Jamdesk has changes you don't have, deploy stops before it publishes. Your commit stays in the folder. Merge the Jamdesk changes, then deploy again:
+
+```bash
+jamdesk pull
+jamdesk deploy
+```
+
+Inside the folder, `jamdesk pull` merges the Jamdesk changes into your copy. It won't run while you have uncommitted changes. Commit them first, or run `jamdesk deploy`.
+
+### Fix conflicts
+
+A conflict happens when the same lines changed in your folder and in Jamdesk. Pull then stops with `Some files changed both here and in Jamdesk.`
+
+1. Run `git status` to see the files with conflicts.
+2. Open each file, keep the text you want, and delete the `<<<<<<<`, `=======`, and `>>>>>>>` lines.
+3. Commit the merge with `git add -A` and `git commit --no-edit`.
+4. Run `jamdesk deploy`.
+
+Deploy refuses files that still have conflict markers.
+
+### Files deploy won't publish
+
+Deploy checks your changes before it commits anything. If it finds any of these files, it lists them and publishes nothing:
+
+- Secret-looking files, such as `service_account.json` or names that start with `secret`. If they're safe to publish, run `jamdesk deploy --allow-secret-files`.
+- Anything in the `.github` folder.
+- Symbolic links, and folders that are their own git repository.
+- Files over 25 MB.
+- Text files with conflict markers left in them.
+
+Deploy never commits `.env` files, `*.pem` and `*.key` files, or `credentials.json`, and no flag changes that. Git ignores them in this folder.
+
+Deploy checks commits you made yourself with git too. A refused file in an earlier commit blocks the deploy even if a later commit deletes it. The error message shows the `git reset --soft` command that takes those commits apart so you can fix the files.
+
+One deploy can publish up to 100 MB of changes.
+
+### Back up to your own repository
+
+You can add your own git remote, for example a private repository for backups, and push to it as usual. Jamdesk publishes only what you send with `jamdesk deploy`, so pushing to your remote doesn't change your site. Don't name the remote `jamdesk`. The CLI uses that name for its record of what Jamdesk has.
+
+### Turn an old copy into a git repository
+
+Copies made with CLI 1.1.226 aren't git repositories, and `jamdesk deploy` can't publish them. To keep edits you made in one, go to the folder that contains the copy and run:
+
+```bash
+jamdesk pull --force
+```
+
+If the copy's folder isn't named after your project slug, add `--dir` with its name. Your files stay as they are and show up as uncommitted changes. Review them with `git status` and `git diff` before you deploy. If someone changed the docs in Jamdesk after you downloaded the copy, those changes show up as edits that undo them. Restore those files with `git restore <file>` before you deploy.
+
+### Download a zip instead
+
+To get a copy without the CLI, open **Settings**, find the **Git Repository** card, and click **Download source (.zip)**. Any project member can download.
+
+## Move your docs to GitHub
+
+Move to GitHub copies your docs and their full edit history into a repository you own. Your site stays up during the move. It works on every plan. Only the project owner can move the docs.
+
+<Steps>
+  <Step title="Create an empty repository">
+    In **Settings**, on the **Git Repository** card, click **Move to GitHub**. Then click **Create repository**. Leave README, .gitignore, and license unchecked. The repository must be empty. Keep it private unless you want your full edit history public.
+  </Step>
+
+  <Step title="Give Jamdesk access">
+    Click **Install Jamdesk** and install the Jamdesk GitHub App on the account that owns the new repository. Include that repository. For an organization, an owner may have to approve the request first.
+
+    If Jamdesk is already on that account, GitHub shows its settings page instead. Add the repository there, then click the account's name in the dialog.
+  </Step>
+
+  <Step title="Pick the repository">
+    Back in the dialog, pick the repository. Jamdesk copies your docs and switches the project to it.
+  </Step>
+</Steps>
+
+Don't edit in the Editor or run `jamdesk deploy` while the move runs. Jamdesk keeps the old copy for 30 days, then deletes it.
+
+## After the move
+
+Pushes to the repository publish your site, as described in [Connect GitHub](/setup/connecting-github). Jamdesk builds only pushes from project members with a linked GitHub account:
+
+1. Link your GitHub account in **User Settings**.
+2. Invite teammates who push to the repository, and ask them to link theirs.
+
+A folder made by `jamdesk pull` can't publish after the move. Run `jamdesk deploy` in it to see the git commands that connect it to your new repository.
+
+## If the move doesn't finish
+
+The dialog says what went wrong. If it says the repository isn't empty, or that Jamdesk couldn't confirm the copy, delete the repository on GitHub, create a new empty one, and try again. Your site and your docs in Jamdesk stay as they were.
+
+<Note>
+If the dialog says another Jamdesk account already uses this GitHub account, click **Verify on GitHub**. See [Use a GitHub account another Jamdesk account uses](/setup/connecting-github#use-a-github-account-another-jamdesk-account-uses).
+</Note>
+
+## If your subscription ends
+
+<Warning>
+Jamdesk deletes the source of a canceled project at least 30 days after the subscription ends. You get an email a week before. Download your docs or move them to GitHub before then.
+</Warning>
+
+## What's Next?
+
+<Columns cols={2}>
+  <Card title="Connect GitHub" icon="github" href="/setup/connecting-github">
+    How builds work once your docs are on GitHub
+  </Card>
+  <Card title="Create a Project" icon="plus" href="/setup/creating-projects">
+    Other ways to start a project
+  </Card>
+</Columns>

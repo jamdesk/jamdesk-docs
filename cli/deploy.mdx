@@ -22,6 +22,8 @@ jamdesk deploy       # From your project directory
 | `--full-rebuild` | Force a full rebuild, bypassing the build cache |
 | `--project <id>` | Deploy to a specific project ID (skips interactive selection) |
 | `--allow-empty` | Allow deploying with zero `.mdx` content pages. By default the CLI refuses to deploy an empty project. This stops a wrong working directory from publishing an empty site. Snippets don't count as content pages |
+| `-m, --message <text>` | Commit message for uncommitted changes in a folder made by `jamdesk pull` (default: "Update docs") |
+| `--allow-secret-files` | Publish files whose names look like secrets from a folder made by `jamdesk pull` |
 
 `jamdesk push` is an alias for `jamdesk deploy`.
 
@@ -52,6 +54,29 @@ jamdesk deploy       # From your project directory
     Prints the live URL when the build finishes.
   </Step>
 </Steps>
+
+## Projects without GitHub
+
+For a project whose docs Jamdesk hosts ([Docs Without GitHub](/setup/without-github)), you run deploy inside the folder that `jamdesk pull` made. There, deploy skips the tarball steps above. Instead it:
+
+1. Checks your changes and refuses files it won't publish, such as `.github` files, secret-looking files, and files over 25 MB, before it commits anything.
+2. Commits your uncommitted changes. Use `-m` to set the message.
+3. Uploads the new commits (up to 100 MB), which Jamdesk adds to your docs.
+4. Starts a build and shows each phase.
+
+Deploy works from any subfolder and never changes `docs.json`. `--full-rebuild` and `--allow-empty` don't apply in this folder, and `--project` must name the folder's own project. Unlike the warning in a normal deploy, a secret-looking file stops the deploy unless you add `--allow-secret-files`.
+
+If Jamdesk has changes you don't have yet, from the Editor or a teammate, deploy stops and keeps your commit. Run `jamdesk pull`, then `jamdesk deploy` again. See [Edit on your computer](/setup/without-github#edit-on-your-computer) for conflicts and the full list of refused files.
+
+| Error | Code | Fix |
+|-------|------|-----|
+| Jamdesk has changes you don't have yet | `HOSTED_STALE` | `jamdesk pull`, then `jamdesk deploy` |
+| Nothing was published | `PUSH_REFUSED` | Remove or fix the listed files, then deploy again |
+| A merge or rebase is not finished | `MERGE_IN_PROGRESS` | Fix the conflicts and commit, or run `git merge --abort` |
+| Folder is on the wrong branch | `WRONG_BRANCH` | `git switch` to the branch the message names |
+| Couldn't commit your changes | `COMMIT_FAILED` | Run `git commit` in the folder to see why |
+| Jamdesk couldn't confirm the publish | `PUSH_UNCONFIRMED` | `jamdesk pull` to check, then deploy again |
+| Project isn't hosted by Jamdesk anymore | `NOT_HOSTED` | Push to your GitHub repository with the commands deploy prints |
 
 ## Build Phases
 
