@@ -87,13 +87,13 @@ Deploy refuses files that still have conflict markers.
 
 Deploy checks your changes before it commits anything. If it finds any of these files, it lists them and publishes nothing:
 
-- Secret-looking files, such as `service_account.json` or names that start with `secret`. If they're safe to publish, run `jamdesk deploy --allow-secret-files`.
+- Secret-looking files, such as `service_account.json` or names that start with `secret`. Pages (`.md` and `.mdx` files) are never treated as secrets files. If the files are safe to publish, run `jamdesk deploy --allow-secret-files`.
 - Anything in the `.github` folder.
 - Symbolic links, and folders that are their own git repository.
 - Files over 25 MB.
 - Text files with conflict markers left in them.
 
-Deploy never commits `.env` files, `*.pem` and `*.key` files, or `credentials.json`, and no flag changes that. Git ignores them in this folder.
+Deploy never commits files like `.env`, `.env.*`, private keys (`*.pem`, `*.key`) and credentials files, even with `--allow-secret-files`. Git ignores them in this folder.
 
 Deploy checks commits you made yourself with git too. A refused file in an earlier commit blocks the deploy even if a later commit deletes it. The error message shows the `git reset --soft` command that takes those commits apart so you can fix the files.
 
@@ -101,7 +101,7 @@ One deploy can publish up to 100 MB of changes.
 
 ### Back up to your own repository
 
-You can add your own git remote, for example a private repository for backups, and push to it as usual. Jamdesk publishes only what you send with `jamdesk deploy`, so pushing to your remote doesn't change your site. Don't name the remote `jamdesk`. The CLI uses that name for its record of what Jamdesk has.
+You can add your own git remote, for example a private repository for backups, and push to it as usual. Jamdesk publishes only what you send with `jamdesk deploy`, so pushing to your remote doesn't change your site. Don't name your own git remote `jamdesk`. The CLI uses that name for its record of what Jamdesk has, and a remote with the same name breaks your next deploy until you run `jamdesk pull`.
 
 ### Turn an old copy into a git repository
 
@@ -111,7 +111,16 @@ Copies made with CLI 1.1.226 aren't git repositories, and `jamdesk deploy` can't
 jamdesk pull --force
 ```
 
-If the copy's folder isn't named after your project slug, add `--dir` with its name. Your files stay as they are and show up as uncommitted changes. Review them with `git status` and `git diff` before you deploy. If someone changed the docs in Jamdesk after you downloaded the copy, those changes show up as edits that undo them. Restore those files with `git restore <file>` before you deploy.
+If the copy's folder isn't named after your project slug, add `--dir` with its name. Your files stay as they are and show up as uncommitted changes. Pages added in Jamdesk after you downloaded the copy are added to the folder.
+
+If any files differ from Jamdesk, the CLI tells you how many. Some of those differences may be changes made in Jamdesk after you downloaded the copy, and publishing them as they are would undo those changes. So this folder needs one review before its first deploy:
+
+1. Run `git status` and `git diff` to see each difference.
+2. For a file where Jamdesk has the version you want, run `git restore <file>`.
+3. Commit the changes you want to keep with `git add` and `git commit`.
+4. Run `jamdesk deploy`.
+
+Until you commit, `jamdesk deploy` stops with a message asking you to review your changes, and publishes nothing.
 
 ### Download a zip instead
 
