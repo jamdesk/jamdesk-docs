@@ -1,0 +1,183 @@
+---
+title: Documentation sans GitHub
+description: Démarrez un projet Jamdesk sans compte GitHub. Jamdesk garde votre documentation dans un dépôt privé, que vous pouvez déplacer vers GitHub à tout moment.
+---
+
+Vous n'avez pas besoin d'un compte GitHub pour publier votre documentation avec Jamdesk. Choisissez cette option si vous voulez commencer à écrire tout de suite et décider de Git plus tard. Vous modifiez vos fichiers dans l'Editor du dashboard ou sur votre ordinateur avec le CLI Jamdesk, et chaque modification publiée relance le build de votre site.
+
+## Configurer un projet sans GitHub
+
+<Steps>
+  <Step title="Choisir l'option">
+    Pendant la configuration, ou sur la carte GitHub d'un projet existant, cliquez sur **Continue without GitHub**. Seul le propriétaire du projet la voit. Si elle est absente, connectez plutôt GitHub.
+  </Step>
+
+  <Step title="Confirmer">
+    Cliquez de nouveau sur **Continue without GitHub** dans le panneau qui s'ouvre. Jamdesk crée un dépôt privé avec des pages de départ et build votre site.
+  </Step>
+
+  <Step title="Modifier votre documentation">
+    Ouvrez **Editor** dans la barre latérale. Chaque commit que vous y faites publie votre site. L'Editor nécessite un écran d'ordinateur.
+  </Step>
+</Steps>
+
+Votre site est en ligne sur `your-project.jamdesk.app`, comme pour un projet GitHub.
+
+## Ce qui fonctionne différemment
+
+Jamdesk possède le dépôt, donc une fonctionnalité demande d'abord votre propre GitHub :
+
+| Fonctionnalité | Sans GitHub |
+|---------|----------------|
+| Editor du dashboard et Fix with AI | Oui |
+| Domaines personnalisés et analytics | Oui |
+| Modifier en local et publier avec `jamdesk pull` et `jamdesk deploy` | Oui, CLI 1.1.227 ou version ultérieure |
+| Modifier avec des agents de code IA comme Claude Code ou Cursor | Oui, dans votre copie locale |
+| Traduction IA | Non |
+
+Pour utiliser la traduction IA, [déplacez votre documentation vers GitHub](#déplacer-votre-documentation-vers-github).
+
+## Modifier sur votre ordinateur
+
+`jamdesk pull` télécharge votre documentation dans un dossier qui est un dépôt git avec tout l'historique des modifications. Vous modifiez les fichiers à la main ou avec un agent de code IA, puis `jamdesk deploy` les publie.
+
+Il vous faut le CLI 1.1.227 ou une version ultérieure, et [git](https://git-scm.com/downloads). Connectez-vous d'abord avec `jamdesk login`.
+
+```bash
+jamdesk pull
+cd your-project
+jamdesk dev
+```
+
+Le dossier porte le nom du slug de votre projet. Si vous avez plusieurs projets sans GitHub, le CLI demande lequel récupérer. Ajoutez `--project your-project` pour éviter la question, ou `--dir` pour choisir le dossier.
+
+### Publier vos modifications
+
+Exécutez `jamdesk deploy` depuis n'importe où dans le dossier :
+
+```bash
+jamdesk deploy -m "Fix install steps"
+```
+
+Deploy crée un commit avec vos modifications non commitées, publie chaque nouveau commit et lance un build. Sans `-m`, le message de commit est « Update docs ». Les commits que vous avez faits vous-même avec git sont publiés aussi. Si rien n'a changé, deploy affiche `Nothing new to publish.` et s'arrête.
+
+### Récupérer les modifications faites dans Jamdesk
+
+Les modifications faites dans l'Editor du dashboard, avec Fix with AI ou par le deploy d'un collègue n'arrivent pas toutes seules dans votre dossier. Quand Jamdesk a des modifications que vous n'avez pas, deploy s'arrête avant de publier. Votre commit reste dans le dossier. Fusionnez les modifications de Jamdesk, puis relancez deploy :
+
+```bash
+jamdesk pull
+jamdesk deploy
+```
+
+Dans le dossier, `jamdesk pull` fusionne les modifications de Jamdesk dans votre copie. La commande ne s'exécute pas tant que vous avez des modifications non commitées. Commitez-les d'abord, ou exécutez `jamdesk deploy`.
+
+### Résoudre les conflits
+
+Un conflit apparaît quand les mêmes lignes ont changé dans votre dossier et dans Jamdesk. Pull s'arrête alors avec `Some files changed both here and in Jamdesk.`
+
+1. Exécutez `git status` pour voir les fichiers en conflit.
+2. Ouvrez chaque fichier, gardez le texte voulu et supprimez les lignes `<<<<<<<`, `=======` et `>>>>>>>`.
+3. Commitez la fusion avec `git add -A` et `git commit --no-edit`.
+4. Exécutez `jamdesk deploy`.
+
+Deploy refuse les fichiers qui contiennent encore des marqueurs de conflit.
+
+### Fichiers que deploy ne publie pas
+
+Deploy vérifie vos modifications avant de créer un commit. S'il trouve l'un de ces fichiers, il les liste et ne publie rien :
+
+- Les fichiers qui ressemblent à des secrets, comme `service_account.json` ou les noms qui commencent par `secret`. Les pages (fichiers `.md` et `.mdx`) ne sont jamais considérées comme des fichiers de secrets. Si les fichiers peuvent être publiés sans risque, exécutez `jamdesk deploy --allow-secret-files`.
+- Tout ce qui se trouve dans le dossier `.github`.
+- Les liens symboliques, et les dossiers qui sont eux-mêmes un dépôt git.
+- Les fichiers de plus de 25 Mo.
+- Les fichiers texte qui contiennent encore des marqueurs de conflit.
+
+Deploy ne commite jamais des fichiers comme `.env`, `.env.*`, les clés privées (`*.pem`, `*.key`) et les fichiers d'identifiants, même avec `--allow-secret-files`. Git les ignore dans ce dossier.
+
+Deploy vérifie aussi les commits que vous avez faits vous-même avec git. Un fichier refusé dans un commit précédent bloque le deploy, même si un commit plus récent le supprime. Le message d'erreur affiche la commande `git reset --soft` qui défait ces commits pour que vous puissiez corriger les fichiers.
+
+Un seul deploy peut publier jusqu'à 100 Mo de modifications.
+
+### Sauvegarder dans votre propre dépôt
+
+Vous pouvez ajouter votre propre remote git, par exemple un dépôt privé pour les sauvegardes, et y pousser comme d'habitude. Jamdesk publie uniquement ce que vous envoyez avec `jamdesk deploy`, donc pousser vers votre remote ne change pas votre site. Ne nommez pas votre remote git `jamdesk`. Le CLI utilise ce nom pour enregistrer ce que Jamdesk possède, et un remote du même nom casse votre prochain deploy tant que vous n'avez pas exécuté `jamdesk pull`.
+
+### Transformer une ancienne copie en dépôt git
+
+Les copies faites avec le CLI 1.1.226 ne sont pas des dépôts git, et `jamdesk deploy` ne peut pas les publier. Pour conserver les modifications faites dans l'une d'elles, allez dans le dossier de la copie (celui qui contient `docs.json`) et exécutez :
+
+```bash
+jamdesk pull --force
+```
+
+Vos fichiers restent tels quels et apparaissent comme des modifications non commitées. Les pages ajoutées dans Jamdesk après le téléchargement de la copie sont ajoutées au dossier. Les pages que vous aviez supprimées dans l'ancienne copie reviennent aussi : supprimez-les de nouveau avant de commiter si vous n'en voulez pas.
+
+Si certains fichiers diffèrent de ceux de Jamdesk, le CLI vous indique combien. Certaines de ces différences peuvent être des modifications faites dans Jamdesk après le téléchargement de la copie, et les publier telles quelles les annulerait. Ce dossier demande donc une vérification avant son premier deploy :
+
+1. Exécutez `git status` et `git diff` pour voir chaque différence.
+2. Pour un fichier dont la version de Jamdesk est celle que vous voulez, exécutez `git restore <file>`.
+3. Commitez les modifications à conserver avec `git add` et `git commit`.
+4. Exécutez `jamdesk deploy`.
+
+Tant que vous n'avez pas commité, `jamdesk deploy` s'arrête avec un message qui vous demande de vérifier vos modifications, et ne publie rien.
+
+### Télécharger un zip à la place
+
+Pour obtenir une copie sans le CLI, ouvrez **Settings**, trouvez la carte **Git Repository** et cliquez sur **Download source (.zip)**. Tous les membres du projet peuvent télécharger.
+
+## Déplacer votre documentation vers GitHub
+
+Move to GitHub copie votre documentation et tout son historique de modifications dans un dépôt qui vous appartient. Votre site reste en ligne pendant le déplacement. Cette option est disponible sur tous les plans. Seul le propriétaire du projet peut déplacer la documentation.
+
+<Steps>
+  <Step title="Créer un dépôt vide">
+    Dans **Settings**, sur la carte **Git Repository**, cliquez sur **Move to GitHub**. Cliquez ensuite sur **Create repository**. Laissez README, .gitignore et licence décochés. Le dépôt doit être vide. Gardez-le privé, sauf si vous voulez rendre public tout votre historique de modifications.
+  </Step>
+
+  <Step title="Donner l'accès à Jamdesk">
+    Cliquez sur **Install Jamdesk** et installez l'application GitHub Jamdesk sur le compte qui possède le nouveau dépôt. Incluez ce dépôt. Pour une organisation, un propriétaire doit peut-être approuver la demande d'abord.
+
+    Si Jamdesk est déjà installé sur ce compte, GitHub affiche à la place sa page de paramètres. Ajoutez-y le dépôt, puis cliquez sur le nom du compte dans la boîte de dialogue.
+  </Step>
+
+  <Step title="Choisir le dépôt">
+    De retour dans la boîte de dialogue, choisissez le dépôt. Jamdesk y copie votre documentation et y bascule le projet.
+  </Step>
+</Steps>
+
+Ne modifiez rien dans l'Editor et n'exécutez pas `jamdesk deploy` pendant le déplacement. Jamdesk garde l'ancienne copie 30 jours, puis la supprime.
+
+## Après le déplacement
+
+Les pushs vers le dépôt publient votre site, comme décrit dans [Connecter GitHub](/fr/setup/connecting-github). Jamdesk ne build que les pushs des membres du projet qui ont un compte GitHub lié :
+
+1. Liez votre compte GitHub dans **User Settings**.
+2. Invitez les collègues qui poussent vers le dépôt et demandez-leur de lier le leur.
+
+Un dossier créé par `jamdesk pull` ne peut plus publier après le déplacement. Exécutez `jamdesk deploy` dedans pour voir les commandes git qui le connectent à votre nouveau dépôt.
+
+## Si le déplacement n'aboutit pas
+
+La boîte de dialogue indique ce qui s'est mal passé. Si elle dit que le dépôt n'est pas vide, ou que Jamdesk n'a pas pu confirmer la copie, supprimez le dépôt sur GitHub, créez-en un nouveau vide et réessayez. Votre site et votre documentation dans Jamdesk restent comme avant.
+
+<Note>
+Si la boîte de dialogue indique qu'un autre compte Jamdesk utilise déjà ce compte GitHub, cliquez sur **Verify on GitHub**. Consultez [Utiliser un compte GitHub déjà utilisé par un autre compte Jamdesk](/fr/setup/connecting-github#utiliser-un-compte-github-déjà-utilisé-par-un-autre-compte-jamdesk).
+</Note>
+
+## Si votre abonnement prend fin
+
+<Warning>
+Jamdesk supprime les sources d'un projet résilié au moins 30 jours après la fin de l'abonnement. Vous recevez un e-mail une semaine avant. Téléchargez votre documentation ou déplacez-la vers GitHub avant cette date.
+</Warning>
+
+## Et ensuite ?
+
+<Columns cols={2}>
+  <Card title="Connecter GitHub" icon="github" href="/fr/setup/connecting-github">
+    Comment fonctionnent les builds une fois votre documentation sur GitHub
+  </Card>
+  <Card title="Créer un projet" icon="plus" href="/fr/setup/creating-projects">
+    Autres façons de démarrer un projet
+  </Card>
+</Columns>

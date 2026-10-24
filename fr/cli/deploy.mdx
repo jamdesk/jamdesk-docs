@@ -20,6 +20,8 @@ jamdesk deploy       # From your project directory
 | `--full-rebuild` | Force un rebuild complet en contournant le cache de build |
 | `--project <id>` | Déploie vers un ID de projet spécifique (ignore la sélection interactive) |
 | `--allow-empty` | Autorise le déploiement sans aucune page de contenu `.mdx`. Par défaut, le CLI refuse de déployer un projet vide afin qu'un mauvais répertoire de travail ne publie pas accidentellement un site vide (les snippets ne comptent pas comme pages de contenu) |
+| `-m, --message <text>` | Message de commit pour les modifications non commitées dans un dossier créé par `jamdesk pull` (par défaut : « Update docs ») |
+| `--allow-secret-files` | Publie les fichiers dont le nom ressemble à un secret depuis un dossier créé par `jamdesk pull` |
 
 `jamdesk push` est un alias de `jamdesk deploy`.
 
@@ -50,6 +52,29 @@ jamdesk deploy       # From your project directory
     Affiche l'URL en ligne lorsque le build est terminé.
   </Step>
 </Steps>
+
+## Projets sans GitHub
+
+Pour un projet dont Jamdesk héberge la documentation ([Documentation sans GitHub](/fr/setup/without-github)), vous exécutez deploy dans le dossier créé par `jamdesk pull`. Dans ce dossier, deploy saute les étapes d'archive ci-dessus. À la place, il :
+
+1. Vérifie vos modifications et refuse les fichiers qu'il ne publie pas, comme les fichiers `.github`, les fichiers qui ressemblent à des secrets et les fichiers de plus de 25 Mo, avant de créer le moindre commit.
+2. Commite vos modifications non commitées. Utilisez `-m` pour définir le message.
+3. Uploade les nouveaux commits (jusqu'à 100 Mo), que Jamdesk ajoute à votre documentation.
+4. Lance un build et affiche chaque phase.
+
+Deploy fonctionne depuis n'importe quel sous-dossier et ne modifie jamais `docs.json`. `--full-rebuild` et `--allow-empty` ne s'appliquent pas dans ce dossier, et `--project` doit désigner le projet du dossier. Contrairement à l'avertissement d'un deploy normal, un fichier qui ressemble à un secret bloque le deploy, sauf si vous ajoutez `--allow-secret-files`.
+
+Si Jamdesk a des modifications que vous n'avez pas encore, faites depuis l'Editor ou par un collègue, deploy s'arrête et garde votre commit. Exécutez `jamdesk pull`, puis relancez `jamdesk deploy`. Consultez [Modifier sur votre ordinateur](/fr/setup/without-github#modifier-sur-votre-ordinateur) pour les conflits et la liste complète des fichiers refusés.
+
+| Erreur | Code | Solution |
+|-------|------|-----|
+| Jamdesk a des modifications que vous n'avez pas encore | `HOSTED_STALE` | `jamdesk pull`, puis `jamdesk deploy` |
+| Rien n'a été publié | `PUSH_REFUSED` | Supprimez ou corrigez les fichiers listés, puis relancez deploy |
+| Une fusion ou un rebase n'est pas terminé | `MERGE_IN_PROGRESS` | Résolvez les conflits et commitez, ou exécutez `git merge --abort` |
+| Le dossier est sur la mauvaise branche | `WRONG_BRANCH` | `git switch` vers la branche indiquée dans le message |
+| Impossible de commiter vos modifications | `COMMIT_FAILED` | Exécutez `git commit` dans le dossier pour voir pourquoi |
+| Jamdesk n'a pas pu confirmer la publication | `PUSH_UNCONFIRMED` | `jamdesk pull` pour vérifier, puis relancez deploy |
+| Le projet n'est plus hébergé par Jamdesk | `NOT_HOSTED` | Poussez vers votre dépôt GitHub avec les commandes que deploy affiche |
 
 ## Phases du build
 
