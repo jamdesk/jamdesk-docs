@@ -1,0 +1,183 @@
+---
+title: Docs ohne GitHub
+description: Starte ein Jamdesk-Projekt ohne GitHub-Konto. Jamdesk speichert deine Dokumentation in einem privaten Repository, und du kannst sie jederzeit zu deinem eigenen GitHub verschieben.
+---
+
+Du brauchst kein GitHub-Konto, um Dokumentation mit Jamdesk zu veröffentlichen. Wähle diese Option, wenn du sofort mit dem Schreiben beginnen und dich später für Git entscheiden möchtest. Du bearbeitest deine Inhalte im Editor des Dashboards oder auf deinem Computer mit der Jamdesk CLI, und jede veröffentlichte Änderung baut deine Website neu.
+
+## Projekt ohne GitHub einrichten
+
+<Steps>
+  <Step title="Option wählen">
+    Klicke während der Einrichtung oder auf der GitHub-Karte eines bestehenden Projekts auf **Continue without GitHub**. Nur der Projektinhaber sieht diese Option. Fehlt sie, verbinde stattdessen GitHub.
+  </Step>
+
+  <Step title="Bestätigen">
+    Klicke im geöffneten Fenster erneut auf **Continue without GitHub**. Jamdesk erstellt ein privates Repository mit Startseiten und baut deine Website.
+  </Step>
+
+  <Step title="Dokumentation bearbeiten">
+    Öffne **Editor** in der Seitenleiste. Jeder Commit, den du dort erstellst, veröffentlicht deine Website. Der Editor benötigt einen Computerbildschirm.
+  </Step>
+</Steps>
+
+Deine Website ist unter `your-project.jamdesk.app` erreichbar, genau wie bei einem GitHub-Projekt.
+
+## Was anders funktioniert
+
+Jamdesk besitzt das Repository, daher benötigt eine Funktion zuerst dein eigenes GitHub:
+
+| Funktion | Ohne GitHub |
+|----------|-------------|
+| Editor im Dashboard und Fix with AI | Ja |
+| Eigene Domains und Analysen | Ja |
+| Lokal bearbeiten und mit `jamdesk pull` und `jamdesk deploy` veröffentlichen | Ja, CLI 1.1.227 oder neuer |
+| Bearbeitung mit KI-Coding-Agenten wie Claude Code oder Cursor | Ja, in deiner lokalen Kopie |
+| KI-Übersetzung | Nein |
+
+Um die KI-Übersetzung zu nutzen, [verschiebe deine Dokumentation zu GitHub](#dokumentation-zu-github-verschieben).
+
+## Auf deinem Computer bearbeiten
+
+`jamdesk pull` lädt deine Dokumentation in einen Ordner herunter, der ein Git-Repository mit dem vollständigen Bearbeitungsverlauf ist. Du bearbeitest die Dateien dort, manuell oder mit einem KI-Coding-Agenten, und `jamdesk deploy` veröffentlicht sie.
+
+Du benötigst CLI 1.1.227 oder neuer sowie [git](https://git-scm.com/downloads). Melde dich zuerst mit `jamdesk login` an.
+
+```bash
+jamdesk pull
+cd your-project
+jamdesk dev
+```
+
+Der Ordner trägt den Namen deines Projekt-Slugs. Wenn du mehrere Projekte ohne GitHub hast, fragt die CLI, welches heruntergeladen werden soll. Füge `--project your-project` hinzu, um die Frage zu überspringen, oder `--dir`, um den Ordner zu wählen.
+
+### Änderungen veröffentlichen
+
+Führe `jamdesk deploy` von irgendeinem Ort innerhalb des Ordners aus:
+
+```bash
+jamdesk deploy -m "Fix install steps"
+```
+
+Deploy committet deine nicht gespeicherten Änderungen, veröffentlicht jeden neuen Commit und startet einen Build. Ohne `-m` lautet die Commit-Nachricht „Update docs“. Commits, die du selbst mit git erstellt hast, werden ebenfalls veröffentlicht. Wenn sich nichts geändert hat, gibt deploy `Nothing new to publish.` aus und stoppt.
+
+### Änderungen aus Jamdesk übernehmen
+
+Änderungen aus dem Editor des Dashboards, aus Fix with AI oder aus einem Deploy eines Teammitglieds gelangen nicht von allein in deinen Ordner. Wenn Jamdesk Änderungen hat, die dir fehlen, bricht deploy ab, bevor etwas veröffentlicht wird. Dein Commit bleibt im Ordner erhalten. Führe die Jamdesk-Änderungen zusammen und deploye danach erneut:
+
+```bash
+jamdesk pull
+jamdesk deploy
+```
+
+Innerhalb des Ordners führt `jamdesk pull` die Jamdesk-Änderungen in deine Kopie ein. Der Befehl läuft nicht, solange du nicht gespeicherte Änderungen hast. Committe sie zuerst oder führe `jamdesk deploy` aus.
+
+### Konflikte beheben
+
+Ein Konflikt entsteht, wenn dieselben Zeilen sowohl in deinem Ordner als auch in Jamdesk geändert wurden. Pull stoppt dann mit `Some files changed both here and in Jamdesk.`
+
+1. Führe `git status` aus, um die Dateien mit Konflikten anzuzeigen.
+2. Öffne jede Datei, behalte den gewünschten Text und lösche die Zeilen `<<<<<<<`, `=======` und `>>>>>>>`.
+3. Committe die Zusammenführung mit `git add -A` und `git commit --no-edit`.
+4. Führe `jamdesk deploy` aus.
+
+Deploy verweigert Dateien, die noch Konfliktmarkierungen enthalten.
+
+### Dateien, die deploy nicht veröffentlicht
+
+Deploy prüft deine Änderungen, bevor etwas committet wird. Findet es eine dieser Dateien, listet es sie auf und veröffentlicht nichts:
+
+- Dateien, die nach Geheimnissen aussehen, etwa `service_account.json` oder Namen, die mit `secret` beginnen. Seiten (`.md`- und `.mdx`-Dateien) werden nie als Geheimnisdateien behandelt. Wenn die Dateien unbedenklich sind, führe `jamdesk deploy --allow-secret-files` aus.
+- Alles im Ordner `.github`.
+- Symbolische Links sowie Ordner, die ihr eigenes Git-Repository sind.
+- Dateien über 25 MB.
+- Textdateien mit übrig gebliebenen Konfliktmarkierungen.
+
+Deploy committet niemals Dateien wie `.env`, `.env.*`, private Schlüssel (`*.pem`, `*.key`) und Credential-Dateien, auch nicht mit `--allow-secret-files`. Git ignoriert sie in diesem Ordner.
+
+Deploy prüft auch Commits, die du selbst mit git erstellt hast. Eine abgelehnte Datei in einem früheren Commit blockiert das Deploy, selbst wenn ein späterer Commit sie löscht. Die Fehlermeldung zeigt den Befehl `git reset --soft`, mit dem du diese Commits auflöst, damit du die Dateien korrigieren kannst.
+
+Ein Deploy kann bis zu 100 MB an Änderungen veröffentlichen.
+
+### Sicherung in dein eigenes Repository
+
+Du kannst einen eigenen git-Remote hinzufügen, zum Beispiel ein privates Repository für Backups, und wie gewohnt dorthin pushen. Jamdesk veröffentlicht nur, was du mit `jamdesk deploy` sendest. Ein Push zu deinem Remote ändert deine Website also nicht. Benenne deinen eigenen git-Remote nicht `jamdesk`. Die CLI verwendet diesen Namen für ihren Eintrag, welchen Stand Jamdesk hat, und ein Remote mit demselben Namen bricht dein nächstes Deploy, bis du `jamdesk pull` ausführst.
+
+### Eine alte Kopie in ein git-Repository umwandeln
+
+Kopien, die mit CLI 1.1.226 erstellt wurden, sind keine git-Repositories, und `jamdesk deploy` kann sie nicht veröffentlichen. Um Bearbeitungen zu behalten, die du darin vorgenommen hast, wechsle in den Ordner der Kopie (den mit `docs.json`) und führe aus:
+
+```bash
+jamdesk pull --force
+```
+
+Deine Dateien bleiben unverändert und erscheinen als nicht gespeicherte Änderungen. Seiten, die du nach dem Herunterladen der Kopie in Jamdesk hinzugefügt hast, werden dem Ordner hinzugefügt. Seiten, die du in der alten Kopie gelöscht hast, kehren ebenfalls zurück. Lösche sie daher erneut, bevor du committest, falls du sie nicht behalten willst.
+
+Wenn sich Dateien von Jamdesk unterscheiden, meldet die CLI die Anzahl. Einige dieser Unterschiede können Änderungen sein, die du in Jamdesk nach dem Herunterladen der Kopie vorgenommen hast. Würdest du sie unverändert veröffentlichen, gingen diese Änderungen verloren. Deshalb braucht dieser Ordner vor dem ersten Deploy eine Überprüfung:
+
+1. Führe `git status` und `git diff` aus, um jeden Unterschied zu sehen.
+2. Bei einer Datei, deren Jamdesk-Version du willst, führe `git restore <file>` aus.
+3. Committe die Änderungen, die du behalten willst, mit `git add` und `git commit`.
+4. Führe `jamdesk deploy` aus.
+
+Bis du committest, stoppt `jamdesk deploy` mit einer Meldung, dass du deine Änderungen prüfen sollst, und veröffentlicht nichts.
+
+### Stattdessen eine ZIP-Datei herunterladen
+
+Um eine Kopie ohne die CLI zu erhalten, öffne **Settings**, finde die Karte **Git Repository** und klicke auf **Download source (.zip)**. Jedes Projektmitglied kann dies herunterladen.
+
+## Dokumentation zu GitHub verschieben
+
+Der Umzug zu GitHub kopiert deine Dokumentation und ihren vollständigen Bearbeitungsverlauf in ein Repository, das dir gehört. Deine Website bleibt während des Umzugs online. Er funktioniert in jedem Tarif. Nur der Projektinhaber kann die Dokumentation verschieben.
+
+<Steps>
+  <Step title="Leeres Repository erstellen">
+    Klicke in **Settings** auf der Karte **Git Repository** auf **Move to GitHub** und danach auf **Create repository**. Lass README, .gitignore und Lizenz deaktiviert. Das Repository muss leer sein. Halte es privat, es sei denn, du möchtest deinen gesamten Bearbeitungsverlauf öffentlich machen.
+  </Step>
+
+  <Step title="Jamdesk Zugriff gewähren">
+    Klicke auf **Install Jamdesk** und installiere die Jamdesk GitHub App auf dem Konto, dem das neue Repository gehört. Schließe dieses Repository ein. Bei einer Organisation muss ein Owner die Anfrage möglicherweise zuerst genehmigen.
+
+    Ist Jamdesk bereits auf diesem Konto installiert, zeigt GitHub stattdessen die Einstellungsseite. Füge dort das Repository hinzu und klicke danach im Dialog auf den Namen des Kontos.
+  </Step>
+
+  <Step title="Repository auswählen">
+    Wähle im Dialog das Repository aus. Jamdesk kopiert deine Dokumentation und stellt das Projekt auf das neue Repository um.
+  </Step>
+</Steps>
+
+Bearbeite nicht im Editor und führe kein `jamdesk deploy` aus, während der Umzug läuft. Jamdesk behält die alte Kopie 30 Tage und löscht sie danach.
+
+## Nach dem Umzug
+
+Pushes in das Repository veröffentlichen deine Website, wie unter [GitHub verbinden](/de/setup/connecting-github) beschrieben. Jamdesk baut nur Pushes von Projektmitgliedern mit verknüpftem GitHub-Konto:
+
+1. Verknüpfe dein GitHub-Konto unter **User Settings**.
+2. Lade Teammitglieder ein, die in das Repository pushen, und bitte sie, ihre Konten ebenfalls zu verknüpfen.
+
+Ein Ordner, der mit `jamdesk pull` erstellt wurde, kann nach dem Umzug nicht mehr veröffentlichen. Führe darin `jamdesk deploy` aus, um die git-Befehle zu sehen, die ihn mit deinem neuen Repository verbinden.
+
+## Wenn der Umzug nicht abgeschlossen wird
+
+Der Dialog zeigt, was schiefgelaufen ist. Wenn er meldet, dass das Repository nicht leer ist oder dass Jamdesk die Kopie nicht bestätigen konnte, lösche das Repository auf GitHub, erstelle ein neues leeres und versuche es erneut. Deine Website und deine Dokumentation in Jamdesk bleiben unverändert.
+
+<Note>
+Wenn der Dialog meldet, dass ein anderes Jamdesk-Konto dieses GitHub-Konto bereits verwendet, klicke auf **Verify on GitHub**. Siehe [Ein GitHub-Konto verwenden, das ein anderes Jamdesk-Konto nutzt](/de/setup/connecting-github#ein-github-konto-verwenden-das-ein-anderes-jamdesk-konto-nutzt).
+</Note>
+
+## Wenn dein Abonnement endet
+
+<Warning>
+Jamdesk löscht die Quelle eines gekündigten Projekts frühestens 30 Tage nach Ende des Abonnements. Eine Woche vorher erhältst du eine E-Mail. Lade deine Dokumentation herunter oder verschiebe sie vorher zu GitHub.
+</Warning>
+
+## Wie geht es weiter?
+
+<Columns cols={2}>
+  <Card title="GitHub verbinden" icon="github" href="/de/setup/connecting-github">
+    Wie Builds funktionieren, sobald deine Dokumentation auf GitHub liegt
+  </Card>
+  <Card title="Projekt erstellen" icon="plus" href="/de/setup/creating-projects">
+    Weitere Wege, ein Projekt zu starten
+  </Card>
+</Columns>
