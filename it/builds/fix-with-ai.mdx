@@ -1,116 +1,165 @@
 ---
-title: Correggere con l’IA
-sidebarTitle: Correggere con l’IA
-description: Esamina e applica le correzioni suggerite dall’IA per link non funzionanti e descrizioni mancanti dal dashboard di build Jamdesk, con commit su GitHub.
+title: Correggi con l'AI
+sidebarTitle: Correggi con l'AI
+description: Rivedi e applica le correzioni suggerite dall'AI per link interrotti e descrizioni mancanti dalla dashboard di build, con commit su GitHub.
 ---
 
-Jamdesk può correggere molti link non funzionanti e molte descrizioni mancanti segnalati da una build. Il pulsante **Fix with AI** legge gli avvisi della build e propone una modifica per ciascuno. Esegue il commit delle correzioni approvate nel repository GitHub collegato. Il commit avvia una nuova build.
-
-Il [comando CLI `jamdesk fix`](/it/cli/fix-broken-links) fa lo stesso dal terminale. Modifica la copia di lavoro e lascia a te il commit.
-
-<YouTube id="w0sR2qbmmW0" title="Correggi automaticamente la documentazione con l’IA: guida a Fix with AI nel dashboard Jamdesk e al comando CLI jamdesk fix" />
-
-## Cosa corregge
-
-Fix with AI corregge tre tipi di avvisi della build:
-
-- **Link interni non funzionanti:** un frammento di link che punta a un titolo inesistente nella pagina di destinazione, per esempio per un errore di battitura (`#instalation` → `#installation`), oppure a una pagina tradotta il cui titolo è stato rinominato.
-- **Descrizioni mancanti:** una pagina senza `description` nel frontmatter. Jamdesk genera un breve riepilogo dal contenuto della pagina, che puoi rivedere.
-- **Titoli mancanti:** per una pagina senza titolo, propone un titolo basato sul contenuto, che puoi rivedere.
-
-Propone una modifica solo quando riesce a individuare la soluzione con sicurezza. Elenca separatamente gli elementi ambigui, così puoi correggerli manualmente.
-
-Fix with AI può effettuare fino a 1.000 richieste IA per progetto in un periodo di 24 ore. I risultati per le pagine che non sono cambiate vengono riutilizzati e non concorrono al limite.
-
-<Note>
-  Il numero di elementi correggibili non coincide con quello degli avvisi. Una build può mostrare cinque avvisi, mentre Fix with AI ne propone la correzione per tre. Gli altri due non hanno una soluzione univoca.
-</Note>
-
-## Prerequisiti
-
-- Un [repository GitHub collegato](/it/integrations/github) al progetto.
-- L’app GitHub di Jamdesk deve avere accesso in scrittura per eseguire il commit delle correzioni. Se l’accesso manca, la finestra modale mostra il link **Grant access** a GitHub.
-- Una build completata che segnali link non funzionanti o descrizioni mancanti.
-
-## Trova il banner
-
-Apri il progetto e scorri fino a **Build History** nella pagina Project Home. Quando l’ultima build presenta problemi correggibili, sopra l’elenco delle build compare un banner con il relativo conteggio e il pulsante **Fix with AI**.
+Jamdesk può riparare molti dei link interrotti e delle descrizioni di pagina mancanti segnalati durante un build. Il pulsante **Correggi con l'AI** legge gli avvisi di build e propone una modifica per ciascuno. Esegue il commit delle correzioni che approvi nel tuo repository GitHub collegato. Il commit avvia un nuovo build.
 
 Gli screenshot mostrano l'interfaccia in inglese.
 
+Il [comando CLI `jamdesk fix`](/it/cli/fix-broken-links) fa lo stesso dal terminale. Scrive nella tua copia di lavoro e lascia il commit a te.
+
+<YouTube id="w0sR2qbmmW0" title="Auto Fix your Docs with AI: a walkthrough of Fix with AI in the Jamdesk dashboard and the jamdesk fix CLI command" />
+
+## Cosa corregge
+
+Correggi con l'AI ripara tre tipi di avviso di build:
+
+- **Link interni interrotti:** un frammento di link che punta a un'intestazione non più presente nella pagina di destinazione, come un refuso (`#instalation` → `#installation`), oppure una pagina tradotta la cui intestazione è stata rinominata.
+- **Descrizioni di pagina mancanti:** una pagina senza `description` nel frontmatter. Jamdesk scrive un breve riassunto dal contenuto della pagina da rivedere.
+- **Titoli di pagina mancanti:** a una pagina senza titolo viene suggerito un titolo dal contenuto, da rivedere.
+
+Propone una modifica solo quando può risolvere la destinazione con sicurezza. Elenca separatamente ciò che è ambiguo, da correggere a mano.
+
+Correggi con l'AI effettua fino a 1.000 richieste AI per progetto in un periodo di 24 ore. I risultati per le pagine non modificate vengono riutilizzati e non contano nel limite.
+
+<Note>
+  Il numero di elementi correggibili non coincide con il numero di avvisi. Un build può mostrare cinque avvisi mentre Correggi con l'AI ne offre tre da riparare. Gli altri due non hanno una correzione univoca.
+</Note>
+
+## Scegli cosa succede
+
+L'impostazione **Correzioni AI** decide cosa fa Jamdesk con gli avvisi correggibili. Per modificarla, fai clic su **Impostazioni** nella barra laterale e individua la scheda **Correzioni AI** in **Generali**.
+
+| Modalità | Cosa succede |
+|---|---|
+| **Off** | Jamdesk non analizza i build. Il pulsante **Correggi con l'AI** è nascosto. |
+| **Rivedi prima** | Jamdesk suggerisce le correzioni. Le revisioni e le applichi nella finestra. È l'impostazione predefinita. |
+| **Correzione automatica** | Jamdesk esegue il commit delle correzioni dopo ogni build. Puoi annullare ogni esecuzione. |
+
+### Come funziona la correzione automatica
+
+La correzione automatica applica le stesse correzioni della finestra, comprese le descrizioni scritte dall'AI. Salta ciò che hai ignorato. Inizia dal build successivo al salvataggio dell'impostazione.
+
+Dopo un build, Jamdesk esegue il commit delle correzioni nel branch di build del progetto. Il messaggio di commit è `docs: auto-fix 3 issues (via Jamdesk)` e l'autore è Jamdesk. Il build mostra un badge **Corretto automaticamente** nella Cronologia build. Per [documentazione senza GitHub](/it/setup/without-github), Jamdesk salva invece le correzioni nella tua documentazione.
+
+<Warning>
+  Jamdesk esegue il commit sul tuo branch. Esegui il pull prima del push. Ogni commit di correzione automatica esegue anche eventuali CI presenti nel repository su quel branch.
+</Warning>
+
+Cosa aspettarsi da ogni esecuzione:
+
+- Jamdesk non corregge automaticamente il build del proprio commit. Se quel build ha ancora avvisi correggibili, mostra **Da rivedere** e le applichi dalla finestra.
+- Una correzione viene applicata una sola volta. Se la annulli, Jamdesk non la riapplica, quindi il tuo ripristino resta. Una correzione che ritorna compare sotto **Da rivedere**.
+- I build i cui avvisi non sono cambiati dall'ultima esecuzione vengono saltati.
+- La correzione automatica si ferma quando il branch di build è protetto o l'app GitHub di Jamdesk perde l'accesso in scrittura. La scheda mostra **In pausa**. Risolvi la causa, quindi salva di nuovo **Correzione automatica**.
+- I limiti AI giornalieri sono gli stessi della finestra. Quando un progetto raggiunge il limite, l'esecuzione salta alcune correzioni e lo segnala.
+- Una nuova descrizione modifica la pagina, quindi la successiva traduzione ritradurrà quella pagina.
+
+## Prerequisiti
+
+- Un [repository GitHub collegato](/it/integrations/github) per il progetto.
+- Accesso in scrittura per l'app GitHub di Jamdesk per eseguire il commit delle correzioni. La finestra mostra un link **Concedi accesso** a GitHub quando l'accesso manca.
+- Un build completato che contiene avvisi di link interrotti o descrizioni mancanti.
+
+## Trova il banner
+
+Apri il progetto e scorri fino a **Cronologia build** nella pagina Home del progetto. Un banner con un conteggio e un pulsante **Correggi con l'AI** compare sopra l'elenco dei build quando l'ultimo build presenta problemi correggibili.
+
 <Frame>
-  <img src="/images/fix-with-ai/banner.webp" alt="Pannello della cronologia delle build con un banner evidenziato che indica che 3 problemi di questa build possono essere corretti con l’IA, accanto a un pulsante Fix with AI. La riga della build più recente mostra uno stato positivo e un badge di avviso con il numero 5." />
+  <img src="/images/fix-with-ai/banner.webp" alt="A build history panel with a highlighted banner reading 3 issues on this build can be fixed with AI next to a Fix with AI button. The newest build row shows a successful status with a warning badge of 5." />
 </Frame>
 
-Il banner appare solo per la build completata più recente. Le correzioni si applicano sempre allo stato attuale della documentazione.
+Il banner compare solo sul build completato più recente. Le correzioni si applicano sempre allo stato attuale della tua documentazione.
 
 ## Rivedi e applica le correzioni
 
 <Steps>
-  <Step title="Apri l’anteprima">
-    Fai clic su **Fix with AI**. Si apre la finestra modale. L’agente IA impiega alcuni secondi per esaminare la documentazione e preparare un piano di correzione.
+  <Step title="Apri l'anteprima">
+    Fai clic su **Correggi con l'AI**. La finestra si apre. L'agente AI impiega alcuni secondi per rivedere la documentazione e costruire un piano di correzione.
   </Step>
-  <Step title="Esamina ogni modifica proposta">
-    Le correzioni sono raggruppate per tipo. **Broken links** mostra ogni ancora riscritta. **Missing descriptions** mostra il riepilogo suggerito per ciascuna pagina. **Missing titles** mostra il titolo proposto. Deseleziona la casella di un elemento per ignorarlo questa volta. Usa il pulsante di esclusione per [ignorare definitivamente una raccomandazione](#ignora-i-suggerimenti). Gli elementi senza una soluzione chiara compaiono in **Can't be fixed automatically** e puoi correggerli manualmente.
+  <Step title="Leggi ogni modifica proposta">
+    Le correzioni sono raggruppate per tipo. **Link interrotti** mostra ogni ancora riscritta. **Descrizioni mancanti** mostra il riassunto suggerito per ogni pagina. **Titoli mancanti** mostra il titolo proposto. Deseleziona la casella per saltare una correzione questa volta. Usa il pulsante di ignorare per [silenziare una raccomandazione in modo definitivo](#ignora-i-suggerimenti). I problemi senza una correzione chiara compaiono sotto **Non può essere corretto automaticamente** da correggere a mano.
 
     <Frame>
-      <img src="/images/fix-with-ai/modal.webp" alt="Finestra modale Fix with AI. Una sezione Broken links elenca tre correzioni selezionate, ciascuna con la vecchia ancora barrata e quella corretta. Una sezione Can't be fixed automatically elenca due problemi da correggere manualmente, sopra i pulsanti Cancel e Apply 3 fixes." />
+      <img src="/images/fix-with-ai/modal.webp" alt="The Fix with AI modal. A Broken links section lists three checked fixes, each showing the old anchor struck through and the corrected anchor. A Can't be fixed automatically section lists two issues to fix by hand, above Cancel and Apply 3 fixes buttons." />
     </Frame>
   </Step>
-  <Step title="Apply">
-    Fai clic su **Apply fixes**. Jamdesk esegue il commit delle modifiche selezionate sul branch collegato con il messaggio `docs: apply AI-suggested fixes (via Jamdesk)` e avvia una nuova build.
+  <Step title="Applica">
+    Fai clic su **Applica correzioni**. Jamdesk esegue il commit delle modifiche selezionate sul branch collegato con il messaggio `docs: apply AI-suggested fixes (via Jamdesk)` e avvia un nuovo build.
   </Step>
-  <Step title="Verifica la nuova build">
-    Segui la nuova build in [Build History](/it/builds/monitoring). Gli avvisi corretti scompaiono una volta che la build è pubblicata. Gli eventuali avvisi rimasti non sono risolvibili da Fix with AI oppure riguardano nuovi problemi introdotti dai contenuti più recenti.
+  <Step title="Conferma la ricostruzione">
+    Segui il nuovo build nella [Cronologia build](/it/builds/monitoring). Gli avvisi corretti spariscono una volta pubblicato. Ciò che resta è un avviso che Correggi con l'AI non ha potuto risolvere oppure un nuovo problema dal contenuto più recente.
   </Step>
 </Steps>
 
 <Note>
-  L’applicazione delle correzioni crea un commit effettivo nel repository. Puoi esaminarlo o annullarlo su GitHub come qualsiasi altro commit.
+  Applicare scrive un vero commit nel tuo repository. Rivedilo o annullalo su GitHub come qualsiasi altro commit.
 </Note>
 
 ## Quando alcuni problemi non possono essere corretti
 
-La finestra modale elenca sotto un titolo separato gli avvisi senza una soluzione chiara e non li modifica. Ecco alcuni motivi comuni:
+La finestra elenca gli avvisi senza una correzione chiara sotto un'intestazione separata e non li tocca. Motivi comuni:
 
-- La pagina o il titolo di destinazione di un link non funzionante non esiste.
-- Una voce di navigazione non ha un file sorgente corrispondente.
-- L’agente non è riuscito a generare una descrizione per una pagina.
+- Un link interrotto la cui pagina o intestazione di destinazione non esiste da nessuna parte.
+- Una voce di navigazione senza un file sorgente corrispondente.
+- Una pagina per la quale l'agente non è riuscito a generare una descrizione.
 
-Questi problemi richiedono una modifica manuale. Apri la pagina nell’[editor](/it/development/local-preview) o nel tuo editor di codice. Correggi il link o aggiungi la descrizione. Esegui il push per avviare una nuova build.
+Questi richiedono una modifica manuale. Apri la pagina nell'[editor](/it/development/local-preview) o nel tuo editor di codice. Correggi il link o aggiungi la descrizione. Esegui il push per ricostruire.
 
 ## Ignora i suggerimenti
 
-Alcuni avvisi non richiedono interventi: per esempio un link che hai interrotto intenzionalmente o una pagina provvisoria che non ha bisogno di una descrizione. Deselezionare una correzione la ignora solo una volta. Ignorare un elemento lo rimuove dal conteggio finché non lo ripristini.
+Alcuni avvisi non meritano di essere affrontati: un link che hai rotto di proposito, o una pagina segnaposto che non ha bisogno di descrizione. Deselezionare una correzione la salta solo una volta. Ignorare la rimuove dal conteggio finché non la ripristini.
 
-Nella finestra modale ogni riga ha un pulsante per ignorarla, che sia correggibile o meno. Facendo clic, l’elemento viene spostato nella sezione **Ignored**, compressa, in fondo alla finestra. Dopo averla chiusa, il conteggio del banner nella pagina Project Home si aggiorna. Gli avvisi corrispondenti scompaiono da Build History nella build attuale e in tutte quelle successive. **Ignore all** fa lo stesso per tutti gli elementi ancora elencati.
+Ogni riga della finestra ha un pulsante per ignorare, correggibile o meno. Facendo clic, l'elemento passa a una sezione compressa **Ignorati** in fondo. Il conteggio del banner nella pagina Home del progetto scende di conseguenza dopo aver chiuso la finestra. Gli avvisi corrispondenti scompaiono dalla Cronologia build del build corrente e di tutti quelli successivi. **Ignora tutti** fa lo stesso per tutto ciò che è ancora elencato.
 
-Come funzionano gli elementi ignorati:
+Come si comportano gli ignorati:
 
-- **Condivisi e persistenti:** gli elementi ignorati si applicano all’intero progetto. Tutti i membri vedono lo stesso elenco, che persiste tra le build. Jamdesk abbina ogni avviso in base al contenuto, non al numero di riga. Modificare altre parti della pagina non fa ricomparire un elemento ignorato.
-- **Ripristino:** espandi la sezione **Ignored** e fai clic su **Restore** accanto a un elemento. Se ignori tutti gli elementi di una build, il banner scompare. Sotto Build History compare quindi un piccolo link «N ignored recommendations», che riapre la finestra modale.
-- **Gli avvisi modificati ricompaiono:** un elemento ignorato viene proposto di nuovo quando cambia il problema sottostante, per esempio se il link non funzionante punta ora altrove.
+- **Condivisi e persistenti:** gli ignorati si applicano all'intero progetto. Ogni membro vede lo stesso elenco. Restano attivi tra i build. Jamdesk associa ogni avviso in base al contenuto, non al numero di riga. Modificare altre parti della pagina non riporta un elemento ignorato.
+- **Ripristino:** espandi la sezione **Ignorati** e fai clic su **Ripristina** per qualsiasi elemento. Ignorare tutto in un build nasconde il banner. Un piccolo link "N raccomandazioni ignorate" sotto la Cronologia build riapre la finestra.
+- **Gli avvisi modificati ritornano:** un elemento ignorato torna come nuova raccomandazione quando il problema sottostante cambia, ad esempio quando il link interrotto ora punta altrove.
+
+## Annulla una correzione automatica
+
+Ogni esecuzione di correzione automatica ha un pulsante **Annulla**. Apri il build nella Cronologia build e trova la sezione **Correzione automatica**. Elenca ciò che Jamdesk ha modificato e collega al commit. Fai clic su **Annulla**, quindi su **Annulla correzione automatica** per confermare.
+
+Jamdesk esegue il commit della versione precedente dei file sul tuo branch con il messaggio `docs: undo Jamdesk auto-fix (via Jamdesk)`. Se un file è cambiato dopo la correzione automatica, Jamdesk lo salta e lo elenca. Annulla quei file a mano.
+
+Le correzioni annullate vengono ignorate. I loro avvisi sono nascosti, e Jamdesk non le riapplica. Per ripristinarle, apri **Correggi con l'AI** e ripristinale sotto **Ignorati**.
+
+## Affida le correzioni al tuo agente AI
+
+Puoi lasciare che un agente di programmazione come Claude Code esegua le modifiche nel tuo repository. Nella finestra Correggi con l'AI, fai clic su **Copia per il tuo agente AI**. Jamdesk copia un prompt in testo semplice che elenca ogni correzione suggerita con il suo file e la sua riga, più i problemi da correggere a mano. Gli elementi ignorati sono esclusi. Incolla il prompt nel tuo agente.
+
+Dal terminale, `jamdesk fix --json` fornisce a un agente lo stesso elenco in formato JSON. Vedi [Usa con un agente AI](/it/cli/fix-broken-links#uso-con-un-agente-ai).
 
 ## Fix with AI e CLI a confronto
 
-Il dashboard e la CLI correggono le ancore dei link non funzionanti. Si differenziano per il luogo in cui vengono eseguiti e per il modo in cui viene applicata la modifica.
+La dashboard e la CLI correggono le ancore dei link interrotti. Differiscono in dove vengono eseguite e in come la modifica arriva.
 
-| | Fix with AI (dashboard) | [`jamdesk fix`](/it/cli/fix-broken-links) (CLI) |
+| | Correggi con l'AI (dashboard) | [`jamdesk fix`](/it/cli/fix-broken-links) (CLI) |
 |---|---|---|
-| Esecuzione | Nel dashboard, su una build | Nel terminale, sui file locali |
-| Correzioni | Link non funzionanti e descrizioni mancanti | Ancore dei link non funzionanti |
-| Commit | Esegue il commit sul tuo branch | Modifica i file locali; esegui tu il commit |
-| Avvio | Un clic sul banner della build | `jamdesk fix` |
+| Esecuzione | Nella dashboard, su un build | Nel terminale, su file locali |
+| Corregge | Link interrotti, descrizioni e titoli mancanti | Ancore di link interrotti, più descrizioni mancanti con l'AI |
+| Commit | Esegue il commit sul tuo branch per te | Scrive file locali; il commit è a tuo carico |
+| Avvio | Un clic sul banner del build | `jamdesk fix` |
 
-Usa il flusso del dashboard per correggere rapidamente un problema senza uscire da Jamdesk. Usa la CLI se vuoi prima applicare le modifiche alla copia di lavoro, per esempio per includerle insieme ad altre modifiche.
+Usa il flusso della dashboard per una riparazione rapida senza uscire da Jamdesk. Usa la CLI quando vuoi che le modifiche siano già nella tua copia di lavoro, ad esempio per raggrupparle con altre modifiche.
+
+Impostare **Correzioni AI** su **Off** ferma le analisi della dashboard. `jamdesk fix` continua a funzionare sul tuo computer. Per cambiare l'impostazione dal terminale, esegui [`jamdesk ai-fix`](/it/cli/overview) con `off`, `review` o `auto`:
+
+```bash
+jamdesk ai-fix auto
+```
 
 ## Cosa fare ora?
 
 <Columns cols={2}>
-  <Card title="Monitoraggio delle build" icon="chart-line" href="/it/builds/monitoring">
-    Controlla lo stato delle build e consulta avvisi e suggerimenti
+  <Card title="Monitorare i build" icon="chart-line" href="/it/builds/monitoring">
+    Tieni traccia dello stato dei build e leggi avvisi e suggerimenti
   </Card>
-  <Card title="Correggere i link non funzionanti (CLI)" icon="terminal" href="/it/cli/fix-broken-links">
-    Correggi automaticamente i link non funzionanti dal terminale
+  <Card title="Correggere i link interrotti (CLI)" icon="terminal" href="/it/cli/fix-broken-links">
+    Correggi automaticamente i link interrotti dal terminale
   </Card>
 </Columns>

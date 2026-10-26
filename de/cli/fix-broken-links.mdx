@@ -1,29 +1,29 @@
 ---
-title: Broken Links reparieren
+title: Broken Links beheben
 description: >-
-  Erfahren Sie, wie jamdesk fix defekte interne Links und fehlerhafte Anker repariert, mit einer Vorschau vor dem Schreiben von Änderungen.
+  Erfahren Sie, wie jamdesk fix kaputte interne Links und fehlerhafte Anker repariert, mit einer Vorschau, bevor Änderungen geschrieben werden.
 ---
 
-`jamdesk fix` repariert, was `jamdesk broken-links` meldet. Es liest dieselben Warnungen und schreibt einen Link neu, wenn es ein eindeutig korrektes Ziel findet. Mehrdeutige Fälle bleiben zur manuellen Prüfung unverändert.
+`jamdesk fix` repariert, was `jamdesk broken-links` meldet. Es liest dieselben Warnungen und schreibt einen Link um, wenn es ein eindeutig korrektes Ziel findet. Mehrdeutige Fälle bleiben unverändert für die manuelle Prüfung.
 
 <Tip>
-  [Mit KI reparieren](/de/builds/fix-with-ai) führt dieselbe Reparatur für einen Build im Dashboard aus. Außerdem ergänzt es fehlende Seitenbeschreibungen. Die Änderungen werden auf GitHub committet.
+  [Mit KI beheben](/de/builds/fix-with-ai) führt dieselbe Reparatur für einen Build aus dem Dashboard aus. Außerdem werden fehlende Seitenbeschreibungen ergänzt. Die Änderungen werden auf GitHub committet.
 </Tip>
 
-Es repariert zwei Arten defekter interner Links:
+Es behebt zwei Arten kaputter interner Links:
 
 - **Fehlerhafte Anker**: ein Fragment, das eine eindeutige Falschschreibung einer echten Überschrift auf der Zielseite ist (z. B. `#instalation` → `#installation`)
-- **Anker-Drift zwischen Sprachversionen**: Eine übersetzte Seite hat ihre Überschriften umbenannt, aber Links in dieser Sprachversion verweisen noch auf das alte englische Fragment (z. B. `/fr/ai/selectors#ai-strategies` → `/fr/ai/selectors#stratégies-ia`)
+- **Anker-Drift zwischen Sprachen**: Eine übersetzte Seite hat ihre Überschriften umbenannt, aber Links in dieser Sprache zeigen noch auf das alte englische Fragment (z. B. `/fr/ai/selectors#ai-strategies` → `/fr/ai/selectors#stratégies-ia`)
 
 ## Schritt 1: Defekte Links finden
 
-Führen Sie `jamdesk broken-links` aus, um zu sehen, was repariert werden muss:
+Führen Sie `jamdesk broken-links` aus, um zu sehen, was behoben werden muss:
 
 ```bash
 jamdesk broken-links
 ```
 
-Prüfen Sie die Ausgabe. `jamdesk fix` zielt auf Warnungen, bei denen es einen wahrscheinlichen Anker einer echten Überschrift zuordnen kann.
+Prüfen Sie die Ausgabe. `jamdesk fix` zielt auf Warnungen, bei denen es einen wahrscheinlichen Anker mit einer echten Überschrift abgleichen kann.
 
 ## Schritt 2: Korrekturen in der Vorschau anzeigen
 
@@ -44,7 +44,7 @@ Planned fixes:
 (dry run — no files written)
 ```
 
-Prüfen Sie jede geplante Reparatur. Wenn eine Änderung falsch aussieht, korrigieren Sie diesen Link stattdessen von Hand.
+Prüfen Sie jede geplante Korrektur. Wenn eine Änderung falsch aussieht, korrigieren Sie diesen Link stattdessen von Hand.
 
 ## Schritt 3: Korrekturen anwenden
 
@@ -87,18 +87,73 @@ git add -A
 git commit -m "fix(docs): auto-fix broken internal links"
 ```
 
+## Verwendung mit einem KI-Agenten
+
+`jamdesk fix --json` gibt den Korrekturplan als ein einziges JSON-Dokument für einen Coding-Agenten wie Claude Code aus. Es werden keine Dateien geschrieben und keine Fragen gestellt. Der Agent nimmt die Änderungen vor. Erfordert CLI 1.1.229 oder neuer.
+
+```bash
+jamdesk fix --json
+```
+
+**Beispielausgabe (gekürzt):**
+
+```json
+{
+  "version": 1,
+  "fixes": [
+    {
+      "type": "broken_link",
+      "file": "fr/ai/overview.mdx",
+      "line": 9,
+      "oldText": "/fr/ai/selectors#ai-strategies",
+      "newText": "/fr/ai/selectors#stratégies-ia",
+      "resolvedBy": "deterministic"
+    },
+    {
+      "type": "description",
+      "file": "setup.mdx",
+      "text": "How to set up the CLI.",
+      "resolvedBy": "ai"
+    }
+  ],
+  "unfixable": [
+    {
+      "type": "broken_link",
+      "file": "quickstart.mdx",
+      "line": 4,
+      "link": "/missing",
+      "reason": "points at a page that doesn't exist; create it or fix the link"
+    }
+  ],
+  "notes": []
+}
+```
+
+Das Dokument enthält drei Listen:
+
+- `fixes`: Die vorzunehmenden Änderungen. Bei einem `broken_link` ersetzen Sie `oldText` durch `newText` in dieser Zeile. Eine `description` ist ein KI-Vorschlag für das Frontmatter der Seite, daher sollte der Agent sie Ihnen vor dem Schreiben zeigen.
+- `unfixable`: Probleme, die von Hand behoben werden müssen, jeweils mit einem Grund.
+- `notes`: Meldungen aus dem Lauf, zum Beispiel wenn KI-Korrekturen übersprungen wurden.
+
+Schlägt der Lauf fehl, lautet die Ausgabe `{"version": 1, "error": "..."}` und der Befehl endet mit Exit-Code 1.
+
+Zum Starten können Sie Ihrem Agenten etwa Folgendes sagen: „Führe `jamdesk fix --json` aus, wende die Link-Korrekturen an und zeige mir die Beschreibungen, bevor du sie hinzufügst."
+
 ## Optionen
 
 | Flag | Beschreibung |
 |------|-------------|
-| `--dry-run` | Geplante Reparaturen anzeigen, ohne Dateien zu schreiben |
-| `-y, --yes` | Reparaturen ohne Bestätigungsabfrage anwenden |
-| `--types <list>` | Kommagetrennte Warnungstypen, die repariert werden sollen (Standard: alle unterstützten) |
+| `--dry-run` | Geplante Korrekturen anzeigen, ohne Dateien zu schreiben |
+| `-y, --yes` | Korrekturen ohne Bestätigungsabfrage anwenden |
+| `--types <list>` | Kommagetrennte Warnungstypen, die behoben werden sollen (Standard: alle unterstützten) |
+| `--no-ai` | KI-Korrekturen überspringen und nur Korrekturen verwenden, die Jamdesk ohne KI ermitteln kann |
+| `--project <id>` | Projekt-ID für KI-Korrekturen (Standard: `projectId` in `docs.json`) |
+| `--json` | Korrekturplan und nicht behebbare Probleme als JSON ausgeben. Schreibt keine Dateien und stellt keine Fragen |
 
 ## Wie geht es weiter?
 
 <Columns cols={2}>
-  <Card title="Mit KI reparieren" icon="wand-magic-sparkles" href="/de/builds/fix-with-ai">
+  <Card title="Mit KI beheben" icon="wand-magic-sparkles" href="/de/builds/fix-with-ai">
     Probleme im Dashboard beheben und auf GitHub committen
   </Card>
   <Card title="CLI-Übersicht" icon="terminal" href="/de/cli/overview">

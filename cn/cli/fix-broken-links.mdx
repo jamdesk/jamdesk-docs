@@ -1,19 +1,19 @@
 ---
 title: 修复失效链接
 description: >-
-  了解 jamdesk fix 如何修复失效的内部链接和拼写错误的锚点，并在写入更改前预览。
+  了解 jamdesk fix 如何修复失效的内部链接和拼写错误的锚点，并在写入更改前提供预览。
 ---
 
 `jamdesk fix` 用于修复 `jamdesk broken-links` 报告的问题。它读取相同的警告，并在找到唯一明确的正确目标时重写链接。对于存在歧义的情况，它不会改动，留待人工审查。
 
 <Tip>
-  [使用 AI 修复](/cn/builds/fix-with-ai) 可在仪表板中对构建执行相同的修复。它还会补充缺失的页面描述，并将更改提交到 GitHub。
+  [使用 AI 修复](/cn/builds/fix-with-ai) 可以在仪表板中对构建执行相同的修复，还会补充缺失的页面描述，并将更改提交到 GitHub。
 </Tip>
 
-它可修复两类失效的内部链接：
+它可以修复两类失效的内部链接：
 
 - **拼写错误的锚点**：片段是目标页面上某个真实标题的明显拼写错误（例如 `#instalation` → `#installation`）
-- **跨语言锚点漂移**：翻译页面重命名了标题，但该语言版本中的链接仍指向旧的英文片段（例如 `/fr/ai/selectors#ai-strategies` → `/fr/ai/selectors#stratégies-ia`）
+- **跨语言锚点漂移**：翻译页面重命名了标题，但该语言中的链接仍指向旧的英文片段（例如 `/fr/ai/selectors#ai-strategies` → `/fr/ai/selectors#stratégies-ia`）
 
 ## 步骤 1：查找失效链接
 
@@ -23,11 +23,11 @@ description: >-
 jamdesk broken-links
 ```
 
-查看输出结果。`jamdesk fix` 会针对那些能够将可能的锚点与真实标题匹配的警告进行处理。
+检查输出。`jamdesk fix` 会处理那些能够将可能的锚点匹配到真实标题的警告。
 
 ## 步骤 2：预览修复内容
 
-使用 `--dry-run` 运行，可在不写入文件的情况下查看将要进行的更改：
+使用 `--dry-run` 运行，查看将会更改的内容而不写入文件：
 
 ```bash
 jamdesk fix --dry-run
@@ -44,7 +44,7 @@ Planned fixes:
 (dry run — no files written)
 ```
 
-逐条检查计划中的修复。如果某项更改看起来有误，请手动修正该链接。
+逐一检查计划中的修复。如果某项更改看起来不对，请手动修复该链接。
 
 ## 步骤 3：应用修复
 
@@ -87,24 +87,79 @@ git add -A
 git commit -m "fix(docs): auto-fix broken internal links"
 ```
 
+## 配合 AI 代理使用
+
+`jamdesk fix --json` 会将修复计划以单个 JSON 文档的形式输出，供 Claude Code 等编码代理使用。它不写入任何文件，也不提出问题，由代理进行编辑。需要 CLI 1.1.229 或更高版本。
+
+```bash
+jamdesk fix --json
+```
+
+**示例输出（已截取）：**
+
+```json
+{
+  "version": 1,
+  "fixes": [
+    {
+      "type": "broken_link",
+      "file": "fr/ai/overview.mdx",
+      "line": 9,
+      "oldText": "/fr/ai/selectors#ai-strategies",
+      "newText": "/fr/ai/selectors#stratégies-ia",
+      "resolvedBy": "deterministic"
+    },
+    {
+      "type": "description",
+      "file": "setup.mdx",
+      "text": "How to set up the CLI.",
+      "resolvedBy": "ai"
+    }
+  ],
+  "unfixable": [
+    {
+      "type": "broken_link",
+      "file": "quickstart.mdx",
+      "line": 4,
+      "link": "/missing",
+      "reason": "points at a page that doesn't exist; create it or fix the link"
+    }
+  ],
+  "notes": []
+}
+```
+
+该文档包含三个列表：
+
+- `fixes`：需要执行的编辑。对于 `broken_link`，将该行中的 `oldText` 替换为 `newText`。`description` 是 AI 为页面 frontmatter 提出的建议，因此代理应在写入前先向你展示。
+- `unfixable`：需要手动修复的问题，每项附有原因。
+- `notes`：本次运行的消息，例如 AI 修复被跳过的情况。
+
+如果运行失败，输出为 `{"version": 1, "error": "..."}`，命令以退出码 1 结束。
+
+开始时，可以这样对代理说："运行 `jamdesk fix --json`，应用链接修复，并在添加描述前向我展示。"
+
 ## 选项
 
 | 参数 | 说明 |
 |------|-------------|
 | `--dry-run` | 预览计划中的修复，不写入任何文件 |
 | `-y, --yes` | 无需确认提示直接应用修复 |
-| `--types <list>` | 要修复的警告类型，以逗号分隔（默认：所有受支持的类型） |
+| `--types <list>` | 以逗号分隔的、需要修复的警告类型（默认：全部支持的类型） |
+| `--no-ai` | 跳过 AI 修复，仅使用 Jamdesk 无需 AI 即可确定的修复 |
+| `--project <id>` | AI 修复所用的项目 ID（默认：`docs.json` 中的 `projectId`） |
+| `--json` | 以 JSON 形式输出修复计划及无法修复的问题。不写入文件，也不提问 |
 
 ## 接下来做什么？
 
 <Columns cols={2}>
   <Card title="使用 AI 修复" icon="wand-magic-sparkles" href="/cn/builds/fix-with-ai">
-    在仪表板中修复问题并提交到 GitHub
+    从仪表板修复问题并提交到 GitHub
   </Card>
   <Card title="CLI 概览" icon="terminal" href="/cn/cli/overview">
     完整的命令参考
   </Card>
   <Card title="链接与导航" icon="link" href="/cn/content/links">
-    内部链接的检测与解析方式
+    内部链接如何被检测和解析
   </Card>
 </Columns>

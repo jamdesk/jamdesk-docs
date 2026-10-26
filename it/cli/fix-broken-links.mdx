@@ -1,19 +1,19 @@
 ---
-title: Correggere i link non funzionanti
+title: Correggi i link interrotti
 description: >-
-  Scopri come jamdesk fix ripara i link interni non funzionanti e le ancore con errori di battitura, con anteprima prima di scrivere le modifiche.
+  Scopri come jamdesk fix ripara i link interni interrotti e le ancore con refusi, con un'anteprima prima di scrivere le modifiche.
 ---
 
-`jamdesk fix` ripara ciò che `jamdesk broken-links` segnala. Legge gli stessi avvisi e riscrive un link quando trova un unico destinatario corretto e chiaro. Lascia intatti i casi ambigui per la revisione manuale.
+`jamdesk fix` ripara ciò che `jamdesk broken-links` segnala. Legge gli stessi avvisi e riscrive un link quando trova un unico destinatario corretto e chiaro. Lascia invariati i casi ambigui, da verificare manualmente.
 
 <Tip>
-  [Correggi con AI](/it/builds/fix-with-ai) esegue la stessa riparazione su una build dalla dashboard. Inoltre compila le descrizioni mancanti delle pagine. Esegue il commit delle modifiche su GitHub.
+  [Correggi con AI](/it/builds/fix-with-ai) esegue la stessa riparazione su una build dalla dashboard. Inoltre compila le descrizioni mancanti delle pagine e pubblica le modifiche su GitHub.
 </Tip>
 
-Corregge due tipi di link interni non funzionanti:
+Corregge due tipi di link interni interrotti:
 
-- **Ancore con errori di battitura**: un frammento che è un chiaro errore di ortografia di un titolo reale nella pagina di destinazione (ad esempio `#instalation` → `#installation`)
-- **Disallineamento delle ancore tra lingue**: una pagina tradotta ha rinominato i propri titoli, ma i link in quella lingua puntano ancora al vecchio frammento inglese (ad esempio `/fr/ai/selectors#ai-strategies` → `/fr/ai/selectors#stratégies-ia`)
+- **Ancore con refusi**: un frammento che è un chiaro errore di battitura di un titolo reale della pagina di destinazione (ad esempio `#instalation` → `#installation`)
+- **Disallineamento delle ancore tra lingue**: una pagina tradotta ha rinominato i propri titoli, ma i link in quella lingua puntano ancora al frammento inglese originale (ad esempio `/fr/ai/selectors#ai-strategies` → `/fr/ai/selectors#stratégies-ia`)
 
 ## Passaggio 1: trovare i link interrotti
 
@@ -23,7 +23,7 @@ Esegui `jamdesk broken-links` per vedere cosa va corretto:
 jamdesk broken-links
 ```
 
-Controlla l'output. `jamdesk fix` agisce sugli avvisi in cui riesce a far corrispondere un'ancora probabile a un titolo reale.
+Esamina l'output. `jamdesk fix` agisce sugli avvisi in cui riesce ad abbinare un'ancora plausibile a un titolo reale.
 
 ## Passaggio 2: visualizzare l'anteprima delle correzioni
 
@@ -44,11 +44,11 @@ Planned fixes:
 (dry run — no files written)
 ```
 
-Verifica ogni correzione prevista. Se una modifica sembra errata, correggi quel link a mano.
+Controlla ogni correzione prevista. Se una modifica sembra errata, correggi quel link a mano.
 
 ## Passaggio 3: applicare le correzioni
 
-Esegui senza `--dry-run` per applicare. La CLI chiede conferma:
+Esegui senza `--dry-run` per applicarle. La CLI chiede conferma:
 
 ```bash
 jamdesk fix
@@ -64,28 +64,80 @@ Premi `y` per scrivere le modifiche. Salta il prompt in CI o negli script con `-
 jamdesk fix -y
 ```
 
-Il comando poi stampa:
+Il comando stampa quindi:
 
 ```text
 Fixed 1 file(s); 0 warning(s) left for manual review.
 ```
 
-`jamdesk fix` lascia un avviso con destinazione ambigua perché tu lo corregga a mano.
+`jamdesk fix` lascia da correggere a mano gli avvisi con un destinatario ambiguo.
 
 ## Passaggio 4: esaminare il diff ed eseguire il commit
 
-Verifica le modifiche prima del commit:
+Controlla le modifiche prima del commit:
 
 ```bash
 git diff
 ```
 
-Assicurati che ogni link riscritto punti dove ti aspetti. Poi effettua il commit:
+Verifica che ogni link riscritto punti dove ti aspetti. Poi esegui il commit:
 
 ```bash
 git add -A
 git commit -m "fix(docs): auto-fix broken internal links"
 ```
+
+## Uso con un agente AI
+
+`jamdesk fix --json` stampa il piano di correzione come un unico documento JSON, destinato a un agente di programmazione come Claude Code. Non scrive file e non pone domande. Le modifiche le esegue l'agente. Richiede CLI 1.1.229 o successiva.
+
+```bash
+jamdesk fix --json
+```
+
+**Output di esempio (abbreviato):**
+
+```json
+{
+  "version": 1,
+  "fixes": [
+    {
+      "type": "broken_link",
+      "file": "fr/ai/overview.mdx",
+      "line": 9,
+      "oldText": "/fr/ai/selectors#ai-strategies",
+      "newText": "/fr/ai/selectors#stratégies-ia",
+      "resolvedBy": "deterministic"
+    },
+    {
+      "type": "description",
+      "file": "setup.mdx",
+      "text": "How to set up the CLI.",
+      "resolvedBy": "ai"
+    }
+  ],
+  "unfixable": [
+    {
+      "type": "broken_link",
+      "file": "quickstart.mdx",
+      "line": 4,
+      "link": "/missing",
+      "reason": "points at a page that doesn't exist; create it or fix the link"
+    }
+  ],
+  "notes": []
+}
+```
+
+Il documento contiene tre liste:
+
+- `fixes`: le modifiche da apportare. Per un `broken_link`, sostituisci `oldText` con `newText` su quella riga. Una `description` è un suggerimento AI per il frontmatter della pagina, quindi l'agente dovrebbe mostrartela prima di scriverla.
+- `unfixable`: problemi da correggere a mano, ciascuno con un motivo.
+- `notes`: messaggi dell'esecuzione, ad esempio quando le correzioni AI sono state saltate.
+
+Se l'esecuzione fallisce, l'output è `{"version": 1, "error": "..."}` e il comando termina con codice 1.
+
+Per iniziare, chiedi al tuo agente qualcosa come: "Esegui `jamdesk fix --json`, applica le correzioni dei link e mostrami le descrizioni prima di aggiungerle."
 
 ## Opzioni
 
@@ -93,13 +145,16 @@ git commit -m "fix(docs): auto-fix broken internal links"
 |------|-------------|
 | `--dry-run` | Visualizza in anteprima le correzioni previste senza scrivere file |
 | `-y, --yes` | Applica le correzioni senza prompt di conferma |
-| `--types <list>` | Tipi di avviso da correggere, separati da virgole (predefinito: tutti quelli supportati) |
+| `--types <list>` | Tipi di avviso da correggere, separati da virgola (predefinito: tutti quelli supportati) |
+| `--no-ai` | Salta le correzioni AI e usa solo quelle che Jamdesk può determinare senza AI |
+| `--project <id>` | ID del progetto per le correzioni AI (predefinito: `projectId` in `docs.json`) |
+| `--json` | Stampa il piano di correzione e i problemi non correggibili in formato JSON. Non scrive file e non pone domande |
 
 ## E dopo?
 
 <Columns cols={2}>
   <Card title="Correggi con AI" icon="wand-magic-sparkles" href="/it/builds/fix-with-ai">
-    Correggi i problemi dalla dashboard e fai commit su GitHub
+    Correggi i problemi dalla dashboard e pubblica su GitHub
   </Card>
   <Card title="Panoramica CLI" icon="terminal" href="/it/cli/overview">
     Riferimento completo dei comandi
