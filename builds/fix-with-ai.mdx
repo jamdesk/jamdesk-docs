@@ -26,6 +26,35 @@ Fix with AI makes up to 1,000 AI requests per project in a 24-hour period. Resul
   The fixable count is not the same as the warning count. A build can show five warnings while Fix with AI offers to repair three of them. The other two have no unambiguous fix.
 </Note>
 
+## Choose what happens
+
+The **AI Fixes** setting decides what Jamdesk does with fixable warnings. To change it, click **Settings** in the sidebar and find the **AI Fixes** card under **General**.
+
+| Mode | What happens |
+|---|---|
+| **Off** | Jamdesk doesn't scan builds. The **Fix with AI** button is hidden. |
+| **Review first** | Jamdesk suggests fixes. You review and apply them in the modal. This is the default. |
+| **Auto-fix** | Jamdesk commits fixes after each build. You can undo each run. |
+
+### How Auto-fix works
+
+Auto-fix applies the same fixes as the modal, AI-written descriptions included. It skips anything you ignored. It starts with the next build after you save the setting.
+
+After a build, Jamdesk commits the fixes to the project's build branch. The commit message is `docs: auto-fix 3 issues (via Jamdesk)` and the author is Jamdesk. The build shows an **Auto-fixed** badge in Build History. For [docs without GitHub](/setup/without-github), Jamdesk saves the fixes to your docs instead.
+
+<Warning>
+  Jamdesk commits to your branch. Pull before you push. Each auto-fix commit also runs any CI your repository has on that branch.
+</Warning>
+
+What to expect from each run:
+
+- Jamdesk doesn't auto-fix the build of its own commit. If that build still has fixable warnings, it shows **Needs review** and you apply them from the modal.
+- A fix is applied once. If you revert it, Jamdesk doesn't apply it again, so your revert sticks. A fix that comes back shows under **Needs review**.
+- Builds whose warnings didn't change since the last run are skipped.
+- Auto-fix pauses when the build branch is protected or the Jamdesk GitHub App loses write access. The card shows **Paused**. Fix the cause, then save **Auto-fix** again.
+- Daily AI limits are the same as for the modal. When a project reaches the limit, the run skips some fixes and says so.
+- A new description changes the page, so the next translation run translates that page again.
+
 ## Prerequisites
 
 - A [connected GitHub repository](/integrations/github) for the project.
@@ -89,6 +118,20 @@ How ignores behave:
 - **Restoring:** expand the **Ignored** section and click **Restore** on any item. Ignoring everything on a build hides the banner. A small "N ignored recommendations" link under Build History then reopens the modal.
 - **Changed warnings come back:** an ignored item returns as a new recommendation when the underlying issue changes, for example when the broken link now points somewhere else.
 
+## Undo an auto-fix
+
+Every auto-fix run has an **Undo** button. Open the build in Build History and find the **Auto-fix** section. It lists what Jamdesk changed and links to the commit. Click **Undo**, then **Undo auto-fix** to confirm.
+
+Jamdesk commits the previous version of the files to your branch with the message `docs: undo Jamdesk auto-fix (via Jamdesk)`. If a file changed after the auto-fix, Jamdesk skips it and lists it. Undo those files by hand.
+
+Undone fixes are ignored. Their warnings are hidden, and Jamdesk doesn't apply them again. To bring them back, open **Fix with AI** and restore them under **Ignored**.
+
+## Hand fixes to your AI agent
+
+You can let a coding agent such as Claude Code make the edits in your repository. In the Fix with AI modal, click **Copy for your AI agent**. Jamdesk copies a plain-text prompt that lists each suggested fix with its file and line, plus the issues to fix by hand. Ignored items are left out. Paste the prompt into your agent.
+
+From the terminal, `jamdesk fix --json` gives an agent the same list as JSON. See [Use with an AI agent](/cli/fix-broken-links#use-with-an-ai-agent).
+
 ## Fix with AI vs. the CLI
 
 The dashboard and the CLI fix broken-link anchors. They differ in where they run and how the change lands.
@@ -96,11 +139,17 @@ The dashboard and the CLI fix broken-link anchors. They differ in where they run
 | | Fix with AI (dashboard) | [`jamdesk fix`](/cli/fix-broken-links) (CLI) |
 |---|---|---|
 | Runs | In the dashboard, on a build | In your terminal, against local files |
-| Fixes | Broken links and missing descriptions | Broken-link anchors |
+| Fixes | Broken links, missing descriptions and missing titles | Broken-link anchors, plus missing descriptions with AI |
 | Commit | Commits to your branch for you | Writes local files; you commit |
 | Trigger | One click on the build banner | `jamdesk fix` |
 
 Use the dashboard flow for a quick repair without leaving Jamdesk. Use the CLI when you want the changes in your working copy first, for example to bundle them with other edits.
+
+Setting **AI Fixes** to **Off** stops the dashboard scans. `jamdesk fix` still runs on your computer. To change the setting from the terminal, run [`jamdesk ai-fix`](/cli/overview) with `off`, `review` or `auto`:
+
+```bash
+jamdesk ai-fix auto
+```
 
 ## What's Next?
 

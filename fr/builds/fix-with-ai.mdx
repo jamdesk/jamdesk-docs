@@ -28,6 +28,35 @@ Fix with AI effectue jusqu'à 1 000 requêtes IA par projet sur une période de 
   Le nombre d'éléments corrigibles n'est pas le même que le nombre d'avertissements. Un build peut afficher cinq avertissements alors que Fix with AI propose d'en corriger trois, car les deux autres n'ont pas de correction non ambiguë. La bannière reflète toujours ce qui peut réellement être corrigé.
 </Note>
 
+## Choisir ce qui se passe
+
+Le réglage **AI Fixes** détermine ce que fait Jamdesk des avertissements corrigibles. Pour le modifier, cliquez sur **Settings** dans la barre latérale et cherchez la carte **AI Fixes** sous **General**.
+
+| Mode | Ce qui se passe |
+|---|---|
+| **Off** | Jamdesk n'analyse pas les builds. Le bouton **Fix with AI** est masqué. |
+| **Review first** | Jamdesk suggère des corrections. Vous les relisez et les appliquez dans la fenêtre modale. C'est le mode par défaut. |
+| **Auto-fix** | Jamdesk commite les corrections après chaque build. Vous pouvez annuler chaque exécution. |
+
+### Fonctionnement d'Auto-fix
+
+Auto-fix applique les mêmes corrections que la fenêtre modale, y compris les descriptions rédigées par l'IA. Il saute les éléments que vous avez ignorés. Il démarre au build suivant l'enregistrement du réglage.
+
+Après un build, Jamdesk commite les corrections dans la branche de build du projet. Le message du commit est `docs: auto-fix 3 issues (via Jamdesk)` et l'auteur est Jamdesk. Le build affiche un badge **Auto-fixed** dans Build History. Pour une [documentation sans GitHub](/fr/setup/without-github), Jamdesk enregistre les corrections dans votre documentation.
+
+<Warning>
+  Jamdesk commite dans votre branche. Faites un pull avant de pousser. Chaque commit d'Auto-fix lance aussi la CI que votre dépôt exécute sur cette branche.
+</Warning>
+
+À quoi vous attendre à chaque exécution :
+
+- Jamdesk n'applique pas Auto-fix au build de son propre commit. Si ce build a encore des avertissements corrigibles, il affiche **Needs review** et vous les appliquez depuis la fenêtre modale.
+- Une correction n'est appliquée qu'une fois. Si vous l'annulez avec un revert, Jamdesk ne la réapplique pas, donc votre revert tient. Une correction qui revient apparaît sous **Needs review**.
+- Les builds dont les avertissements n'ont pas changé depuis la dernière exécution sont ignorés.
+- Auto-fix se met en pause quand la branche de build est protégée ou que la GitHub App de Jamdesk perd l'accès en écriture. La carte affiche **Paused**. Corrigez la cause, puis enregistrez de nouveau **Auto-fix**.
+- Les limites quotidiennes d'IA sont les mêmes que pour la fenêtre modale. Quand un projet atteint la limite, l'exécution saute certaines corrections et l'indique.
+- Une nouvelle description modifie la page. La prochaine exécution de traduction traduit donc de nouveau cette page.
+
 ## Prérequis
 
 - Un [dépôt GitHub connecté](/fr/integrations/github) pour le projet.
@@ -91,6 +120,20 @@ Comportement des éléments ignorés :
 - **Restauration.** Développez la section **Ignored** et cliquez sur **Restore** sur n'importe quel élément. Si vous ignorez tout sur un build, la bannière disparaît et un petit lien « N ignored recommendations » sous Build History rouvre la fenêtre modale.
 - **Les avertissements modifiés reviennent.** Si le problème sous-jacent change, par exemple si le lien rompu pointe désormais ailleurs, il ne correspond plus à l'entrée ignorée et réapparaît comme une nouvelle recommandation.
 
+## Annuler un auto-fix
+
+Chaque exécution d'Auto-fix a un bouton **Undo**. Ouvrez le build dans Build History et repérez la section **Auto-fix**. Elle liste ce que Jamdesk a modifié et renvoie vers le commit. Cliquez sur **Undo**, puis sur **Undo auto-fix** pour confirmer.
+
+Jamdesk commite la version précédente des fichiers dans votre branche avec le message `docs: undo Jamdesk auto-fix (via Jamdesk)`. Si un fichier a changé après l'auto-fix, Jamdesk le saute et le liste. Annulez ces fichiers à la main.
+
+Les corrections annulées sont ignorées. Leurs avertissements sont masqués, et Jamdesk ne les réapplique pas. Pour les récupérer, ouvrez **Fix with AI** et restaurez-les sous **Ignored**.
+
+## Confier les corrections à votre agent IA
+
+Vous pouvez laisser un agent de code comme Claude Code faire les modifications dans votre dépôt. Dans la fenêtre modale Fix with AI, cliquez sur **Copy for your AI agent**. Jamdesk copie un prompt en texte brut qui liste chaque correction suggérée avec son fichier et sa ligne, ainsi que les problèmes à corriger à la main. Les éléments ignorés sont exclus. Collez le prompt dans votre agent.
+
+Depuis le terminal, `jamdesk fix --json` donne la même liste à un agent, au format JSON. Voir [Utiliser avec un agent IA](/fr/cli/fix-broken-links#utiliser-avec-un-agent-ia).
+
 ## Fix with AI face à la CLI
 
 Les deux outils corrigent les ancres de liens rompus. Ils diffèrent par leur environnement d'exécution et la façon dont la modification est appliquée.
@@ -98,11 +141,17 @@ Les deux outils corrigent les ancres de liens rompus. Ils diffèrent par leur en
 | | Fix with AI (dashboard) | [`jamdesk fix`](/fr/cli/fix-broken-links) (CLI) |
 |---|---|---|
 | Exécution | Dans le dashboard, sur un build | Dans votre terminal, sur les fichiers locaux |
-| Corrections | Liens rompus et descriptions manquantes | Ancres de liens rompus |
+| Corrections | Liens rompus, descriptions manquantes et titres manquants | Ancres de liens rompus et, avec l'IA, descriptions manquantes |
 | Commit | Commite dans votre branche pour vous | Écrit dans les fichiers locaux ; vous commitez |
 | Déclenchement | Un clic sur la bannière du build | `jamdesk fix` |
 
 Utilisez le flux du dashboard pour une correction rapide sans quitter Jamdesk. Utilisez la CLI lorsque vous voulez d'abord avoir les modifications dans votre copie de travail, par exemple pour les regrouper avec d'autres modifications.
+
+Passer **AI Fixes** sur **Off** arrête les analyses du dashboard. `jamdesk fix` fonctionne toujours sur votre ordinateur. Pour changer le réglage depuis le terminal, lancez [`jamdesk ai-fix`](/fr/cli/overview) avec `off`, `review` ou `auto` :
+
+```bash
+jamdesk ai-fix auto
+```
 
 ## Et ensuite ?
 

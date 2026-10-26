@@ -28,6 +28,35 @@ Fix with AI hace hasta 1,000 solicitudes de IA por proyecto en un periodo de 24 
   El número de elementos corregibles no es el mismo que el número de avisos. Un build puede mostrar cinco avisos mientras Fix with AI ofrece corregir tres de ellos, porque los otros dos no tienen una corrección inequívoca. El banner siempre refleja lo que realmente se puede corregir.
 </Note>
 
+## Elegir qué ocurre
+
+El ajuste **AI Fixes** decide qué hace Jamdesk con los avisos corregibles. Para cambiarlo, haz clic en **Settings** en la barra lateral y busca la tarjeta **AI Fixes** en **General**.
+
+| Modo | Qué ocurre |
+|---|---|
+| **Off** | Jamdesk no analiza los builds. El botón **Fix with AI** se oculta. |
+| **Review first** | Jamdesk sugiere correcciones. Tú las revisas y las aplicas en el modal. Es el modo predeterminado. |
+| **Auto-fix** | Jamdesk hace commit de las correcciones después de cada build. Puedes deshacer cada ejecución. |
+
+### Cómo funciona Auto-fix
+
+Auto-fix aplica las mismas correcciones que el modal, también las descripciones escritas por IA. Omite todo lo que hayas ignorado. Empieza con el siguiente build después de guardar el ajuste.
+
+Después de un build, Jamdesk hace commit de las correcciones en la rama de build del proyecto. El mensaje del commit es `docs: auto-fix 3 issues (via Jamdesk)` y el autor es Jamdesk. El build muestra una insignia **Auto-fixed** en Build History. En la [documentación sin GitHub](/es/setup/without-github), Jamdesk guarda las correcciones en tu documentación.
+
+<Warning>
+  Jamdesk hace commit en tu rama. Haz pull antes de hacer push. Cada commit de Auto-fix también ejecuta el CI que tenga tu repositorio en esa rama.
+</Warning>
+
+Qué esperar de cada ejecución:
+
+- Jamdesk no aplica Auto-fix al build de su propio commit. Si ese build todavía tiene avisos corregibles, muestra **Needs review** y tú los aplicas desde el modal.
+- Una corrección se aplica una sola vez. Si la reviertes, Jamdesk no la vuelve a aplicar, así que tu revert se mantiene. Una corrección que reaparece se muestra en **Needs review**.
+- Los builds cuyos avisos no cambiaron desde la última ejecución se omiten.
+- Auto-fix se pausa cuando la rama de build está protegida o la GitHub App de Jamdesk pierde el acceso de escritura. La tarjeta muestra **Paused**. Corrige la causa y vuelve a guardar **Auto-fix**.
+- Los límites diarios de IA son los mismos que en el modal. Cuando un proyecto llega al límite, la ejecución omite algunas correcciones y lo indica.
+- Una descripción nueva cambia la página, así que la siguiente ejecución de traducción vuelve a traducir esa página.
+
 ## Requisitos previos
 
 - Un [repositorio de GitHub conectado](/es/integrations/github) para el proyecto.
@@ -91,6 +120,20 @@ Cómo se comportan los elementos ignorados:
 - **Restaurar.** Expande la sección **Ignored** y haz clic en **Restore** en cualquier elemento. Si ignoras todo en un build, el banner desaparece y un pequeño enlace "N ignored recommendations" debajo de Build History vuelve a abrir el modal.
 - **Los avisos modificados reaparecen.** Si el problema subyacente cambia, por ejemplo si el enlace roto ahora apunta a otro lugar, deja de coincidir con la entrada ignorada y vuelve a aparecer como una recomendación nueva.
 
+## Deshacer un auto-fix
+
+Cada ejecución de Auto-fix tiene un botón **Undo**. Abre el build en Build History y busca la sección **Auto-fix**. Muestra lo que cambió Jamdesk y enlaza al commit. Haz clic en **Undo** y luego en **Undo auto-fix** para confirmar.
+
+Jamdesk hace commit de la versión anterior de los archivos en tu rama con el mensaje `docs: undo Jamdesk auto-fix (via Jamdesk)`. Si un archivo cambió después del auto-fix, Jamdesk lo omite y lo lista. Deshaz esos archivos a mano.
+
+Las correcciones deshechas quedan ignoradas. Sus avisos se ocultan y Jamdesk no las vuelve a aplicar. Para recuperarlas, abre **Fix with AI** y restáuralas en **Ignored**.
+
+## Pasar las correcciones a tu agente de IA
+
+Puedes dejar que un agente de programación como Claude Code haga las ediciones en tu repositorio. En el modal de Fix with AI, haz clic en **Copy for your AI agent**. Jamdesk copia un prompt de texto plano que lista cada corrección sugerida con su archivo y su línea, además de los problemas que hay que corregir a mano. Los elementos ignorados no se incluyen. Pega el prompt en tu agente.
+
+Desde la terminal, `jamdesk fix --json` le da a un agente la misma lista en JSON. Consulta [Uso con un agente de IA](/es/cli/fix-broken-links#uso-con-un-agente-de-ia).
+
 ## Fix with AI frente a la CLI
 
 Ambas herramientas corrigen anclas de enlaces rotos. Se diferencian en dónde se ejecutan y cómo se aplica el cambio.
@@ -98,11 +141,17 @@ Ambas herramientas corrigen anclas de enlaces rotos. Se diferencian en dónde se
 | | Fix with AI (dashboard) | [`jamdesk fix`](/es/cli/fix-broken-links) (CLI) |
 |---|---|---|
 | Ejecución | En el dashboard, sobre un build | En tu terminal, sobre archivos locales |
-| Corrige | Enlaces rotos y descripciones faltantes | Anclas de enlaces rotos |
+| Corrige | Enlaces rotos, descripciones faltantes y títulos faltantes | Anclas de enlaces rotos y, con IA, descripciones faltantes |
 | Commit | Hace commit en tu rama por ti | Escribe archivos locales; tú haces commit |
 | Activación | Un clic en el banner del build | `jamdesk fix` |
 
 Usa el flujo del dashboard para una reparación rápida sin salir de Jamdesk. Usa la CLI cuando quieras tener primero los cambios en tu copia de trabajo, por ejemplo para agruparlos con otras ediciones.
+
+Poner **AI Fixes** en **Off** detiene los análisis del dashboard. `jamdesk fix` sigue funcionando en tu equipo. Para cambiar el ajuste desde la terminal, ejecuta [`jamdesk ai-fix`](/es/cli/overview) con `off`, `review` o `auto`:
+
+```bash
+jamdesk ai-fix auto
+```
 
 ## ¿Qué sigue?
 

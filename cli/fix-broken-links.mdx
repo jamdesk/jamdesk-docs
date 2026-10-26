@@ -88,6 +88,58 @@ git add -A
 git commit -m "fix(docs): auto-fix broken internal links"
 ```
 
+## Use with an AI agent
+
+`jamdesk fix --json` prints the fix plan as one JSON document for a coding agent such as Claude Code. It writes no files and asks no questions. The agent makes the edits. Needs CLI 1.1.229 or later.
+
+```bash
+jamdesk fix --json
+```
+
+**Example output (trimmed):**
+
+```json
+{
+  "version": 1,
+  "fixes": [
+    {
+      "type": "broken_link",
+      "file": "fr/ai/overview.mdx",
+      "line": 9,
+      "oldText": "/fr/ai/selectors#ai-strategies",
+      "newText": "/fr/ai/selectors#stratégies-ia",
+      "resolvedBy": "deterministic"
+    },
+    {
+      "type": "description",
+      "file": "setup.mdx",
+      "text": "How to set up the CLI.",
+      "resolvedBy": "ai"
+    }
+  ],
+  "unfixable": [
+    {
+      "type": "broken_link",
+      "file": "quickstart.mdx",
+      "line": 4,
+      "link": "/missing",
+      "reason": "points at a page that doesn't exist; create it or fix the link"
+    }
+  ],
+  "notes": []
+}
+```
+
+The document has three lists:
+
+- `fixes`: the edits to make. For a `broken_link`, replace `oldText` with `newText` on that line. A `description` is an AI suggestion for the page's frontmatter, so the agent should show it to you before writing it.
+- `unfixable`: issues to fix by hand, each with a reason.
+- `notes`: messages from the run, for example when AI fixes were skipped.
+
+If the run fails, the output is `{"version": 1, "error": "..."}` and the command exits with code 1.
+
+To start, ask your agent something like: "Run `jamdesk fix --json`, apply the link fixes, and show me the descriptions before you add them."
+
 ## Options
 
 | Flag | Description |
@@ -95,6 +147,9 @@ git commit -m "fix(docs): auto-fix broken internal links"
 | `--dry-run` | Preview planned fixes without writing any files |
 | `-y, --yes` | Apply fixes without a confirmation prompt |
 | `--types <list>` | Comma-separated warning types to fix (default: all supported) |
+| `--no-ai` | Skip the AI fixes and use only fixes Jamdesk can work out without AI |
+| `--project <id>` | Project id for AI fixes (default: `projectId` in `docs.json`) |
+| `--json` | Print the fix plan and the issues it can't fix as JSON. Writes no files and asks nothing |
 
 ## What's Next?
 

@@ -88,6 +88,58 @@ git add -A
 git commit -m "fix(docs): auto-fix broken internal links"
 ```
 
+## Uso con un agente de IA
+
+`jamdesk fix --json` imprime el plan de corrección como un único documento JSON para un agente de programación como Claude Code. No escribe archivos ni hace preguntas. El agente hace las ediciones. Requiere la CLI 1.1.229 o posterior.
+
+```bash
+jamdesk fix --json
+```
+
+**Ejemplo de salida (recortada):**
+
+```json
+{
+  "version": 1,
+  "fixes": [
+    {
+      "type": "broken_link",
+      "file": "fr/ai/overview.mdx",
+      "line": 9,
+      "oldText": "/fr/ai/selectors#ai-strategies",
+      "newText": "/fr/ai/selectors#stratégies-ia",
+      "resolvedBy": "deterministic"
+    },
+    {
+      "type": "description",
+      "file": "setup.mdx",
+      "text": "How to set up the CLI.",
+      "resolvedBy": "ai"
+    }
+  ],
+  "unfixable": [
+    {
+      "type": "broken_link",
+      "file": "quickstart.mdx",
+      "line": 4,
+      "link": "/missing",
+      "reason": "points at a page that doesn't exist; create it or fix the link"
+    }
+  ],
+  "notes": []
+}
+```
+
+El documento tiene tres listas:
+
+- `fixes`: las ediciones que hay que hacer. En un `broken_link`, reemplaza `oldText` por `newText` en esa línea. Una `description` es una sugerencia de IA para el frontmatter de la página, así que el agente debe mostrártela antes de escribirla.
+- `unfixable`: problemas que hay que corregir a mano, cada uno con un motivo.
+- `notes`: mensajes de la ejecución, por ejemplo cuando se omitieron las correcciones con IA.
+
+Si la ejecución falla, la salida es `{"version": 1, "error": "..."}` y el comando termina con el código 1.
+
+Para empezar, pídele algo así a tu agente: "Ejecuta `jamdesk fix --json`, aplica las correcciones de enlaces y muéstrame las descripciones antes de añadirlas."
+
 ## Opciones
 
 | Opción | Descripción |
@@ -95,6 +147,9 @@ git commit -m "fix(docs): auto-fix broken internal links"
 | `--dry-run` | Previsualiza las correcciones planificadas sin escribir ningún archivo |
 | `-y, --yes` | Aplica las correcciones sin pedir confirmación |
 | `--types <list>` | Lista de tipos de advertencia separados por comas para corregir (por defecto: todos los admitidos) |
+| `--no-ai` | Omite las correcciones con IA y usa solo las que Jamdesk puede resolver sin IA |
+| `--project <id>` | ID del proyecto para las correcciones con IA (predeterminado: `projectId` en `docs.json`) |
+| `--json` | Imprime en JSON el plan de corrección y los problemas que no puede corregir. No escribe archivos ni pregunta nada |
 
 ## ¿Qué sigue?
 
