@@ -283,7 +283,7 @@ Das vollständige Verhalten finden Sie unter [Mehrsprachige Unterstützung → A
 
 ### banner
 
-Zeigen Sie oben auf jeder Seite über dem Header eine seitenweite Ankündigungsleiste in voller Breite und in der Akzentfarbe Ihres Themes an. Verwenden Sie sie für Veröffentlichungen, Migrationen, Wartungsfenster oder Nachrichten, die jeder Besucher sehen soll.
+Zeigen Sie oben auf jeder Seite über dem Header eine seitenweite Ankündigungsleiste in voller Breite an. Verwenden Sie sie für Veröffentlichungen, Migrationen, Wartungsfenster oder Nachrichten, die jeder Besucher sehen soll.
 
 ```json
 {
@@ -297,9 +297,75 @@ Zeigen Sie oben auf jeder Seite über dem Header eine seitenweite Ankündigungsl
 | Feld | Typ | Standard | Beschreibung |
 |-------|------|---------|-------------|
 | `content` | string | - | **Erforderlich.** Der Bannertext. Unterstützt grundlegende Inline-Formatierung: Links `[text](url)`, **fett** (`**text**`) und *kursiv* (`*text*`). Benutzerdefinierte MDX-Komponenten werden nicht unterstützt. |
-| `dismissible` | boolean | `false` | Wenn `true`, wird eine Schaltfläche zum Schließen angezeigt. Nachdem ein Besucher den Banner geschlossen hat, bleibt er für diese Person ausgeblendet, bis Sie `content` ändern. Durch das Bearbeiten der Nachricht wird er wieder eingeblendet. |
+| `type` | string | `"info"` | Der Stil des Banners: `"info"`, `"warning"` oder `"danger"`. Siehe [Banner-Typen](#banner-typen). |
+| `dismissible` | boolean | `false` | Wenn `true`, wird eine Schaltfläche zum Schließen angezeigt. Nachdem ein Besucher den Banner geschlossen hat, bleibt er für diese Person ausgeblendet, bis Sie `content` oder `type` ändern. Durch das Bearbeiten der Nachricht wird er wieder eingeblendet. |
 
-Der Banner wird auf Ihrer veröffentlichten Website und in `jamdesk dev` angezeigt. Er wird global konfiguriert (ein Banner für die gesamte Website); Banner pro Tab und pro Sprache werden derzeit nicht unterstützt.
+Der Banner wird auf Ihrer veröffentlichten Website und in `jamdesk dev` angezeigt. Banner pro Tab werden derzeit nicht unterstützt.
+
+### Banner-Typen
+
+Wählen Sie einen `type`, der zur Dringlichkeit der Nachricht passt. Ohne Angabe verwendet der Banner `"info"`.
+
+| Typ | Farbe | Symbol |
+|-----|-------|--------|
+| `"info"` | Ihre Akzentfarbe | Keins |
+| `"warning"` | Bernstein | Warnsymbol |
+| `"danger"` | Rot | Alarmsymbol |
+
+```json
+{
+  "banner": {
+    "content": "Scheduled maintenance Saturday 10:00 UTC.",
+    "type": "warning",
+    "dismissible": true
+  }
+}
+```
+
+CLI-Versionen vor 1.1.231 lehnen `type` in `jamdesk dev` und `jamdesk validate` ab. Führen Sie `jamdesk update` aus, um die neueste Version zu installieren.
+
+Wie Sie die Farben ändern, steht unter [Benutzerdefiniertes CSS → Banner](/de/customization/custom-css#banner).
+
+### Eigener Banner pro Sprache
+
+Jeder Eintrag in `navigation.languages` kann einen eigenen `banner` mit denselben Feldern haben. Auf den Seiten dieser Sprache ersetzt er den Banner der obersten Ebene. Eine Sprache ohne eigenen `banner` zeigt den Banner der obersten Ebene.
+
+In diesem Beispiel zeigen englische Seiten den Banner der obersten Ebene und deutsche Seiten einen deutschen Banner:
+
+```json
+{
+  "banner": {
+    "content": "Scheduled maintenance Saturday 10:00 UTC.",
+    "type": "warning"
+  },
+  "navigation": {
+    "languages": [
+      {
+        "language": "en",
+        "tabs": [...]
+      },
+      {
+        "language": "de",
+        "banner": {
+          "content": "Geplante Wartung am Samstag um 10:00 UTC.",
+          "type": "warning"
+        },
+        "tabs": [...]
+      }
+    ]
+  }
+}
+```
+
+Der Banner einer Sprache übernimmt keine Felder vom Banner der obersten Ebene. Setzen Sie `type` und `dismissible` dort selbst, wenn Sie sie brauchen.
+
+### Wann ein geschlossener Banner wieder erscheint
+
+Ein Besucher, der einen Banner schließt, sieht ihn erst wieder, wenn Sie `content` oder `type` ändern. Wenn Sie nur `dismissible` ändern, bleibt er ausgeblendet.
+
+Schließt ein Besucher den Banner der obersten Ebene, bleibt er in jeder Sprache ausgeblendet, die ihn zeigt. Der eigene Banner einer Sprache wird getrennt gespeichert. Wer den deutschen Banner schließt, sieht den englischen weiterhin.
+
+Verwenden Sie bei einem Ausfall `"type": "danger"` und lassen Sie `dismissible` weg. Dann können Besucher den Banner nicht schließen, bis Sie ihn entfernen.
 
 ## OpenAPI
 

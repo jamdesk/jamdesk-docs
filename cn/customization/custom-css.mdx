@@ -167,6 +167,52 @@ Jamdesk 的类名来自 Tailwind，可能会在任何版本中发生变化。以
 | `#content-scroll-container` | 页面内容栏 |
 | `[role="tab"][aria-selected="true"]` | `<Tabs>` 组中选中的标签页 |
 
+## 横幅
+
+你在 `docs.json` 中设置的[横幅](/cn/config/docs-json-reference#横幅)有自己的稳定钩子：
+
+| 钩子 | 匹配内容 |
+|------|---------|
+| `.jd-banner` | 横幅栏 |
+| `[data-type="info"]`, `[data-type="warning"]`, `[data-type="danger"]` | 横幅栏的 `type`，作为 `.jd-banner` 上的属性 |
+| `.jd-banner-inner` | 横幅栏内居中的那一行 |
+| `.jd-banner-icon` | `warning` 和 `danger` 横幅上的图标 |
+| `.jd-banner-content` | 横幅文本 |
+| `.jd-banner-close` | 可关闭横幅上的关闭按钮 |
+| `--jd-banner-bg` | 横幅栏的背景色 |
+| `--jd-banner-fg` | 横幅栏的文字和图标颜色 |
+| `--jd-banner-height` | 横幅栏的实测高度，设置在 `<html>` 上 |
+
+请在 `.jd-banner` 上设置颜色变量，而不是在 `:root` 上。`warning` 和 `danger` 类型会在横幅栏上设置自己的值，所以 `:root` 上的值影响不到它们。
+
+普通的 `.jd-banner` 规则会改变所有类型的样式：
+
+```css style.css
+.jd-banner {
+  --jd-banner-bg: #111827;
+  --jd-banner-fg: #f9fafb;
+}
+```
+
+加上属性选择器，只改变一种类型的样式：
+
+```css style.css
+.jd-banner[data-type="danger"] {
+  --jd-banner-bg: #7f1d1d;
+}
+```
+
+如果你的 CSS 里有类似 `[data-jd-banner] { background: ... }` 的旧规则，它会改变所有类型的颜色，包括 `warning` 和 `danger`。请改用上面的规则之一。
+
+用 `--jd-banner-height` 让你自己的吸顶元素保持在横幅栏下方。没有横幅显示时不会设置这个变量，所以请给它一个 `0px` 的后备值：
+
+```css style.css
+.my-sticky-toolbar {
+  position: sticky;
+  top: var(--jd-banner-height, 0px);
+}
+```
+
 ## 外部字体
 
 只要可能，请通过 `docs.json` 加载字体。[`fonts`](/cn/customization/theming#字体) 字段可加载 Google Font 和自托管字体文件（包括您仓库中的 `.woff2` 文件），并将其应用于标题和正文。

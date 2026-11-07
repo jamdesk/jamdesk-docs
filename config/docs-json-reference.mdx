@@ -283,7 +283,7 @@ See [Languages → Automatic language routing](/setup/languages#automatic-langua
 
 ### banner
 
-Show a site-wide announcement bar pinned to the top of every page, above the header, at full width, in your theme's accent color. Use it for launches, migrations, maintenance windows, or any message every visitor should see.
+Show a site-wide announcement bar pinned to the top of every page, above the header, at full width. Use it for launches, migrations, maintenance windows, or any message every visitor should see.
 
 ```json
 {
@@ -297,9 +297,75 @@ Show a site-wide announcement bar pinned to the top of every page, above the hea
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
 | `content` | string | - | **Required.** The banner text. Supports basic inline formatting: links `[text](url)`, **bold** (`**text**`), and *italic* (`*text*`). Custom MDX components are not supported. |
-| `dismissible` | boolean | `false` | When `true`, shows a close button. A dismissed banner stays hidden for that visitor until you change `content`. |
+| `type` | string | `"info"` | The banner style: `"info"`, `"warning"`, or `"danger"`. See [Banner types](#banner-types). |
+| `dismissible` | boolean | `false` | When `true`, shows a close button. A dismissed banner stays hidden for that visitor until you change `content` or `type`. |
 
-The banner renders on your published site and in `jamdesk dev`. It is configured globally (one banner for the whole site). Per-tab and per-language banners are not available yet.
+The banner renders on your published site and in `jamdesk dev`. Per-tab banners are not available yet.
+
+### Banner types
+
+Pick a `type` that matches how urgent the message is. Leave it out and the banner uses `"info"`.
+
+| Type | Color | Icon |
+|------|-------|------|
+| `"info"` | Your accent color | None |
+| `"warning"` | Amber | Warning |
+| `"danger"` | Red | Alert |
+
+```json
+{
+  "banner": {
+    "content": "Scheduled maintenance Saturday 10:00 UTC.",
+    "type": "warning",
+    "dismissible": true
+  }
+}
+```
+
+CLI versions before 1.1.231 reject `type` in `jamdesk dev` and `jamdesk validate`. Run `jamdesk update` to get the latest version.
+
+To change the colors, see [Custom CSS → Banner](/customization/custom-css#banner).
+
+### Different banner per language
+
+Each entry in `navigation.languages` can have its own `banner`, with the same fields. On that language's pages it replaces the top-level banner. A language without its own `banner` shows the top-level one.
+
+In this example, English pages show the top-level banner and German pages show a German one:
+
+```json
+{
+  "banner": {
+    "content": "Scheduled maintenance Saturday 10:00 UTC.",
+    "type": "warning"
+  },
+  "navigation": {
+    "languages": [
+      {
+        "language": "en",
+        "tabs": [...]
+      },
+      {
+        "language": "de",
+        "banner": {
+          "content": "Geplante Wartung am Samstag um 10:00 UTC.",
+          "type": "warning"
+        },
+        "tabs": [...]
+      }
+    ]
+  }
+}
+```
+
+The language's banner doesn't inherit fields from the top-level one. Set `type` and `dismissible` on it if you need them.
+
+### When a dismissed banner comes back
+
+A visitor who closes a banner won't see it again until you change its `content` or its `type`. Changing only `dismissible` keeps it hidden.
+
+If a visitor closes the top-level banner, it stays hidden in every language that shows it. A language's own banner is tracked on its own. Closing the German banner doesn't hide the English one.
+
+For an outage, use `"type": "danger"` and leave out `dismissible`. Visitors then can't close the banner until you remove it.
 
 ## OpenAPI
 

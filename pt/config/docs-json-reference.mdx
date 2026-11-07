@@ -283,7 +283,7 @@ Consulte [Suporte multilíngue → Roteamento automático de idioma](/pt/setup/l
 
 ### banner
 
-Exiba uma barra de anúncio em todo o site, fixada no topo de cada página, acima do cabeçalho, em largura total e na cor de destaque do seu tema. Use-a para lançamentos, migrações, períodos de manutenção ou qualquer mensagem que todos os visitantes devam ver.
+Exiba uma barra de anúncio em todo o site, fixada no topo de cada página, acima do cabeçalho, em largura total. Use-a para lançamentos, migrações, períodos de manutenção ou qualquer mensagem que todos os visitantes devam ver.
 
 ```json
 {
@@ -297,9 +297,75 @@ Exiba uma barra de anúncio em todo o site, fixada no topo de cada página, acim
 | Campo | Tipo | Padrão | Descrição |
 |-------|------|--------|-----------|
 | `content` | string | - | **Obrigatório.** O texto do banner. Aceita formatação inline básica: links `[text](url)`, **negrito** (`**text**`) e *itálico* (`*text*`). Componentes MDX personalizados não são compatíveis. |
-| `dismissible` | boolean | `false` | Quando `true`, exibe um botão de fechar. Depois que um visitante dispensa o banner, ele permanece oculto para essa pessoa até que você altere `content`. Editar a mensagem faz com que ela volte a ser exibida. |
+| `type` | string | `"info"` | O estilo do banner: `"info"`, `"warning"` ou `"danger"`. Consulte [Tipos de banner](#tipos-de-banner). |
+| `dismissible` | boolean | `false` | Quando `true`, exibe um botão de fechar. Depois que um visitante dispensa o banner, ele permanece oculto para essa pessoa até que você altere `content` ou `type`. Editar a mensagem faz com que ela volte a ser exibida. |
 
-O banner é renderizado no site publicado e em `jamdesk dev`. Ele é configurado globalmente (um banner para todo o site); banners por aba e por idioma não são compatíveis atualmente.
+O banner é renderizado no site publicado e em `jamdesk dev`. Banners por aba não são compatíveis atualmente.
+
+### Tipos de banner
+
+Escolha um `type` de acordo com a urgência da mensagem. Se você não informar, o banner usa `"info"`.
+
+| Tipo | Cor | Ícone |
+|------|-----|-------|
+| `"info"` | A cor de destaque do seu tema | Nenhum |
+| `"warning"` | Âmbar | Aviso |
+| `"danger"` | Vermelho | Alerta |
+
+```json
+{
+  "banner": {
+    "content": "Scheduled maintenance Saturday 10:00 UTC.",
+    "type": "warning",
+    "dismissible": true
+  }
+}
+```
+
+Versões da CLI anteriores à 1.1.231 rejeitam `type` em `jamdesk dev` e `jamdesk validate`. Execute `jamdesk update` para instalar a versão mais recente.
+
+Para mudar as cores, consulte [CSS personalizado → Banner](/pt/customization/custom-css#banner).
+
+### Um banner diferente por idioma
+
+Cada entrada de `navigation.languages` pode ter seu próprio `banner`, com os mesmos campos. Nas páginas desse idioma, ele substitui o banner de nível superior. Um idioma sem `banner` próprio mostra o banner de nível superior.
+
+Neste exemplo, as páginas em inglês mostram o banner de nível superior e as páginas em alemão mostram um banner em alemão:
+
+```json
+{
+  "banner": {
+    "content": "Scheduled maintenance Saturday 10:00 UTC.",
+    "type": "warning"
+  },
+  "navigation": {
+    "languages": [
+      {
+        "language": "en",
+        "tabs": [...]
+      },
+      {
+        "language": "de",
+        "banner": {
+          "content": "Geplante Wartung am Samstag um 10:00 UTC.",
+          "type": "warning"
+        },
+        "tabs": [...]
+      }
+    ]
+  }
+}
+```
+
+O banner de um idioma não herda campos do banner de nível superior. Defina `type` e `dismissible` nele se precisar.
+
+### Quando um banner dispensado volta a aparecer
+
+Um visitante que fecha um banner só volta a vê-lo quando você muda o `content` ou o `type`. Se você mudar só `dismissible`, ele continua oculto.
+
+Se um visitante fechar o banner de nível superior, ele continua oculto em todos os idiomas que o exibem. O banner próprio de um idioma é lembrado separadamente. Fechar o banner em alemão não oculta o banner em inglês.
+
+Em caso de indisponibilidade, use `"type": "danger"` e não inclua `dismissible`. Assim os visitantes não conseguem fechar o banner até você removê-lo.
 
 ## OpenAPI
 

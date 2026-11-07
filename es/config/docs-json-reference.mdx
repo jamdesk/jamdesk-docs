@@ -283,7 +283,7 @@ Consulta [Idiomas → Enrutamiento automático de idioma](/es/setup/languages#en
 
 ### banner
 
-Muestra una barra de anuncios para todo el sitio, fijada en la parte superior de cada página, sobre el encabezado, a todo el ancho y con el color de acento de tu tema. Úsala para lanzamientos, migraciones, ventanas de mantenimiento o cualquier mensaje que todos los visitantes deban ver.
+Muestra una barra de anuncios para todo el sitio, fijada en la parte superior de cada página, sobre el encabezado, a todo el ancho. Úsala para lanzamientos, migraciones, ventanas de mantenimiento o cualquier mensaje que todos los visitantes deban ver.
 
 ```json
 {
@@ -297,9 +297,75 @@ Muestra una barra de anuncios para todo el sitio, fijada en la parte superior de
 | Campo | Tipo | Predeterminado | Descripción |
 |-------|------|----------------|-------------|
 | `content` | string | - | **Obligatorio.** El texto del banner. Admite formato en línea básico: enlaces `[text](url)`, **negrita** (`**text**`) y *cursiva* (`*text*`). No se admiten componentes MDX personalizados. |
-| `dismissible` | boolean | `false` | Si es `true`, muestra un botón de cierre. Cuando un visitante descarta el banner, este permanece oculto para esa persona hasta que cambies `content`. Al editar el mensaje, el banner vuelve a aparecer. |
+| `type` | string | `"info"` | El estilo del banner: `"info"`, `"warning"` o `"danger"`. Consulta [Tipos de banner](#tipos-de-banner). |
+| `dismissible` | boolean | `false` | Si es `true`, muestra un botón de cierre. Cuando un visitante descarta el banner, este permanece oculto para esa persona hasta que cambies `content` o `type`. Al editar el mensaje, el banner vuelve a aparecer. |
 
-El banner se muestra en tu sitio publicado y en `jamdesk dev`. Se configura de forma global (un solo banner para todo el sitio); por ahora no se admiten banners por pestaña ni por idioma.
+El banner se muestra en tu sitio publicado y en `jamdesk dev`. Por ahora no se admiten banners por pestaña.
+
+### Tipos de banner
+
+Elige un `type` según la urgencia del mensaje. Si no lo indicas, el banner usa `"info"`.
+
+| Tipo | Color | Icono |
+|------|-------|-------|
+| `"info"` | Tu color de acento | Ninguno |
+| `"warning"` | Ámbar | Advertencia |
+| `"danger"` | Rojo | Alerta |
+
+```json
+{
+  "banner": {
+    "content": "Scheduled maintenance Saturday 10:00 UTC.",
+    "type": "warning",
+    "dismissible": true
+  }
+}
+```
+
+Las versiones de la CLI anteriores a la 1.1.231 rechazan `type` en `jamdesk dev` y `jamdesk validate`. Ejecuta `jamdesk update` para instalar la última versión.
+
+Para cambiar los colores, consulta [CSS personalizado → Banner](/es/customization/custom-css#banner).
+
+### Un banner distinto por idioma
+
+Cada entrada de `navigation.languages` puede tener su propio `banner`, con los mismos campos. En las páginas de ese idioma, reemplaza al banner de nivel superior. Un idioma sin `banner` propio muestra el de nivel superior.
+
+En este ejemplo, las páginas en inglés muestran el banner de nivel superior y las páginas en alemán muestran uno en alemán:
+
+```json
+{
+  "banner": {
+    "content": "Scheduled maintenance Saturday 10:00 UTC.",
+    "type": "warning"
+  },
+  "navigation": {
+    "languages": [
+      {
+        "language": "en",
+        "tabs": [...]
+      },
+      {
+        "language": "de",
+        "banner": {
+          "content": "Geplante Wartung am Samstag um 10:00 UTC.",
+          "type": "warning"
+        },
+        "tabs": [...]
+      }
+    ]
+  }
+}
+```
+
+El banner de un idioma no hereda campos del banner de nivel superior. Define `type` y `dismissible` en él si los necesitas.
+
+### Cuándo vuelve a aparecer un banner descartado
+
+Un visitante que cierra un banner no lo vuelve a ver hasta que cambies su `content` o su `type`. Si solo cambias `dismissible`, sigue oculto.
+
+Si un visitante cierra el banner de nivel superior, queda oculto en todos los idiomas que lo muestran. El banner propio de un idioma se recuerda por separado. Cerrar el banner en alemán no oculta el banner en inglés.
+
+Para una caída del servicio, usa `"type": "danger"` y no incluyas `dismissible`. Así los visitantes no pueden cerrar el banner hasta que lo quites.
 
 ## OpenAPI
 

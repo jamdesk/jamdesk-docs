@@ -283,7 +283,7 @@ Consultez [Support multilingue → Routage automatique de la langue](/fr/setup/l
 
 ### banner
 
-Affichez une barre d'annonce sur tout le site, épinglée en haut de chaque page, au-dessus de l'en-tête, sur toute la largeur et dans la couleur d'accent de votre thème. Utilisez-la pour les lancements, les migrations, les fenêtres de maintenance ou tout message que chaque visiteur doit voir.
+Affichez une barre d'annonce sur tout le site, épinglée en haut de chaque page, au-dessus de l'en-tête, sur toute la largeur. Utilisez-la pour les lancements, les migrations, les fenêtres de maintenance ou tout message que chaque visiteur doit voir.
 
 ```json
 {
@@ -297,9 +297,75 @@ Affichez une barre d'annonce sur tout le site, épinglée en haut de chaque page
 | Champ | Type | Par défaut | Description |
 |-------|------|------------|-------------|
 | `content` | string | - | **Obligatoire.** Le texte de la bannière. Prend en charge la mise en forme en ligne de base : liens `[text](url)`, **gras** (`**text**`) et *italique* (`*text*`). Les composants MDX personnalisés ne sont pas pris en charge. |
-| `dismissible` | boolean | `false` | Lorsque la valeur est `true`, affiche un bouton de fermeture. Une fois la bannière fermée par un visiteur, elle reste masquée pour lui jusqu'à ce que vous modifiiez `content`. Modifier le message la fait réapparaître. |
+| `type` | string | `"info"` | Le style de la bannière : `"info"`, `"warning"` ou `"danger"`. Voir [Types de bannière](#types-de-bannière). |
+| `dismissible` | boolean | `false` | Lorsque la valeur est `true`, affiche un bouton de fermeture. Une fois la bannière fermée par un visiteur, elle reste masquée pour lui jusqu'à ce que vous modifiiez `content` ou `type`. Modifier le message la fait réapparaître. |
 
-La bannière s'affiche sur votre site publié et dans `jamdesk dev`. Elle est configurée globalement (une seule bannière pour tout le site) ; les bannières par onglet et par langue ne sont pas prises en charge pour le moment.
+La bannière s'affiche sur votre site publié et dans `jamdesk dev`. Les bannières par onglet ne sont pas prises en charge pour le moment.
+
+### Types de bannière
+
+Choisissez un `type` adapté à l'urgence du message. Sans `type`, la bannière utilise `"info"`.
+
+| Type | Couleur | Icône |
+|------|---------|-------|
+| `"info"` | Votre couleur d'accent | Aucune |
+| `"warning"` | Ambre | Avertissement |
+| `"danger"` | Rouge | Alerte |
+
+```json
+{
+  "banner": {
+    "content": "Scheduled maintenance Saturday 10:00 UTC.",
+    "type": "warning",
+    "dismissible": true
+  }
+}
+```
+
+Les versions de la CLI antérieures à 1.1.231 refusent `type` dans `jamdesk dev` et `jamdesk validate`. Lancez `jamdesk update` pour installer la dernière version.
+
+Pour changer les couleurs, consultez [CSS personnalisé → Bannière](/fr/customization/custom-css#bannière).
+
+### Une bannière différente par langue
+
+Chaque entrée de `navigation.languages` peut avoir sa propre `banner`, avec les mêmes champs. Sur les pages de cette langue, elle remplace la bannière de premier niveau. Une langue sans `banner` propre affiche la bannière de premier niveau.
+
+Dans cet exemple, les pages en anglais affichent la bannière de premier niveau et les pages en allemand une bannière en allemand :
+
+```json
+{
+  "banner": {
+    "content": "Scheduled maintenance Saturday 10:00 UTC.",
+    "type": "warning"
+  },
+  "navigation": {
+    "languages": [
+      {
+        "language": "en",
+        "tabs": [...]
+      },
+      {
+        "language": "de",
+        "banner": {
+          "content": "Geplante Wartung am Samstag um 10:00 UTC.",
+          "type": "warning"
+        },
+        "tabs": [...]
+      }
+    ]
+  }
+}
+```
+
+La bannière d'une langue n'hérite d'aucun champ de la bannière de premier niveau. Définissez `type` et `dismissible` sur elle si vous en avez besoin.
+
+### Quand une bannière fermée réapparaît
+
+Un visiteur qui ferme une bannière ne la revoit pas tant que vous ne modifiez pas son `content` ou son `type`. Si vous modifiez seulement `dismissible`, elle reste masquée.
+
+Si un visiteur ferme la bannière de premier niveau, elle reste masquée dans toutes les langues qui l'affichent. La bannière propre à une langue est mémorisée séparément. Fermer la bannière allemande ne masque pas la bannière anglaise.
+
+En cas de panne, utilisez `"type": "danger"` et omettez `dismissible`. Les visiteurs ne peuvent alors pas fermer la bannière tant que vous ne l'avez pas retirée.
 
 ## OpenAPI
 

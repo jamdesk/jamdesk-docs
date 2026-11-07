@@ -283,7 +283,7 @@ description: "完整参考 docs.json 的各项配置：主题、颜色、导航�
 
 ### banner
 
-在每个页面顶部、页眉上方，以全宽和主题强调色显示网站级公告栏。可用于发布、迁移、维护窗口或任何所有访问者都应看到的消息。
+在每个页面顶部、页眉上方，以全宽显示网站级公告栏。可用于发布、迁移、维护窗口或任何所有访问者都应看到的消息。
 
 ```json
 {
@@ -297,9 +297,75 @@ description: "完整参考 docs.json 的各项配置：主题、颜色、导航�
 | 字段 | 类型 | 默认值 | 描述 |
 |-------|------|---------|-------------|
 | `content` | string | - | **必填。** 横幅文本。支持基本的行内格式：链接 `[text](url)`、**粗体**（`**text**`）和*斜体*（`*text*`）。不支持自定义 MDX 组件。 |
-| `dismissible` | boolean | `false` | 为 `true` 时显示关闭按钮。访问者关闭横幅后，在你更改 `content` 前，横幅会持续对其隐藏。编辑消息会使横幅重新显示。 |
+| `type` | string | `"info"` | 横幅样式：`"info"`、`"warning"` 或 `"danger"`。请参阅[横幅类型](#横幅类型)。 |
+| `dismissible` | boolean | `false` | 为 `true` 时显示关闭按钮。访问者关闭横幅后，在你更改 `content` 或 `type` 前，横幅会持续对其隐藏。编辑消息会使横幅重新显示。 |
 
-横幅会显示在已发布的网站和 `jamdesk dev` 中。它是全局配置的（整个网站只有一个横幅）；目前不支持按标签页和按语言配置横幅。
+横幅会显示在已发布的网站和 `jamdesk dev` 中。目前不支持按标签页配置横幅。
+
+### 横幅类型
+
+根据消息的紧急程度选择 `type`。不设置时，横幅使用 `"info"`。
+
+| 类型 | 颜色 | 图标 |
+|------|------|------|
+| `"info"` | 你的强调色 | 无 |
+| `"warning"` | 琥珀色 | 警告图标 |
+| `"danger"` | 红色 | 警示图标 |
+
+```json
+{
+  "banner": {
+    "content": "Scheduled maintenance Saturday 10:00 UTC.",
+    "type": "warning",
+    "dismissible": true
+  }
+}
+```
+
+1.1.231 之前的 CLI 版本在 `jamdesk dev` 和 `jamdesk validate` 中会拒绝 `type`。运行 `jamdesk update` 获取最新版本。
+
+要更改颜色，请参阅[自定义 CSS → 横幅](/cn/customization/custom-css#横幅)。
+
+### 按语言设置不同横幅
+
+`navigation.languages` 中的每个条目都可以有自己的 `banner`，字段相同。在该语言的页面上，它会替换顶层横幅。没有自己 `banner` 的语言会显示顶层横幅。
+
+在下面的示例中，英文页面显示顶层横幅，德文页面显示德文横幅：
+
+```json
+{
+  "banner": {
+    "content": "Scheduled maintenance Saturday 10:00 UTC.",
+    "type": "warning"
+  },
+  "navigation": {
+    "languages": [
+      {
+        "language": "en",
+        "tabs": [...]
+      },
+      {
+        "language": "de",
+        "banner": {
+          "content": "Geplante Wartung am Samstag um 10:00 UTC.",
+          "type": "warning"
+        },
+        "tabs": [...]
+      }
+    ]
+  }
+}
+```
+
+语言的横幅不会继承顶层横幅的字段。如果需要 `type` 和 `dismissible`，请在语言的横幅上单独设置。
+
+### 已关闭的横幅何时重新显示
+
+访问者关闭横幅后，在你更改它的 `content` 或 `type` 之前，不会再看到它。只更改 `dismissible` 时，横幅仍保持隐藏。
+
+如果访问者关闭了顶层横幅，它在所有显示该横幅的语言中都会保持隐藏。语言自己的横幅单独记录。关闭德文横幅不会隐藏英文横幅。
+
+遇到服务中断时，请使用 `"type": "danger"`，并且不要设置 `dismissible`。这样在你移除横幅之前，访问者无法关闭它。
 
 ## OpenAPI
 
